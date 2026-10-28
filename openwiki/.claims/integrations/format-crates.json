@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f5d5603fc8458a58aaf59c3f36fc10626d0d9026a81014bf70bf2476a20cd0f7",
+  "pageVersion": "sha256:23e9a4c6ec033d341255c604cdbb026772ab749dfe4bfae70ac0b72e344ae93f",
   "claims": [
     {
       "id": "claim_caa17141f634409dbccb9366097931e2",
       "statement": "crates/ holds seven in-repo format crates — chd-rs (port of chdman, BSD-3-Clause, CLI chdrs), cia-rs (ctrtool, MIT since its upstream shipped no license, ciars), gdi-rs (gdidrop, BSD-2-Clause, gdirs), nsz-rs (nsz, MIT, nszrs), xdelta-rs (xdelta3, Apache-2.0, xdeltars), xps-rs (Flips, GPL-3.0-or-later, xpsrs) and xso-rs (maxcso, ISC, xsors) — that replaced the external tools oxyromon used to shell out to. They are workspace members via `members = [\"crates/*\"]`, sharing the root lockfile and CI, while frontend/ and desktop/ declare their own workspaces and stay out of the native build.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L125-L129",
+          "resource": "repo://AGENTS.md#L126-L130",
           "version": "repo-lines-v1:sha256:8c005f75de46ff0d6d12b1ebcabd5d6fe7af7f16de4ffd24622452bd925e7d46:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE4YTUwYmU2OTE1MmE5NWQxMWQzODgxMDI5ZjlkNGYzMTJlNTM0ZDI2Y2UzODliNDhmNjY5ZGFjNjRlZDBiNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGZhMzIzN2VjZDA2ZTgyYzE3M2EyNWVlNTkxODI3ZDcxZGRmODEyYTlhYmU3OWI4NDFhMWMxMDQwMzAzNmFhNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzFlNWIyOWRjZDkwYWY5Mzg4OWY3ZTI5YTJiZDkzZjEzZTk3ZTljOWU1N2E5NGIxMGEzZjkyZDdhMzU3ODQ2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWU3OGIyN2M0YWFkODI5MGZiZjE1YmYzYjVlMzZlOWQwMGJjMjRjMjlkZDA5NWY4ZjY3YmMwZDIwNmNjYzMzNSJ9"
         },
         {
@@ -33,7 +33,7 @@
       "statement": "Every crate entry point is synchronous and file-to-file: input path, output path, a settings struct, and `progress: &mut dyn FnMut(u64)` called with bytes consumed since the last call, the calls summing to a total the caller can compute up front — the ISO/BIN/container for xso, gdi and nsz, the patch for xdelta and xps, and the image or sheet for chd-rs creation. Where one input is not one file the crate exports the denominator: `gdi_rs::input_size(cue)` (counting a dropped pregap as consumed) and `chd_rs::cd_input_size` for a CUE, GDI or ISO; chd-rs extraction instead reports decompressed bytes summing to the CHD's logical size.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L135-L137",
+          "resource": "repo://AGENTS.md#L136-L138",
           "version": "repo-lines-v1:sha256:de0117a85cf42524e917ba497d27f62428cb7d6c5322942857704e2196cf6e1f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWZjNGE2NTRmNWQwNzllNmM2MTYyMTVlYjdhYmVjMTBjNGQyNWJiMTE3YjU3YWI5ZTAwNDU5NGEzNTBmM2I1YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTI1YTdkNDY1Y2NhYTNiNDJlN2I4ZjQ5MWJkMGUxYmI4OTg2ZWE2ZDFkZWY2OTEzOGIwZjFhZDdmNzA2NmJkZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTlmMjU2ZTNiZWExZTE4Njk5ZWZlOWE1Mzg0ZTM3MzlhMGFiZjU1MzM0MDI2NDlhMWZhYWUyZGFiMzg2YzdiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTk4MTRiZjk2MGNhNWU1ZDlmOThmNjRjZTUwOTczNTA1N2NkMGU5ZTg2N2YzNDg3YWIyYjgxMTk3NzVmNDgwNyJ9"
         },
         {
@@ -89,7 +89,7 @@
       "statement": "All six crates write to `<output>.part` beside the destination and rename it into place only on success, removing it on any failure; the same `part`/`finish` pair is duplicated per crate (xso-rs shares it through `crate::io`, chd-rs through `writer::part_path`, used by `write_part`, `Chd::extract`, `extract_cd` and `extract_ld`). Where an output is a set, every member is staged and renamed only after the last succeeds — gdi-rs for a GDI and its track files, chd-rs's `extract_cd` for a CUE/GDI/TOC and its track BINs. The guarantees are tested per crate, and nsz-rs's `with_output` additionally creates the parent directory and drops the File before renaming, which Windows requires.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L138-L140",
+          "resource": "repo://AGENTS.md#L139-L141",
           "version": "repo-lines-v1:sha256:19814bf960ca5e5d9f98f64ce509735057cd0e9e867f3487ab2b8119775f4807:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDQ0MTE1NTRhNGYxYmNhNGZkZTM2YWIzYWUwZThhMjQ3MGI4MzI5ZTJiMzM0NzMxMzY0ZGE4NTJmM2M1YzA5MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQzYWNkY2Q0MDkxMGZkMjBkYzkwMmY4NjQzNGZlYzViOTBjMjU3YzdjMzdlNDM2M2E5ZDMxZGUzNmZkMDc3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGUwMTE3YTg1Y2Y0MjUyNGU5MTdiYTQ5N2QyN2Y2MjQyOGNiN2Q2YzUzMjI5NDI4NTc3MDRlMjE5NmNmNmUxZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDU0MmRhNDI3YTY4YTczMWMzOTAyOWRiNjk5MjM5NjJmNjRjZjg0ZGFkYmJiMGY2MTU3YWJjMGRhNGI3YjBhYSJ9"
         },
         {
@@ -141,7 +141,7 @@
       "statement": "Each crate exposes one thiserror `Error` plus a `Result<T>` alias, with identical wording for the shared variants: `Io` (\"io error: …\", `#[from] std::io::Error`) and `Corrupt` in all six; `BadMagic { expected, found }` and `Unsupported` in chd-rs, xso-rs, nsz-rs, xdelta-rs and xps-rs; `InvalidOption` in chd-rs, xso-rs, gdi-rs and xdelta-rs. Crates add only format-specific variants (chd-rs: `Compression`; nsz-rs: MissingKey, InvalidKey, Verification, Compression, Hex).",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L141-L144",
+          "resource": "repo://AGENTS.md#L142-L145",
           "version": "repo-lines-v1:sha256:145edf8b1a0f7eda1f46cd8861cd19a65cd7f92375325fcd1709801c044c7bc8:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzU5MTJjMjA1ZWZjYzE1OTVhYmEyNDJmNDQyMWY4YjZiOGUwYTNjMTdjNGI4N2M3NGNiMGUzNWQwZjNjZDhkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjE2YWY5MGYzMzMzZDZlMTU3ZmIxYWM5MDcwNDE0ZWNkNTNkMGM2NTgwMWRmOGZiMDYzNjZlMzJiNGUyMzk3YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTk4MTRiZjk2MGNhNWU1ZDlmOThmNjRjZTUwOTczNTA1N2NkMGU5ZTg2N2YzNDg3YWIyYjgxMTk3NzVmNDgwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjNiNWJiNmUwYWM2MDA3YTkxZmY4MjUzYzY4YTYxNTA0MTM3Y2RkOGEyMTEwMTk0MDIxM2E0ZGM2MWNiYTkwOSJ9"
         },
         {
@@ -257,11 +257,11 @@
       "statement": "Manifests are library-first: `[features] default = [\"cli\"]` with `cli = [\"dep:clap\", \"dep:console\", \"dep:indicatif\"]`, the `[[bin]]` gated on `required-features = [\"cli\"]`, and oxyromon depending on each crate by `path` and `version` with `default-features = false` so it links none of the CLI UI stack. `edition`, `rust-version`, `repository` and shared dependencies come from `[workspace.package]`/`[workspace.dependencies]`, and no crate declares `[profile]` since only the root's applies.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L133-L134",
+          "resource": "repo://AGENTS.md#L134-L135",
           "version": "repo-lines-v1:sha256:2dd6744775bfc6808200c0e178775ea48a60110878ec0286a373eb06e8cb0f86:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNlN2Y3ZWRiMTVmMGVkM2IxMGQ4OTQxYmVhZmE5NWM5NzY3MjRjMWFkYzM0ZmJmYzU1ZjEwNGZkYzlhOWIxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgyYzU0ODkyMDYxOTYxYTVhOGE2YWExMjJiODI2NTY2ZjJjNzFjOTU1NjBmNzAyNjVlZjZiMGYyMmRkMjg5NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGZiMWNmMmY2YTRiZmZhNTM5ZmYwMGJiZTlhMWQzOWEwZWQxMzA1YjI5MWQzYjRlOGNhZGM1YTNlZTcyYTc2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGUwMTE3YTg1Y2Y0MjUyNGU5MTdiYTQ5N2QyN2Y2MjQyOGNiN2Q2YzUzMjI5NDI4NTc3MDRlMjE5NmNmNmUxZiJ9"
         },
         {
-          "resource": "repo://AGENTS.md#L158-L161",
+          "resource": "repo://AGENTS.md#L159-L162",
           "version": "repo-lines-v1:sha256:f5353e9b6ce2bad7e6e694f4828ac261fd60559d45db1ae53316d65f5dcd8bd2:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VjNDE4MWYzOGIwMjUyNmNkMWM5ZjdkODUwMGY4MTU3Zjk1MTRjY2FlNmZkM2JlOTU1NWUwYjM2MTAxNjIzMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDZmOWJmOWZlZTQ1YjBiNDgzM2I1NmY2YzU2ZmY3ZTg4ZjZjNDU1ZjZkZTNkOWZkMDdhNDdjYjlhMWQxZTQ2MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjUzYWM3ODRhZWM3ZWFiYmJkNGE2NjE0ZjczZTQzYTEwZmRjMWExZjM5NWUyMjAzMDM3ZjcyMjJjZWQ0NTEzZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzRlOTRiOTkyNmRkZDM3NmQzMTg2NmJjZTdmOWE5OTYxZWZjMTZmMjAwMGY5NzdmM2IwMjBkZjRjYTE1ZmVmOSJ9"
         },
         {
@@ -379,7 +379,7 @@
           "version": "repo-lines-v1:sha256:a72d0c526332640881f549fbdc09143de5d32d273af5e898a54d06b850e26309:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMGMzNDQ2ZTRjOGEwNzNhNDFjZmRjODMzMTFhOGQwNWRmYThjNzgzYTU4ZDU4YzQ3MWYyN2E5YTEzNDc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1N2UzOGQyNmYxNzJhY2NiNTk5OWI5Y2NhMmU3N2E3MGIwMGFlNTM4MzA5NjdkZTZhYzI2MDE0OTFlNjNkMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzN2RjZjYzNTBmMGU3ZDg3NmIzYmRmNWEzYzE4ZjNmM2Y0N2QyNzcyODAwNzI1YTNhYThiODQ4Y2VkMzU1YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMjY0MDQ3NjA1ZjM2N2MwNDU5Zjg5NWM3ZGJkZTYyNzdmNmNjNTAzZTgxODljOGQ3YzMwNGMyZjllOGMzOTgifQ"
         },
         {
-          "resource": "repo://AGENTS.md#L154-L156",
+          "resource": "repo://AGENTS.md#L155-L157",
           "version": "repo-lines-v1:sha256:1c9ecc0f8853edd11a44c0f2bec65cdde2f8d8deddd2b14d485113db9f0fedc3:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjAyMzFiOTRiMjY3YzIyMDZiMWVmZThlYWViMWYwOTQ3YTQwOWQ3NzBlNDBlYWM0MTAxNzc4MTRmMDA0ZTE2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQ1ODhhY2Q2YWI0Nzg2OWEwODNkOWQ5NDEwZmNlY2VlNDljMzFmNDUxYWNiYmJlYzMxZjA4ODE2MWQ0NGQxOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzZiNjIxMDIwODBjNWY4ZmRiYzI2MGQ5MGFiODdmMjQ2MGI1ZjAyNWNkNTQwMWQwYzMzMmUxM2QwY2Y4OWMwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTJjODFjNDY3YzdjNzNmMWVlNjZiN2ZjODdkMzVkZDRlN2M3YTFiODBhNjJlZWZmZWUzNmQ5MTM0N2U2ZWZjYSJ9"
         },
         {
@@ -441,7 +441,7 @@
       "statement": "CHD and CIA stopped being child-process dependencies in oxyromon 0.25: chd-rs replaced chdman and cia-rs replaced ctrtool, both modules' get_version() return the literal \"built-in\", and chdman and ctrtool survive only as $CHDMAN/$CTRTOOL/$PATH reference binaries for the crates' tests. The README's supported-formats table names cia-rs as the CIA backend.",
       "evidence": [
         {
-          "resource": "repo://CHANGELOG.md#L18-L20",
+          "resource": "repo://CHANGELOG.md#L19-L21",
           "version": "repo-lines-v1:sha256:74e91bfda0ebc101ec5fda0bea1f51a396c7b033398336621ec5b28b07016348:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVkYzNkYTY0Njc2ZjI2NTU5ZjM4MzYzYjg4ZDQ0OGY4ZjNkMTMwNmVkNTZkN2I5YzU2NmVhMGY2N2MyMTAwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWM1NDg0NGQwNzExNGYzOTFiNWQ5NmU2ZjAzZTJjZTkzYjNlYjVlZjg0YjJkMDU1ZDRmYmYyZWQ0NGIzNzI0MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjhiNmRkZTlkZGNhYjk0NWYyYzY4ZGI1MjgwNTY5MDBmYThlYWM4YmE3YjE5NWI3ZDU3MzNmNzY2ZWMyODMyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmZjYmIxZDJmYjU5ZGQ1YTc5N2E2Yjc2YjYzY2EyYjM0MTZmOTRkNjUxMjAwMDI5ZTM1ZTJmZTAxZDNhNjYxMSJ9"
         },
         {
@@ -546,11 +546,11 @@
     },
     {
       "id": "claim_cabb4d35b52043de9adb50c3638d21de",
-      "statement": "wux-rs's public API covers lossless WUAs: to_wua takes an optional store for update partitions, wua_to_wux and wua_to_wud take the same store and the keys to rebuild the disc, and disc_info and store_entries read what a WUA keeps without rebuilding it; it also exports parse_tmd with Tmd and Content, which oxyromon uses to grade a Wii U title against its newest TMD.",
+      "statement": "wux-rs's public API covers lossless WUAs: to_wua takes an optional store for update partitions, wua_to_wux and wua_to_wud take the same store and the keys to rebuild the disc, and disc_info and store_entries read what a WUA keeps without rebuilding it; it also exports load_keys, parse_keys and parse_otp for Cemu's keys.txt and a console's otp.bin, and parse_tmd with Tmd and Content, which oxyromon uses to grade a Wii U title against its newest TMD.",
       "evidence": [
         {
           "resource": "repo://crates/wux-rs/src/lib.rs#L41-L53",
-          "version": "repo-lines-v1:sha256:82a527d55f8c87d9c33e448f5441515841d9a41db20775ab90aadb04125f851a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZGM1ZTcyNmYxYjI5MjkwODlmZGJmY2FlYTdiNTMwODc5ODg1ZDlmMzhiM2ZiZDFhMjFhODBhNzRiMzdhMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MDRhNDMwY2ZjM2MwMTJlYzVkNjBlYzEzODI1ZWQ5ZWU0MjBmNTQ0NDI5ZDc5YmQ0YzYwYjYwY2NhNjU2NjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2NzQxZTZlNTA4ODJlYzAxMWUyODhlYTcwYjgxOWZlNzdjZGQyZDI2ZmM1MzRiMWY3NDIzZDQyMThiZDJhZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyNjcwNzg5MTExMDFmMGU0NGM1MDFjODMwZjcyYjMxMjlhNTE2N2MwYWVjZjFiYjVhMjRiZTBmOTk2YThkODUifQ"
+          "version": "repo-lines-v1:sha256:c3618bb9d7c5a1ed15057cd7532a58099b257277ba4f82138ee711182b4439e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZGM1ZTcyNmYxYjI5MjkwODlmZGJmY2FlYTdiNTMwODc5ODg1ZDlmMzhiM2ZiZDFhMjFhODBhNzRiMzdhMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MDRhNDMwY2ZjM2MwMTJlYzVkNjBlYzEzODI1ZWQ5ZWU0MjBmNTQ0NDI5ZDc5YmQ0YzYwYjYwY2NhNjU2NjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2NzQxZTZlNTA4ODJlYzAxMWUyODhlYTcwYjgxOWZlNzdjZGQyZDI2ZmM1MzRiMWY3NDIzZDQyMThiZDJhZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyNjcwNzg5MTExMDFmMGU0NGM1MDFjODMwZjcyYjMxMjlhNTE2N2MwYWVjZjFiYjVhMjRiZTBmOTk2YThkODUifQ"
         },
         {
           "resource": "repo://crates/wux-rs/src/nus.rs#L20-L66",
@@ -568,7 +568,7 @@
     },
     {
       "id": "claim_74ae8b2ba43f460cb7b2cd254f7f342c",
-      "statement": "The wuxrs CLI's --updates flag names the store of update partitions WUAs share, defaulting to the .update-partitions folder next to each WUA, and a .wua input is rebuilt to its WUX unless -f nus asks for NUS folders.",
+      "statement": "The wuxrs CLI's --updates flag names the store of update partitions WUAs share, defaulting to the .update-partitions folder next to each WUA, --keys takes Cemu's keys.txt or a console's otp.bin, and a .wua input is rebuilt to its WUX unless -f nus asks for NUS folders.",
       "evidence": [
         {
           "resource": "repo://crates/wux-rs/src/bin/wuxrs/main.rs#L130-L175",
@@ -576,7 +576,7 @@
         },
         {
           "resource": "repo://crates/wux-rs/src/bin/wuxrs/main.rs#L40-L60",
-          "version": "repo-lines-v1:sha256:7ebeb94b2cb1e0cc90a224796021cc54a67b21273309fba83f99f1497ae78fe6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YWVlZjJiMTk1NDBlYzZlNzE1MjYyOThkZDVhMGViMTE0NDZlNTRhYjZmNTA4YmVlNWZjZDY1Yjc0N2Y3MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2YWI5NzVhMDg0NzlmYmRjNDc3ZmQ5NjViZGVlNjljYTk1OWEwZGU5NGY1YWNiODYxOTBjYzU0NGU3ZGNmYzEifQ"
+          "version": "repo-lines-v1:sha256:616ebe2d65e601a929c8d328eeab368014870a0eefb77ea12d0fb09ccf5dc900:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YWVlZjJiMTk1NDBlYzZlNzE1MjYyOThkZDVhMGViMTE0NDZlNTRhYjZmNTA4YmVlNWZjZDY1Yjc0N2Y3MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2YWI5NzVhMDg0NzlmYmRjNDc3ZmQ5NjViZGVlNjljYTk1OWEwZGU5NGY1YWNiODYxOTBjYzU0NGU3ZGNmYzEifQ"
         }
       ]
     },
@@ -601,6 +601,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T23:15:44.056Z"
+    "at": "2026-10-28T08:10:36.025Z"
   }
 }

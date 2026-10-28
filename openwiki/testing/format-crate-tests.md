@@ -48,6 +48,8 @@ sources:
     resource: repo://crates/nsz-rs/tests/vectors.rs
   - id: openwiki-source-ce853e79f786a28d42f8717a
     resource: repo://crates/wux-rs/Cargo.toml
+  - id: openwiki-source-1eccc54b012309dc15e12f9a
+    resource: repo://crates/wux-rs/src/keys.rs
   - id: openwiki-source-14c5adede207ce806ea08421
     resource: repo://crates/wux-rs/tests/common/mod.rs
   - id: openwiki-source-1cbc70c4e7294de765ba5845
@@ -80,10 +82,10 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-10-26T21:20:28.066Z" }
+generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T21:20:28.066Z
+    at: 2026-10-28T08:10:36.025Z
 ---
 
 # Format Crate Test Strategy
@@ -147,6 +149,10 @@ nested directories, all with made-up keys (`DISC_KEY`, `COMMON_KEY`, `TITLE_KEY`
   layout is kept whole, and a WUA without a disc refuses to rebuild. A vWii title
   stays encrypted without the vWii common key and still rebuilds, while one
   decrypted with it needs that key again to rebuild.
+- The unit tests in `src/keys.rs` read keys as Cemu does and take both common
+  keys from a dummy `otp.bin` written to a `tempfile`. They also pin the
+  refusals: a short binary file, and a 1 KiB one whose common key slots were
+  never programmed.
 
 `tests/real.rs` holds five `#[ignore]`d tests that need a real disc. They skip
 with a message unless `WUXRS_DISC` names a WUD or WUX, read keys from `WUXRS_KEYS`

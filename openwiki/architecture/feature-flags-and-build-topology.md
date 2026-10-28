@@ -76,10 +76,10 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-27T21:16:24.550Z
+    at: 2026-10-28T08:10:36.025Z
 ---
 
 # Feature Flags and Build Topology
@@ -273,17 +273,20 @@ whole job and builds the web UI once in a dedicated step
 and the `wasm32-unknown-unknown` target installed. Every later cargo invocation
 then reuses `target/assets` instead of recompiling the wasm several times.
 
-Two clippy passes guard the feature matrix:
+Three clippy passes guard the feature matrix and the separate web UI workspace:
 
 ```
 cargo clippy --workspace --all-targets --features oxyromon/server
 cargo clippy --no-default-features --features use-rustls,mcp --all-targets
+(cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets)
 ```
 
 The first uses the package-qualified feature name because a workspace with
 several selected packages requires it. The second is the point of interest: it
 lints the MCP stdio server **without** the web server, so `mcp`-only builds —
-which nothing else in CI compiles — cannot silently rot. The job then builds
+which nothing else in CI compiles — cannot silently rot. The third lints the
+Leptos frontend, which declares its own `[workspace]` and so is outside the
+first pass, for the browser target. The job then builds
 `--release --features server` and runs workspace tests under
 `cargo llvm-cov --workspace --features oxyromon/server`. Feature-gated tests
 follow the same split: `tests/mcp_stdio.rs` opens with `#![cfg(feature = "mcp")]`

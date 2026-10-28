@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:cae68f9be0dfeefb4d09f6edd924f7b7c10e5129719fe1e6d9f5836f6b62907c",
+  "pageVersion": "sha256:c0e32304457c7cc5089f38c462a22fc94656a000144a39b1c0056dad10d19fc0",
   "claims": [
     {
       "id": "claim_987db34fed214490868d6d3b69714abf",
@@ -248,11 +248,11 @@
     },
     {
       "id": "claim_955036e46ce64b51bf665f599c1e0f16",
-      "statement": "CI runs two clippy passes: `cargo clippy --workspace --all-targets --features oxyromon/server` (package-qualified because several workspace packages are selected) and `cargo clippy --no-default-features --features use-rustls,mcp --all-targets`, a dedicated pass that keeps the MCP-stdio-without-web-server combination compiling; the job then builds --release --features server and tests under `cargo llvm-cov --workspace --features oxyromon/server`.",
+      "statement": "CI runs three clippy passes: `cargo clippy --workspace --all-targets --features oxyromon/server` (package-qualified because several workspace packages are selected), `cargo clippy --no-default-features --features use-rustls,mcp --all-targets`, a dedicated pass that keeps the MCP-stdio-without-web-server combination compiling, and `cargo clippy --target wasm32-unknown-unknown --all-targets` inside `frontend/`, its own workspace; the job then builds --release --features server and tests under `cargo llvm-cov --workspace --features oxyromon/server`.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L51-L62",
-          "version": "repo-lines-v1:sha256:96fc5c9df6a7030d591755b60362f8df3ee696c97a0578fbbaeeb70b9aa6c1bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMTEyOTNmZjUzYmVmZDY3MGFkYzM5ZDViOTU0NTE0ZGY1OGY4MTM4MDkzNmMxYWVjY2M3NjgxYTg1YWU3NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNjI3NDY0MzVjYzliOGQ1YTk5ZDhkN2E4M2NmNzNmODA4ZWYwM2EzZTlhNDI4NTU4MWU1N2QyNDRhYWI1NzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L51-L65",
+          "version": "repo-lines-v1:sha256:08aa6568d126a4d7d2a8c2a0c5d0f1125517a961381ac16013d7b5e4d2b82d47:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMTEyOTNmZjUzYmVmZDY3MGFkYzM5ZDViOTU0NTE0ZGY1OGY4MTM4MDkzNmMxYWVjY2M3NjgxYTg1YWU3NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNjI3NDY0MzVjYzliOGQ1YTk5ZDhkN2E4M2NmNzNmODA4ZWYwM2EzZTlhNDI4NTU4MWU1N2QyNDRhYWI1NzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
         }
       ]
     },
@@ -467,7 +467,7 @@
       "statement": "test.sh is a single command — `cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info` — matching CI's test step exactly, and build.sh is the host-side release build (trunk build --release, then cargo build --release --features server); the older second coverage pass gated on oxyromon/nod and oxyromon/sevenz is gone, and would now fail on unknown features.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L59-L62",
+          "resource": "repo://.github/workflows/continuous_integration.yml#L62-L65",
           "version": "repo-lines-v1:sha256:4b2dceeb85a11272aa8018f4c7bbffe3490bbc4de6a44a399227ca0cc1ece9b2:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzJkOWRlMTUxOWYxNzc0MmM5Y2IzNjE0NDk0ZmFmMmNmNmQ4MzUyM2JkNTkwNDY3MWNhNTBlZTNjMDc2MzZkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwOTEzYjA5YTZhYjQ5YjVlYzdlMjhjNjZiNTQ1MTI3NjdmYzE4MzU4ODNiMGM3MjQyYjcxNjJlNzJiNzU5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZkYTllOTk1NjdmM2RmZTExMjdmNThiNTc5M2QxMjUzMGRlMDk2ZTcyMzFlOTc2ZDg2YmI1M2QyNzc3ZTRlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGUxMmFkZTlhN2ExOTZiM2NiN2RlYWZmMDZkNzEzZjA2MTBkZTJiODMzN2NhZjU4NGQyMzFlMzk1YTQwZmIyZSJ9"
         },
         {
@@ -529,6 +529,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-27T21:16:24.550Z"
+    "at": "2026-10-28T08:10:36.025Z"
   }
 }
