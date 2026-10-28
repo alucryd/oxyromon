@@ -79,7 +79,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T12:28:25.132Z
+    at: 2026-10-28T17:34:44.685Z
 ---
 
 # Feature Flags and Build Topology

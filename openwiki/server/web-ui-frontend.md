@@ -76,10 +76,10 @@ sources:
     resource: repo://src/query.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
-generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
+generated: { by: "claude-code", at: "2026-10-28T17:34:44.685Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T12:28:25.132Z
+    at: 2026-10-28T17:34:44.685Z
 ---
 
 # Web UI (Leptos SPA + Web Awesome)
@@ -112,8 +112,8 @@ Related: [HTTP Server, GraphQL API and Uploads](http-server-and-graphql-api.md),
 | `src/model.rs` | serde types mirroring the *requested subset* of the GraphQL schema |
 | `src/sse.rs` | `EventSource("/events")` and every event listener |
 | `src/notify.rs` | notification history + `<wa-toast>` delivery |
-| `src/page.rs` | the three panes, statistics, delete dialog, toast host |
-| `src/ui.rs` | `Modal`, `Dropzone`, `ScrollWindow`, `Spacer`, `StatTile`, event-property readers |
+| `src/page.rs` | the three panes, statistics, system and game delete dialogs, toast host |
+| `src/ui.rs` | `Modal`, `DeleteDialog`, `Dropzone`, `ScrollWindow`, `Spacer`, `StatTile`, event-property readers |
 | `src/components/` | navbar, notifications bell, the modal dialogs |
 
 ## Build and serve path
@@ -375,7 +375,7 @@ row past the overscan simply does not take focus yet. Changing the system or any
 filter resets scroll to the top rather than stranding the view mid-list.
 
 Each game row also carries an actions menu, a `wa-dropdown` like the one on
-system rows. Today it holds a single danger item, Purge, disabled when the game
+system rows. Today it holds a single danger item, Delete, disabled when the game
 has no files. Picking it stores the row's game in `purge_game_target` and opens
 `PurgeGameModal`, so the dialog acts on that game whether or not it is the
 selected one. Confirming calls `purge_game`, which sends the `purgeGames`
@@ -459,6 +459,17 @@ The UI keeps its own copies of the server's format lists. `PREFER_FORMAT_CHOICES
 so a new format must be added to both by hand. The UI offers no export, so the
 export-only Wii U target `NUS` never appears in it.
 
+Both delete confirmations, `DeleteModal` for a system and `PurgeGameModal` for a
+game, render the shared `DeleteDialog` from `frontend/src/ui.rs`. It shows a
+round danger badge beside the name of what is about to go and a quiet detail
+line: games complete out of total for a system, the system's name for a game.
+Below that it lists one line per consequence, each an icon and a sentence taken
+from a `&'static` list in `frontend/src/page.rs`. `SYSTEM_EFFECTS` and
+`GAME_EFFECTS` share the `TRASH_MOVE` and `TRASH_NOTE` lines, so the Trash
+wording lives in one place. Delete runs `on_confirm` and then closes; Cancel,
+Escape and a click outside only close. Every icon an effect names must be in
+the fetch script's icon list, or it renders nothing.
+
 Dialog placement in the tree matters. The per-system `SettingsModal`,
 `DeleteModal` and `PurgeGameModal` sit **outside** the `.page` flex column on purpose: a `wa-dialog`
 host is `display: none` while closed and `display: block` once open, so inside that
@@ -506,7 +517,8 @@ the pinned `dist-cdn` build plus the explicit list of Font Awesome icons into
 binary). Its stamp file hashes the **icon list** as well as the two versions,
 because otherwise adding an icon stays a no-op until the next version bump and
 shows up only as an icon that silently renders nothing — a dialog would lose its
-close button.
+close button. A name Font Awesome does not ship prints a warning during the fetch
+rather than failing it.
 
 Styling otherwise comes from Web Awesome: its components, the `wa-stack` /
 `wa-cluster` / `wa-grid` / `wa-split` layout utilities and its `--wa-*` tokens.
