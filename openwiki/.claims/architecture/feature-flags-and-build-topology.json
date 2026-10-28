@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:c0e32304457c7cc5089f38c462a22fc94656a000144a39b1c0056dad10d19fc0",
+  "pageVersion": "sha256:1d4517cb812e41e70dd13399a432b5a4e0962b9ee5694c013183824ef3f7d1b8",
   "claims": [
     {
       "id": "claim_987db34fed214490868d6d3b69714abf",
@@ -237,7 +237,7 @@
       "statement": "CI sets SKIP_TRUNK=true for the whole job and builds the web UI exactly once in a dedicated `cd frontend && trunk build --release` step with trunk pinned to 0.21.14 and the wasm32-unknown-unknown target installed, so every later cargo invocation reuses target/assets instead of recompiling the wasm.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L43-L48",
+          "resource": "repo://.github/workflows/continuous_integration.yml#L57-L62",
           "version": "repo-lines-v1:sha256:68d94edd750b64630eccefe42c40f96819a2937ec6d381155d266110ce0f172b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjliMjkzMTg2ODIxOWE0MTBmZGQzOWQxMjNjMTQxNGE4OGQ2N2IzMzg3YTEwODY4ZGI2OWFhODE1NDJjZTM2NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWE0OGQ5MzA3OWU4MGIxZWM0ODk2NjI4ZjFlMzc4OGRhOTQ2ZGQ5ODUyYzgwZmZjZmYwNWQxMzRjYmY5N2YzMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYThkNzQ4ZWZhYmU0OTFlNjFkNDg3NzNmYzlhZTk4M2U3N2U1OWRlYjlhYjY2MWI1ODA1ODc1NTUxYWU0NWZmZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTIyYzUxNWFmZGE4M2U2OTFiZWI4MzE1Mzc0OTJmNGUzOGY5MzhiMzc1MWJiZWZhMDBmZTIwMWMzNjRmMDRlZSJ9"
         },
         {
@@ -248,11 +248,15 @@
     },
     {
       "id": "claim_955036e46ce64b51bf665f599c1e0f16",
-      "statement": "CI runs three clippy passes: `cargo clippy --workspace --all-targets --features oxyromon/server` (package-qualified because several workspace packages are selected), `cargo clippy --no-default-features --features use-rustls,mcp --all-targets`, a dedicated pass that keeps the MCP-stdio-without-web-server combination compiling, and `cargo clippy --target wasm32-unknown-unknown --all-targets` inside `frontend/`, its own workspace; the job then builds --release --features server and tests under `cargo llvm-cov --workspace --features oxyromon/server`.",
+      "statement": "CI runs four clippy passes: `cargo clippy --workspace --all-targets --features oxyromon/server` (package-qualified because several workspace packages are selected), `cargo clippy --no-default-features --features use-rustls,mcp --all-targets`, a dedicated pass that keeps the MCP-stdio-without-web-server combination compiling, `cargo clippy --target wasm32-unknown-unknown --all-targets` inside `frontend/`, and `cargo clippy --all-targets` inside `desktop/` after the release build is staged as the Tauri sidecar; both are their own workspaces. `cargo fmt --check` runs first in all three workspaces, and the job builds --release --features server and tests under `cargo llvm-cov --workspace --features oxyromon/server`.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L51-L65",
-          "version": "repo-lines-v1:sha256:08aa6568d126a4d7d2a8c2a0c5d0f1125517a961381ac16013d7b5e4d2b82d47:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMTEyOTNmZjUzYmVmZDY3MGFkYzM5ZDViOTU0NTE0ZGY1OGY4MTM4MDkzNmMxYWVjY2M3NjgxYTg1YWU3NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNjI3NDY0MzVjYzliOGQ1YTk5ZDhkN2E4M2NmNzNmODA4ZWYwM2EzZTlhNDI4NTU4MWU1N2QyNDRhYWI1NzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L49-L85",
+          "version": "repo-lines-v1:sha256:e403e135594b01835d996a728618cf6da606668e1a63fc7e34e4c98c6d5f4ca1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjNTdhMmIwOWFlMzVhZWNlMGYwNjUzYjcxYWU5ODNlZjM3YmUwNDk1YTg1MDJjMmNlNjYyZTJjMThkZGM1NjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhNzViNTkzMzAxMTUyMWVlZTExMWQ5NjliZTlkYWFhZmQ0NDllZTFlZTM4OGI5MDdkZmU5NWQ1ODUxODRiMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
+        },
+        {
+          "resource": "repo://desktop/scripts/stage-sidecar.sh#L1-L22",
+          "version": "repo-lines-v1:sha256:b65559e5788d0886e4a8adc967136d8759088cebcd7f547a0a80c13c640cbdcd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MDc2ZDNkMjhkMjFlMDIwMTJiMjBlYWY3ZGJmNzU0MDlhNjI3NzEzNDQzOTAyNWYyODJlMzY4ZTMzMDVhYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMGNkNDA1NjExMjFiZDY4ZTU1MGRkNGM5M2QxNTcyMWRkNTY5YmNiNjdhMzZjOGI5ZjhkYzBmZTA3YzQ4NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -467,8 +471,8 @@
       "statement": "test.sh is a single command — `cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info` — matching CI's test step exactly, and build.sh is the host-side release build (trunk build --release, then cargo build --release --features server); the older second coverage pass gated on oxyromon/nod and oxyromon/sevenz is gone, and would now fail on unknown features.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L62-L65",
-          "version": "repo-lines-v1:sha256:4b2dceeb85a11272aa8018f4c7bbffe3490bbc4de6a44a399227ca0cc1ece9b2:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzJkOWRlMTUxOWYxNzc0MmM5Y2IzNjE0NDk0ZmFmMmNmNmQ4MzUyM2JkNTkwNDY3MWNhNTBlZTNjMDc2MzZkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwOTEzYjA5YTZhYjQ5YjVlYzdlMjhjNjZiNTQ1MTI3NjdmYzE4MzU4ODNiMGM3MjQyYjcxNjJlNzJiNzU5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZkYTllOTk1NjdmM2RmZTExMjdmNThiNTc5M2QxMjUzMGRlMDk2ZTcyMzFlOTc2ZDg2YmI1M2QyNzc3ZTRlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGUxMmFkZTlhN2ExOTZiM2NiN2RlYWZmMDZkNzEzZjA2MTBkZTJiODMzN2NhZjU4NGQyMzFlMzk1YTQwZmIyZSJ9"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L76-L85",
+          "version": "repo-lines-v1:sha256:c1111625d987e655fa78189f3235812725b671a7036e0728a41e3b3f41ac9fe0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyZDlkZTE1MTlmMTc3NDJjOWNiMzYxNDQ5NGZhZjJjZjZkODM1MjNiZDU5MDQ2NzFjYTUwZWUzYzA3NjM2ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2OWI4YzIwZDE0OGUwZDc2MGE5NWJmZTkzMzgyZjIxNDA3ZDJiODliNmE4YjYwYjExZDJjMGJlZTlkYzNhOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
         },
         {
           "resource": "repo://build.sh#L1-L6",
@@ -529,6 +533,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-28T08:10:36.025Z"
+    "at": "2026-10-28T11:29:22.151Z"
   }
 }

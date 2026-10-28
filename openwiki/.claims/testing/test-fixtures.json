@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:183005d56743cdf46861ef96a3724c5e28ef49d75fcc891f45f3d547e0f9f1a0",
+  "pageVersion": "sha256:bdbcd4ae7d8f9f635486de365b7e83437fa943c4f7dcd6e55f7b540b4dac98a9",
   "claims": [
     {
       "id": "claim_62e2eb596fd1472683dffa8d1316579b",
@@ -365,8 +365,8 @@
       "statement": "tests/mcp_stdio.rs is #![cfg(feature = \"mcp\")] so without that feature it contributes no tests; server implies mcp, so CI's single cargo llvm-cov --workspace --features oxyromon/server step runs it, and the MCP-without-web-server combination is covered separately by cargo clippy --no-default-features --features use-rustls,mcp --all-targets.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L53-L65",
-          "version": "repo-lines-v1:sha256:1fb8cd813ae5eaf4e9977f1c3e99a63e3a4c322d093f6450bcb1fcd894b06ef2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5ZDE4ZDliNTI2ZjEwODBhMmIwZTBlZDUzNDA3ZmNjMzQ3YTU0ODY0OWNjZTMxZjVjNDFiYTUwYmYxNzVlODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYWM5MzZjMDcyNzUzODk4ZTcwYTA3OTY5NjYyODM0MDVjMTVkYjc0Njg0YWU1MjEzMjZjYWM4YmM0YjA5NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L67-L85",
+          "version": "repo-lines-v1:sha256:a06e977abda31763c74a0e8e1e3cd77c31691100ec6164caa6b7e39a2010b0c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5ZDE4ZDliNTI2ZjEwODBhMmIwZTBlZDUzNDA3ZmNjMzQ3YTU0ODY0OWNjZTMxZjVjNDFiYTUwYmYxNzVlODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYWM5MzZjMDcyNzUzODk4ZTcwYTA3OTY5NjYyODM0MDVjMTVkYjc0Njg0YWU1MjEzMjZjYWM4YmM0YjA5NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
         },
         {
           "resource": "repo://Cargo.toml#L42-L57",
@@ -605,6 +605,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-28T08:10:36.025Z"
+    "at": "2026-10-28T11:29:22.151Z"
   }
 }

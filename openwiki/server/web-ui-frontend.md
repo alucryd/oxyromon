@@ -76,10 +76,10 @@ sources:
     resource: repo://src/query.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
-generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
+generated: { by: "claude-code", at: "2026-10-28T11:29:22.151Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T08:10:36.025Z
+    at: 2026-10-28T11:29:22.151Z
 ---
 
 # Web UI (Leptos SPA + Web Awesome)
@@ -571,8 +571,9 @@ trunk (pinned `TRUNK_VERSION`), runs `cd frontend && trunk build --release` once
 with `SKIP_TRUNK=true` exported for every later cargo invocation, and runs
 `cargo llvm-cov` over `--workspace`, which — for the reason in the first
 paragraph — excludes this crate. CI does lint it, in a clippy pass of its own:
-`cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets`.
-So a frontend change is checked by compiling, by that clippy pass, and by
+`cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets`, and
+checks its formatting with `cargo fmt --check` from `frontend/`.
+So a frontend change is checked by compiling, by those two passes, and by
 whatever the server tests happen to cover on the other side of the boundary. Treat the GraphQL
 field names, the SSE event prefixes and `ROW_HEIGHT`/`--row-height` as three
 unverified contracts that only a browser reveals.

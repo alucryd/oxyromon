@@ -52,10 +52,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
+generated: { by: "claude-code", at: "2026-10-28T11:29:22.151Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T08:10:36.025Z
+    at: 2026-10-28T11:29:22.151Z
 ---
 
 # Quickstart & Task Routing
@@ -239,7 +239,9 @@ a feature must name its package. CI runs clippy over the whole workspace with
 `--all-targets --features oxyromon/server`, then clippy again with
 `--no-default-features --features use-rustls,mcp` so the stdio-only MCP build stays covered, and
 clippy on the web UI from `frontend/` with `--target wasm32-unknown-unknown --all-targets`, then
-builds `--release --features server` and tests under `cargo llvm-cov`. The reference tools it
+builds `--release --features server`, stages that binary as the desktop sidecar and runs clippy
+from `desktop/`, and tests under `cargo llvm-cov`. Before all of that it runs `cargo fmt --check`
+in the root, `frontend/` and `desktop/` workspaces. The reference tools it
 installs (`mame-tools` for `chdman`, `xdelta3`, `ffmpeg`) exist only so the crates' parity tests
 can run; those suites skip rather than fail when the tool is absent.
 

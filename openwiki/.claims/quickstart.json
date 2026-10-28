@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:69bd11ad25567ab7c973fd7e72da38a0639345c1ba5a0ca5a7183a3eef8eac39",
+  "pageVersion": "sha256:7e3486c366d75822fee5026b1d3250425a423c94d4163c34ee39114613bc6dcf",
   "claims": [
     {
       "id": "claim_98400b462b5344caa604fedd009ca2c6",
@@ -123,7 +123,7 @@
       "statement": "The Cargo workspace is the root oxyromon package plus `crates/*` — eight format crates (`chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `wux-rs`, `xdelta-rs`, `xps-rs`, `xso-rs`) — each also building a standalone CLI (`chdrs`, `ciars`, `gdirs`, `nszrs`, `wuxrs`, `xdeltars`, `xpsrs`, `xsors`) that `dist.sh` cross-builds and ships alongside oxyromon; `frontend/` and `desktop/` are deliberately not members, each declaring its own empty `[workspace]` so WebAssembly and Tauri/webview dependencies stay out of the native build.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L126-L130",
+          "resource": "repo://AGENTS.md#L131-L135",
           "version": "repo-lines-v1:sha256:8c005f75de46ff0d6d12b1ebcabd5d6fe7af7f16de4ffd24622452bd925e7d46:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE4YTUwYmU2OTE1MmE5NWQxMWQzODgxMDI5ZjlkNGYzMTJlNTM0ZDI2Y2UzODliNDhmNjY5ZGFjNjRlZDBiNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGZhMzIzN2VjZDA2ZTgyYzE3M2EyNWVlNTkxODI3ZDcxZGRmODEyYTlhYmU3OWI4NDFhMWMxMDQwMzAzNmFhNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzFlNWIyOWRjZDkwYWY5Mzg4OWY3ZTI5YTJiZDkzZjEzZTk3ZTljOWU1N2E5NGIxMGEzZjkyZDdhMzU3ODQ2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWU3OGIyN2M0YWFkODI5MGZiZjE1YmYzYjVlMzZlOWQwMGJjMjRjMjlkZDA5NWY4ZjY3YmMwZDIwNmNjYzMzNSJ9"
         },
         {
@@ -153,7 +153,7 @@
       "statement": "build.rs shells out to `trunk build --release` in `frontend/` only when the `server` feature is enabled and SKIP_TRUNK is not `true`, and always creates `target/assets` so rust-embed compiles even with no UI built; the desktop app bundles the same `oxyromon` binary as a Tauri sidecar.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L224-L226",
+          "resource": "repo://AGENTS.md#L229-L231",
           "version": "repo-lines-v1:sha256:98ba048fee67fcaefa1bc92a1f41293cf78d3d3041c0177a31c76ec55b85ae84:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWM2N2Y5ODJjM2M1ODE0MWNjOTM5NzcwZTZiYWVkMWE3ODk5ZDliNDU2ZmE5MmJkY2M2NDYxMmJiNTk1ZGNkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc1ZmRkYjFjMTYyYzUyYzUzYzJjYzE2OGIxZTc3OThjMjRmYWNmMDgyYWNiOGViMDAwYTg2NTQwMDNlZTM5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjY4MDM4YmRlNzE1ZTZjMzU1OTA1MDI3MTYwY2ZhYWJjOWIxZGZmNjkxZTNjOTYxODgxZDNmNjRmN2I2ZTA3ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzlmZjllYTExNmZlYTdkMjc4ZWVjNTFiMDU5MTE3Y2JkNDFlYWI4NjEwYmRkNTY1MzMyZGNiZWUyYzE5NzBiYyJ9"
         },
         {
@@ -201,7 +201,7 @@
       "statement": "Repo-wide invariant: romfile paths are stored relative to ROM_DIRECTORY, so writers must strip the prefix and readers must join it; CommonRomfile::get_relative_path does the strip and errors when a path lies outside the ROM directory.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L48-L49",
+          "resource": "repo://AGENTS.md#L53-L54",
           "version": "repo-lines-v1:sha256:7c2997c07d7b536881b2a911da3468670b9056a46f0cf2f6d7607a62fa8fdc4f:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWRjN2Y2NTM2ZTYyOWVjZjM4OThkMDUwNTk2YTIzMjJlMGQ5NjE1MGM2ZDI1ZjgwYzVjNTgxZDg5YjAwZGU5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTU4YTVjMjk5MDk0MjkyNTQwZTI4MTQwNmZmYjE4OTE3OTA0YTZjOTU1YmZjZGI1ZDRmZjA2YjE2M2E2NzJkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDVkZDYxMzIwMTg2ODU4YTk0ZWVhNjc4OWE2NmVjYzA1MDFiN2Q3OTc4Mzk5NjliMDY2ZmNkYzFhZTMwNDY2NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGRhZDk1M2ZlNmM3NWIxNTg0NzNhOGQ4ZmQ3MjFlNjc3ZWI0ZTZkYzYyZGQ4YmY1NjZlZmYzYjljZGM3MTE0ZCJ9"
         },
         {
@@ -215,11 +215,11 @@
       "statement": "Repo-wide invariant: user-facing output goes through the progress.rs categorized print_* helpers (header, subheader, info, success, warning, error, skip, action, separator) bound to a process-wide `MultiProgress`, and stdout must never be written directly from a path the MCP server can reach because `oxyromon mcp` (and the `/mcp` mount) carries JSON-RPC there — logs and progress go to stderr.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L50-L53",
+          "resource": "repo://AGENTS.md#L55-L58",
           "version": "repo-lines-v1:sha256:4daaae8c99b0ae3b4ac547d72d154fcc904926f3e6b411511dabf9720ac27f5f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRlYjM5ZGFhMDgzZDg5YmVjYzBjYzI0ZWU4OTlmZGI5NzM4ODhiNmY3OTVkMjZkMWRiYWQ0ZWVkZTA3ZDNjYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjIzZDg0ZWMwODVhYWI0NGI4OGRiMmI5NGYwNzNlNzM5NjNlMTM3NzQ4M2JkMzQ0MmZjZjhkYjY1ZmE3N2QwZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTI0Y2NhZDU0MzUxOWJjNzI5OTA2MGJjNTY5NzFjYjMzNDdkM2Y1NWQ1YzNlOGVkMDUwNzEwMzI4MmQzNGQ5NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjIzMDkzYmI0OWIwYzM1OGUyZGJkNmI4MGZlM2UwOWI5N2U1YzVjMmI3ODMxZmJmZWJhYzM2NzgzNjU2ODdlZCJ9"
         },
         {
-          "resource": "repo://AGENTS.md#L92-L110",
+          "resource": "repo://AGENTS.md#L97-L115",
           "version": "repo-lines-v1:sha256:76b3da0c81714f892058410a7eefccff3462acf68e0b112c87da8a7b5246b2ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlMjlmYzFmYzZlMjRhMTcwNzVmMTg3OWY2MDk0Nzg2NDYzYWZjNmIwZDkzMGIxYjEwZGEwOTdmNWZkYmI1NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3YWUyNzRmOGE0NGNkYzJkYzAyNGNjMDA0NmQ0MGYxMzRlM2IyNzBhMDBlZDIxNjU3YjQ1M2UxYjA5MGI5M2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhYjM2ZDQzYTdjZDQ0ZjJlNzM1YTJjYWFkMTdiNjliZjA1MTk3ZmQzZTdiMDlhNDZhMmFhNTQ1OGM3OWVkNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxNmUzMjkxN2ZhYTI0NWQ4MzA5ZjNmZTc1ZWQzYjliNDM2MjZiMzViNmNmNmZmYjZmY2ViNDhlNGI4NTM5ZTYifQ"
         },
         {
@@ -245,7 +245,7 @@
       "statement": "Repo-wide invariant: every new feature or notable change must update README.md (keeping each subcommand's usage block in sync with --help) and add a CHANGELOG.md entry under the current version's section, for CLI, server, and bug-fix changes alike.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L237-L246",
+          "resource": "repo://AGENTS.md#L242-L251",
           "version": "repo-lines-v1:sha256:e98730508642d4cc1db83f50d4fe9b3bd10c30db339b5e7a085d8d435700afd1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2MmFhMzI0NDcxOWE3MTE2ZDIwMDE3ZWRiNWI5OWM4YmNkMTMzOTdhM2Y5MWFiMDljYzVhMWQyMmI1NTM3ZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlM2I0NzI3MTgyN2JlM2I1ZDMxMzdkZmVlMWY2ZDhiYTUwYjA3NmEyZjM1YjVlNDgxZjJkOGUzNDZkMmU1ZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmZGFkMzBjOTk3NjhhYThjOGMyNTQ5OWJjMmViODJjNDZiNGMyMTQ5MzFiNGI5OTYwMTg4NjM3NjVjNGRlMjgifQ"
         }
       ]
@@ -255,11 +255,11 @@
       "statement": "Every capability is exposed as one module implementing `pub fn subcommand() -> Command` plus `pub async fn main(connection, matches, progress_bar)`, registered in main.rs; because subcommand() is pure argv declaration, the GraphQL mutations and MCP tools reach the same code by synthesizing ArgMatches, so functionality implemented outside that contract is invisible to those surfaces.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L169-L173",
+          "resource": "repo://AGENTS.md#L174-L178",
           "version": "repo-lines-v1:sha256:b1c15878b5dc60ce74baf4f328fa466ac6e51afc22188711f546e7b6da034220:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDZhMDBjMzU2NTBhNDVlNTEyNGM2NDA5MjQ0ZTQ3ZTRhZjg5NGFmOTg5OGZlN2IxZjQ4MTNlYzgxMTYyOGRmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWQ0N2JiZDYxYTZjNTU3ZjM1NzIxMDQ3ZDg0NTRmY2JjYjE2ZTcxMWYwNTZhNjI0MmQ5NGFhNzU0NWY4OThjZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzIxNjk0ODRlYjQyOTI1YzYyODAxYzI3ZTE4NWE3YTMxZDExZjc2NDkwOWMxZTNjM2JkN2M5NjFiMmYxOGFiYSJ9"
         },
         {
-          "resource": "repo://AGENTS.md#L54-L58",
+          "resource": "repo://AGENTS.md#L59-L63",
           "version": "repo-lines-v1:sha256:f168c388e8b14bff1eb857f13cf2388e8f0a5ec562f3f8845d18d4f12f055c66:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjE3MWYzYjBkZWE0NDBjNGM1YTdlZTBhZmVlMTM1MzBhOTVjM2UyMWQ1MWNjYjdkMGUzOGI5YjhjZDJlYmIxNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTM3NDhhYmVkOWQwZTU3ZjI5Y2FmMDlhZmQzYTJiYzQwNjRkYmEyNDQxNWU4OWI5NzQ4ZmI3OWRkNzI2MDE5NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWFmM2JhYTQ0ZmRjZDdmNzgyNDA2ZDg5Njk4ZmE5YWNlZmI4NTRiYjAwODI5NmIzYWIwOWQwMDNlMmFlOTFmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2M3MTNjNzI4ZTE0YTkyYzRiOGVlZTM3NzllODk4OGZjMjM1NDQxZDI2OTliZWVjOWU4ZmI5OTg2YjUzNjA5MCJ9"
         },
         {
@@ -291,26 +291,26 @@
       "statement": "Because sqlx queries are compile-time verified against offline data, changing a query or adding a migration requires regenerating `.sqlx/` with `cargo sqlx prepare -- --all-targets --features server`.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L181-L183",
+          "resource": "repo://AGENTS.md#L186-L188",
           "version": "repo-lines-v1:sha256:d01e9af147ccef09ca08e4ecac3bf62fd7abab707138225f21e9ba3d3992fe1e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzZlZGE5NGJhNjNhZmQwNTNlMmVhZmQxNGE0ODE1ODcyNmYwZWExOGEzNzI0ZmE1MzRhNTFlNmZlMjdkNDAxZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2Q1YzQ3NjYyM2FkMzg4OGRhMDgwNTJiNWVhOGE0OWZmNmViODY2M2MzNjA0MDI4OGUxYWI2MTE0ODkyYTBkNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTk2ODJlNWQ0YjExMGQxMTc2M2Q0ZGMyZmZjMTliZTZkNzk4ZjRhNjhiZTBiMmRjMWJlMThjODQ3YzgwOTljOCJ9"
         },
         {
-          "resource": "repo://AGENTS.md#L34-L34",
+          "resource": "repo://AGENTS.md#L36-L36",
           "version": "repo-lines-v1:sha256:6b697c041de9262735017a0e5deaf39855607f6a0bfb469292e986cda5b32431:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI2OTdjMDQxZGU5MjYyNzM1MDE3YTBlNWRlYWYzOTg1NTYwN2Y2YTBiZmI0NjkyOTJlOTg2Y2RhNWIzMjQzMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI2OTdjMDQxZGU5MjYyNzM1MDE3YTBlNWRlYWYzOTg1NTYwN2Y2YTBiZmI0NjkyOTJlOTg2Y2RhNWIzMjQzMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDQ1YWRjZmU4MmQwZDc4MjBmOGE5ZDA4OWUwMWEyNzU3ZjU3OTdjMGRhZWVkMGU0YmNhMzEwOGMxNmE1NmZiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzk5YTMyNTFkNTM4ZmVkMjMyMjM5NThjM2I4OTQ5YzJhNGEyMzgwOGVhYzBlZjAzYzc2ZDc5MzU4ZDIzMGNiMyJ9"
         }
       ]
     },
     {
       "id": "claim_06e25d753bb84844a824fc940613f21a",
-      "statement": "The workspace is validated with `cargo test --workspace --features oxyromon/server` (the package-qualified feature name is required because a workspace selection spans packages), and `test.sh` is exactly `cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info` with no extra flags; CI runs clippy with `--all-targets --features oxyromon/server`, a second clippy pass with `--no-default-features --features use-rustls,mcp` so the stdio-only MCP build stays covered, and a third over frontend/ for wasm32-unknown-unknown.",
+      "statement": "The workspace is validated with `cargo test --workspace --features oxyromon/server` (the package-qualified feature name is required because a workspace selection spans packages), and `test.sh` is exactly `cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info` with no extra flags; CI checks `cargo fmt` in the root, frontend/ and desktop/ workspaces, runs clippy with `--all-targets --features oxyromon/server`, a second clippy pass with `--no-default-features --features use-rustls,mcp` so the stdio-only MCP build stays covered, a third over frontend/ for wasm32-unknown-unknown, and a fourth over desktop/ once the release binary is staged as its sidecar.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L51-L65",
-          "version": "repo-lines-v1:sha256:08aa6568d126a4d7d2a8c2a0c5d0f1125517a961381ac16013d7b5e4d2b82d47:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMTEyOTNmZjUzYmVmZDY3MGFkYzM5ZDViOTU0NTE0ZGY1OGY4MTM4MDkzNmMxYWVjY2M3NjgxYTg1YWU3NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNjI3NDY0MzVjYzliOGQ1YTk5ZDhkN2E4M2NmNzNmODA4ZWYwM2EzZTlhNDI4NTU4MWU1N2QyNDRhYWI1NzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L49-L85",
+          "version": "repo-lines-v1:sha256:e403e135594b01835d996a728618cf6da606668e1a63fc7e34e4c98c6d5f4ca1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjNTdhMmIwOWFlMzVhZWNlMGYwNjUzYjcxYWU5ODNlZjM3YmUwNDk1YTg1MDJjMmNlNjYyZTJjMThkZGM1NjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhNzViNTkzMzAxMTUyMWVlZTExMWQ5NjliZTlkYWFhZmQ0NDllZTFlZTM4OGI5MDdkZmU5NWQ1ODUxODRiMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
         },
         {
-          "resource": "repo://AGENTS.md#L27-L31",
-          "version": "repo-lines-v1:sha256:665814bb37adaf1c3278b9bbeb8a3e1483e87e639c1f785be45960ebf8fcb955:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTUyZTYyYjA2NzBlZWM4NDk4MTFkYzNiYWM5NDk2MDgwM2NhY2VjZGM0MzNmMmFkYzUwMjcxYTdjNGI3N2RiOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjg1MjU1NDY5ZDA5ZjNmM2I2OWJkMTk0MzNmNDA2YmZhYzA4ZjFiOThkMTI4NmQyMThhNGNiMWYzMWRiNjE2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc1ZGEwMzc4ZmVkMzZhM2QwNTE0NDY2NjkwMjMzZmNlZjBiMTBiZmI3M2Q3MDk1NTA3MDNlZDRhMDA5MGIwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmE2MzhlZWY2YmM3ZjE3ZmE3ZjhhYTFmZTBiYjFhZGRlN2IyNTM4NWIxN2JiMTZiMDQyYTYxMWNmMzU0MWM4ZiJ9"
+          "resource": "repo://AGENTS.md#L27-L34",
+          "version": "repo-lines-v1:sha256:21a430e9c205196bc4f702b5a4475be2f7ba029942503b0843f3a3f3cbb926f3:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTUyZTYyYjA2NzBlZWM4NDk4MTFkYzNiYWM5NDk2MDgwM2NhY2VjZGM0MzNmMmFkYzUwMjcxYTdjNGI3N2RiOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODlmZDY5NDA4NmQ1NjJhYzY3MDJlZmJlMTg3NDE4NGVhYjNkOTFiZjM2NjliODE2YWRhMDIxODFjYjY0NTllNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc1ZGEwMzc4ZmVkMzZhM2QwNTE0NDY2NjkwMjMzZmNlZjBiMTBiZmI3M2Q3MDk1NTA3MDNlZDRhMDA5MGIwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjIyZTQ4OWRlNDNiMGU1YmVlYTBjM2NjNWQ5YjMyMzI4ZWJhNTU4NjY3ODg1ZjJkODVmMWZiMzFmNGE0ZTNjYiJ9"
         },
         {
           "resource": "repo://test.sh#L1-L3",
@@ -345,7 +345,7 @@
       "statement": "Format modules do not spawn processes: `src/chd.rs`, `cia.rs`, `archive.rs`, `nsz.rs`, `xso.rs`, `xdelta.rs`, `xps.rs` and `rvz.rs` call their linked crate and return `\"built-in\"` from `get_version()`; `src/chdman.rs` and `src/ctrtool.rs` no longer exist.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L62-L63",
+          "resource": "repo://AGENTS.md#L67-L68",
           "version": "repo-lines-v1:sha256:96d3e2fbf3395d2b190c261c4b13c660bd3ddc416b4b10c485c8b229827c9bd9:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFlODM1NGUxMjU4OTYwYjA0YzA3YTUzNTYzOGMzM2E1NGFjNWQwN2FhN2Y4MDEwMWNmMDIzOThkNTkzNWRlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1MDliNjg4ZjE2ZDAxMWI4NzZhZjY3M2EzMmY5OWNmZGE5MDZkYTU0M2U5NzA5YjY4MGE4OGZkZTkyYjg5MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2M3MTNjNzI4ZTE0YTkyYzRiOGVlZTM3NzllODk4OGZjMjM1NDQxZDI2OTliZWVjOWU4ZmI5OTg2YjUzNjA5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjFlZmQ3MzdjNzE4MDg3YWRkMjdmZTIyYTM3MzBiZTlmYjQ0MzNhODU0NmZhYjM1NDRkY2IzMDQ1NDQwMjkxNCJ9"
         },
         {
@@ -407,6 +407,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-28T08:10:36.025Z"
+    "at": "2026-10-28T11:29:22.151Z"
   }
 }

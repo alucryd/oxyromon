@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d478bae6563115e664d3e6ca1b99586bb1ea4484d09fab2f08883b790f9fd035",
+  "pageVersion": "sha256:6a005967a3ef9450b2a98b781877c22e7e9648073c355196b387ceb044bb23d4",
   "claims": [
     {
       "id": "claim_576b8c67163e49f78677876793d52f3a",
@@ -151,12 +151,12 @@
       "statement": "connect_sse opens one EventSource('/events') for the SPA's whole lifetime and leaks its closures. Because EventSource reconnects by itself but never replays missed events, it installs an onopen handler that resets every in-flight flag (purging_system_id, sorting_system_id, checking_system_id, purging_irds_system_id, generating_playlists, purging_roms, purging_game_id) on every opening including the first, and registers on_finished to clear each flag on {prefix}_complete *or* {prefix}_error so neither outcome can strand a spinner.",
       "evidence": [
         {
-          "resource": "repo://frontend/src/api.rs#L413-L487",
-          "version": "repo-lines-v1:sha256:3b1766377c3c2ce9eba87f20e7fdddc7c392dd648a44a75715ceaa97d9f82fd9:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2E2NjU3NWJkZTNiM2FhMWQ3OWI1NDYzNDI2MWZiMTFiMmJkMjAwOTJkMTU0NDgzOWRiMGE2MmE5YzJkNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5MjEyN2VlY2VhODM4ZWJkOGJmZDMzNjFiNzgxNDI4ZGQ2NmY3NDJiY2RjNmY4OWEzZWY0MzliZmY2MmQyZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3N2ZlZTBhMTg2Y2Q3NTk2ODczNWI3OWRmYjcxMzgzNzBlZDgzOTI2ODIyZTY5ZWIwYTJhOTBmYmQ3MTZmYzMifQ"
+          "resource": "repo://frontend/src/api.rs#L413-L491",
+          "version": "repo-lines-v1:sha256:1a1e2c82914e83e8030921ed5f3867f00bf122b2ddc2daf566cf7c52b8a2012c:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2E2NjU3NWJkZTNiM2FhMWQ3OWI1NDYzNDI2MWZiMTFiMmJkMjAwOTJkMTU0NDgzOWRiMGE2MmE5YzJkNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5MjEyN2VlY2VhODM4ZWJkOGJmZDMzNjFiNzgxNDI4ZGQ2NmY3NDJiY2RjNmY4OWEzZWY0MzliZmY2MmQyZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlYTZjM2U3MDIyYmY5NTM0OGNlZTJiZTU3NzFkODI1NDFhYzQ3MzIwOGQ3N2Y4Y2VkNjk0ZTYzYjAwOGY3MGYifQ"
         },
         {
-          "resource": "repo://frontend/src/sse.rs#L156-L182",
-          "version": "repo-lines-v1:sha256:a48827bb411c8fbb6805d2cf64029c18724d21153ec39d99c23649cba2820e10:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlZTBkYWYwZGExZmU3MjAzNWZjMDUxMDkyNWYwZDc2YjE4YWZkMjQzNzIxMjA0NTM4NDlkNTBkYTY1NWMzZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3MzNkNjBmM2RmNjEzNDQ2YzFjYWVhZWI2MDUwMWRhNGJlZjRlOGQxZGRjMTA4NDcyZmQ0NWJhMTY0YmE0N2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://frontend/src/sse.rs#L195-L232",
+          "version": "repo-lines-v1:sha256:9e9a091820190c8bce95366e9f1fc4cf57335a7c2cea0cc085b148f95e00a341:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2ZWEyNjg4MGJiZTY5ODdkM2EwZmRlNWVlMDIzYWJhZGMyZjM4MjMyMDQzY2JjNDRjMmFhMzU4ZjUxOTU0Y2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://frontend/src/sse.rs#L68-L82",
@@ -241,8 +241,8 @@
       "statement": "No test exercises /events or MCP progress notifications: the server tests boot the real main() and assert only HTTP status codes (202 accepted, 400 rejected) or re-query GraphQL after a sleep, and tests/mcp_stdio.rs builds tools/call params without a progressToken so the progress poller never runs under test. Its hand-rolled client reads stdout until a line carries its own id (so unsolicited notifications are tolerated) and close() asserts a clean exit on stdin EOF. Consequently the SSE event names and payload shapes are an unverified contract — renaming a prefix compiles cleanly, silently breaks the matching SPA listener, and fails no test.",
       "evidence": [
         {
-          "resource": "repo://frontend/src/sse.rs#L97-L154",
-          "version": "repo-lines-v1:sha256:ddb3ace68f492fcf07067a9eb408b50637e7634afc43a01ba3cec4f7ec350762:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZjljZDc5YmU3ZmQ4OTMzY2Q1ZmVlZjVmZTE5YTdkNjRjNWUwYjZkOWVlOTBkNTBiYTJhODNhYzZlYTg4OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzY2MyZGE3YjMyNWVlNmExNGY3ZjA2M2JiNTBjOTAwMGEzNTBmODgwOWYxMThiODUzOWMxY2FmM2MwMmE3MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzN2U3NGE3NDZmM2U0ZmE5OGQ3Y2I5OGRiMDdkMzBiZmY2NWNlZjY3NmYxN2FiMWVhNDkzYWM0ODQ5MDY4MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0M2QxNzdkY2I4ZDgyNDBkNjU3ZDgyM2IzYTFmNTY1NDhkMGE2MzZmOGJiNzA0ZjNjMDU2Y2MzNmI3YjRkZDgifQ"
+          "resource": "repo://frontend/src/sse.rs#L88-L194",
+          "version": "repo-lines-v1:sha256:fcc5682c76a8eee7bd26b723d5b543831501a783fbdd9c746ecdd59052ae5875:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlOTMxYzYwZWIwOTBjODVlNmMyODU0NGMwZjMwODA0ODQ5ZmQxZjMxNjkxM2U5MDFjNWMxNjIyZThkZTk3ODY3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0M2NjMmRhN2IzMjVlZTZhMTRmN2YwNjNiYjUwYzkwMDBhMzUwZjg4MDlmMTE4Yjg1MzljMWNhZjNjMDJhNzIwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5NDFkMjBkNzIzNjc1YjI0MjZiNTcyMWM2YmJjZjAwYjEzMTAwM2FkMzQzM2I4NjY2OWY3ZWExMTA3NTFjNzM5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjNDNkMTc3ZGNiOGQ4MjQwZDY1N2Q4MjNiM2ExZjU2NTQ4ZDBhNjM2ZjhiYjcwNGYzYzA1NmNjMzZiN2I0ZGQ4In0"
         },
         {
           "resource": "repo://src/server/test_uploads.rs#L85-L110",
@@ -263,11 +263,11 @@
       "statement": "The byte-level progress that ultimately reaches MCP clients comes from a workspace-wide contract: each format crate entry point takes `progress: &mut dyn FnMut(u64)` called with the input bytes consumed since the last call, adding up to the input size, and run_blocking in src/progress.rs adapts that callback to `bar.inc(n)` on a bytes-styled bar of `length` moved onto the blocking pool. Callers supply the matching total — the input file's metadata().len() for xso-rs/nsz/xdelta/xps, chd_rs::cd_input_size for a CD image, gdi_rs::input_size for GDI, and the CHD's info().logical_size when extracting — so those byte counts are precisely the position/total pair the poller forwards.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L135-L137",
+          "resource": "repo://AGENTS.md#L141-L143",
           "version": "repo-lines-v1:sha256:de0117a85cf42524e917ba497d27f62428cb7d6c5322942857704e2196cf6e1f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWZjNGE2NTRmNWQwNzllNmM2MTYyMTVlYjdhYmVjMTBjNGQyNWJiMTE3YjU3YWI5ZTAwNDU5NGEzNTBmM2I1YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTI1YTdkNDY1Y2NhYTNiNDJlN2I4ZjQ5MWJkMGUxYmI4OTg2ZWE2ZDFkZWY2OTEzOGIwZjFhZDdmNzA2NmJkZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTlmMjU2ZTNiZWExZTE4Njk5ZWZlOWE1Mzg0ZTM3MzlhMGFiZjU1MzM0MDI2NDlhMWZhYWUyZGFiMzg2YzdiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTk4MTRiZjk2MGNhNWU1ZDlmOThmNjRjZTUwOTczNTA1N2NkMGU5ZTg2N2YzNDg3YWIyYjgxMTk3NzVmNDgwNyJ9"
         },
         {
-          "resource": "repo://AGENTS.md#L88-L89",
+          "resource": "repo://AGENTS.md#L94-L95",
           "version": "repo-lines-v1:sha256:1a3d5473911f43327c1425e1453d1c6dd710b6117043491df7416b4b43748c9b:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg4ZjM4ZjI0Yjk3OTk1OTJhMjBiNjZmNTUxNGQzYzRjNDgxNWU5ZDdjOWU2N2E2NDlkZTMwMzY1OGRkYWY0MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ZkOWQ3YjE0NzE4ZGVjNzY2ZDk1YjY3ZjA5ZWM2M2I1OTc0NTU4NmJlYjEwN2ZkZmNjMzEwZjI4NzcyMTRjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2FhNmY2Y2ZjY2NjZTViNDBiMjhiOWE1ZGY5MTZhNjMwYTM4MmVjOTRiZTc2ZmM5YjI3NjUwNmJiNzVjMTViMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGEwODg5ODc2MzEyNmIyMzJmNjg5ZjUwYWQ0NzFmZjk3MWMwNTZiYmI0MTA5MTY4Y2Y1ZmFjYmU5MWQ4NTNiYyJ9"
         },
         {
@@ -303,6 +303,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-27T21:16:24.550Z"
+    "at": "2026-10-28T11:29:22.151Z"
   }
 }

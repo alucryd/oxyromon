@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d49fe67055288b83c03cba5b44d6ecf1bd64190017e07da5a5e18a7c9fd31894",
+  "pageVersion": "sha256:d60b29d219d5017e7bab00df9b2d61479cd6e186e18f35a3bd05de7a0cb2c9b7",
   "claims": [
     {
       "id": "claim_56ecae6ff3f14ff0babfd3201239caab",
       "statement": "The standard of proof for every crate under crates/ is agreement with the upstream reference implementation rather than self-consistency, and the suites are split accordingly: roundtrip.rs / apply.rs / decode.rs / convert.rs exercise the crate alone, interop.rs runs the upstream binary as a child process, and where a reference cannot be run a pinned reference-made artifact or a generated vector file stands in for it.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L156-L158",
+          "resource": "repo://AGENTS.md#L161-L163",
           "version": "repo-lines-v1:sha256:f53ac784aec7eabbbd4a6614f73e43a10fdc1a1f395e2203037f7222ced4513d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU3MDRhNzlmNzdhNTBjYzg3ZDdlMjJmODUxZTEzMmQwOGY5YjhiNTdjYTJlZDcwMDNlNzdjNWVkZGIxOGYyZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIzODU2YjUyMTA2MDkzZGQ4MzJjNzZlMmEzZThhZTkyM2VkYzBjODlhYWQzZDVkODhhNTIwMmFhYzk3YmRlNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzUwNGMwMjkxZjI5ZWM4NTFlZDg3YTYxNDc0MDQzNjFlMTgxZTBlMTZkYTM5ZDNlZTZjMjcwODk4MjMzNThmMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDJhZmQyOTM3ZGU3NTllNzU1NDQ1NGVkYjM5OGM5NmFjMTA5NTlmOWU5ZjkyNmZkOGMxOWQ1NTE1Zjc5ZmFiZiJ9"
         },
         {
@@ -357,8 +357,8 @@
       "statement": "The crates are executed as part of the workspace: `cargo test --workspace --features oxyromon/server` locally (test.sh is the same command under cargo llvm-cov), and in CI that llvm-cov step is what actually runs them since clippy only lints test targets. The root package adds the cross-crate check tests/crates.rs, which requires the seven copied src/bin/<cli>/ui.rs files (chdrs, ciars, gdirs, nszrs, wuxrs, xdeltars, xpsrs) to be byte-identical to xso-rs's.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L51-L65",
-          "version": "repo-lines-v1:sha256:08aa6568d126a4d7d2a8c2a0c5d0f1125517a961381ac16013d7b5e4d2b82d47:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMTEyOTNmZjUzYmVmZDY3MGFkYzM5ZDViOTU0NTE0ZGY1OGY4MTM4MDkzNmMxYWVjY2M3NjgxYTg1YWU3NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNjI3NDY0MzVjYzliOGQ1YTk5ZDhkN2E4M2NmNzNmODA4ZWYwM2EzZTlhNDI4NTU4MWU1N2QyNDRhYWI1NzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L67-L85",
+          "version": "repo-lines-v1:sha256:a06e977abda31763c74a0e8e1e3cd77c31691100ec6164caa6b7e39a2010b0c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5ZDE4ZDliNTI2ZjEwODBhMmIwZTBlZDUzNDA3ZmNjMzQ3YTU0ODY0OWNjZTMxZjVjNDFiYTUwYmYxNzVlODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYWM5MzZjMDcyNzUzODk4ZTcwYTA3OTY5NjYyODM0MDVjMTVkYjc0Njg0YWU1MjEzMjZjYWM4YmM0YjA5NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
         },
         {
           "resource": "repo://test.sh#L1-L3",
@@ -621,14 +621,14 @@
       "statement": "wux-rs's keys unit tests extract both common keys from a dummy otp.bin and assert that a short binary file and a 1 KiB file with no programmed common key slot are both refused with Unsupported.",
       "evidence": [
         {
-          "resource": "repo://crates/wux-rs/src/keys.rs#L78-L127",
-          "version": "repo-lines-v1:sha256:92ebbbd4e61f28e788d11aa24de25c745669fd1640d6a1ca4fcfe86d111b81c4:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1Y2Y1ZmMyM2YyYTZkMjNjM2VhNTFlNzJmNWU4OTZjNzU1NWZiYWEwNWNkNWIxZWExODJiZjk2MThhOGU4MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0YWIwNjVjZjFmODhiMGU5M2Y5ZjQ1ZjdkOWU4Mjc4ZjVhYzg5Mjc4ZmJiYjRkN2EwNmNlYjU5YWQ5NGZmMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+          "resource": "repo://crates/wux-rs/src/keys.rs#L78-L131",
+          "version": "repo-lines-v1:sha256:b6d2fe25caf8a32dc91c1a0dbc8066fc9546e1aa986b398afe716f9b6abd968c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1Y2Y1ZmMyM2YyYTZkMjNjM2VhNTFlNzJmNWU4OTZjNzU1NWZiYWEwNWNkNWIxZWExODJiZjk2MThhOGU4MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0YWIwNjVjZjFmODhiMGU5M2Y5ZjQ1ZjdkOWU4Mjc4ZjVhYzg5Mjc4ZmJiYjRkN2EwNmNlYjU5YWQ5NGZmMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-28T08:10:36.025Z"
+    "at": "2026-10-28T11:29:22.151Z"
   }
 }

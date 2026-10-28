@@ -1,7 +1,7 @@
 ---
 type: reference
 title: CI Pipelines and Runtime Environment
-description: How .github/workflows/continuous_integration.yml gates every change (apt reference tools for the format crates' tests, toolchain, trunk, the three clippy passes, release build and coverage), and exactly which runtime environment variables the binary reads, when, and for how long they stay authoritative.
+description: How .github/workflows/continuous_integration.yml gates every change (apt reference tools for the format crates' tests, toolchain, trunk, the format check, the four clippy passes, release build and coverage), and exactly which runtime environment variables the binary reads, when, and for how long they stay authoritative.
 tags: [ci, github-actions, clippy, coverage, environment-variables, trunk, sqlx, toolchain]
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
@@ -30,6 +30,12 @@ sources:
     resource: repo://crates/xps-rs/tests/interop.rs
   - id: openwiki-source-0c6adbcf77da61d03e900821
     resource: repo://crates/xso-rs/tests/common/mod.rs
+  - id: openwiki-source-92ee3a60a9826201e8ce6fa7
+    resource: repo://desktop/Cargo.toml
+  - id: openwiki-source-b758f5266102887201b4a0ff
+    resource: repo://desktop/scripts/stage-sidecar.sh
+  - id: openwiki-source-c11c5a4e888d0c73a5778ab4
+    resource: repo://desktop/tauri.conf.json
   - id: openwiki-source-33ab0e331223101757a2c45d
     resource: repo://docker.sh
   - id: openwiki-source-bb1ebe868e35e9e500714501
@@ -70,10 +76,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
+generated: { by: "claude-code", at: "2026-10-28T11:29:22.151Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T08:10:36.025Z
+    at: 2026-10-28T11:29:22.151Z
 ---
 
 # CI Pipelines and Runtime Environment
@@ -120,22 +126,24 @@ as separate cargo invocations instead. Job-level `env` sets `CARGO_TERM_COLOR`,
 
 ```mermaid
 flowchart TD
-  CO["checkout v7"] --> APT["apt-get update with Acquire Retries 3, then install mame-tools xdelta3 ffmpeg"]
-  APT --> TC["rust-toolchain stable plus wasm32-unknown-unknown, clippy, llvm-tools-preview"]
+  CO["checkout v7"] --> APT["apt-get update with Acquire Retries 3, then install mame-tools xdelta3 ffmpeg, webkit2gtk and xdo dev packages"]
+  APT --> TC["rust-toolchain stable plus wasm32-unknown-unknown, clippy, rustfmt, llvm-tools-preview"]
   TC --> DEF["rustup default stable"]
-  DEF --> CACHE["Swatinem/rust-cache v2"]
-  CACHE --> TRUNK["install trunk from the pinned TRUNK_VERSION tarball into cargo bin"]
+  DEF --> CACHE["Swatinem/rust-cache v2 over root, frontend and desktop"]
+  CACHE --> FMT["cargo fmt --check in root, frontend and desktop"]
+  FMT --> TRUNK["install trunk from the pinned TRUNK_VERSION tarball into cargo bin"]
   TRUNK --> UI["cd frontend, trunk build --release (the one and only wasm build)"]
   UI --> COV["cargo install cargo-llvm-cov"]
   COV --> L1["clippy workspace all-targets features oxyromon/server"]
   L1 --> L2["clippy no-default-features features use-rustls,mcp all-targets"]
   L2 --> L3["cd frontend, clippy target wasm32-unknown-unknown all-targets"]
   L3 --> B["cargo build --release --features server"]
-  B --> T["cargo llvm-cov workspace features oxyromon/server, lcov output"]
+  B --> L4["stage-sidecar.sh, then cd desktop, clippy all-targets"]
+  L4 --> T["cargo llvm-cov workspace features oxyromon/server, lcov output"]
   T --> U["codecov-action v7 with CODECOV_TOKEN"]
 ```
 
-*Caption: the CI job as a single linear pipeline — one wasm build, three clippy passes, one release build, one coverage run.*
+*Caption: the CI job as a single linear pipeline — one format check, one wasm build, four clippy passes, one release build, one coverage run.*
 
 Why each step exists:
 
@@ -164,9 +172,9 @@ Why each step exists:
   interop suites skip there — those three are a local responsibility
   (`$CTRTOOL`, `$MAXCSO`, `flips` on `$PATH`).
 - **`wasm32-unknown-unknown` on the toolchain** is needed by the "Build web UI"
-  step: `frontend/` is a standalone crate with its own `[workspace]`, so no
-  `cargo` invocation in the job compiles the Leptos app — only `trunk` does, and
-  it needs the wasm target installed. **`llvm-tools-preview`** is required by
+  step and by the web UI's clippy pass: `frontend/` is a standalone crate with its
+  own `[workspace]`, so only `trunk` and that `cd frontend` clippy pass compile
+  the Leptos app, both for the wasm target. **`llvm-tools-preview`** is required by
   `cargo-llvm-cov`. `rustup default stable` makes the freshly installed toolchain
   the one every later `cargo` invocation resolves to.
 - **Toolchain pinning is asymmetric.** There is no `rust-toolchain.toml`
@@ -185,7 +193,7 @@ Why each step exists:
   wasm bundle is target- and feature-independent, so it is compiled once into
   `target/assets` (`frontend/Trunk.toml` sets `dist = "../target/assets"`, where
   the `rust-embed` derive in `src/server.rs` looks for it) and every later cargo
-  invocation — three clippy runs, a release build, and a workspace test run that
+  invocation — four clippy runs, a release build, and a workspace test run that
   rebuilds the `server` feature many times over — reuses those assets instead of
   recompiling wasm. `build.rs` honors the variable only when `server` is enabled,
   and `SKIP_TRUNK` is **not** declared with `cargo:rerun-if-env-changed`, so
@@ -193,8 +201,20 @@ Why each step exists:
   before any cargo invocation, its `pre_build` hook — which fetches Web Awesome
   into the gitignored `frontend/vendor/` — executes exactly once per job instead
   of once per `build.rs` run.
-- **Three clippy passes** — see the next section. The third lints the web UI,
-  which declares its own `[workspace]`, for `wasm32-unknown-unknown`.
+- **A formatting check** runs `cargo fmt --check` in the root workspace and
+  again in `frontend/` and `desktop/`: each declares its own `[workspace]`, so
+  the root's `cargo fmt --all` never reaches them. `rustfmt` is installed with
+  the toolchain for it.
+- **Four clippy passes** — see the next section. The third lints the web UI,
+  which declares its own `[workspace]`, for `wasm32-unknown-unknown`. The fourth
+  lints the Tauri desktop shell, also its own workspace. It runs after the
+  release build because `tauri-build` refuses to compile until the sidecar
+  declared as `externalBin` exists, so the step first runs
+  `desktop/scripts/stage-sidecar.sh`, which reuses that build and copies it to
+  `desktop/binaries/oxyromon-<triple>`. Its webview needs the
+  `libwebkit2gtk-4.1-dev` and `libxdo-dev` packages.
+- **`Swatinem/rust-cache` lists all three workspaces**, since each has its own
+  `target/` directory.
 - **`cargo build --release --features server`** builds the artifact users
   actually get (server implies `mcp`, and the release profile uses
   `lto = "thin"`, `codegen-units = 1`, `panic = "abort"`, which ordinary debug
@@ -205,10 +225,14 @@ Why each step exists:
   `codecov/codecov-action@v7` step uploads it with `secrets.CODECOV_TOKEN`.
 
 ```sh
-# the three commands CI treats as the compile gate, verbatim
+# the commands CI treats as the format and compile gate
+cargo fmt --all --check
+(cd frontend && cargo fmt --check)
+(cd desktop && cargo fmt --check)
 cargo clippy --workspace --all-targets --features oxyromon/server
 cargo clippy --no-default-features --features use-rustls,mcp --all-targets
-cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets
+(cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets)
+sh desktop/scripts/stage-sidecar.sh && (cd desktop && cargo clippy --all-targets)
 ```
 
 ## Feature-combination coverage, and what a change must keep compiling
@@ -251,11 +275,11 @@ single-connection/EXCLUSIVE configuration**, and a `cfg_if` arm mistake on that
 branch surfaces only for downstream packagers and `cargo build` without features.
 Likewise `use-native-tls` and every Windows/macOS target are never compiled in CI
 at all — the OpenSSL and cross-compiler paths are guarded only by `dist.sh` and
-by packagers. Neither
+by packagers. No
 clippy invocation passes `-D warnings`, and the manifests declare no `[lints]`
 section, so this gate fails on hard errors in a feature combination, not on new
-lint warnings. There is also no `cargo fmt` step: formatting is a convention,
-not a CI check.
+lint warnings. Formatting, by contrast, is gated: any `rustfmt` diff in any of
+the three workspaces fails the job.
 
 ## Runtime environment variables
 
