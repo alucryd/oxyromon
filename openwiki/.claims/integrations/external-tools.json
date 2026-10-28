@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:23e5de54e6ee45ca33d3a3116cb9202bb625331fc434e229fa90926bc54e4d83",
+  "pageVersion": "sha256:69ca4d1b00e7c959bc2e688df2b865a789fa2f6704cec022511ec9a31bea3599",
   "claims": [
     {
       "id": "claim_4574f56cdfe7474ba7de65c5cbfca04a",
@@ -15,7 +15,7 @@
           "version": "repo-lines-v1:sha256:4d75738bcbbe009c741c75ade0007adc501dab8b4ac046ee95536886c2cac80f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxMDdmZTAxYjI5ZjUyOGUyMWU3NjllYjNlZGFjNTVkNmZkNjNhZjBjMzcyM2JkM2I2ZTQ5ZDY3ZGIyYjFiMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwODIyODg0MmQ2MjE3NTRjZTVhNTg4YWUwMmNkNWU2NTM5OTYwMWM5ODc3OGQ5OTY5YzBmZjFhYmQ0YjllNGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjMjJmYzliNjA2M2I3YmE3MWQxN2UyY2RlNzAzODdhMTM2MTUxZDk0MzJhM2FlNjZmOTgwZjhhZGE2OTg3ZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzYzYxNjcyN2QxNGY5NDZlMjVlYjdkMjhiZmMyYjA4MzBiMzY1N2Y1NmUwZWRkMTVlZTUyNmVlNGYxMjA0NTMifQ"
         },
         {
-          "resource": "repo://src/util.rs#L198-L202",
+          "resource": "repo://src/util.rs#L199-L203",
           "version": "repo-lines-v1:sha256:a01261e6d74d4678bb99028f1a269d2479cb305623d7fbe46a4a52549443c3bf:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGNlZWU3ZmQxZTNlY2U2OWQ2M2M4Yzk3ZmRmZWY0OWY4ODg5NmIwYjU1NWI2ZTk3MWE5YmU2N2ZlNTU5MjM0MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzVmNmY0NjZlNTljZmMzMDcwM2M0NWY3MmFmNjVkZTU0YWMzNjNkMzU0Y2MxYTMzMzAzNTBhY2Q0NTI0MzRjNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2U4OWY1Y2RmN2RmNDk5ZTlmNzNkMzFmMTFiYjgxNTAyYmE3NTJhNzY5Y2MyYWZmYzJjOWE0ZDRjNDEyMzQxNCJ9"
         }
       ]
@@ -45,18 +45,18 @@
           "version": "repo-lines-v1:sha256:e934193591db764c9e06b4213147270178ca86785c64643d981ffa343784fb18:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzZTMzMWE2ZGVlNTYwYmM4OGFkN2MzOTliZWQ5NTg2NTlhNzBjNTQyNzkyM2E1MzcxMmE0MjljOTZlNDVhYzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxMDE5NTMwZjU3ODYwYWM4NDZkOGE2MWQxOTJjYzZiMGM4OGY2OWFmZjJjMDRhNWNjZWVhNzg4MzJmZDY0MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3ODc5NGUzYjgyMjVhODBlYzU2ZmI2Njc5NjNhYzA5YmI4Njc1Mzg5ZmI1YmUxN2ViMzg2Zjk3ZDY0NGU1ZWEifQ"
         },
         {
-          "resource": "repo://src/wux.rs#L689-L696",
+          "resource": "repo://src/wux.rs#L794-L801",
           "version": "repo-lines-v1:sha256:cee9816effbdb2f1610f6fa4b558e40972e50ef173c5afdb631ac39568dab742:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzhkZjVkNTU5Mjk4ZTllYmFmOWNhYzc2Y2NmOTYyOGUzN2JmNzA1NjEyNTBiOTdkZjJjNzE5NmE0YWM4MzhjZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzUyMDM4NmU1OTQyNGEzYzVlY2JhNDkzOGEzOTk0NjAxYTg5NjYxYWEwNjBiZWY0NTlmNDllMmQwMjIxNzAxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
     },
     {
       "id": "claim_4669a970c9e94f0ea4f9e2f7d3fd80f6",
-      "statement": "CI's single dependency step runs apt-get update with retries and installs mame-tools, xdelta3 and ffmpeg, and none of the three is a runtime dependency: the workflow comment states all three exist only so the format crates' tests can compare against chdman and xdelta3 and build LaserDisc AVIs with ffmpeg, and those tests skip when the binary is absent.",
+      "statement": "CI's lint and test job runs apt-get update with retries and installs mame-tools, xdelta3 and ffmpeg, and none of the three is a runtime dependency: the workflow comment states they exist only so the format crates' tests can compare against chdman and xdelta3 and build LaserDisc AVIs with ffmpeg, and those tests skip when the binary is absent.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L23-L32",
-          "version": "repo-lines-v1:sha256:a72d0c526332640881f549fbdc09143de5d32d273af5e898a54d06b850e26309:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMGMzNDQ2ZTRjOGEwNzNhNDFjZmRjODMzMTFhOGQwNWRmYThjNzgzYTU4ZDU4YzQ3MWYyN2E5YTEzNDc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1N2UzOGQyNmYxNzJhY2NiNTk5OWI5Y2NhMmU3N2E3MGIwMGFlNTM4MzA5NjdkZTZhYzI2MDE0OTFlNjNkMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzN2RjZjYzNTBmMGU3ZDg3NmIzYmRmNWEzYzE4ZjNmM2Y0N2QyNzcyODAwNzI1YTNhYThiODQ4Y2VkMzU1YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMjY0MDQ3NjA1ZjM2N2MwNDU5Zjg5NWM3ZGJkZTYyNzdmNmNjNTAzZTgxODljOGQ3YzMwNGMyZjllOGMzOTgifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L86-L91",
+          "version": "repo-lines-v1:sha256:a387ab8ee02abc3bb37a08f20b085fde3bc5005efa377e2c087b5a806708ee4a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQwYzM0NDZlNGM4YTA3M2E0MWNmZGM4MzMxMWE4ZDA1ZGZhOGM3ODNhNThkNThjNDcxZjI3YTlhMTM0NzQ4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU3ZTM4ZDI2ZjE3MmFjY2I1OTk5YjljY2EyZTc3YTcwYjAwYWU1MzgzMDk2N2RlNmFjMjYwMTQ5MWU2M2QwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDM3ZGNmNjM1MGYwZTdkODc2YjNiZGY1YTNjMThmM2YzZjQ3ZDI3NzI4MDA3MjVhM2FhOGI4NDhjZWQzNTViMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWUyNjQwNDc2MDVmMzY3YzA0NTlmODk1YzdkYmRlNjI3N2Y2Y2M1MDNlODE4OWM4ZDdjMzA0YzJmOWU4YzM5OCJ9"
         },
         {
           "resource": "repo://crates/xdelta-rs/tests/interop.rs#L8-L10",
@@ -95,7 +95,7 @@
       "statement": "oxyromon runs no external program at runtime: AGENTS.md requires every format to be handled by a crate in-process, the README states oxyROMon needs no external tool, and the CIA format formerly handled by ctrtool now runs on the cia-rs crate through src/cia.rs.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L61-L62",
+          "resource": "repo://AGENTS.md#L70-L71",
           "version": "repo-lines-v1:sha256:96d3e2fbf3395d2b190c261c4b13c660bd3ddc416b4b10c485c8b229827c9bd9:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFlODM1NGUxMjU4OTYwYjA0YzA3YTUzNTYzOGMzM2E1NGFjNWQwN2FhN2Y4MDEwMWNmMDIzOThkNTkzNWRlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1MDliNjg4ZjE2ZDAxMWI4NzZhZjY3M2EzMmY5OWNmZGE5MDZkYTU0M2U5NzA5YjY4MGE4OGZkZTkyYjg5MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2M3MTNjNzI4ZTE0YTkyYzRiOGVlZTM3NzllODk4OGZjMjM1NDQxZDI2OTliZWVjOWU4ZmI5OTg2YjUzNjA5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjFlZmQ3MzdjNzE4MDg3YWRkMjdmZTIyYTM3MzBiZTlmYjQ0MzNhODU0NmZhYjM1NDRkY2IzMDQ1NDQwMjkxNCJ9"
         },
         {
@@ -117,7 +117,7 @@
           "version": "repo-lines-v1:sha256:1db42ff62dd879845f159fbc32a46359a10400dfee7524a5cfa652cbc6f9222d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTA3ZjIzNTkxYjI2MTViYTAxNTI1NzdiZjQ0OGMyZTNmNzQ1NWIwYTQwYjg0MzJkYmM0NmM4NDEyNjFjOWI2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjE4YmIwM2YxZDNiNjhhYTFiOTBmMmI2ZjM3YmQyN2JjYzhkNmJjNjY5ZGYxOTk4ODBlMjhlZTM4ZWIxMDg5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWMzYWUyMDI3NDI0NDMxMDZjNzNlM2VlYzdlZDliMDZmMzE5NWIzZTZiMDExZTQzM2Q4ZjE1MmQyNDQwYjUzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTM5MDNiYzU0NmMxYjViMDgxZmI5MDY5YWM1ZmNlMTNlZTUwMTcyNzRiOTUyMWI5YjhiOTBmZjBmNzZlMWI0ZiJ9"
         },
         {
-          "resource": "repo://crates/wux-rs/README.md#L170-L214",
+          "resource": "repo://crates/wux-rs/README.md#L177-L221",
           "version": "repo-lines-v1:sha256:916b3e37966cbea10d8cc77e29563b1c58a30ba1fd13805880bc5beeb2d4394a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4MDA1OWZhM2YzMjBiNTMyYjdjOTA4NDNmMTNkYmU0YzA5OWRhMDBhMTZlMzgyYmZlOTNiMDI4MTM3NTg0YzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1ZGUzZWZmOTI3YjJmMzYyYjQ3YzI5NWZhMjUzOGNlNzIxZTNjYTIxYTdjNWQ3YzljNDRjMDJkMGIzNmYyYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -125,6 +125,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T20:09:06.498Z"
+    "at": "2026-10-28T12:28:25.132Z"
   }
 }

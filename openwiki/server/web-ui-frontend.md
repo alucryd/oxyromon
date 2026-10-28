@@ -76,10 +76,10 @@ sources:
     resource: repo://src/query.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
-generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
+generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T08:10:36.025Z
+    at: 2026-10-28T12:28:25.132Z
 ---
 
 # Web UI (Leptos SPA + Web Awesome)
@@ -566,13 +566,17 @@ returns early without one leaves a menu spinner turning forever.
 
 ## Verification
 
-Nothing under `frontend/src` is tested. `continuous_integration.yml` installs
-trunk (pinned `TRUNK_VERSION`), runs `cd frontend && trunk build --release` once
-with `SKIP_TRUNK=true` exported for every later cargo invocation, and runs
-`cargo llvm-cov` over `--workspace`, which — for the reason in the first
-paragraph — excludes this crate. CI does lint it, in a clippy pass of its own:
-`cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets`.
-So a frontend change is checked by compiling, by that clippy pass, and by
+Nothing under `frontend/src` is tested. `continuous_integration.yml` builds the
+UI once, in its *Web UI* job: it installs trunk (pinned `TRUNK_VERSION`), runs
+`cd frontend && trunk build --release`, lints the crate with
+`cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets`, and
+uploads `target/assets` as an artifact. Only the release job downloads it, to
+embed it in the release build; `SKIP_TRUNK=true` keeps every cargo invocation
+from running trunk again. The tests run `cargo llvm-cov` over `--workspace`,
+which, for the reason in the first paragraph, excludes this crate, and they
+compile against an empty UI. The *Format* job checks the crate with
+`cargo fmt --check` from `frontend/`.
+So a frontend change is checked by compiling, by those two passes, and by
 whatever the server tests happen to cover on the other side of the boundary. Treat the GraphQL
 field names, the SSE event prefixes and `ROW_HEIGHT`/`--row-height` as three
 unverified contracts that only a browser reveals.

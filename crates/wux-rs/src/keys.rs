@@ -123,6 +123,9 @@ mod tests {
     fn other_binary_files_are_refused() {
         assert!(matches!(load(&[0x80; 16]), Err(Error::Unsupported(_))));
         // 1 KiB, but no common key slot was ever programmed
-        assert!(matches!(load(&[0xFF; OTP_SIZE]), Err(Error::Unsupported(_))));
+        assert!(matches!(
+            load(&[0xFF; OTP_SIZE]),
+            Err(Error::Unsupported(_))
+        ));
     }
 }

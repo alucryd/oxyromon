@@ -18,9 +18,7 @@ pub fn PurgeRomModal() -> impl IntoView {
     let foreign = RwSignal::new(false);
     let purging = RwSignal::new(false);
 
-    let none_selected = move || {
-        !missing.get() && !orphan.get() && !trash.get() && !foreign.get()
-    };
+    let none_selected = move || !missing.get() && !orphan.get() && !trash.get() && !foreign.get();
 
     let do_purge = move || {
         let missing_value = missing.get_untracked();
@@ -29,8 +27,14 @@ pub fn PurgeRomModal() -> impl IntoView {
         let foreign_value = foreign.get_untracked();
         purging.set(true);
         spawn_local(async move {
-            let outcome =
-                purge_roms(state, missing_value, orphan_value, trash_value, foreign_value).await;
+            let outcome = purge_roms(
+                state,
+                missing_value,
+                orphan_value,
+                trash_value,
+                foreign_value,
+            )
+            .await;
             purging.set(false);
             if outcome.is_ok() {
                 missing.set(false);
