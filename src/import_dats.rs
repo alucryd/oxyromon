@@ -253,7 +253,7 @@ pub async fn parse_dat<P: AsRef<Path>>(
     if datfile_xml.system.name.is_empty() {
         // MAME's -listxml output has no header: name the system after the file
         let Some(build) = datfile_xml.build.take() else {
-            bail!("Failed to deserialize DAT file: missing header");
+            bail!("Failed to deserialize DAT file: missing header or MAME build attribute");
         };
         let name = dat_path
             .as_ref()
