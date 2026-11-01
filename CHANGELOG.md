@@ -32,6 +32,7 @@
 
 ## Fixes
 
+- Fixed actions started from the web UI or an MCP client running at the same time, which could collide moving the same files; they now run one at a time, in the order they started, and a waiting MCP tool can be cancelled
 - Fixed checking, sizing and converting a hard disk CHD failing with "Not a valid rdsk" unless the disk began with an Amiga Rigid Disk Block, which most arcade hard disks do not
 - The web UI's system deletion dialog no longer says the files on disk are left alone: they move to the system's `Trash`
 - Fixed `create-dats` reading each file three times, once per checksum; it now reads it once

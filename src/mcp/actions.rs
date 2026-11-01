@@ -4,13 +4,14 @@
 // `progressToken`, per-request cancellation, and SSE fan-out when mounted on
 // the web server (so a UI watching `/events` also sees MCP-triggered work).
 
-use super::OxyromonMcp;
+use super::{OxyromonMcp, WRITE_LOCK};
 use crate::progress::*;
 use anyhow::Result;
 use rmcp::model::{CallToolResult, ContentBlock, ProgressNotificationParam, ProgressToken};
 use rmcp::service::{Peer, RoleServer};
 use sqlx::SqliteConnection;
 use std::time::Duration;
+use tokio::sync::MutexGuard;
 use tokio_util::sync::CancellationToken;
 
 #[cfg(feature = "server")]
@@ -49,6 +50,18 @@ pub(crate) fn read_only_denial(tool: &str) -> CallToolResult {
     ))
 }
 
+/// Wait for `WRITE_LOCK`, giving up if the client cancels or the server stops.
+pub(crate) async fn lock_writes(
+    client: &CancellationToken,
+    server: &CancellationToken,
+) -> Result<MutexGuard<'static, ()>, String> {
+    tokio::select! {
+        guard = WRITE_LOCK.lock() => Ok(guard),
+        _ = client.cancelled() => Err("cancelled by the client".to_owned()),
+        _ = server.cancelled() => Err("server shutting down".to_owned()),
+    }
+}
+
 impl OxyromonMcp {
     /// Run one mutating action to completion. `work` drives the existing
     /// subcommand internals on a pooled connection, reporting progress on the
@@ -74,8 +87,9 @@ impl OxyromonMcp {
         let _ = sse_prefix;
 
         // SQLite serializes writers anyway; do it politely instead of hitting
-        // SQLITE_BUSY halfway through an import.
-        let _guard = self.write_lock.lock().await;
+        // SQLITE_BUSY halfway through an import. The wait can last as long as
+        // a web action, so it can be cancelled like the work itself.
+        let _guard = lock_writes(&ct, &self.cancel).await?;
 
         let mut connection = self
             .pool

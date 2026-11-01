@@ -2,6 +2,7 @@ use super::database::*;
 use super::import_dats::{ImportDatResult, process_dat_upload};
 use super::import_irds;
 use super::import_patches::{import_patch, parse_patch};
+use super::mcp::WRITE_LOCK;
 use super::mutation::Mutation;
 use super::progress::*;
 use super::query::{GameLoader, QueryRoot, RomfileLoader, SystemLoader};
@@ -336,6 +337,7 @@ async fn upload_rom(State(state): State<AppState>, mut multipart: Multipart) -> 
             }),
         );
 
+        let _write_guard = WRITE_LOCK.lock().await;
         // Acquired in here, so a failure is reported like any other: the client
         // has already been told the import is queued.
         let outcome = async {
@@ -470,6 +472,8 @@ async fn upload_patch(State(state): State<AppState>, mut multipart: Multipart) -
             "import_patch_started",
             json!({ "name": filename, "message": format!("Importing patch \"{}\"", filename) }),
         );
+
+        let _write_guard = WRITE_LOCK.lock().await;
 
         let outcome = async {
             let mut connection = pool.acquire().await?;
@@ -616,6 +620,8 @@ async fn upload_ird(State(state): State<AppState>, mut multipart: Multipart) -> 
             "import_irds_started",
             json!({ "name": filename, "message": format!("Importing IRD \"{}\"", filename) }),
         );
+
+        let _write_guard = WRITE_LOCK.lock().await;
 
         // The IRD path is the single positional; `--system` keeps it unattended.
         let arguments = vec![
@@ -955,6 +961,8 @@ async fn upload_dat(State(state): State<AppState>, mut multipart: Multipart) -> 
                 "message": format!("Importing '{}'", filename),
             }),
         );
+
+        let _write_guard = WRITE_LOCK.lock().await;
 
         let tmp_dir = match tempfile::TempDir::new() {
             Ok(d) => d,

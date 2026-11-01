@@ -15,8 +15,9 @@
 // Tools reuse the CLI subcommands the same way the GraphQL mutations do — a
 // synthesized `ArgMatches` fed to the subcommand's own `main()` — so all three
 // surfaces (CLI, GraphQL, MCP) share one implementation per action. Mutating
-// tools hold a process-wide write lock: SQLite serializes writers anyway, and
-// this makes that explicit instead of surfacing as `SQLITE_BUSY`.
+// tools hold `WRITE_LOCK`, as the web server's background actions do: SQLite
+// serializes writers anyway, and the lock also keeps two actions from moving
+// the same files at once.
 
 mod actions;
 mod output;
@@ -38,12 +39,20 @@ use rmcp::service::RequestContext;
 use rmcp::service::RoleServer;
 use rmcp::{ServerHandler, ServiceExt, prompt_handler, tool_handler};
 use sqlx::SqlitePool;
+#[cfg(feature = "server")]
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 
 #[cfg(feature = "server")]
 use crate::server::SseMessage;
+
+/// Held across every long-running write in this process, whichever surface
+/// started it: MCP tools and the web server's background actions run one at a
+/// time, in order, so they cannot move the same files at once. Short settings
+/// writes on the web's request path stay outside it, so that they answer while
+/// a long action runs.
+pub(crate) static WRITE_LOCK: Mutex<()> = Mutex::const_new(());
 
 const INSTRUCTIONS: &str = concat!(
     "oxyromon organizes a ROM library: systems and games come from catalog DATs, ",
@@ -63,9 +72,6 @@ pub struct OxyromonMcp {
     pub(crate) pool: SqlitePool,
     /// Cancelled when the process should stop; in-flight actions bail out.
     pub(crate) cancel: CancellationToken,
-    /// SQLite serializes writers; this makes it explicit and ordered instead
-    /// of surfacing as SQLITE_BUSY. Held across whole mutating actions.
-    pub(crate) write_lock: Arc<Mutex<()>>,
     read_only: bool,
     /// When mounted on the web server, mutating tools fan their outcome into
     /// the SSE stream so the UI reacts to MCP-triggered actions too.
@@ -74,16 +80,10 @@ pub struct OxyromonMcp {
 }
 
 impl OxyromonMcp {
-    fn new(
-        pool: SqlitePool,
-        cancel: CancellationToken,
-        write_lock: Arc<Mutex<()>>,
-        read_only: bool,
-    ) -> Self {
+    fn new(pool: SqlitePool, cancel: CancellationToken, read_only: bool) -> Self {
         OxyromonMcp {
             pool,
             cancel,
-            write_lock,
             read_only,
             #[cfg(feature = "server")]
             sse_tx: None,
@@ -129,12 +129,7 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> Result<()> {
     let read_only = matches.get_flag("READ_ONLY");
     let cancel = CancellationToken::new();
 
-    let service = OxyromonMcp::new(
-        pool.clone(),
-        cancel.clone(),
-        Arc::new(Mutex::new(())),
-        read_only,
-    );
+    let service = OxyromonMcp::new(pool.clone(), cancel.clone(), read_only);
     // stdout becomes the protocol channel here; keep every log line on stderr.
     let server = service.serve(rmcp::transport::stdio()).await?;
 
@@ -179,12 +174,9 @@ pub fn mcp_http_service(
     use rmcp::transport::streamable_http_server::tower::StreamableHttpService;
 
     let manager = Arc::new(LocalSessionManager::default());
-    // the factory runs per request: share one lock so concurrent requests
-    // still serialize their writes
-    let write_lock = Arc::new(Mutex::new(()));
     StreamableHttpService::new(
         move || {
-            let service = OxyromonMcp::new(pool.clone(), cancel.clone(), write_lock.clone(), false);
+            let service = OxyromonMcp::new(pool.clone(), cancel.clone(), false);
             Ok(service.with_sse(sse_tx.clone()))
         },
         manager,
@@ -239,3 +231,6 @@ impl ServerHandler for OxyromonMcp {
         resources::read_resource(self, request, context).await
     }
 }
+
+#[cfg(test)]
+mod test_write_lock;
