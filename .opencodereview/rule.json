@@ -21,6 +21,11 @@
       "rule": "wux-rs, which writes NUS folders into a caller's directory. Check: A command that writes into a user-chosen directory must not recursively delete a directory it did not create in this run. Replace-directory semantics must match the bail-or-skip hygiene of copy_file(..., false), and any deletion computed from per-file metadata must fail closed: a parse error in a referencing file keeps the candidates rather than releasing them for deletion."
     },
     {
+      "path": "src/{mutation,server}.rs",
+      "merge_system_rule": true,
+      "rule": "Web server write paths, which share a process with the MCP tools. Check: every background action in these files (spawn_cli_action, or any other tokio::spawn doing file or database writes) takes WRITE_LOCK from src/mcp.rs before it acquires its connection, the same lock MCP tools take in run_action; one without it can move the same files as another action at the same time. Short settings writes on the request path stay outside the lock by design, so they answer during a long action, and are not a finding. Also apply the src/*.rs rule: OxyRomon subcommand module. Check: every CLI flag, default value, and behaviour the diff introduces or changes is documented in the matching README.md section, including the flag's interaction with existing options; a change to how roms, DATs or CHDs are matched, renamed or deduplicated contradicts the workflow section or the FAQ, so check those too; CHANGELOG.md gets an entry under the version heading that matches Cargo.toml's version for anything user-visible — a new flag, a new default behaviour, a directory the tool now deletes; do not report internal refactors with no user-visible effect. Also check: one boundary label per `?`-chain, since the same `with_context` label applied twice to one chain renders twice; per-system DAT download outcomes (imported, up to date, failed) come from the one collector in download_dats.rs, and a GraphQL mutation in mutation.rs that loops over systems itself instead is a finding."
+    },
+    {
       "path": "src/*.rs",
       "merge_system_rule": true,
       "rule": "OxyRomon subcommand module. Check: every CLI flag, default value, and behaviour the diff introduces or changes is documented in the matching README.md section, including the flag's interaction with existing options; a change to how roms, DATs or CHDs are matched, renamed or deduplicated contradicts the workflow section or the FAQ, so check those too; CHANGELOG.md gets an entry under the version heading that matches Cargo.toml's version for anything user-visible — a new flag, a new default behaviour, a directory the tool now deletes; do not report internal refactors with no user-visible effect. Also check: one boundary label per `?`-chain, since the same `with_context` label applied twice to one chain renders twice; per-system DAT download outcomes (imported, up to date, failed) come from the one collector in download_dats.rs, and a GraphQL mutation in mutation.rs that loops over systems itself instead is a finding."
@@ -28,7 +33,7 @@
     {
       "path": "crates/chd-rs/src/**",
       "merge_system_rule": true,
-      "rule": "chd-rs codec glue, on top of the Rust rule. Check: a constant assumed length or shape of another component's output that the code strips, skips or seeks past (a container header, a magic, a fixed prefix) is validated with a runtime check returning an error, not a debug_assert: release builds skip the assert and silently misalign every record after it."
+      "rule": "chd-rs codec glue, on top of the Rust rule. Check: a constant assumed length or shape of another component's output that the code strips, skips or seeks past (a container header, a magic, a fixed prefix) is validated with a runtime check returning an error, not a debug_assert: release builds skip the assert and silently misalign every record after it. Also: any arithmetic multiplying a hunk index or hunk count by hunk_bytes or unit_bytes is performed in 64 bits; u32 offset products wrap at 4 GiB and corrupt clone maps past that size, which only DVD-and-larger parents expose."
     },
     {
       "path": "src/mcp/**/*.rs",
