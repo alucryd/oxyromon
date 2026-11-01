@@ -16,7 +16,7 @@
 
 ## Changes
 
-- RVZ and WBFS support now always comes from the nod crate: `dolphin-tool` and `wit` are no longer needed, and the `nod` feature is gone. `RVZ_SCRUB` is ignored, with a warning, as nod cannot scrub RVZ
+- RVZ and WBFS support now always comes from the nod crate: `dolphin-tool` and `wit` are no longer needed, and the `nod` feature is gone. The `RVZ_SCRUB` setting is gone, as nod cannot scrub RVZ: with it set, `export-roms` decoded and re-encoded every RVZ for nothing
 - 7z and ZIP support now always comes from the sevenz-rust2 and zip crates: 7-Zip is no longer needed, and the `sevenz` feature is gone
 - BPS and IPS support now comes from the new xps-rs crate, a port of Flips, instead of the external `flips` tool; its CLI (`xpsrs`) ships in the release archives too
 - XDELTA support now comes from the new xdelta-rs crate, a port of xdelta3, instead of the external `xdelta3` tool; its CLI (`xdeltars`) ships in the release archives too

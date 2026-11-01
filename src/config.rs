@@ -66,7 +66,6 @@ pub(crate) const BOOLEANS: &[&str] = &[
     "GROUP_SUBSYSTEMS",
     "PREFER_PARENTS",
     "REGIONS_ONE_STRICT",
-    "RVZ_SCRUB",
     "SEVENZIP_SOLID_COMPRESSION",
 ];
 pub(crate) fn choice_options(key: &str) -> Option<&[&str]> {

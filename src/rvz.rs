@@ -134,7 +134,6 @@ pub trait ToRvz {
         compression_algorithm: &RvzCompressionAlgorithm,
         compression_level: usize,
         block_size: usize,
-        scrub: bool,
     ) -> Result<RvzRomfile>;
 }
 
@@ -146,7 +145,6 @@ impl ToRvz for IsoRomfile {
         compression_algorithm: &RvzCompressionAlgorithm,
         compression_level: usize,
         block_size: usize,
-        scrub: bool,
     ) -> Result<RvzRomfile> {
         progress_bar.set_message("Creating rvz");
 
@@ -162,13 +160,6 @@ impl ToRvz for IsoRomfile {
                 path.file_name().unwrap().to_str().unwrap()
             ),
         );
-
-        if scrub {
-            print_warning(
-                progress_bar,
-                "RVZ_SCRUB is unsupported by nod, writing unscrubbed",
-            );
-        }
 
         write_rvz(
             &self.romfile.path,
@@ -301,7 +292,7 @@ async fn hash_disc<P: AsRef<Path>>(
     .context("Disc reader task failed")?
 }
 
-/// Convert an ISO to RVZ. nod cannot scrub RVZ.
+/// Convert an ISO to RVZ.
 async fn write_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
     source: P,
     destination: Q,

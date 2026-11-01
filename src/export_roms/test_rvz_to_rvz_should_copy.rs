@@ -64,7 +64,6 @@ async fn test() {
         &RvzCompressionAlgorithm::Zstd,
         5,
         128,
-        false,
     )
     .await
     .unwrap();

@@ -305,7 +305,6 @@ pub async fn main(
                 let block_size = get_integer(connection, "RVZ_BLOCK_SIZE", Some(system.id))
                     .await
                     .unwrap();
-                let scrub = get_bool(connection, "RVZ_SCRUB", Some(system.id)).await;
                 to_rvz(
                     connection,
                     progress_bar,
@@ -315,7 +314,6 @@ pub async fn main(
                     &compression_algorithm,
                     compression_level,
                     block_size,
-                    scrub,
                 )
                 .await?
             }
@@ -1358,7 +1356,6 @@ async fn to_rvz(
     compression_algorithm: &RvzCompressionAlgorithm,
     compression_level: usize,
     block_size: usize,
-    scrub: bool,
 ) -> Result<()> {
     // partition archives
     let (archives, others) = partition_games_by_extensions(
@@ -1394,7 +1391,6 @@ async fn to_rvz(
                 compression_algorithm,
                 compression_level,
                 block_size,
-                scrub,
             )
             .await?;
     }
@@ -1413,7 +1409,6 @@ async fn to_rvz(
                 compression_algorithm,
                 compression_level,
                 block_size,
-                scrub,
             )
             .await?;
     }
@@ -1422,36 +1417,20 @@ async fn to_rvz(
     for roms in rvzs.values() {
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        if scrub {
-            let tmp_directory = create_tmp_directory(connection).await?;
-            rvz_to_iso(connection, progress_bar, romfile, &tmp_directory)
-                .await?
-                .inner
-                .to_rvz(
-                    progress_bar,
-                    destination_directory,
-                    compression_algorithm,
-                    compression_level,
-                    block_size,
-                    scrub,
-                )
-                .await?;
-        } else {
-            copy_file(
-                progress_bar,
-                &romfile.as_common(connection).await?.path,
-                &destination_directory.join(
-                    romfile
-                        .as_common(connection)
-                        .await?
-                        .path
-                        .file_name()
-                        .unwrap(),
-                ),
-                false,
-            )
-            .await?;
-        }
+        copy_file(
+            progress_bar,
+            &romfile.as_common(connection).await?.path,
+            &destination_directory.join(
+                romfile
+                    .as_common(connection)
+                    .await?
+                    .path
+                    .file_name()
+                    .unwrap(),
+            ),
+            false,
+        )
+        .await?;
     }
 
     Ok(())
