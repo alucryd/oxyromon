@@ -845,7 +845,7 @@ fn write_bits(bits: &mut BitstreamOut<'_>, value: u64, count: u32) {
 /// table export and encoding of that stream; a second walk which, reading
 /// the symbol stream back, writes each entry's surviving payload bits; and
 /// the map's 16-byte header.
-fn compress_map(
+pub(crate) fn compress_map(
     rawmap: &[u8],
     hunk_count: u32,
     unit_bytes: u32,
