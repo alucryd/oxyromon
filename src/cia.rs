@@ -71,7 +71,7 @@ pub async fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
 
     let input = archive_path.as_ref().to_path_buf();
     let output = directory.as_ref().to_path_buf();
-    // the TMD as the DAT records it: the metadata plus the CA and TMD
+    // the TMD as the DAT records it: the metadata plus the TMD and CA
     // certificates, appended in that order
     let certs_path = output.join("certs");
     let tmd_path = output.join("tmd");
