@@ -534,7 +534,11 @@ impl ToRdsk for ChdRomfile {
             false,
         )
         .await?;
-        CommonRomfile::from_path(&path)?.as_rdsk().await
+        // Not as_rdsk: the RDSK magic is an Amiga Rigid Disk Block, which most
+        // hard disks, arcade ones included, do not start with
+        Ok(RdskRomfile {
+            romfile: CommonRomfile::from_path(&path)?,
+        })
     }
 }
 
@@ -897,5 +901,7 @@ pub async fn get_version() -> Result<String> {
     Ok(String::from("built-in"))
 }
 
+#[cfg(test)]
+mod test_hd;
 #[cfg(test)]
 mod test_ld;

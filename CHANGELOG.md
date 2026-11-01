@@ -31,6 +31,7 @@
 
 ## Fixes
 
+- Fixed checking, sizing and converting a hard disk CHD failing with "Not a valid rdsk" unless the disk began with an Amiga Rigid Disk Block, which most arcade hard disks do not
 - The web UI's system deletion dialog no longer says the files on disk are left alone: they move to the system's `Trash`
 - Fixed `create-dats` reading each file three times, once per checksum; it now reads it once
 - Fixed `create-dats` sometimes writing a DAT cut short, and `import-roms` sometimes hashing a CIA's TMD before its certificates were written to it
