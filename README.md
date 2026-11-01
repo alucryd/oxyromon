@@ -174,7 +174,6 @@ These environment variables change where things go:
 | `RVZ_BLOCK_SIZE`                  | RVZ block size in KiB, `32` to `2048`                                                                    | `128`     |
 | `RVZ_COMPRESSION_ALGORITHM`       | RVZ codec: `none`, `zstd`, `bzip2`, `lzma`, `lzma2`                                                      | `zstd`    |
 | `RVZ_COMPRESSION_LEVEL`           | RVZ level, `1` to `22` for zstd and `1` to `9` otherwise                                                 | `5`       |
-| `RVZ_SCRUB`                       | Scrub RVZ exports; currently ignored with a warning, as the RVZ backend cannot scrub                     | `false`   |
 | `SEVENZIP_COMPRESSION_ALGORITHM`  | 7Z codec: `lzma2` or `zstd`                                                                              | `lzma2`   |
 | `SEVENZIP_COMPRESSION_LEVEL`      | 7Z LZMA2 level, `1` to `9`                                                                               | `9`       |
 | `SEVENZIP_ZSTD_COMPRESSION_LEVEL` | 7Z Zstandard level, `1` to `22`                                                                          | `19`      |
