@@ -4,6 +4,7 @@ use super::convert_roms;
 use super::database::*;
 use super::download_dats::download_redump_systems;
 use super::generate_playlists;
+use super::mcp::WRITE_LOCK;
 use super::progress::*;
 use super::purge_games;
 use super::purge_irds;
@@ -25,8 +26,9 @@ use tokio::sync::broadcast;
 /// The connection is acquired *inside* the task and a failure to acquire is
 /// reported as an SSE error rather than a panic, so the UI never hangs waiting
 /// for a completion event that will never arrive. `{prefix}_started` goes out
-/// first: with every connection taken, the action waits for one, and the UI
-/// should show it has begun rather than nothing at all.
+/// first: the action then waits for `WRITE_LOCK`, behind any other action, and
+/// for a connection, and the UI should show it has begun rather than nothing at
+/// all.
 fn spawn_cli_action(
     pool: SqlitePool,
     sse_tx: broadcast::Sender<SseMessage>,
@@ -44,6 +46,7 @@ fn spawn_cli_action(
             &format!("{prefix}_started"),
             json!({ "message": start_message }),
         );
+        let _write_guard = WRITE_LOCK.lock().await;
         let mut connection = match pool.acquire().await {
             Ok(connection) => connection,
             Err(e) => {
@@ -243,6 +246,7 @@ impl Mutation {
             .clone();
 
         tokio::spawn(async move {
+            let _write_guard = WRITE_LOCK.lock().await;
             let mut connection = match pool.acquire().await {
                 Ok(connection) => connection,
                 Err(e) => {
@@ -329,6 +333,7 @@ impl Mutation {
 
         // Spawn background task for deletion
         tokio::spawn(async move {
+            let _write_guard = WRITE_LOCK.lock().await;
             let mut connection = match pool.acquire().await {
                 Ok(connection) => connection,
                 Err(e) => {
@@ -747,3 +752,6 @@ impl Mutation {
         Ok(true)
     }
 }
+
+#[cfg(test)]
+mod test_write_lock;
