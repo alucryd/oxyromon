@@ -628,7 +628,10 @@ impl Chd {
                 }
                 if let Some(parent) = self.parent.as_mut() {
                     let unit_bytes = u64::from(parent.unit_bytes);
-                    return parent.read_bytes(block_offs * unit_bytes, dest);
+                    // chd_file::read_bytes bounds by hunks, not by logical
+                    // size: a clone's hunk may map onto the parent's last,
+                    // partial hunk
+                    return parent.read_hunk_bytes(block_offs * unit_bytes, dest);
                 }
                 return Err(Error::Unsupported("CHD requires its parent file".into()));
             }
@@ -653,6 +656,12 @@ impl Chd {
         {
             return Err(Error::InvalidOption("read past end of CHD".into()));
         }
+        self.read_hunk_bytes(offset, dest)
+    }
+
+    /// Reads `dest.len()` bytes from `offset`, which may run into the
+    /// padding of the last hunk, as `chd_file::read_bytes` does.
+    fn read_hunk_bytes(&mut self, offset: u64, dest: &mut [u8]) -> Result<()> {
         let hunk_bytes = u64::from(self.hunk_bytes);
         let mut pos = offset;
         let mut done = 0usize;
@@ -981,7 +990,8 @@ fn decompress_v5_map(
                 offset = u64::from(last_self);
             }
             TYPE_PARENT_SELF => {
-                last_parent = u64::from((hunknum as u32).wrapping_mul(hunk_bytes) / unit_bytes);
+                // in 64 bits, as chd_file does: a DVD clone's hunks pass 4 GiB
+                last_parent = hunknum as u64 * u64::from(hunk_bytes) / u64::from(unit_bytes);
                 hunk[0] = TYPE_PARENT;
                 offset = last_parent;
             }
@@ -1004,4 +1014,73 @@ fn decompress_v5_map(
         return Err(Error::Corrupt("map failed its CRC check".into()));
     }
     Ok(rawmap)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+
+    /// A DVD clone whose hunks all point at the same place in the parent
+    /// passes 4 GiB of logical data; its map reads back as it was written.
+    #[test]
+    fn parent_self_map_past_4_gib() {
+        let (hunk_bytes, unit_bytes) = (4096u32, 2048u32);
+        let hunk_count = (5u64 << 30) / u64::from(hunk_bytes);
+        let mut rawmap = vec![0u8; hunk_count as usize * 12];
+        for (hunknum, entry) in rawmap.chunks_mut(12).enumerate() {
+            entry[0] = TYPE_PARENT;
+            let unit = hunknum as u64 * u64::from(hunk_bytes / unit_bytes);
+            put_u48be(&mut entry[4..], unit);
+        }
+        let compressed =
+            crate::writer::compress_map(&rawmap, hunk_count as u32, unit_bytes, hunk_bytes)
+                .unwrap();
+        let mut file = tempfile::tempfile().unwrap();
+        file.write_all(&[0; 16]).unwrap();
+        file.write_all(&compressed).unwrap();
+        let decoded =
+            decompress_v5_map(&mut file, 16, hunk_count as u32, hunk_bytes, unit_bytes).unwrap();
+        assert!(decoded == rawmap);
+    }
+
+    /// A clone of an image that ends mid-hunk reads its last hunk from the
+    /// parent's last, partial hunk, padding included, as chd_file does.
+    #[test]
+    fn clone_reads_parent_partial_last_hunk() {
+        let dir = tempfile::tempdir().unwrap();
+        let image = dir.path().join("disc.iso");
+        let data: Vec<u8> = (0..8192 * 3 + 2048).map(|i| (i * 7 % 251) as u8).collect();
+        std::fs::write(&image, &data).unwrap();
+        let codecs = [crate::codec::CODEC_ZLIB, 0, 0, 0];
+        let parent_path = dir.path().join("parent.chd");
+        crate::create(
+            &image,
+            &parent_path,
+            2048,
+            8192,
+            codecs,
+            None,
+            &[],
+            &mut |_| {},
+        )
+        .unwrap();
+        let mut parent = Chd::open(&parent_path).unwrap();
+        let clone_path = dir.path().join("clone.chd");
+        crate::create(
+            &image,
+            &clone_path,
+            2048,
+            8192,
+            codecs,
+            Some(&mut parent),
+            &[],
+            &mut |_| {},
+        )
+        .unwrap();
+        let mut clone = Chd::open_with_parent(&clone_path, &parent_path).unwrap();
+        let mut read = vec![0u8; data.len()];
+        clone.read_bytes(0, &mut read).unwrap();
+        assert!(read == data);
+    }
 }
