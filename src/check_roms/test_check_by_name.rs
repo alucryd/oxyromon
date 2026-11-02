@@ -57,8 +57,7 @@ async fn test() {
     file.sync_all().await.unwrap();
 
     // when
-    let matches =
-        super::subcommand().get_matches_from(["check-roms", "--system", system.name.as_str()]);
+    let matches = super::subcommand().get_matches_from(["check-roms", "-s", system.name.as_str()]);
     super::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
