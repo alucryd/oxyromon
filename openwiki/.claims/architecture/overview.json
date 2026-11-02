@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a467285d21bcbb25a4d95b5b6e5b0686a114e499e854494d7e67dea75e987769",
+  "pageVersion": "sha256:d968adbd3be26b7fa63b6e39ac110ab5451bc14cd6f5ee5bd2b02b78b36968ba",
   "claims": [
     {
       "id": "claim_d425cce21bc645aaadc3b688834e2cc5",
@@ -55,7 +55,7 @@
       "statement": "`src/main.rs` runs batch subcommands inside a block that holds the single pooled connection, then dispatches `mcp::main(pool.clone(), ...)` and `server::main(pool.clone(), ...)` outside that block because those hosts multiplex requests, and finally calls `optimize_database(pool)` — which itself needs a connection.",
       "evidence": [
         {
-          "resource": "repo://src/main.rs#L135-L185",
+          "resource": "repo://src/main.rs#L138-L188",
           "version": "repo-lines-v1:sha256:618c85084ad7f2e37a948bd15c391b3a36f8dc52b0bc9d95a635c74821f6688a:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NmI0MGU5ZmRjNGQwYTQzZDUyNDc5MTBjNzUxZmIyNDVjN2FkNmQxNzEwZGI0NTZiMzBjNWU1MzQ5ZDA5MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNDM5MGEwMmY3NDQwMjc0MTNlYTQ0MjhmMzBmMzM0MmNkYzE2ZTA5M2MwNTllZTA1YWFkYjUwYjY3N2Q2NjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxZTliOGIyMGU3OTIzZmNkZTk2NGFjN2YyZmE5NDQ0ZjVmODk3ZGNlZmI5YTZjNzQwZWNjMGUxNTM3MmFkMjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5YjNlZDU4MWY5ODVlNTk5Zjk1ZTNlMmU2YTEzZDA1MTVjNzQzMzg1MmEzYjQ2NTFjODI1YTExNGIxOWJmZjEifQ"
         }
       ]
@@ -266,23 +266,27 @@
     },
     {
       "id": "claim_c49c1b5c3103485b841903e94bcc0a85",
-      "statement": "Under `oxyromon mcp` (or `/mcp`) stdout is the MCP JSON-RPC channel, so nothing on a reachable code path may `println!` there; all user-facing output goes through the categorized `print_*` helpers in `progress.rs`, which write via the global `MultiProgress`, and `log::*` records are bridged onto the same UI in `main.rs`.",
+      "statement": "Under `oxyromon mcp` (or `/mcp`) stdout is the MCP JSON-RPC channel, so nothing on a reachable code path may `println!` there; all user-facing output goes through the categorized `print_*` helpers in `progress.rs`, which write via the global `MultiProgress`, or straight to stderr for a one-shot command when stderr is not a terminal, and `log::*` records are bridged onto the same UI in `main.rs`.",
       "evidence": [
         {
           "resource": "repo://src/import_roms.rs#L362-L370",
           "version": "repo-lines-v1:sha256:1aee9339a666377b146bb40f5be4c5103ef62ab7c0a454152f58b3f096377dd3:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg0OWUxN2M5NTcwYzc1NTQ3MzA1OTYyNjQ2NzY4Nzc2MjZiMmU5MjU5YzUxYTZjNmU2OWEwMGMwN2VkMDlmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGFiMjAyMWViY2VhZWJjYmMwYzQ3YWNjNTA2OGMyNjM2ZjdiZjJkZmJmMDVhM2Y1ZDQ3YWM3MTRjZDVjNGQyOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODA0ZjI3ZWMxMTQ3YWM2ZGRhNzgyZmQyMTI3NjkxMmIxZWViZTg5MDhiZmEzODAzZDZlY2ZlZjYyZDViYmIwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTVjYWI3NDdmNTUxOTlhNTEwZTQ3MWM1MmE3YWQ2NzIyZDNhYmZjNmMyMWNlMzlkYTQ3N2E5YTI1YzZmMjY4MCJ9"
         },
         {
-          "resource": "repo://src/main.rs#L104-L120",
-          "version": "repo-lines-v1:sha256:ec48790f6359edcadcb0ca4de467bdbccfda2c5f21cb4fdd028c42cc027362e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMjMxMzEzOTNkNTQwODI0NzM5YTA3NWJiNjA1YjIyOTllOWE3YjFlNzg0N2Q2MzRhMjNmMzcwM2MwNmY5ZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5ZDllOThiNWVjNTY3OWM1OTQ1ZmUwM2YxMDlmYjgxODMxZDdhZGY1ZWFhNWM0NWI2ZTRkNmMyYWJlYWZiODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzNDM2OWI3MWEyNDM1ZDhmZjQzZjY3ZTY5MjMyMGQwZDVjNDkwMjZiZmFhMDk1MWUxYmMwYzZjODcwNjE4MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlMjFjYTFhNGZkYzk5ZDNjZWJlZGVmOWM0ZjI0OGMyMjMwNDFlODIzNGM4YjcyZmE0ZTBiNzViMjEyZmY1NmYifQ"
+          "resource": "repo://src/main.rs#L104-L123",
+          "version": "repo-lines-v1:sha256:e7352d0227baee8bd2e97abe2952ad6d33ca69996b77a2d7281f71b6e2c0d09d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMjMxMzEzOTNkNTQwODI0NzM5YTA3NWJiNjA1YjIyOTllOWE3YjFlNzg0N2Q2MzRhMjNmMzcwM2MwNmY5ZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5ZDllOThiNWVjNTY3OWM1OTQ1ZmUwM2YxMDlmYjgxODMxZDdhZGY1ZWFhNWM0NWI2ZTRkNmMyYWJlYWZiODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzNDM2OWI3MWEyNDM1ZDhmZjQzZjY3ZTY5MjMyMGQwZDVjNDkwMjZiZmFhMDk1MWUxYmMwYzZjODcwNjE4MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4YjdiZTZkMzFjNzQ3NGQ2MmM1OThmMWQwNmRkZWU1NGMwOWJiNDBmZjJmYWU5N2RlNTE2MDQxMzU4YTBlNDEifQ"
         },
         {
           "resource": "repo://src/mcp.rs#L5-L13",
           "version": "repo-lines-v1:sha256:5ce6e0e193a8886444af0bb561746bccfafb8e39309c433ff05f3f808a39eb26:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGY2ZTM1MzRiOGFlNDg4NmI3NTE4OTY4MWJiMDZhNjgwZWNjOTlkODYyOTI2NWViYWZmMzIwZmZjMzcyNzQwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDhhODBjOTFlYzc2YjY3MmMzYTYyOTM3NTRmYzc2NzhlYWFkZjAxYzkxNjQ4MjkwYzQ5NjAxMWY5YTE2OTMzNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDE1MmQxNWFiMDE5OWY4NDViZjExYWUzNTMwZTFmNWMxZDgxZWRkOWFlY2NlMGVjY2U1NjM2MzkxZTMwN2U4NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGVjYWIwYTMxOTU5YzcwNGY1YWI5MDA1Mzc5MWY3NzkzMTA4NjRiZTFhOWI2YWEzYzgwN2YwNjllN2U2MzA0OCJ9"
         },
         {
-          "resource": "repo://src/progress.rs#L17-L34",
-          "version": "repo-lines-v1:sha256:653d4a1c96faea445472cea2863afc98bf6ddf31f319c251e67de08222c32772:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YjMyZWU0ZWQ0MjBhYTE2ZTBiYWEzMTEyNmJjOTZiOTViZmQ3MjI0OTIyYjQxYTgzZTBlMzBlMTg0Y2EzYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2MDZkZjkwZTMyN2JjMTJlODA4ZWVlNGRiMTIxMTlhYjMzY2U1NjhjNmI4ZjAwY2NhZDY0ZjAyYzg0MzE3NTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkYTVlMWEzZTI2YmJkMWUyMWRkNTA5YTIzOWJmYjA2NjE0MTM0NDgwMjlhMWQxMTNiMjc3ZWMyYTI5MTg0MTAifQ"
+          "resource": "repo://src/progress.rs#L104-L119",
+          "version": "repo-lines-v1:sha256:d89083effb3f97f40e45f36ab9409bd41e93d24342df8e4bdc3ec9b25dfab5ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2NGFiN2Y4MDNlNzE4NTU1NTkwNmE5MzNjMjhlNTg1Y2E5YzJhMjYzMjkwNzQwMmM3Y2Y4ZDAzODEyZjAyYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiMTNlOTkwN2ZjMjQ5YjYxYjdlZGFlZWRmN2UyNDZiMzA4NDQ2MjYzZTNkOTM5MDg3NTE1OGM3NTZmNGNlMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwZjkyMWQwYzdjOGY2NDIxZDk5YjAxYWU3NWIyZWY3YTJiNmZjYjMzYWMxNDc5YmI3NjYxYzcxMzg2YmM0NjYifQ"
+        },
+        {
+          "resource": "repo://src/progress.rs#L17-L38",
+          "version": "repo-lines-v1:sha256:5f2f995e2e5feb5c249832e13f7bfa76122c1f8a38c6ddfac5b1081a5446f282:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NWYzNTNkODc0YWE4YzcwMDJmNjY0ZmNkNzcyYjgxY2I1MmVlNTAyYTcwMDI3YzZiYmJkZTNlNzkxNjQwYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzODhkY2FlMTE0ZDNiZjQzZTQwNDdlYzZkOWNmOWYxMGUzOTFlOThiNTk2OTIxNjBlY2E4MDMyN2ZlMzc1ZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4OTUxZWU2NjJmZGY4ZDU5YjU3YjQ0MTJhN2Q0NTRmYjVhN2JkOTcxMjZlNzYyN2QyY2ZhOWRlZTdiMTRkZmQifQ"
         }
       ]
     },
@@ -303,7 +307,7 @@
           "version": "repo-lines-v1:sha256:213896242f0df7a372499aafcbcf2e2c15367038ce5ff936b2de930f8adfbacf:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhYTE3YzEyYzIwOWQ1MzNlZTUwNTU5NWY1N2IxYjdlZWI3NmE4MjBkOTFkMjRiNTAzZjk3NGQ5MDcxMDM1MmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxMjA3ZGQwNWEwMGNjODAyNTQyOWMzYzVhZTdiNGRiZDU1ZjBiYzE5NDFjZDFkYjIwZDZkYzllZmM5YzY3ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyMmU1YjUwZWI0MDM4MmViYmJhZjQ0Mzk1YWE4NjRiNjBlMTAyM2RiNWRlNjRlNjJlNmU5MDhhYzE2MTc2ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0MTBhNjY3Y2QwYzU4YjZkYjRkMWNhOTJiY2IyMmQ2ZGEwZGFmZmQ1NjQ2Njg4MDlmZWE4YzBlMTZmNWVmZGQifQ"
         },
         {
-          "resource": "repo://src/progress.rs#L72-L97",
+          "resource": "repo://src/progress.rs#L75-L100",
           "version": "repo-lines-v1:sha256:d698d204244294e8368a1beec4d3d4839f368640bf56b511f7286bbb8b6d76b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NGIxNTA2YzQ4YjcwNmZjYTE5Njk1YzE5M2FkNmFjOWU4NjM4YzE0OGI2MDU2NDU0Mjg3OTM4NjBlMjI4NzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3NTcyMjA5ZmZjNDIxMjVhMjRlYjdiODNkZDQ4ZjA2NDNiYmVhNWUxNTNlNjhjNzBjNjk4NmUyZjM3ZGNmYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMTNlOTkwN2ZjMjQ5YjYxYjdlZGFlZWRmN2UyNDZiMzA4NDQ2MjYzZTNkOTM5MDg3NTE1OGM3NTZmNGNlMDQifQ"
         },
         {
@@ -381,7 +385,7 @@
           "version": "repo-lines-v1:sha256:7c310d5f111244b7f89e14968f60891b3fdbd802f747cd986754fd49b0659672:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZmYyOWVjODRkYTEzZDFjZDE2OGViMDc0NWQ2OTBlMDExNDIwMzJiZmExZWI4OGExZjMyNDZiNzE0Zjk2ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlY2UyNTU4YzNkNjRhNmNjZWIzYjcxNjcxNjgzMzA3MWEzMjdhNzI1ZGFkMTI4M2QxY2U0NDQ1ZjI3ZWEzNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmZTEwYzlmZWI5NjQ2NjFhYWJmYTg2NTQ0NDYxMTk5ZWRmYmRjNTY0MmM5NzU2Nzc5Y2RiN2MyYjUwMWViMGIifQ"
         },
         {
-          "resource": "repo://src/main.rs#L131-L133",
+          "resource": "repo://src/main.rs#L134-L136",
           "version": "repo-lines-v1:sha256:328b5c7e04cb449428db5a21baccdd3ea6049fd80e8798c9f8fb51f85d7c4a1b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzkzNjg2ZjY1ZjI3OTIxNjMxMGYzN2JmZmMxZDNhZWU4Y2NkYTliYmFkMjRhYmZmODJlOGZhMWE3MDdhYjE3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNmMTlmMTI2MGJkOGFmOTM2NTAwMmRmYjJjMWYwOGJlODMzMzRiNzU3MDA0Y2VjMjZhMzRjZThhMGZkODhlZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWVmMWFlNDM0YWQ0ZmM5ODYzMjI3YzI1MTc5NjExMzQ2ZjM3ZDQ4MDMyZTJlMTdjYzc2ZDk2OTExZjRhZmQyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzNkMmQ4MDgzMjJiMjEwYjNmZDdkMzc4MTgyMmUyOTBkNjc5NzdlZTE4ZmUxNTk5ZmU2ZjMyZTkyODE3NzlmOCJ9"
         }
       ]
@@ -413,7 +417,7 @@
       "statement": "CHD decoding and creation run in-process through the `chd-rs` crate rather than a chdman subprocess: `chd.rs` reads headers with `Chd::open`/`Chd::open_with_parent` on `spawn_blocking`, and drives `chd_rs::create_cd`/`create_dvd`/`create_hd`/`create_ld` and `extract_cd`/`extract_ld`/`Chd::extract` through `run_blocking`, reproducing chdman's own default codec lists and hunk sizes when the user gives none. With CIA also in-process through cia-rs, no format needs anything installed on `PATH`.",
       "evidence": [
         {
-          "resource": "repo://CHANGELOG.md#L23-L23",
+          "resource": "repo://CHANGELOG.md#L24-L24",
           "version": "repo-lines-v1:sha256:bf2066e139155726eae0f26d5119a0c096787998daf2f31ae9f64767321b75b8:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmYyMDY2ZTEzOTE1NTcyNmVhZTBmMjZkNTExOWEwYzA5Njc4Nzk5OGRhZjJmMzFhZTlmNjQ3NjczMjFiNzViOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmYyMDY2ZTEzOTE1NTcyNmVhZTBmMjZkNTExOWEwYzA5Njc4Nzk5OGRhZjJmMzFhZTlmNjQ3NjczMjFiNzViOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDVlM2RhMDNkODUyMmNhMDRmNWYyYTI4ZjU5OTdlM2EwMjljNjExMTgyZmViN2MwNzZkMWQ4YTM1ZTcyOTk2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTlmOTgzZmNmNWE1NzI5ZDVjZjE5YjlmMjBhZDU5NjQyZTUzYWNmNGJhN2M1NmVlMjc1MTM1MWZiNWM0MWJhOSJ9"
         },
         {
@@ -485,6 +489,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-01T22:28:11.879Z"
+    "at": "2026-11-02T21:30:44.962Z"
   }
 }

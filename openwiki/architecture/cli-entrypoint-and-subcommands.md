@@ -5,7 +5,7 @@ description: How src/main.rs registers clap subcommands, runs global startup (do
 tags: [cli, entrypoint, clap, subcommands, connection-scope, tokio, sqlite, info]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-02T21:30:44.962Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -57,7 +57,9 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+  - id: openwiki-source-d3ba64341f3a424837662eeb
+    resource: repo://tests/cli_output.rs
+generated: { by: "claude-code", at: "2026-11-02T21:30:44.962Z" }
 ---
 
 # CLI Entrypoint and the Subcommand Contract
@@ -247,8 +249,12 @@ goes through the categorized `print_header` / `print_subheader` / `print_info` /
 `print_success` / `print_warning` / `print_error` / `print_skip` / `print_action`
 helpers rather than raw `println!` (`import_roms` carries an explicit comment at
 the one place a stray `println!` used to live: stdout can be the MCP protocol
-channel). `cfg!(test)` is used where a selection would otherwise hang headless
-(`prompt_for_games(games, cfg!(test))`).
+channel). When stderr is not a terminal the bar hides itself and would drop those
+lines, so `main` turns on plain output for every subcommand but `mcp` and `server`,
+and the helpers then write straight to stderr
+([src/main.rs](../../src/main.rs#L114-L116),
+[src/progress.rs](../../src/progress.rs#L104-L119)). `cfg!(test)` is used where a
+selection would otherwise hang headless (`prompt_for_games(games, cfg!(test))`).
 
 ## The `info` report: dependencies and statistics
 

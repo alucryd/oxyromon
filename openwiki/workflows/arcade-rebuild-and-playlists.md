@@ -58,6 +58,8 @@ sources:
     resource: repo://src/query.rs
   - id: openwiki-source-2d7562030526fe478e02c8ca
     resource: repo://src/rebuild_roms.rs
+  - id: openwiki-source-9fb9ef47dcd158ab951ffbed
+    resource: repo://src/rebuild_roms/test_already_rebuilt.rs
   - id: openwiki-source-df495719acffd15555777f18
     resource: repo://src/rebuild_roms/test_full_non_merged_to_non_merged.rs
   - id: openwiki-source-58ba9477c498370023d4450e
@@ -80,10 +82,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-af9ca7a4de06de516c2bef85
     resource: repo://tests/Test%20System%20(20200721)%20(MAME%20Rebuild).dat
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-02T21:30:44.962Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-02T21:30:44.962Z
 ---
 
 # Arcade Rebuilds and M3U Playlists
@@ -189,23 +191,24 @@ flowchart TD
     D --> E["compute_system_completion"]
     E --> F{"system.merging == merging and not --force"}
     F -->|yes| G["skip: Nothing to do"]
-    F -->|no| U{"stored Merged, target not Merged"}
+    F -->|no| S["select games holding all their own files, by split completion"]
+    S --> U{"stored Merged, target not Merged"}
     U -->|yes| V["unmerge_game per game: stored becomes Split"]
     U -->|no| H
-    V --> H{"expand or trim direction, MERGED targeting Split"}
-    H -->|"Split/NonMerged to NonMerged/FullNonMerged"| I["expand_game per full game"]
-    H -->|"NonMerged/FullNonMerged to Split/NonMerged"| J["trim_game per full game"]
-    H -->|same tier| K["no file work"]
+    V --> H{"stored differs from target, NonMerged/FullNonMerged to Split/NonMerged, MERGED targeting Split"}
+    H -->|yes| J["trim_game per selected game"]
+    H -->|no| N
+    J --> N{"target NonMerged/FullNonMerged"}
+    N -->|yes| I["expand_game per selected game, then warn on partial games"]
+    N -->|no| W
     I --> W{"target Merged"}
-    J --> W
-    K --> W
     W -->|yes| X["merge_game per game, warn on skipped clones"]
     W -->|no| L
     X --> L["update_system_merging"]
     L --> M["re-read the system, compute_system_completion"]
 ```
 
-*Figure: `rebuild_system` — repair, short-circuit, unmerge, migrate, merge,
+*Figure: `rebuild_system` — repair, short-circuit, select, unmerge, migrate, merge,
 re-record, recompute.*
 
 ### The repair pass runs before the merge check
@@ -237,26 +240,42 @@ A merged set is a split one with each clone's own files in its parent's ZIP, so
 `MERGED` is reached through `SPLIT` both ways. Leaving `Merged` first runs
 `unmerge_game` on every game and treats the stored strategy as `Split`; a
 `MERGED` target is treated as `Split` for the expand-or-trim test, and
-`merge_game` then runs on every game. The expand-or-trim step itself is a
-two-branch test on (stored, target)
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L201-L239)):
+`merge_game` then runs on every game. The expand-or-trim step itself is two
+independent tests on (stored, target), the trim first
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L221-L244)):
 
 | Stored | Target | Work |
 | --- | --- | --- |
-| `Split` / `NonMerged` | `NonMerged` / `FullNonMerged` | `expand_game` for every `Full` game |
-| `NonMerged` / `FullNonMerged` | `Split` / `NonMerged` | `trim_game` for every `Full` game |
-| any other pair | — | only `update_system_merging` (unless `--force`) |
+| `NonMerged` / `FullNonMerged`, unlike the target | `Split` / `NonMerged` | `trim_game` for every selected game |
+| any | `NonMerged` / `FullNonMerged` | `expand_game` for every selected game |
+| any other pair | — | only `update_system_merging` |
 
 With the merged steps around it, `NON_MERGED → MERGED` trims to split then merges,
-and `MERGED → FULL_NON_MERGED` unmerges then expands. Both expand-or-trim
-branches operate on `find_full_games_by_system_id` — partial games are never
-expanded or trimmed, which is why the repair pass matters. The merge and unmerge
+and `MERGED → FULL_NON_MERGED` unmerges then expands. `FULL_NON_MERGED → NON_MERGED`
+trims and then expands, and forcing a strategy onto itself only expands, so clones
+imported since the last rebuild get their parents' files in every case.
+
+Both steps operate on the games selected just before them: `rebuild_system`
+recomputes completion with the split rule, then calls
+`find_full_games_by_system_id`, so a game qualifies by holding all its own files,
+whatever strategy it was last rebuilt with
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L201-L205)). Completion under the
+stored strategy would not do: a set already `NON_MERGED` counts a clone's parent files
+as required, so a clone imported after that first rebuild would stay `Partial` for
+lacking the very files the rebuild gives it. This is what merged HBMAME sets ran into,
+where only the clones sharing no ROM with their parent were rebuilt.
+
+A game missing some of its own files is not touched, which is why the repair pass
+matters, and expansion ends by warning `"<game>" is missing some of its own files,
+skipping` for each one. A game missing all of them stays silent, so that a DAT's
+machines nobody owns do not flood the output
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L229-L244)). The merge and unmerge
 passes walk every game instead, so a partial clone is not left in the other
 layout. After recording the new strategy, `rebuild_system` reads the system row
 again before `compute_system_completion`, so completion follows the new
 strategy rather than the one it rebuilt from. `--force` bypasses the
-early return, so a repeated `expand`/`trim` pass can be used to re-lay out files
-after manual tampering.
+early return, so a repeated expand pass can complete a set after new imports or
+manual tampering.
 
 ### expand_game: pulling parent files into a set
 
@@ -319,8 +338,9 @@ links and files, and neither ever deletes or mutates the parent's data. The full
 matrix is pinned by five tests: `test_nothing_to_do`, `test_split_to_non_merged`,
 `test_split_to_full_non_merged`, `test_non_merged_to_split`, and
 `test_full_non_merged_to_non_merged`, plus `test_split_to_non_merged_missing` for a
-missing source and the merged ones below
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L734-L753)).
+missing source, `test_already_rebuilt` for clones imported into a set already on
+`NON_MERGED` or `FULL_NON_MERGED`, and the merged ones below
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L737-L760)).
 
 ### merge_game and unmerge_game: the merged layout
 
@@ -575,10 +595,11 @@ LaserDisc, `lzma,zlib,huff,flac` for HD).
 - `rebuild-roms` has no GraphQL mutation today; it is CLI-only, while
   `generate-playlists` has one
   ([src/mutation.rs](../../src/mutation.rs#L507-L534)).
-- Rebuild touches only files whose *target* rom is part of a `Full` game under the
-  stored strategy. If you switch from `Split` to `FULL_NON_MERGED` while BIOS games
-  are incomplete, the BIOS roms stay unlinked and the clones end up `Partial` —
-  run the rebuild again after importing the BIOS.
+- Rebuild touches only games holding all their own files. If you switch from `Split`
+  to `FULL_NON_MERGED` while BIOS games are incomplete, `expand_game` prints
+  `Missing "<rom>"`, the BIOS roms stay unlinked and the clones end up `Partial`. The
+  new strategy is still recorded, so run the rebuild again with `--force` after
+  importing the BIOS.
 
 See also [Format Conversion and Export](format-conversion-and-export.md) for the
 CHD pipeline that consumes these playlists, and

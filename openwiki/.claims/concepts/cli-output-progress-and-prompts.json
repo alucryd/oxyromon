@@ -1,22 +1,22 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:25991e1c37eb5783b0d469564764b2aa3d25f2c99bc9bcb9f7501d450eda9c1d",
+  "pageVersion": "sha256:c3d3a7518478b3d621fb996e1b1ffe83055ae7bb91ed6b2d1341d9cdccd225fa",
   "claims": [
     {
       "id": "claim_77b116c7739346779859b7ffe4c75f3b",
       "statement": "src/progress.rs owns a single process-wide `static MULTI_PROGRESS: LazyLock<MultiProgress>`, and `get_progress_bar(length, style)` is the only helper that adds a bar to it, so bars created by the CLI, by GraphQL mutations and by MCP actions all stack in one render. The module also re-exports indicatif's `MultiProgress`, `ProgressBar` and `ProgressStyle` so `use super::progress::*;` is sufficient for consumers; no code calls `MultiProgress::remove`, and only `mcp::run_action` and `info::main` call `finish_and_clear()`.",
       "evidence": [
         {
-          "resource": "repo://src/info.rs#L63-L66",
-          "version": "repo-lines-v1:sha256:ff913c1e561bff477137679dcccb53bdd1c8ff1ceec4059f44ae1b20369e4b90:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmU5ZTQwMTBhZTgyMGE0MDU2NzcyZjA2MWIyY2M2YjlmZjE0NjNlN2JkZjEwNjFkZTU2YjdiMDA2NWZhMzQ0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzAyNzM4NWVkYjZhNTM0MGVlYWMxYTY1M2U4NzlkMDk0NGU2NzZhMzYzYjE2YjczNzVjYmZlNDk2MzZkZTA2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ5Y2ZjYmJhM2MzYzk3YTk2MDdiMjllNTNmNWVlNTE0YjllOTk3NTQ3YjI2MDU3YWU1OTFmNmYyOWVhZTU2NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTFmYjM2ZjA0NmQ0MWViYTFmMzIzNGM5ODQyYWI0YjJkMzQ3NTI2ZDE2NDc5NjhiNTg1ZTkwYzExOGVhZTVkYSJ9"
+          "resource": "repo://src/info.rs#L62-L68",
+          "version": "repo-lines-v1:sha256:400a60fe6fbd292db8d4f372d6be5eea4e8c94ddd4202bfa7a3aa925d40ec0dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTNjOTJjNmM2N2IwNzAxY2I5ZDBhMjEwODEzOTY0NzQwMDQ5YzU5OTQyZTJmN2RhYmJkMmRkZWM2MGI4NThhYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjhlYjcyODk3ZWVlMGI5YjE0ZmE5ODg5OGZlNjc4YjAxYzc0ZjhmOTllZmFhYmRkMDhmYzhiYWZkYWNiNzRjMCJ9"
         },
         {
           "resource": "repo://src/mcp/actions.rs#L100-L153",
           "version": "repo-lines-v1:sha256:92d189dcb7257a65cbff55eacb98a76c8edef1fdca32d0351f2b8e2ba4a21b46:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1MTM2YzAzYWEwNDNlYzU1OTQwZDJmY2M1OWUzMjA2YWE0MjEwNDcwYmVkMjViODljMjdiNWUzZDM2MmZmYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlZGY4ZDVkOTQyZmIwMTcwZTQ5Y2VmOTI5NTE4OTIwYTRiOTY0ZWU4NmMyY2Q5MWY0YzVhMWJlOTAyZTdhMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyNDIxNThhYWIyMWFhNGQ5ODk4ODU3YzUxZDE4MDNiNWZiYjRhY2M4MDIwMGNkNzk5OTU5OGFkMjA3ZGMwZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4YjE5MmExNzMwNDhjYTAyYTA0MTg3YThiYjllMWQ4NzRmMTgzNGI0ZmI4NGYwNGEyM2EwNTc2ZDk5MThmMTUifQ"
         },
         {
-          "resource": "repo://src/progress.rs#L8-L34",
-          "version": "repo-lines-v1:sha256:edd95c192ae24249fd48a0ba47c3bece7d765d601e4c33ef40f682ffc8159e7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0YzA3MmE3NTAwN2RmMTFmYTE1YzQ3NzQzZWE4OGU1ZmJlNDAwMWFlZTM5NTg3YzQxODFiMDM0Y2NkNmYxYzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MjhkOTY3MzUyZjkxNjEzZTc5YjM5ZDZiNzExOTg3ZTVkMTViNDg2YWVkNjZkYTgzNjY1MmZjM2M1MTQyODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkYTVlMWEzZTI2YmJkMWUyMWRkNTA5YTIzOWJmYjA2NjE0MTM0NDgwMjlhMWQxMTNiMjc3ZWMyYTI5MTg0MTAifQ"
+          "resource": "repo://src/progress.rs#L8-L38",
+          "version": "repo-lines-v1:sha256:344b8bcbcd2557cc1077c697ca5fc8e3ed5e704dcd97a058dc8d6ffd7ea2c082:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxOGY3NjY5NzFjOTRjMWI5Nzk1OWY0OWUzMDcxNzQ4YzFkMmRhZDE2MDNlNGRjZmY2YzNjZTFhYmJiYjE5YjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4OTUxZWU2NjJmZGY4ZDU5YjU3YjQ0MTJhN2Q0NTRmYjVhN2JkOTcxMjZlNzYyN2QyY2ZhOWRlZTdiMTRkZmQifQ"
         }
       ]
     },
@@ -25,8 +25,8 @@
       "statement": "The CLI entrypoint creates exactly one bar at startup (`get_progress_bar(0, get_none_progress_style())`), prints the version banner through it, and hands that same `&ProgressBar` to every subcommand `main()`, which may restyle it, set its length and tick it. Hosts without a TTY build their own bar instead: `get_progress_bar(0, get_none_progress_style())` for GraphQL settings mutations and MCP actions, `ProgressBar::hidden()` for spawned GraphQL actions, web upload handlers and most unit tests.",
       "evidence": [
         {
-          "resource": "repo://src/main.rs#L107-L120",
-          "version": "repo-lines-v1:sha256:df7e951be31492371beddcecb12fd35918c8398d5ab11054189cda2607f4d45c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwMDdmYzQ2MDM4NDY2OTA3OTM4MzVhMGNkYjYyOWZhMjYxMjA0ZmMzOWM4ZmM1MjFjZjA0ZDk0MDFiYzUxYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5ZDllOThiNWVjNTY3OWM1OTQ1ZmUwM2YxMDlmYjgxODMxZDdhZGY1ZWFhNWM0NWI2ZTRkNmMyYWJlYWZiODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1ODRjMmRjZDliMzMzZDJiMWU1MDdhNzc0ZDBlYjcxMWQ1NWMwMmNmNWU4NDg0OGNhMmU1YmNhNTI3ZGI4ZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlMjFjYTFhNGZkYzk5ZDNjZWJlZGVmOWM0ZjI0OGMyMjMwNDFlODIzNGM4YjcyZmE0ZTBiNzViMjEyZmY1NmYifQ"
+          "resource": "repo://src/main.rs#L107-L123",
+          "version": "repo-lines-v1:sha256:0970e94fcac5673fb7e30b5de731d80f0084c3939f5d1010fb7da783731d07d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwMDdmYzQ2MDM4NDY2OTA3OTM4MzVhMGNkYjYyOWZhMjYxMjA0ZmMzOWM4ZmM1MjFjZjA0ZDk0MDFiYzUxYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5ZDllOThiNWVjNTY3OWM1OTQ1ZmUwM2YxMDlmYjgxODMxZDdhZGY1ZWFhNWM0NWI2ZTRkNmMyYWJlYWZiODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1ODRjMmRjZDliMzMzZDJiMWU1MDdhNzc0ZDBlYjcxMWQ1NWMwMmNmNWU4NDg0OGNhMmU1YmNhNTI3ZGI4ZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4YjdiZTZkMzFjNzQ3NGQ2MmM1OThmMWQwNmRkZWU1NGMwOWJiNDBmZjJmYWU5N2RlNTE2MDQxMzU4YTBlNDEifQ"
         },
         {
           "resource": "repo://src/mutation.rs#L112-L131",
@@ -59,11 +59,11 @@
           "version": "repo-lines-v1:sha256:1cf4b5a01ecab7f4bc60c9c2f85ac18bc2490e1c3602a21a5e401bc43ec40bee:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGUyYjdhYjg4YTFkNjk5MGM3NzFlMWQzYWJjZGI3YTE5NWM5NWVhZjU3NjUzY2JmOWZhODA1ZDY5M2YwNDcwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQwNGFjYTdlODJkMGViYzUwZjllOTYzM2Y3MTQzZTE0MTk4OTBiOTQ4MmZjNTNmMDM2M2M0MjRlODJjZDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjJkODI4YTAzN2FjMWM4MTUzNWIxZDU1MDA4MzIzMjNiZmJiODY2YTNhM2Y4N2U3YTY4YzEzYTJiYWU1NmZmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWMyNzE5NDM1NGI4NGEwMWEyOTZhZDIzOGRlMWU2NDIyYzU5MjllZTgxNGI3OGJiY2ZjNDAyYjY0ZTg0NjdkYyJ9"
         },
         {
-          "resource": "repo://src/progress.rs#L10-L15",
+          "resource": "repo://src/progress.rs#L12-L17",
           "version": "repo-lines-v1:sha256:eed3f3d3ac79d9225050100808ef74b5234344abe57151798b9954575e64d7ef:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTVkZGI5YmU1YTRmMzRhNWQxN2Y1MzI2NmE1MTIxOWRkYjEyZTYwMTZhYjc3ZGM5ZWI3ZmJjMzUxYTAwOTI4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQ1ZjM1M2Q4NzRhYThjNzAwMmY2NjRmY2Q3NzJiODFjYjUyZWU1MDJhNzAwMjdjNmJiYmRlM2U3OTE2NDBiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDI3MzcwNTkwYjZhOGY3NGYzYjIyOWU1MmI2NGJjMzI0Zjg4YjI3ZTEzZjA0ZDcyZTgyNTU1YjM4MTAwOTFiZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWQyM2E0NTY0NmRmZWZjN2Q5MDY4YmU0NmZlZmE5YTY4NzEyNjJiMmJkNTg4MjlkZDQzODNiZGFkNzVlYTBiZCJ9"
         },
         {
-          "resource": "repo://src/progress.rs#L43-L70",
+          "resource": "repo://src/progress.rs#L46-L73",
           "version": "repo-lines-v1:sha256:f0ccba37940239038c844fcfd95d7c7a73bca20fc70ba3070954e6facb0031b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxOGJkOWM5YTczN2UwMDZkNmE4YWEwODM1NzFkNjJlMjNhNDhmMTMzMzg3MjIxNzlkYmM2ZmY2MjBkNzE3MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyYWQ2NWY5OWY4NDAzYmUzMDI0YTkzY2Q2NmVhZTEwMDQwODA4ZmNkNjBkYjBhNmE5OWU3NWZjZTgyZTVlN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjYWYyZGJlMGJiN2U5NmI4NDQ1YTBiN2ZjMTY3NGMxMGE3YTJjNjQ1MTViNWUwMzU2NzM4MDk2NzdmYWRhOWIifQ"
         },
         {
@@ -105,7 +105,7 @@
           "version": "repo-lines-v1:sha256:f8de9fb3deb3c593955a326b5aa78e47d357dbf2c9b16e9eeaa092635ff47f88:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzM3YzM5MWE3M2ZkYzIyNTMzNjU1YWI0ZTc3MjBhYzFiZGY0ZThlOGU2YmQ3Mjc2MjdlYWI4MmExZmNhMzFlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTY1ODg5OWQ1NzE2ZjZjYzdmOWQ2NTk5ZTY3NTY1ODc5YjBmODUzMDYyYmRiYmZkYmIxNTZhZTQ3ZDVhOTUyNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzRlZDc5YjZjOWNjNTM5MWZjNmI5MDIxYWY2OTIzNDBhZWQzZjNiNTM4ZjFhNWU2ZTNlNDM4Y2JmM2EyMDdmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWJjMzc3MjkyNzQ5YjZkZWU2YTBlZjZmN2M1ZTU1NWJhZjgxMTU1NTJkZmMzYjhkMzM1NzA4NGM0MjhiZDRiYSJ9"
         },
         {
-          "resource": "repo://src/progress.rs#L72-L97",
+          "resource": "repo://src/progress.rs#L75-L100",
           "version": "repo-lines-v1:sha256:d698d204244294e8368a1beec4d3d4839f368640bf56b511f7286bbb8b6d76b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NGIxNTA2YzQ4YjcwNmZjYTE5Njk1YzE5M2FkNmFjOWU4NjM4YzE0OGI2MDU2NDU0Mjg3OTM4NjBlMjI4NzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3NTcyMjA5ZmZjNDIxMjVhMjRlYjdiODNkZDQ4ZjA2NDNiYmVhNWUxNTNlNjhjNzBjNjk4NmUyZjM3ZGNmYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMTNlOTkwN2ZjMjQ5YjYxYjdlZGFlZWRmN2UyNDZiMzA4NDQ2MjYzZTNkOTM5MDg3NTE1OGM3NTZmNGNlMDQifQ"
         },
         {
@@ -128,19 +128,19 @@
     },
     {
       "id": "claim_5010615a582b48be8dd152d524d89240",
-      "statement": "Every user-facing line goes through nine categorized helpers in src/progress.rs — `print_header` (◆ bold cyan), `print_subheader` (▸ bold), `print_info` (ℹ dim), `print_success` (✔ green), `print_warning` (⚠ yellow), `print_error` (✖ red bold), `print_skip` (↪ dim), `print_action` (→ dim), `print_separator` — each a `ProgressBar::println` with fixed icon and indent. The project rule is never to call `progress_bar.println(...)` directly from a subcommand or format module; the only surviving direct calls outside progress.rs are the two donation-footer lines in `info::main`, immediately followed by `finish_and_clear()`.",
+      "statement": "Every user-facing line goes through nine categorized helpers in src/progress.rs — `print_header` (◆ bold cyan), `print_subheader` (▸ bold), `print_info` (ℹ dim), `print_success` (✔ green), `print_warning` (⚠ yellow), `print_error` (✖ red bold), `print_skip` (↪ dim), `print_action` (→ dim), `print_separator` — each a `print_line` call with fixed icon and indent. The project rule is never to call `progress_bar.println(...)` directly from a subcommand or format module; the only uncategorized lines outside progress.rs are the two donation-footer lines in `info::main`, which call `print_line` and are immediately followed by `finish_and_clear()`.",
       "evidence": [
         {
           "resource": "repo://AGENTS.md#L100-L118",
           "version": "repo-lines-v1:sha256:76b3da0c81714f892058410a7eefccff3462acf68e0b112c87da8a7b5246b2ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlMjlmYzFmYzZlMjRhMTcwNzVmMTg3OWY2MDk0Nzg2NDYzYWZjNmIwZDkzMGIxYjEwZGEwOTdmNWZkYmI1NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3YWUyNzRmOGE0NGNkYzJkYzAyNGNjMDA0NmQ0MGYxMzRlM2IyNzBhMDBlZDIxNjU3YjQ1M2UxYjA5MGI5M2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhYjM2ZDQzYTdjZDQ0ZjJlNzM1YTJjYWFkMTdiNjliZjA1MTk3ZmQzZTdiMDlhNDZhMmFhNTQ1OGM3OWVkNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxNmUzMjkxN2ZhYTI0NWQ4MzA5ZjNmZTc1ZWQzYjliNDM2MjZiMzViNmNmNmZmYjZmY2ViNDhlNGI4NTM5ZTYifQ"
         },
         {
-          "resource": "repo://src/info.rs#L63-L66",
-          "version": "repo-lines-v1:sha256:ff913c1e561bff477137679dcccb53bdd1c8ff1ceec4059f44ae1b20369e4b90:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmU5ZTQwMTBhZTgyMGE0MDU2NzcyZjA2MWIyY2M2YjlmZjE0NjNlN2JkZjEwNjFkZTU2YjdiMDA2NWZhMzQ0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzAyNzM4NWVkYjZhNTM0MGVlYWMxYTY1M2U4NzlkMDk0NGU2NzZhMzYzYjE2YjczNzVjYmZlNDk2MzZkZTA2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ5Y2ZjYmJhM2MzYzk3YTk2MDdiMjllNTNmNWVlNTE0YjllOTk3NTQ3YjI2MDU3YWU1OTFmNmYyOWVhZTU2NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTFmYjM2ZjA0NmQ0MWViYTFmMzIzNGM5ODQyYWI0YjJkMzQ3NTI2ZDE2NDc5NjhiNTg1ZTkwYzExOGVhZTVkYSJ9"
+          "resource": "repo://src/info.rs#L62-L68",
+          "version": "repo-lines-v1:sha256:400a60fe6fbd292db8d4f372d6be5eea4e8c94ddd4202bfa7a3aa925d40ec0dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTNjOTJjNmM2N2IwNzAxY2I5ZDBhMjEwODEzOTY0NzQwMDQ5YzU5OTQyZTJmN2RhYmJkMmRkZWM2MGI4NThhYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjhlYjcyODk3ZWVlMGI5YjE0ZmE5ODg5OGZlNjc4YjAxYzc0ZjhmOTllZmFhYmRkMDhmYzhiYWZkYWNiNzRjMCJ9"
         },
         {
-          "resource": "repo://src/progress.rs#L99-L172",
-          "version": "repo-lines-v1:sha256:da5a00a3c2fd319ce6c40dcad58db9fbf03e28988e693821d43c61bc8bff654c:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZWY5MGE0NjQzOTlhNTIxM2Q1ZWNmYTIwZDBiYWYzNTQ4NDE2M2Y3M2I3MTU3NGRhZWE0MWExYmM2MzE2YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4YmE2MGRiZjhjZTM0OTI5Y2ZkYzYwZjBiOTA1MGMyNTk2MzgxN2YzOWYwMTc3NWQwNDcxNjgzNjU2MjI4OWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://src/progress.rs#L111-L215",
+          "version": "repo-lines-v1:sha256:2a3af045e72a0a20bc9e9f507416410e5e167a0a54fd125c889c23c8f9688e12:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjZmMxMzFmNDliZTYxYWE4MjEwNzY2M2NkNGEyYjAyNGQ0ZWYzYjhlMTEyM2MxOGYzYTVkNGEzYzk1NTU4YWY5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzZGMxMjhlN2IwZTY5MDJhNzc2NTAwODI5NTgxNDM0YjhkOWQ3ZjMwM2NlMGVmMGUzZTM3ZGU2MzMyNWEyNTZiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -297,7 +297,7 @@
       "statement": "`import-roms --unattended <none|skip|first>` (default `none`) decides the fate of files needing a human: with `first` ambiguous ROMs are ranked by `jaro_winkler` against the file name and the best taken, with `skip` (or `first` with no name to rank against) the file is reported `Multiple matches, skipping` and returned as `MatchState::Skipped`, with `none` the user is prompted via `prompt_for_roms`. A PS3 jukebox folder with no `--system` warns and skips when unattended, otherwise prompts. `import-irds`/`purge-irds` derive a `headless` boolean from `--system`: headless picks the first parent ROM, purges every IRD game, and requires an exact tag-stripped title match (`unattended_game`) rather than a fuzzy best match, which would silently attach an IRD to the wrong game.",
       "evidence": [
         {
-          "resource": "repo://src/import_irds.rs#L61-L147",
+          "resource": "repo://src/import_irds.rs#L62-L148",
           "version": "repo-lines-v1:sha256:c96deb9e4946afd5b230ab9673c6b187f6ace7538cc4b80b1d27d40f52852338:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMGY4MGY2MTJjODc0NGMwMjdhNjkyOWU5NTMxZjJmMTMxNWFiMjhjMzcyMTIyOTAzNTM3N2Y4YmU3YzU1NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhYzc4ZjgzNDQ1NGU5YTZkOWI4MDM1ZGFlMjE1NzczMzEwZTdlNDM5NjJmMmFlNmVlNDRlY2E2OGNlYmU1MGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiOGViZmJlYWJmMzM0YWZiMzA1YjVjZWFjMDljNzg5MGEzMzZjYWQ3YThhNDEzNDIxYTMxNTUxMjBkMDY0YjgifQ"
         },
         {
@@ -317,7 +317,7 @@
           "version": "repo-lines-v1:sha256:d106940f98ac9d45a2b90ba80afd2bea898d0d61d55f9e587fcc595ccc21613f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhNWI3MTU0ZGVlNGM4MTU4YWJmZWEwMDMzYjM1ZmZjMmFhYmZmYWY5MzQ0MTE5ODFhNWE0NjFkNWY0Nzg3MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYjMzOWMxN2Q0Y2M1NGU3MGM0ZmNmZWNiNjExYmI5ZTdkMzYzZjI1YjE4ZTA5MjNhMWQzMDZjYzk1OTI0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhMzE3YjIxZTU2OTFiODA0ZjI2ZTM3MWZmNzc3NjRmOTU3MTIzMjRlYTg1MmY0M2JmNDdlZWRmMTJmMWYzOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlM2NhMGY0MGI3YWE2YmU0YzYzYjZjOGY5MTliNGZlMTY4MTQ1OGJiNzc1M2MwNGMxOThmYzk5ZDViODM3M2UifQ"
         },
         {
-          "resource": "repo://src/purge_irds.rs#L38-L90",
+          "resource": "repo://src/purge_irds.rs#L39-L91",
           "version": "repo-lines-v1:sha256:e29697228d1a1256472c059c31faba63703ffa9745a6850215036d2772194eaa:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlZmQ5NTNkNDA1MjNjM2QwNDU3MGQ1MmZkM2VlZTZhOTZiZjIxNGMzNjA2ZWJhNTM1MzczZjIxYThlYWU4YTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzOTAzOTBhNGQ2ZWYxZTAyMDQ5N2ExMTk0ZTJhNjQxNDU0Mzg2ZDVhOWRhYjZjZDRmZWQ2MDIyMzM3N2RiOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1NzA0ZGNiMDRlZjRjMjhiMDdmYWZjZjg2OTlkNzE4ZmZlY2EzZGRhZmQ0MWI5OGE4MDc4NzhmOWRmZDg1MTMifQ"
         }
       ]
@@ -405,7 +405,7 @@
           "version": "repo-lines-v1:sha256:7cd4ab8967603da1574370856b38574d5b2c1cc507bd3a533f80cc224cad76d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YWExN2MxMmMyMDlkNTMzZWU1MDU1OTVmNTdiMWI3ZWViNzZhODIwZDkxZDI0YjUwM2Y5NzRkOTA3MTAzNTJmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1MjJlNWI1MGViNDAzODJlYmJiYWY0NDM5NWFhODY0YjYwZTEwMjNkYjVkZTY0ZTYyZTZlOTA4YWMxNjE3NjgyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         },
         {
-          "resource": "repo://src/progress.rs#L72-L97",
+          "resource": "repo://src/progress.rs#L75-L100",
           "version": "repo-lines-v1:sha256:d698d204244294e8368a1beec4d3d4839f368640bf56b511f7286bbb8b6d76b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NGIxNTA2YzQ4YjcwNmZjYTE5Njk1YzE5M2FkNmFjOWU4NjM4YzE0OGI2MDU2NDU0Mjg3OTM4NjBlMjI4NzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3NTcyMjA5ZmZjNDIxMjVhMjRlYjdiODNkZDQ4ZjA2NDNiYmVhNWUxNTNlNjhjNzBjNjk4NmUyZjM3ZGNmYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMTNlOTkwN2ZjMjQ5YjYxYjdlZGFlZWRmN2UyNDZiMzA4NDQ2MjYzZTNkOTM5MDg3NTE1OGM3NTZmNGNlMDQifQ"
         }
       ]
@@ -429,10 +429,42 @@
           "version": "repo-lines-v1:sha256:cdcf3f734c76aa266e2528bc301ad65e5f221d9ab252d4c523ddefb705a11907:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjJjNDJjZDE5YzZkMDNkODA4YzQ1MjcyMDU1MjgyNWI3ZWExYzViNDkxYjIxODUxMWNhYzc0MTVjZjlkOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjOTZkNGYwY2ZmMWY2Yjc5MWJiZjVhNDA0Y2NlZDEzMzg4MTFkMmIyMDZmNzhjOWQwNmJlYTkwZWVlYjE3YTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkMjdlZTE2MWEyZGEyOWFlMTVlMWQxYTNlN2NjZWFlYjdiZmVmOGQ4YmY5YTVlMzJiYjY2NDA4YzljZmU1NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMDk3ZmQ2MDcwY2ZlMzljMDJiNmViM2UwOTA1NWUzNTQyZjRmZTkyMjU1NTQ0YzY5OTQzNjllZjJjNjc1ZGUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_686a809b15c54ddcb1d655a544de25b1",
+      "statement": "`print_line` calls `ProgressBar::println` unless plain output is on; `main` enables it for every subcommand except `mcp` and `server`, it takes effect only when the global MultiProgress is hidden, which happens when stderr is not a terminal, and lines then go straight to stderr with write failures ignored. `tests/cli_output.rs` runs the real binary with a piped stderr and asserts the banner reaches stderr and stdout stays empty.",
+      "evidence": [
+        {
+          "resource": "repo://src/main.rs#L113-L116",
+          "version": "repo-lines-v1:sha256:2d1dbddcd4eb5529c23fdd8314ccaa4f8d4d3872a10712576d2e461b062ba9c3:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZjMTgzOTJhODI1M2RlNTgzMWU5ZTgwYzdhOTM1NmQ3NWQ1YzVmNmMyMGEwYWU0YjFhZjkzODgzOWNlY2VhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWNkYzVlMGMxNmIxM2M3MDAzZjc1NzE1YTg5MThmMGY3ZjNkZDllYzYxMGE5ZjhhMGIyNjk1YjI3ZWZkMTk3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGU4YWM4NGFkYTU0MzNmOGMzZmE2YjczYzMwYWZkYzEyZjcwYzhiMTc5ODU4Y2E0YjdkOWZmNTIwODJiMjEyMyJ9"
+        },
+        {
+          "resource": "repo://src/progress.rs#L104-L119",
+          "version": "repo-lines-v1:sha256:d89083effb3f97f40e45f36ab9409bd41e93d24342df8e4bdc3ec9b25dfab5ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2NGFiN2Y4MDNlNzE4NTU1NTkwNmE5MzNjMjhlNTg1Y2E5YzJhMjYzMjkwNzQwMmM3Y2Y4ZDAzODEyZjAyYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiMTNlOTkwN2ZjMjQ5YjYxYjdlZGFlZWRmN2UyNDZiMzA4NDQ2MjYzZTNkOTM5MDg3NTE1OGM3NTZmNGNlMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwZjkyMWQwYzdjOGY2NDIxZDk5YjAxYWU3NWIyZWY3YTJiNmZjYjMzYWMxNDc5YmI3NjYxYzcxMzg2YmM0NjYifQ"
+        },
+        {
+          "resource": "repo://tests/cli_output.rs#L1-L19",
+          "version": "repo-lines-v1:sha256:001545a08afb0a11a1ebe3bc345ee5d5d7f9c081d19ffbb00cd14b5b97ff6c92:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3NmNkNDUxNDg3ZWQxYWNiZTg4YWExM2Q0MTU1MTVkODhkMjE4MGQ2NDgxNzAzYzY1MjU4NTI3YjgwYzMwNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_21fc833260e549bea17a198128bad310",
+      "statement": "The message styles in progress.rs and the label style in import-dats are built with `for_stderr()`, because the messages are written to stderr and `console` otherwise chooses colours from stdout's terminal state, which would put escape codes in a redirected stderr while stdout is a terminal.",
+      "evidence": [
+        {
+          "resource": "repo://src/import_dats.rs#L269-L271",
+          "version": "repo-lines-v1:sha256:4d21d3d4ec4253b728a44c4ccaf5a6b500014e8dd1ab6b7b83e2f904bdaf5878:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y5YTU4NzViNTJmNGE5NTBhNDAwOGQyZTUwZWFkMDJkN2JiNWZhZDJiZjVkMzBkOGMxYjNmZDBkM2FiZjA2MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdkNDk0NmVmYjI5MDliMTNkNGNiODEwOGM0OTc5NWUzMGZiNzM2ZTUyOTcyZmIwNTExM2U5NzBhNGVjMmVkYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDUxMWM4MWRkM2RkZTRmM2FkM2VhZGQ5N2U5MmZkNzRkZmJlMDYzZmEyYzBhOWZhYTZmZjYyZDRkYTgxZWQ5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTIyNjNmMWM5OWIxZmY5MDY5NWU4YTAyMDQwYTZiNjc4MGQxZjBkOWQzZGRiN2EyMWU1ZDZjYmZmOTQxMjM2YiJ9"
+        },
+        {
+          "resource": "repo://src/progress.rs#L21-L27",
+          "version": "repo-lines-v1:sha256:7f16cf4aebabef99085590ee8bf0ad1a0efddfbdc278578d5a727a0faa171c31:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjc2NDFjYWFkMDdjN2U5ZmNlNGE1ZmVlODdjNTE3ZDMzOTg5YzIzZjEyMDdiZTdkYmU2MTA3MjRjNWZlMmM1MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTM2NjExYWJmYTkxOTlkYmY1OWYzZDY5ZmFkZDU4YWM4OGUzODBjMGUxYTdjNzk2MDMwYWRlOWQ1NTZhMTI4MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWNlZmYyYTgzNDE2MWU1MjNiYTQyM2M1NTIzOWVkMzhjMjViYzA4YmQ5MTE5ZmU1ZDZhY2MyYTJlMGJlNDEyYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjYyYjdlYjMwZTQxM2MwYjYxMDliODVlZTkwZjRmMWFjMzVhYzZmMzE2NWUyNmYzN2I4MTViY2E5ZjViODQ3MSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-01T22:28:11.879Z"
+    "at": "2026-11-02T21:30:44.962Z"
   }
 }

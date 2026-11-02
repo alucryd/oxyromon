@@ -54,10 +54,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-2209a68ba11f4f6225c7aec7
     resource: repo://tests/Test%20System%20(20230527)%20(PSN).dat
-generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
+generated: { by: "claude-code", at: "2026-11-02T21:30:44.962Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-02T21:30:44.962Z
 ---
 
 # PS3 IRD Files and JB Folders
@@ -80,7 +80,7 @@ that recognises an IRD is in
 
 `import-irds <IRDS>...` and `purge-irds [GAMES]...` are ordinary clap subcommands
 registered in [`src/main.rs`](../../src/main.rs#L69-L170), each taking an optional
-`--system <NAME>` that turns the run unattended
+`-s/--system <NAME>` that turns the run unattended
 ([src/import_irds.rs](../../src/import_irds.rs#L24-L59),
 [src/purge_irds.rs](../../src/purge_irds.rs#L13-L31)). `import-irds` additionally
 takes `-i/--info` (print and stop) and `-f/--force` (re-import over an

@@ -76,12 +76,14 @@ sources:
     resource: repo://src/xps.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
+  - id: openwiki-source-d3ba64341f3a424837662eeb
+    resource: repo://tests/cli_output.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-02T21:30:44.962Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-02T21:30:44.962Z
 ---
 
 # Progress Bars, Categorized Output and Prompts
@@ -195,8 +197,8 @@ sequenceDiagram
 
 ## The categorized output helpers
 
-Every user-facing line is one of nine helpers, each a `ProgressBar::println`
-with a fixed icon, indent and `console::Style`:
+Every user-facing line is one of nine helpers, each a `print_line` call with a
+fixed icon, indent and `console::Style`:
 
 | Helper | Icon | Purpose |
 | --- | --- | --- |
@@ -210,6 +212,24 @@ with a fixed icon, indent and `console::Style`:
 | `print_action` | `→` dim | file operations |
 | `print_separator` | (blank line) | section spacing |
 
+`print_line` normally calls `ProgressBar::println`. A bar on a stderr that is not a
+terminal hides itself and drops those lines, so `main` calls
+`enable_plain_output_if_hidden` for every subcommand but `mcp` and `server`. When
+the `MultiProgress` is hidden, `print_line` then writes straight to stderr, with no
+progress bar, and a failed write is ignored
+([src/main.rs](../../src/main.rs#L114-L116),
+[src/progress.rs](../../src/progress.rs#L104-L119)). That is what makes
+`check-roms 2>log.txt` or a pipe produce a log. The two long-lived servers stay out
+of it because they hide their bars on purpose. `tests/cli_output.rs`
+pins the behaviour by running the real binary with a piped stderr
+([tests/cli_output.rs](../../tests/cli_output.rs#L1-L19)).
+
+The styles are built with `for_stderr()`, as is the label style in `import-dats`,
+because `console` otherwise decides on colours from stdout's terminal state. With
+stdout on a terminal and stderr redirected, a log would collect escape codes
+([src/progress.rs](../../src/progress.rs#L21-L27),
+[src/import_dats.rs](../../src/import_dats.rs#L270-L270)).
+
 **Hard rule: never call `progress_bar.println(...)` directly from a subcommand
 or format module.** Go through the `print_*` helpers, which route through the
 MultiProgress and therefore never tear an animating bar in half or interleave
@@ -217,10 +237,10 @@ with another bar's redraw. [`AGENTS.md`](../../AGENTS.md#L616-L632) records the
 same rule for contributors, and its "Common Pitfalls" list repeats it as the
 reason nothing may `println!` on a path the MCP server can reach
 ([AGENTS.md](../../AGENTS.md#L676-L676)).
-The only surviving direct calls outside `progress.rs` are the two
-donation-footer lines in `info::main`, which are printed after the useful output
-and immediately followed by `finish_and_clear()` — an exception, not a pattern
-to copy.
+The only uncategorized lines outside `progress.rs` are the two donation-footer
+lines in `info::main`, which call `print_line` themselves after the useful output
+and are immediately followed by `finish_and_clear()` — an exception, not a pattern
+to copy ([src/info.rs](../../src/info.rs#L62-L68)).
 
 Shared helpers take the bar so the categorization stays uniform:
 `util::is_update` expresses version comparison entirely as
@@ -242,17 +262,18 @@ outcome) reach the terminal rather than the protocol stream.
 
 ```mermaid
 flowchart TD
-  A["subcommand or format module"] -->|"print_header, print_info, print_error"| B["ProgressBar.println on the shared bar"]
+  A["subcommand or format module"] -->|"print_header, print_info, print_error"| B["print_line on the shared bar"]
   A -->|"log macros"| C["LogWrapper installed in main"]
   D["format crate byte callback"] -->|"run_blocking increments"| E["global MultiProgress"]
   B --> E
+  B -->|"plain output, one-shot command on a non-terminal stderr"| F
   C --> E
   E --> F["stderr"]
   G["MCP poller samples position, length, message every 400ms"] --> H["notifications progress"]
   H --> I["stdout, JSON-RPC only"]
 ```
 
-*Caption: every rendered line reaches stderr through the MultiProgress; stdout carries only JSON-RPC frames.*
+*Caption: every rendered line reaches stderr, through the MultiProgress or directly in plain output; stdout carries only JSON-RPC frames.*
 
 `indicatif` and `env_logger` both draw to stderr by default, and nothing in
 `src/` sets a `ProgressDrawTarget` of its own, so the invariant rests on those

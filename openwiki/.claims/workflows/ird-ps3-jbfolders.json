@@ -1,26 +1,26 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:22c1ee0c82ae38390d948e791590fc0250dfa0d97b14f7bfa0d2c0112746e25a",
+  "pageVersion": "sha256:38e7572dd81e70eaedd091232f73b624f6b1f9061ffee355d39583fb1589741f",
   "claims": [
     {
       "id": "claim_be7e331717cf488b9632566ef15e50ac",
-      "statement": "import-irds and purge-irds are clap subcommands registered in src/main.rs; import-irds takes <IRDS>... plus -i/--info, -f/--force and --system, and accepts IRD version 9 only — any other version prints 'IRD version unsupported' after the metadata block and continues with the next file rather than failing the run.",
+      "statement": "import-irds and purge-irds are clap subcommands registered in src/main.rs; import-irds takes <IRDS>... plus -i/--info, -f/--force and -s/--system, and accepts IRD version 9 only — any other version prints 'IRD version unsupported' after the metadata block and continues with the next file rather than failing the run.",
       "evidence": [
         {
-          "resource": "repo://README.md#L436-L457",
-          "version": "repo-lines-v1:sha256:bcaf9d7ead0ac19f6714d9ba6abb88860d3c9e18b2bcf119f21fa37b4f90c3f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4M2JjYjY3OGZlNDY4YWJmN2RmOWQwODU1MzMyZjkxZjQxZWIwZmNhMjg4Y2QzMzFkYTU4OTIzY2ZkZjg2YTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3M2U3M2FiYjc0NTgwMmMzMzNiODcyNjQ0MzVlMjQ5NDdiNmI3YmYwZjU2ZmUzMDI4ZThmMjBlODljODVmYmEifQ"
+          "resource": "repo://README.md#L459-L481",
+          "version": "repo-lines-v1:sha256:5ab0150103ef768c060164ecb3aab2493d6263e05742d2a3aaaed88565340f6b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzZTRjNzNiMzI5ZDA5MjUxOGNmY2ZjZjU3YjQzNDBhYTczZjk4Y2E2YmVkYWRjYjJmMTk1N2EwNDdiMWU3NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmZDAzOTJlYWFiNzFjN2I5YjJiZWUzMGYwODhlY2JhMjExMWI1OTBkYzBlYTRlMGU4MTE4Yjk4NjY5ZTVjZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyOGQzOTI2YTgyYWY5MDBiOTQ2NWEzYjA3MmVhYjMwYWVhZmM0NTcwZmFmZGRmNTgxMjY1Y2Q2NjMwYjU4NzYifQ"
         },
         {
-          "resource": "repo://src/import_irds.rs#L22-L59",
-          "version": "repo-lines-v1:sha256:f4646ca0200a766b475d65d70d0e48afb215c49813618f644b1f87c9ed058672:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyOTFmYzNhYzVmMTcwMGVhZGJiNjFjYzAyNzc1OGNiNTIyMzA1MThmNWNlMjFjZGMwZTY0ZTE3ODdhYWU1OGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2Yjg0YTAyMGZkM2NlOTY0NWZmNDg1YzE4ZjYyZmRhOGRjZGE2ZWY2ZmZhN2QwY2Y5ZWM5YzkyYzJkNmE0MzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjMjk1OTliNzliZmE4OWZlZWMyZDUzMmVhMzc1OGNlYWNlN2MxMTE0MWZkNjc2NmU1ZDI1M2IxZjc4MDBjNzYifQ"
+          "resource": "repo://src/import_irds.rs#L100-L122",
+          "version": "repo-lines-v1:sha256:93b1538cc025384df5e5b7657ba711223dd8bc3eece7c3a98814f13c9fcf21b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3OThiMzI5OTA1ZTUyYTUzZTlhMDkzMGY3OWE4NGY1ZmUyNzhiMmJlMGYwY2MxNzhhZjA2MjY0NzY4Y2E3YmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzYTY1ZjdhZDJmY2M3ODQ2ZDY2ZjY1NWIxZTNiNDRiOWVlMzY4ODc4N2I2MmQxZDY1ZGM0OGE0NWEzMmNmNDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0NDFlNzExMTNmZDI5M2M2YmFhY2Q0NTliZWYxODlmYThhZjlhYTlhNTVlOTRkOGYwNjYwNTQ5MmQ5OTY5NzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhYzZjOTgwY2YyNWIzN2Y5NzM5Nzg0M2UxOGMyMzgzNzIwYzA3NjUzYWYyYzI0YWYwNDk3ZTk4MjBkMmZkYjkifQ"
         },
         {
-          "resource": "repo://src/import_irds.rs#L94-L118",
-          "version": "repo-lines-v1:sha256:68fc51ac8ff8be72d30098b65b70943a4fed6fba448fc31479b5919cdc4bd75a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjY2ZjOWVlZWExODhlMDAwNzU3OTJhNmZjMDk1NDZlMGFhODRiY2UyNDA2ZWZmMDg1ZmY4Y2FhMGVhMzRkODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyZDgyOGEwMzdhYzFjODE1MzViMWQ1NTAwODMyMzIzYmZiYjg2NmEzYTNmODdlN2E2OGMxM2EyYmFlNTZmZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkZjcxZjQwOGFkYmMzMWY2ZmRhMTc1N2NhMTVjOTZkMTViZWRlOGUwMWZlMTE5OTMxOTM3ZjIzYWVmNDRjM2QifQ"
+          "resource": "repo://src/import_irds.rs#L24-L60",
+          "version": "repo-lines-v1:sha256:969cba5d1cffac64bb7deeedd576ea47748d5039234fbaf3bac2bc0a27d74859:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNDQ1N2MwMTlmZmJhOTVkYjU1ZDAzOTQ4MTE2YTRlN2JlYmY5NWZkZmM5N2UyOWQ5ZmMwMWZjNzQ2ZWQyN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxMDRkNjRhODEzMTMyODQzMDBmYWM1NGRjYzA0M2Q2NTM3MTYzNGI0MjcxOGM5YTQ2ZDQwY2VlNjU3YzIwNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjMjk1OTliNzliZmE4OWZlZWMyZDUzMmVhMzc1OGNlYWNlN2MxMTE0MWZkNjc2NmU1ZDI1M2IxZjc4MDBjNzYifQ"
         },
         {
-          "resource": "repo://src/main.rs#L71-L173",
-          "version": "repo-lines-v1:sha256:e7921fe309d59b973f6521348c3f997ffcd8d7be9531fdb451bafd7070180aec:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNTc0NGY1MTRiYjAxOTRlMGFkNDhjNTdmYmY2ZjJlMDhlZGRiZGMwYWE5YjZhMmRmMTA3MGUxZDQ4M2YwNTBmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NTIyYzQyY2QxOWM2ZDAzZDgwOGM0NTI3MjA1NTI4MjViN2VhMWM1YjQ5MWIyMTg1MTFjYWM3NDE1Y2Y5ZDliIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2OTgwN2E2MTI4OWIxOTAwYTRiZmNjMDFkZWVjYjM0OGU1YTZiZTQ2YzY2YjlhOTRjYTFiYzBmNjY3Nzc4MmU3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNDgzYzNjYzUyMGRlMGMzNjVhMTU2NzRiMThjZTdkZDkwZDYwYjhkZDY1NDczM2U5M2NkODllMTRhZTJkNmRmIn0"
+          "resource": "repo://src/main.rs#L71-L176",
+          "version": "repo-lines-v1:sha256:43f87b77afda607769b311c6c6857197adcbd0142f91109d8725832eecc1b1ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNTc0NGY1MTRiYjAxOTRlMGFkNDhjNTdmYmY2ZjJlMDhlZGRiZGMwYWE5YjZhMmRmMTA3MGUxZDQ4M2YwNTBmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NTIyYzQyY2QxOWM2ZDAzZDgwOGM0NTI3MjA1NTI4MjViN2VhMWM1YjQ5MWIyMTg1MTFjYWM3NDE1Y2Y5ZDliIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2OTgwN2E2MTI4OWIxOTAwYTRiZmNjMDFkZWVjYjM0OGU1YTZiZTQ2YzY2YjlhOTRjYTFiYzBmNjY3Nzc4MmU3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNDgzYzNjYzUyMGRlMGMzNjVhMTU2NzRiMThjZTdkZDkwZDYwYjhkZDY1NDczM2U5M2NkODllMTRhZTJkNmRmIn0"
         }
       ]
     },
@@ -29,7 +29,7 @@
       "statement": "parse_ird gates on the shared infer matcher (3IRD magic or gz) — anything else bails 'Not an IRD file' — then sequentially reads version, game ID, game name, the update/game/app versions, a gzip-compressed ISO header, a discarded footer, region hashes and files_count (sector LBA, MD5) pairs. files_hashes is therefore keyed by LBA rather than by name, and regions_hashes plus the footer are parsed but never used.",
       "evidence": [
         {
-          "resource": "repo://src/import_irds.rs#L199-L310",
+          "resource": "repo://src/import_irds.rs#L200-L311",
           "version": "repo-lines-v1:sha256:dd80574b02691633c5e0c11c4727d6b6c736c8298ecf888f1156a00684fdea41:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhYWNiNzcwODVmYmJjZDMyMjQyYTI0YWFkNDUwZjM3NmMxZGY3OWEwZTk2MWQ1M2M2Y2YwMTM2ZWIxZjhlMzJhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0NDM0ZDYzNjkyYjEzMzVkMTVhYzdmNmQ2NzdiZWMzNjk3Y2M4ZTliNTdlMzJkMGQ1NDFhM2M2YWE5YzA2NjExIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzOGFhYWJhZjNlNTA5MzI0MDk2MDFkYjVmZGRhNGUzNmNiMmEzMWNmM2I5ZTRmZTc1NTYwYmRhOTk2OWRlMDU5In0"
         },
         {
@@ -51,11 +51,11 @@
           "version": "repo-lines-v1:sha256:6b057c76738ced08c327968d7a5aff5a46dc526b71a235d9065bb43ff0e8d257:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwZDM3MmZhY2RkY2M2ZGViNTM5NjU3NDU2N2ViYjc4N2RkYTZmYTBhMTZlOTIyNTdjNDc3Y2UwZmFhODU5ZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYjVhM2MzMWVlZWI4N2M1OWJmMWVlNWVjNjg4OTQ3ZmIyYjEzMjEzZDNiMzU0YzAyMmYxMzNhNmQ2OGViNjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlNTU0NzZmZjA5YzA1OWE2NjVjMzZhMTljYzY5MzBjZmI1MDJjYzU4YjgyZjA2ZDI4OWQzYTI4MzZjNWU2NjUifQ"
         },
         {
-          "resource": "repo://src/import_irds.rs#L158-L197",
+          "resource": "repo://src/import_irds.rs#L159-L198",
           "version": "repo-lines-v1:sha256:8adeeebd82986ad9a14e9450a4a729d41200f596b6f625fd8e09c78d505b77a8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczM2E1NGM3ZjgwYWE5MWQxZTk2ZTRjYmIyZDY5MDUyOTdhYzExYWI1MzVlODM0ZGQ2OTgzOGI2ZGEyNDQzMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3YzJmNTg2MjE4OTBkMzI5ZTkyZjViMjVlYTgzNDg0NDJmOTE4NjI5MzE1OWYwMTVkYTBiMTkxMGIxZDEwM2UifQ"
         },
         {
-          "resource": "repo://src/import_irds.rs#L61-L156",
+          "resource": "repo://src/import_irds.rs#L62-L157",
           "version": "repo-lines-v1:sha256:2aee4085b712039a39585913548a5e42a1c41abe3fa40e00a34c4a1c56b7f7d0:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMGY4MGY2MTJjODc0NGMwMjdhNjkyOWU5NTMxZjJmMTMxNWFiMjhjMzcyMTIyOTAzNTM3N2Y4YmU3YzU1NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg2MWUwNGY2NDY4OGJjOGZkYWY4ZDkyMzE5NmYyMmQ4NDc5NWMwZmUxNjY4OTg3MjZmMDM4ZDlhOWJhZjc1OGIifQ"
         },
         {
@@ -73,11 +73,11 @@
           "version": "repo-lines-v1:sha256:e0ec8b26efb09a3ffdf9481651faf520ee59eb0f21817e99692653c9f4d58fe2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4Y2EzNWE4ZTRmODFiMzUxYTM5NGFkNDU0NWE1N2Q5ZDE4MmViMjg5NGRhYzA5MTJkYWJhZTEwYzdkMWIwYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYWI3MTBkZGY3ODU5ZTU3NTc2NGE5MTNhMDAyYzc0NTg1ZmZhNzAwMTUxMGNiODgxMWRhODNkMmNmNzRiMzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxZTMzMGQ1ZTViY2MzOGQ4ZTYxYjBmZjQ4ODNkM2ZjZmE3NTM0MzgzOThhODM3ZTBkNjI3YWNhZjY1NWJkN2EifQ"
         },
         {
-          "resource": "repo://src/import_irds.rs#L334-L366",
+          "resource": "repo://src/import_irds.rs#L335-L367",
           "version": "repo-lines-v1:sha256:e3ca728d243dbc6fb1714deb2bfee7aeb40c6e9c1d249799ff0684861cb4507c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlN2UwMGQ3ZjdkYTRhYWJiNGU1ZDdhNjlkYWM3ZmYyMGM2OWZmYzdjYjc3NGQxYTM1NjQ3NzBlNzEzZTA3YzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2YzNlYmZjZDg4MjY5NGVlZDY1ZWFlMTBhMTMyN2Q3OTA3NzlhNzA1YWI3NGRiYmY3ZjI4YmJkMjI0YTI3MjAifQ"
         },
         {
-          "resource": "repo://src/import_irds.rs#L368-L439",
+          "resource": "repo://src/import_irds.rs#L369-L440",
           "version": "repo-lines-v1:sha256:6566e88657909ccd8d4045e3c56aa16a654d6cbd946e585dce477999e59eb1ca:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNjI1ZjhlOTJkOGE1MTk4Y2RiNzcwYzlmOGEwNWNmODk1OTg3M2U3M2FiZGI2YmQxMmE1ZmQxMDFlY2ZkOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmZGUyMzIwZmI2ZjdhNDllNGFhYTRlNjQ5MTJiMmFlZDNhYjczN2EzODNlODgyYzZmMzUxOTI3YThkOTNlZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1YWU0NDJkODE5NzhkYWJlOWFjY2QwNDY1Zjg3YTk3NTk0NjA0NjVhNmNjODNlZjVmY2FiNTI1ZTM0YmUzMGMifQ"
         }
       ]
@@ -91,7 +91,7 @@
           "version": "repo-lines-v1:sha256:595e7c4274dd19ffda14ce51c676bbee3d1119d8b0348ebd304ad17c2a73fe28:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjM2E0YmU5OTFmYjk5ZWIwMDk2YzMyZTg1MzBiZDYyZDNiMzFiMzNmMjgzMzBhNmIyZWU0N2YxZTgzMWM5YzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3YjVjOTAzNTEwMjI1ZjRhOTg1ODdmYjUyNmNjNjA2NmI1N2ZmZjljMzVmNzk5YzM2MmRkMWQ1NzRjOTM2NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzOGYwMjkxYjk3YWM5NWEwYjhkNTZkOGRiYmJhMTZhZTEyNGI2MTA2M2UwZDVjNTMzNjFjYzQ1YzRiYmE0NWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmYTVhMDZhMGZhMDdmNDIwZDVkMTZkNWQxZTI2MmQ4N2NjZmVhOTFkNWZhZjVjMGQ4Y2MwYjhhYjBhY2VlMTUifQ"
         },
         {
-          "resource": "repo://src/import_irds.rs#L400-L459",
+          "resource": "repo://src/import_irds.rs#L401-L460",
           "version": "repo-lines-v1:sha256:405eb1d038776405c8913314da58b647e3b42faefe19fe337d9b500d4e515bb7:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYjljYjdlZTk4NDhkMTAzNTdjNDI1YmYxNTQwMGEwMzE5NGU2ZGI2ZTJjOTAyZmYxMzIxZTQwODI1N2I4NzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkZTk4NDRiYmYwZDhlN2U5YWZlYWVhNjBkNjk4NWZjY2M0ZTYwNjU4NTFmNzA5OTk5YzYzOGRkNjA0MmMyYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MjQzZWVmN2FjMzdjYjdiNjIyNzE0ZjY5ZDI5YzljNzU4M2M1MzZiNDMzZGM2NmQyY2EwNTI4ZDNjNjZkZTMifQ"
         },
         {
@@ -133,7 +133,7 @@
       "statement": "purge-irds operates only on games with jbfolder = true and has three selection modes (explicit names, headless --system purging every IRD game, or an interactive shrinking loop). purge_ird deletes each parent rom's child roms, collects their romfile ids in a HashSet, moves the surviving files to <system directory>/Trash, and clears jbfolder — the parent rom and its file survive, and completion is recomputed for the system.",
       "evidence": [
         {
-          "resource": "repo://src/purge_irds.rs#L33-L172",
+          "resource": "repo://src/purge_irds.rs#L34-L173",
           "version": "repo-lines-v1:sha256:b882169cbc8c206165d2b2cf3ac7393bb7466abe7bfb993d3039eef2b5ed5728:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5ZjBmODBmNjEyYzg3NDRjMDI3YTY5MjllOTUzMWYyZjEzMTVhYjI4YzM3MjEyMjkwMzUzNzdmOGJlN2M1NTY3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3N2E5N2ExZGRjZGM1N2EzMGI2ZDQ2YzcwYzZhY2MwNDM1M2FjMDdiYWI0ZTkwOTBlODJmNzUwNTQ1MDE2OGM3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNTI0M2VlZjdhYzM3Y2I3YjYyMjcxNGY2OWQyOWM5Yzc1ODNjNTM2YjQzM2RjNjZkMmNhMDUyOGQzYzY2ZGUzIn0"
         },
         {
@@ -209,7 +209,7 @@
       "statement": "HeaderSectorReader backs the ISO walk with the IRD's embedded header buffer, always returning a full 2048-byte sector and zero-filling past the header end; without that the vendored read_bytes would spin forever on a short sector (a guard was added upstream-side too) or abort the whole walk, since IRDs carry only the volume descriptors and directory extents.",
       "evidence": [
         {
-          "resource": "repo://src/import_irds.rs#L312-L332",
+          "resource": "repo://src/import_irds.rs#L313-L333",
           "version": "repo-lines-v1:sha256:4fe346ce29625f014372ef6a29fc458d0f434112a1c109759ff24ddc9d6fbc47:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzMjhiZWUzNDY5YjIwNmJhNjcwNTM1M2M4N2Y3YTA2YzhkZDc0N2JhZDZjN2RhZDljMjk2NGRkN2Y2MDc3MmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzZTlkYWU1NDA4YzZhYWZjM2IzMGFjNzUwMGFjY2QzOTIxYTVhZmM4MjMyZWI3OWI2ZDY0MWNjOTBlODRmOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlMmMxOWJiZTk4ZTk2MTU1ODFmMmNkNGIzZTk5OWEwY2I3YjdiOWU1NjQwYTY0ZmM3YWUxYjY2MWUyMWJhOWUifQ"
         },
         {
@@ -297,6 +297,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-01T22:28:11.879Z"
+    "at": "2026-11-02T21:30:44.962Z"
   }
 }

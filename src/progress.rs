@@ -18,13 +18,13 @@ const BYTES_TEMPLATE: &str = "  {spinner:.cyan} {wide_msg}\n        {bytes}/{tot
 
 static MULTI_PROGRESS: LazyLock<MultiProgress> = LazyLock::new(MultiProgress::new);
 static PLAIN_OUTPUT: AtomicBool = AtomicBool::new(false);
-// Prefixed styles
-static STYLE_HEADER: LazyLock<Style> = LazyLock::new(|| Style::new().bold().cyan());
-static STYLE_SUBHEADER: LazyLock<Style> = LazyLock::new(|| Style::new().bold());
-static STYLE_SUCCESS: LazyLock<Style> = LazyLock::new(|| Style::new().green());
-static STYLE_WARNING: LazyLock<Style> = LazyLock::new(|| Style::new().yellow());
-static STYLE_ERROR: LazyLock<Style> = LazyLock::new(|| Style::new().red().bold());
-static STYLE_DIM: LazyLock<Style> = LazyLock::new(|| Style::new().dim());
+// Prefixed styles, for stderr, where all messages go
+static STYLE_HEADER: LazyLock<Style> = LazyLock::new(|| Style::new().for_stderr().bold().cyan());
+static STYLE_SUBHEADER: LazyLock<Style> = LazyLock::new(|| Style::new().for_stderr().bold());
+static STYLE_SUCCESS: LazyLock<Style> = LazyLock::new(|| Style::new().for_stderr().green());
+static STYLE_WARNING: LazyLock<Style> = LazyLock::new(|| Style::new().for_stderr().yellow());
+static STYLE_ERROR: LazyLock<Style> = LazyLock::new(|| Style::new().for_stderr().red().bold());
+static STYLE_DIM: LazyLock<Style> = LazyLock::new(|| Style::new().for_stderr().dim());
 
 /// Returns the global MultiProgress instance.
 /// All progress bars should be added to this instance.

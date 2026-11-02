@@ -88,6 +88,8 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-1cf069de5c999c3ff1245ed6
     resource: repo://src/xps/test_patch.rs
+  - id: openwiki-source-d3ba64341f3a424837662eeb
+    resource: repo://tests/cli_output.rs
   - id: openwiki-source-790aa1ecc03c536bf0e060a6
     resource: repo://tests/compute_sums.sh
   - id: openwiki-source-13df766a80853b510f45e6c3
@@ -124,10 +126,10 @@ sources:
     resource: repo://tests/Test%20System%20(20261025)%20(CDN).dat
   - id: openwiki-source-706217a392bda126ca145591
     resource: repo://tests/Test%20System%20(20261025)%20(WUD).dat
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-02T21:30:44.962Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-02T21:30:44.962Z
 ---
 
 
@@ -137,10 +139,11 @@ verified:
 **a fixture corpus** — 30 Logiqx DAT files and the ROM, disc-image, archive,
 patch and header files they describe — consumed by the ~300 `src/<module>/test_*.rs`
 modules that live beside the code under test (see
-[Testing Conventions](testing-conventions.md)). Only two files in it are test
-targets of the root package: `tests/crates.rs` and `tests/mcp_stdio.rs`, and
-both are the special cases — one cross-crate parity guard, one end-to-end suite
-that spawns the real binary. A third audience exists: `crates/chd-rs/tests/`
+[Testing Conventions](testing-conventions.md)). Only three files in it are test
+targets of the root package: `tests/crates.rs`, `tests/mcp_stdio.rs` and
+`tests/cli_output.rs`, and all are special cases — one cross-crate parity guard,
+one end-to-end suite that spawns the real binary, and one check that a command's
+messages reach a stderr that is not a terminal. A third audience exists: `crates/chd-rs/tests/`
 reads the repository's CHD fixtures through `../../tests` as the
 byte-comparison corpus for its `chdman` interop suites.
 
