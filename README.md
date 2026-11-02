@@ -475,7 +475,7 @@ Arguments:
 Options:
   -i, --info             Show the IRD information and exit
   -f, --force            Force import of already imported IRD files
-      --system <SYSTEM>  Select the system to import into, matching the game and ROM automatically
+  -s, --system <SYSTEM>  Select the system to import into, matching the game and ROM automatically
   -h, --help             Print help
 ```
 
@@ -491,7 +491,7 @@ Arguments:
   [GAMES]...  Set the game names to purge
 
 Options:
-      --system <SYSTEM>  Select the system to purge from, skipping the prompt and purging every IRD game when no names are given
+  -s, --system <SYSTEM>  Select the system to purge from, skipping the prompt and purging every IRD game when no names are given
   -h, --help             Print help
 ```
 
@@ -683,8 +683,8 @@ Usage: oxyromon check-roms [OPTIONS]
 Options:
   -a, --all              Check all systems
   -g, --game <GAME>      Select games by name
-  -s, --size             Recalculate ROM file sizes
-      --system <SYSTEM>  Select systems by name
+      --size             Recalculate ROM file sizes
+  -s, --system <SYSTEM>  Select systems by name
   -h, --help             Print help
 ```
 

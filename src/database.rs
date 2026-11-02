@@ -2637,7 +2637,9 @@ pub async fn find_rom_by_size_and_crc_and_game_ids(
     let sql = format!(
         "
         SELECT *
-        FROM roms
+        -- a ROM shared by thousands of machines makes the size and CRC index a
+        -- scan, which the planner cannot know without statistics, in a first import
+        FROM roms INDEXED BY roms_game_parent_romfile
         WHERE size = {}
         AND crc = '{}'
         AND game_id IN ({})

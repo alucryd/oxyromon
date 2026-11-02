@@ -17,6 +17,7 @@
 
 ## Changes
 
+- `-s` now means `--system` wherever a command has that option: `check-roms -s` selects systems instead of recalculating sizes, `--size` no longer has a short form, and `import-irds` and `purge-irds` gain it
 - RVZ and WBFS support now always comes from the nod crate: `dolphin-tool` and `wit` are no longer needed, and the `nod` feature is gone. The `RVZ_SCRUB` setting is gone, as nod cannot scrub RVZ: with it set, `export-roms` decoded and re-encoded every RVZ for nothing
 - 7z and ZIP support now always comes from the sevenz-rust2 and zip crates: 7-Zip is no longer needed, and the `sevenz` feature is gone
 - BPS and IPS support now comes from the new xps-rs crate, a port of Flips, instead of the external `flips` tool; its CLI (`xpsrs`) ships in the release archives too
@@ -32,6 +33,9 @@
 
 ## Fixes
 
+- Fixed `rebuild-roms -f` skipping every clone that shares files with its parent when the set was already `NON_MERGED` or `FULL_NON_MERGED`, as a set imported into after a first rebuild is: such a clone counted as incomplete for lacking the very files the rebuild gives it. `FULL_NON_MERGED` to itself also did nothing at all, and going down to `NON_MERGED` now completes those clones too. A game left out for missing its own files now gets a warning
+- Fixed `import-dats` slowing down as it goes on a DAT with ROMs shared by many machines, such as HBMAME's Neo Geo sets
+- Fixed commands printing nothing when stderr is not a terminal, such as when redirected to a file: their messages now go there, without the progress bar
 - Fixed actions started from the web UI or an MCP client running at the same time, which could collide moving the same files; they now run one at a time, in the order they started, and a waiting MCP tool can be cancelled
 - Fixed checking, sizing and converting a hard disk CHD failing with "Not a valid rdsk" unless the disk began with an Amiga Rigid Disk Block, which most arcade hard disks do not
 - The web UI's system deletion dialog no longer says the files on disk are left alone: they move to the system's `Trash`
