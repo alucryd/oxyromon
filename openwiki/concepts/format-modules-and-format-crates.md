@@ -46,8 +46,6 @@ sources:
     resource: repo://src/progress.rs
   - id: openwiki-source-f314ed3b08dd849d591fdb0f
     resource: repo://src/query.rs
-  - id: openwiki-source-2d7562030526fe478e02c8ca
-    resource: repo://src/rebuild_roms.rs
   - id: openwiki-source-db13c01516e9bd04294e339d
     resource: repo://src/rvz.rs
   - id: openwiki-source-4fe52c7cb090ec0387522035
@@ -64,10 +62,10 @@ sources:
     resource: repo://src/xps/test_patch.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-28T19:36:29.623Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T19:36:29.623Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # Format Modules and Their Crate Backends
@@ -329,15 +327,9 @@ back. `Check` follows the same path unless a DAT declares a header — no GameCu
 or Wii DAT does — in which case it falls back to extracting an ISO so header
 stripping can happen.
 
-**`RVZ_SCRUB` is accepted and ignored, with a warning.** It is a real settings
-key (a boolean read by `export_roms`), but `write_disc` hardcodes
-`ScrubLevel::None` because nod cannot scrub RVZ. `ToRvz for IsoRomfile` prints
-`RVZ_SCRUB is unsupported by nod, writing unscrubbed` and proceeds rather than
-failing the export. The setting is not entirely inert: `export_roms::to_rvz`
-still distinguishes the cases — an already-RVZ source is copied verbatim when
-scrub is off, and re-encoded through a temp ISO when it is on, which is the only
-way to honour the intent. `convert_roms` never reads the key at all and passes
-`false`.
+**RVZ cannot be scrubbed.** `write_disc` hardcodes `ScrubLevel::None`, because
+nod scrubs only CISO and WBFS output, so there is no scrub setting, and
+`export_roms::to_rvz` copies an already-RVZ source verbatim.
 
 Compression mapping is the other defensive spot: `RVZ_COMPRESSION_LEVEL` ranges
 1–22, but only Zstandard accepts that range, so `compression()` **clamps**

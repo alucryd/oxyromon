@@ -36,6 +36,8 @@ sources:
     resource: repo://migrations/20260810000001_add_archive_compression_algorithms.sql
   - id: openwiki-source-543688cbca9cffab391f2283
     resource: repo://migrations/20260811000001_add_prefer_format_setting.sql
+  - id: openwiki-source-eba856d35532bf0484543b16
+    resource: repo://migrations/20261101000001_drop_rvz_scrub_setting.sql
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
   - id: openwiki-source-02628a361dd4faa0f62f87a2
@@ -96,10 +98,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
-generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T23:15:44.056Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # Settings and Configuration Model
@@ -295,7 +297,6 @@ row is seeded `NULL` and the consumer picks a value itself.
 | `RVZ_BLOCK_SIZE` | `integer_range` | `128` | no |
 | `RVZ_COMPRESSION_ALGORITHM` | `choice_options` | `zstd` | no |
 | `RVZ_COMPRESSION_LEVEL` | `integer_range` | `5` | no |
-| `RVZ_SCRUB` | `BOOLEANS` | `false` | no |
 | `SEVENZIP_COMPRESSION_ALGORITHM` | `choice_options` (`lzma2`, `zstd`) | `lzma2` | no |
 | `SEVENZIP_COMPRESSION_LEVEL`, `SEVENZIP_ZSTD_COMPRESSION_LEVEL` | `integer_range` | `9`, `19` | yes |
 | `SEVENZIP_SOLID_COMPRESSION` | `BOOLEANS` | `false` | no |
@@ -434,8 +435,9 @@ that carries the level on the chosen algorithm's own scale. The consumers apply
 the units and per-algorithm limits the setting layer deliberately does not:
 `rvz.rs` multiplies `RVZ_BLOCK_SIZE` by 1024 because nod wants bytes, clamps the
 level with `level.clamp(1, 9)` for bzip2/lzma/lzma2 and `clamp(1, 22)` for zstd
-(the `integer_range` entry is the union 1..22), and prints a warning that
-`RVZ_SCRUB is unsupported by nod, writing unscrubbed` rather than failing.
+(the `integer_range` entry is the union 1..22). There is no scrub setting: nod
+scrubs only CISO and WBFS output, so `RVZ_SCRUB` was removed, and a migration
+deletes the stored value.
 
 CHD tuning is resolved inside `chd.rs::create_chd` as arguments to the `chd-rs`
 writer, not on a command line. An empty algorithm list is not "no compression":

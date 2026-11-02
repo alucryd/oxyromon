@@ -24,6 +24,8 @@ sources:
     resource: repo://CHANGELOG.md
   - id: openwiki-source-1519e62b0bf12b3d41c2e1b8
     resource: repo://crates/chd-rs/Cargo.toml
+  - id: openwiki-source-a057427619dc76389568b31f
+    resource: repo://crates/chd-rs/src/flac.rs
   - id: openwiki-source-0bc9c609aef896964e961315
     resource: repo://Cross.toml
   - id: openwiki-source-b5a80c315c8a39d6bc68be22
@@ -56,10 +58,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T12:28:25.132Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # Builds, Distribution and Releases
@@ -283,7 +285,11 @@ That pin is a mandatory dependency, not an optional feature (0.25.0 deleted the
 return to a plain version requirement before release. The sibling case is already
 resolved: `sevenz-rust2` is back to a normal `version = "0.24.0"` requirement with
 the `zstd` feature, no longer a fork pinned by revision, so `nod` is the only
-git-sourced dependency left. Relatedly, `frontend/` and `desktop/` are
+git-sourced dependency left. `rusty_flac` is git-sourced differently: a
+`[patch.crates-io]` entry in the root manifest supplies its unreleased
+`Encoder::set_block_size`, which `chd-rs` calls. A patch does not reach a published
+crate, so `chd-rs` cannot be published against it until `rusty_flac` releases that
+method. Relatedly, `frontend/` and `desktop/` are
 `publish = false` and declare their own `[workspace]`, and `Cargo.toml` excludes
 `.github/`, `crates/`, `dist/` and `tests/`; cargo also leaves the nested
 `frontend/` package out of the tarball. Installing from crates.io therefore builds

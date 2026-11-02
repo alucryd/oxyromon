@@ -42,6 +42,8 @@ sources:
     resource: repo://src/import_dats/test_dat_headered_embedded.rs
   - id: openwiki-source-8485a3ae73bdd8c6923a0bf4
     resource: repo://src/import_dats/test_dat_headered_skipped_header.rs
+  - id: openwiki-source-0ad541323389e44d86d51bdc
+    resource: repo://src/import_dats/test_dat_mame_listxml.rs
   - id: openwiki-source-799a986fffbd6d0361994608
     resource: repo://src/import_dats/test_dat_mame_mixed.rs
   - id: openwiki-source-9d464240a7b7d0d02b932ef0
@@ -90,10 +92,12 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-26T22:40:03.236Z" }
+  - id: openwiki-source-83177d2c1f345aa579fa2a29
+    resource: repo://tests/hbmame.xml
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-27T21:16:24.550Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # Catalog Ingestion: DATs, Headers and Downloads
@@ -162,6 +166,11 @@ header, so a DAT can point at a *detector* file:
 #[folder = "data/"]
 struct Assets;
 ```
+
+`parse_dat` also reads the output of MAME's or HBMAME's `-listxml` directly. It has no
+`<header>`, so the system takes its name from the file and its version from the `build`
+attribute of the `<mame>` root; a DAT with neither fails, naming both. Every
+`<machine>` becomes a game, device machines included, with `games.device` set on those.
 
 `parse_dat` looks for the first `<clrmamepro>` element that actually carries a
 `header` attribute — a DAT may list several `clrmamepro` elements and most of them
@@ -302,8 +311,9 @@ CRC, records the hit as `roms.parent_id`, and inherits `roms.bios` from the sour
 rom; a miss prints `please fix your DAT file` and imports the rom as exclusive
 ([src/import_dats.rs](../../src/import_dats.rs#L746-L831)). Two adjacent details
 shape later behaviour: roms with `status="nodump"` are skipped entirely, and
-`roms.original` is false when the DAT's file name carries an extension in
-`NON_ORIGINAL_EXTENSIONS` (chd, cso, nsz, rvz, wua, wux, zso, 7z, zip)
+`roms.original` is false for a `<disk>` and for a DAT file name carrying an extension
+in `NON_ORIGINAL_EXTENSIONS` (chd, cso, nsz, rvz, wua, wux, zso, 7z, zip), while a name
+with no extension, as a Wii U title's contents have, stays original
 ([src/mimetype.rs](../../src/mimetype.rs#L40-L49),
 [`test_dat_as_is.rs`](../../src/import_dats/test_dat_as_is.rs)). Hashes are
 lower-cased on write so a provider's upper-case CRC still matches a computed one.

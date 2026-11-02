@@ -5,7 +5,7 @@ description: How src/main.rs registers clap subcommands, runs global startup (do
 tags: [cli, entrypoint, clap, subcommands, connection-scope, tokio, sqlite, info]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T08:10:36.025Z
+    at: 2026-11-01T22:28:11.879Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -57,7 +57,7 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 ---
 
 # CLI Entrypoint and the Subcommand Contract
@@ -327,10 +327,10 @@ let matches = sort_roms::subcommand().try_get_matches_from(arguments)?;
 sort_roms::main(connection, &matches, &progress_bar).await
 ```
 
-inside `spawn_cli_action`, which acquires its own pooled connection in a spawned
-task and reports `*_started` / `*_complete` / `*_error` over SSE. The MCP write
-tools do the same through `run_action`, which takes the process-wide write lock,
-acquires a connection, and builds a hidden progress bar that a poller samples
+inside `spawn_cli_action`, which in a spawned task announces `*_started`, waits
+for the process-wide `WRITE_LOCK`, acquires its own pooled connection, and
+reports `*_complete` / `*_error` over SSE. The MCP write tools do the same through
+`run_action`, which takes that same lock, acquires a connection, and builds a hidden progress bar that a poller samples
 into MCP `notifications/progress`. Hosts inject the long form of the confirmation
 flag into the synthesized argv because there is no TTY to answer `confirm()` —
 `--yes` for `sort-roms` / `purge-roms`, `-a`/`--all` or `--system <name>` to skip

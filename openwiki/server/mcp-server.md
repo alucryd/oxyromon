@@ -42,6 +42,8 @@ sources:
     resource: repo://src/mcp/read.rs
   - id: openwiki-source-d208b6cbd6d391c2701b95c0
     resource: repo://src/mcp/resources.rs
+  - id: openwiki-source-2b4d7f63c87efd338db64b08
+    resource: repo://src/mcp/test_write_lock.rs
   - id: openwiki-source-762e9c43ab8143e7dda872d3
     resource: repo://src/mcp/write.rs
   - id: openwiki-source-528b2bf14ffa06b3842b8c96
@@ -60,10 +62,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-27T21:16:24.550Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # MCP Server: Tools, Resources and Prompts
@@ -72,7 +74,7 @@ verified:
 and prompts on top of the official Rust SDK (`rmcp` 3.5, `default-features =
 false`, features `server`, `macros`, `transport-io`, `schemars`). One type,
 `OxyromonMcp`, is the whole server: a cheap-to-clone handle holding the
-`SqlitePool`, a `CancellationToken`, an `Arc<Mutex<()>>` write lock, the
+`SqlitePool`, a `CancellationToken`, the
 `read_only` flag and — in server builds — an optional
 `broadcast::Sender<SseMessage>`. Two transports serve that same handler: stdio
 from the `mcp` subcommand, and the Streamable HTTP Tower service that
@@ -227,7 +229,7 @@ sequenceDiagram
   participant R as ToolRouter
   participant T as write tool
   participant A as run_action
-  participant L as write_lock
+  participant L as WRITE_LOCK
   participant P as SqlitePool
   participant S as subcommand main
   participant B as progress bar
@@ -267,16 +269,16 @@ sequenceDiagram
 ## run_action: the shared execution path
 
 Every mutating tool funnels through `OxyromonMcp::run_action` in
-[`src/mcp/actions.rs`](../../src/mcp/actions.rs). It takes the process-wide
-`write_lock` *before* acquiring a connection and holds it across the whole
-action, so writers queue politely instead of surfacing `SQLITE_BUSY` halfway
-through an import; SQLite serializes writers anyway, and this makes the ordering
-explicit. The lock is created outside `OxyromonMcp::new` and passed in: the
-stdio server makes one for its single handler, and `mcp_http_service` makes one
-before its factory, which builds a handler per request, so every `/mcp` request
-shares it. GraphQL mutations (`spawn_cli_action`) take no such lock at all, so
-between GraphQL and MCP the backstop is SQLite itself plus the pool's 5-second
-`acquire_timeout`.
+[`src/mcp/actions.rs`](../../src/mcp/actions.rs). It takes the
+process-wide `WRITE_LOCK` *before* acquiring a connection and holds it across the
+whole action, so writers queue politely instead of surfacing `SQLITE_BUSY` halfway
+through an import or moving the same files at once. `WRITE_LOCK` is a `static` in
+`src/mcp.rs`, so every `/mcp` request shares it, and so do the web server's
+background actions in `src/mutation.rs` and `src/server.rs`: a tool can wait behind a
+long web action. That wait goes through `lock_writes`, which the client's
+cancellation or server shutdown can abandon. Settings writes on the web's request
+path stay outside the lock, and between those and MCP the backstop is SQLite itself
+plus the pool's 5-second `acquire_timeout`.
 
 The `work` closure is `for<'a> FnOnce(&'a mut SqliteConnection, &'a ProgressBar)
 -> BoxFuture<'a, Result<T>>` — the shape `spawn_cli_action` uses in

@@ -78,10 +78,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-27T21:16:24.550Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # Progress Bars, Categorized Output and Prompts
@@ -394,8 +394,8 @@ only when `trash` or `foreign` would delete files) — so `--yes` only answers t
 CLI prompt, it does not authorize the tool.
 
 `prompt_for_games` receives its bypass from the compiler rather than from argv:
-`check_roms` and `common::select_games` call it as
-`prompt_for_games(games, cfg!(test))`, so a `cargo test` run that names several
+`common::select_games`, which `check_roms` and other subcommands share, calls it
+as `prompt_for_games(games, cfg!(test))`, so a `cargo test` run that names several
 games resolves them all instead of hanging on a multiselect nobody can answer.
 The single-match short-circuit is covered directly by
 `src/prompt/test_prompt_for_games_single_match.rs`, which asserts that a

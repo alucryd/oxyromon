@@ -66,10 +66,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T21:20:28.066Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # Romfile Trait System
@@ -132,9 +132,10 @@ file has to survive its own conversion.
   `with_extension`), prints an action line, drives the backend, and returns the new
   wrapper built by running `CommonRomfile::from_path` **back through the matching
   `As*`**, so the output is re-validated on the way out
-  (`to_iso` → `as_iso`, `to_riff` → `as_riff`, `to_rdsk` → `as_rdsk`, `to_xso` →
-  `as_xso`, `to_nsp`/`to_nsz` → `as_nsp`/`as_nsz`). `to_chd` is the deliberate
-  exception: the four `ToChd` impls build the `ChdRomfile` directly with `size: 0`
+  (`to_iso` → `as_iso`, `to_riff` → `as_riff`, `to_xso` → `as_xso`,
+  `to_nsp`/`to_nsz` → `as_nsp`/`as_nsz`). `to_rdsk` is one exception, building
+  its wrapper directly, as most hard disks do not carry the `RDSK` magic `as_rdsk`
+  looks for. `to_chd` is the other, deliberate too: the four `ToChd` impls build the `ChdRomfile` directly with `size: 0`
   and empty SHA1s, because the freshly written container's facts are not known
   until something reopens it — a caller that needs them calls `as_chd` on the
   result ([src/chd.rs](../../src/chd.rs#L279-L416)). `to_wbfs` returns `Result<()>`

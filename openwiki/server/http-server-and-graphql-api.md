@@ -38,6 +38,8 @@ sources:
     resource: repo://src/model.rs
   - id: openwiki-source-528b2bf14ffa06b3842b8c96
     resource: repo://src/mutation.rs
+  - id: openwiki-source-0fa2bde6e74011e7f0c28346
+    resource: repo://src/mutation/test_write_lock.rs
   - id: openwiki-source-d3402490d16a663b822e8a00
     resource: repo://src/nsz.rs
   - id: openwiki-source-f314ed3b08dd849d591fdb0f
@@ -56,10 +58,10 @@ sources:
     resource: repo://src/validator.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T11:29:22.151Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # HTTP Server, GraphQL API and Uploads
@@ -240,7 +242,7 @@ This is the invariant that most distinguishes the write path from the read path.
   pool failure onto `async_graphql::Error("Failed to acquire database
   connection: …")`. A GraphQL error, not a 500 and not a panic.
 - **Spawned actions** acquire *inside* the task, after `{prefix}_started` has
-  already gone out. The ordering matters: the client has been told the work
+  already gone out and the task has taken `WRITE_LOCK`. The ordering matters: the client has been told the work
   began, so it must also be told it failed. A failed acquire emits
   `{prefix}_error` and returns; nothing hangs forever waiting for a completion
   event that will never arrive.
@@ -257,9 +259,16 @@ This is the invariant that most distinguishes the write path from the read path.
 `spawn_cli_action(pool, sse_tx, prefix, start_message, complete_message, fail_prefix, run)`
 is the single template behind `sort_roms`, `check_roms`, `generate_playlists`,
 `purge_roms`, `convert_roms`, `purge_irds` and `purge_games`. It spawns a task, emits
-`{prefix}_started`, acquires a connection, runs the caller's closure, then emits
-`{prefix}_complete` or `{prefix}_error` — and the closure it runs is the CLI
-subcommand's own `main()`, reached through a synthesised `ArgMatches`.
+`{prefix}_started`, waits for `WRITE_LOCK`, acquires a connection, runs the caller's
+closure, then emits `{prefix}_complete` or `{prefix}_error` — and the closure it runs
+is the CLI subcommand's own `main()`, reached through a synthesised `ArgMatches`.
+
+Every background write in `mutation.rs` and `server.rs` holds the process-wide
+`WRITE_LOCK` from `src/mcp.rs` for its whole run, as MCP tools do, so web and MCP
+actions run one at a time in the order they started and cannot move the same files
+at once. A queued action has already announced itself, and the mutation has already
+returned.
+
 `purge_games` is the exception: it validates every id on the request path
 (refusing an empty list or an unknown id), then its closure calls
 `purge_games::purge_games` with the fetched `Game` rows directly instead of
@@ -283,6 +292,7 @@ sequenceDiagram
   MUT-->>UI: true, the job is accepted
   MUT->>TASK: spawn with a BoxFuture closure
   TASK->>SSE: sort_roms_started
+  TASK->>TASK: wait for WRITE_LOCK
   TASK->>POOL: acquire inside the task
   alt acquire fails
     TASK->>SSE: sort_roms_error with the pool error
@@ -307,12 +317,14 @@ always passes `-u` with the caller's mode (`first` when the upload omitted it),
 and every bar is `ProgressBar::hidden()`. Anything that needs a human answer would
 hang the task.
 
-`purge_system` and `download_dats` predate the helper and inline the same shape.
-They differ in one respect worth knowing: `purge_system` validates the id on the
-request path, then the spawned task emits `purge_started` *after* acquiring, so
+`purge_system` and `download_dats` predate the helper and inline the same shape,
+including the lock, which they take first. They differ in one respect worth knowing:
+`purge_system` validates the id on the request path, then the spawned task emits
+`purge_started` *after* acquiring, so
 the generic `purge` prefix (not `purge_system`) is what the frontend listens for.
 
-Mutations that only touch settings — `setBool`, `setString`-backed
+Mutations that only touch settings stay outside `WRITE_LOCK`, so they answer during
+a long action — `setBool`, `setString`-backed
 `setPreferRegions` / `setPreferVersions` / `setPreferFormat` /
 `setSubfolderScheme`, `setDirectory`, `addToList`, `removeFromList`,
 `unsetPreferFormat` — run synchronously on the request path and return `true`.

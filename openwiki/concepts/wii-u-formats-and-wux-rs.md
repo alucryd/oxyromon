@@ -3,7 +3,7 @@ type: concept
 title: Wii U Formats and the wux-rs Crate
 description: The four Wii U shapes oxyromon handles (WUD, WUX, lossless WUA and NUS folders), what the in-tree wux-rs crate does with each, how a lossless WUA rebuilds its disc and shares update partitions through a store, how keys reach it through import-keys, and how oxyromon wires discs, updates and DLC through import, convert, check, export, purge and create-dats.
 tags: [wii-u, wux, wud, wua, nus, wux-rs, keys, import-keys, cemu, zarchive, lossless, update-partitions]
-generated: { by: "claude-code", at: "2026-10-28T19:36:29.623Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 sources:
   - id: openwiki-source-ce853e79f786a28d42f8717a
     resource: repo://crates/wux-rs/Cargo.toml
@@ -79,7 +79,7 @@ sources:
     resource: repo://tests/Test%20System%20(20261025)%20(CDN%20History).dat
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T19:36:29.623Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # Wii U Formats and the wux-rs Crate
@@ -162,7 +162,9 @@ Progress follows the stream as it is read, chunk by chunk, rather than jumping
 once a partition is done. A partition bound for the store is read twice, once
 to hash it for its name and once to compress it when the store lacks it, so
 each read counts for half its length. When the entry already exists, the
-second half is reported at once.
+second half is reported at once. The streams together are scaled to the disc's
+size, the budget `to_wua` gives them: they leave out the game's contents and the
+disc's padding, and unscaled they would fall short and end in one jump.
 
 oxyromon keeps one store per system: a hidden `.update-partitions` folder
 (`wux_rs::STORE_DIR`) in the system's directory, from `store_directory`. A WUA

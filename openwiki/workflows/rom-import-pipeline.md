@@ -56,6 +56,8 @@ sources:
     resource: repo://src/import_roms/test_sevenzip_multiple_files_partial_game.rs
   - id: openwiki-source-28688ed391a3497d6be6a0e0
     resource: repo://src/import_roms/test_single_track_chd.rs
+  - id: openwiki-source-2a4d9aa4eb46a76cfbbc8b9d
+    resource: repo://src/import_roms/test_unknown_system.rs
   - id: openwiki-source-67041cdcd7062eab68afff98
     resource: repo://src/import_roms/test_zip_single_file_extract.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
@@ -84,10 +86,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-28T19:36:29.623Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T19:36:29.623Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # ROM Import Pipeline
@@ -136,9 +138,11 @@ one is at a terminal
 case-insensitively), so `%PlayStation 3%` works while a name with no wildcards has
 to match a system name exactly
 ([src/database.rs](../../src/database.rs#L294-L312)). The resolved list is then
-de-duplicated by id, and when nothing is passed it becomes a single `None` entry
-meaning "every system"
-([src/import_roms.rs](../../src/import_roms.rs#L141-L151)).
+de-duplicated by id. A `-s` matching nothing fails with `No matching system found`
+rather than falling back to every system, as after a typo; when `-s` is not passed the
+list is a single `None` entry meaning "every system"
+([src/import_roms.rs](../../src/import_roms.rs#L144-L154),
+[`test_unknown_system.rs`](../../src/import_roms/test_unknown_system.rs)).
 
 That list is not just a filter — `main` loops **once per system**, so `-s A -s B`
 scans the input twice, and each pass carries the `Header` row loaded for that

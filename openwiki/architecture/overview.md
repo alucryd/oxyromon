@@ -80,10 +80,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-27T21:16:24.550Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # System Architecture Overview
@@ -196,20 +196,22 @@ This is the invariant to preserve when adding a capability. The subcommand's
 the non-CLI hosts adapt to it rather than the reverse:
 
 - **GraphQL.** `src/mutation.rs`'s `spawn_cli_action` takes a closure over a
-  connection, spawns a task, sends `{prefix}_started` over SSE, acquires its own
-  pooled connection (reporting an acquire failure as `{prefix}_error` rather than
+  connection, spawns a task, sends `{prefix}_started` over SSE, waits for the
+  process-wide `WRITE_LOCK`, acquires its own pooled connection (reporting an acquire failure as `{prefix}_error` rather than
   panicking), then runs the closure. Each mutation's closure builds an argv vec,
   parses it with the module's own `subcommand().try_get_matches_from(...)`, and
   calls that module's `main()` with a `ProgressBar::hidden()`.
 - **MCP.** `src/mcp/actions.rs`'s `run_action` does the same thing synchronously:
-  acquire the process-wide `write_lock`, acquire one connection, create a hidden
+  wait for `WRITE_LOCK`, which the client's cancellation or server shutdown
+  can abandon, acquire one connection, create a hidden
   progress bar, then drive the subcommand. Mutating tools such as `sort_roms`,
   `check_roms`, `convert_roms` and `purge_roms` build argv and hand it to
   `sort_roms::main`, `check_roms::main`, and so on.
 - **HTTP uploads.** `server.rs`'s upload handlers stream the body to a temp
   directory and then drive the same work on a spawned task — `import_roms::main`
   and `import_irds::main` through synthesized argv, `POST /dats` through
-  `import_dats`'s own `process_dat_upload` helper — reporting progress over SSE.
+  `import_dats`'s own `process_dat_upload` helper — holding `WRITE_LOCK` and
+  reporting progress over SSE.
 
 ```mermaid
 sequenceDiagram
@@ -223,7 +225,7 @@ sequenceDiagram
   M->>M: resolve system name, validate input
   M->>T: spawn_cli_action with closure
   T->>B: sort_roms_started
-  T->>T: acquire pooled connection, else report error
+  T->>T: wait for WRITE_LOCK, acquire pooled connection, else report error
   T->>S: parse argv then call the module main
   S-->>T: Ok or Err
   T->>B: sort_roms_complete or sort_roms_error
@@ -242,10 +244,12 @@ for the MCP `download_dats` tool. A subcommand that grows a prompt that cannot b
 bypassed, or that reads process state outside its three arguments, breaks both
 servers and the test suite at once.
 
-The hosts differ only around the shared core: GraphQL actions run *asynchronously*
+Both hold one process-wide `WRITE_LOCK` for the whole action, so web and MCP
+actions run one at a time in the order they started, rather than colliding over
+the same files or surfacing as `SQLITE_BUSY`; settings writes on the web's request
+path stay outside it. The hosts differ only around the shared core: GraphQL actions run *asynchronously*
 and report only start/complete/error over SSE, while MCP actions run to completion
-inside the request, hold the write lock for the whole action so SQLite writer
-serialization is ordered instead of surfacing as `SQLITE_BUSY`, poll the bar
+inside the request, poll the bar
 roughly twice a second into `notifications/progress`, and race the work against
 per-request and server-shutdown cancellation tokens. MCP read tools take no lock
 at all, and in `--read-only` mode the write routes are disabled so they never

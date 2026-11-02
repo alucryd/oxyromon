@@ -30,8 +30,6 @@ sources:
     resource: repo://src/archive.rs
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
-  - id: openwiki-source-f1234afbb261ce7190a87845
-    resource: repo://src/check_roms.rs
   - id: openwiki-source-f026be5ceac01513e05fa46c
     resource: repo://src/check_roms/test_check_by_name.rs
   - id: openwiki-source-db15f8427180aeec55b3a076
@@ -74,6 +72,8 @@ sources:
     resource: repo://src/progress.rs
   - id: openwiki-source-fcdf0f9c4361c1ee384f2689
     resource: repo://src/prompt.rs
+  - id: openwiki-source-82e96c0f155bab36abef9bdf
+    resource: repo://src/purge_games.rs
   - id: openwiki-source-8ae1d314abb7c3fe6703b5e4
     resource: repo://src/purge_roms/test_orphans.rs
   - id: openwiki-source-f314ed3b08dd849d591fdb0f
@@ -102,10 +102,10 @@ sources:
     resource: repo://tests/crates.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T19:36:29.623Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # Test Harness and Conventions
@@ -262,10 +262,10 @@ a TTY under test. Three mechanisms carry this:
 - **`cfg!(test)` as the "select everything" flag.** `prompt_for_games(games, all)`
   returns the whole list untouched when `all` is true, so the `dialoguer`
   multiselect is never constructed
-  ([src/prompt.rs](../../src/prompt.rs#L123-L144)). The two call sites pass
-  `cfg!(test)` for exactly this reason
-  ([src/check_roms.rs](../../src/check_roms.rs#L61-L82),
-  [src/common.rs](../../src/common.rs#L36-L55)).
+  ([src/prompt.rs](../../src/prompt.rs#L123-L144)). `common::select_games`, which the
+  subcommands share, passes `cfg!(test)` for exactly this reason
+  ([src/common.rs](../../src/common.rs#L36-L56)). `purge_games` is the exception:
+  it prompts only when no game was named, so its tests name them.
 - **Explicit unattended modes.** Import helpers thread an
   `UnattendedMode::{None, Skip, First}` parameter — the same value the CLI's
   `-u/--unattended` flag parses — and tests pass `Skip` (or `First`) rather than

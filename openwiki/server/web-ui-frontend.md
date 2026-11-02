@@ -79,7 +79,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-28T17:34:44.685Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T17:34:44.685Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # Web UI (Leptos SPA + Web Awesome)
