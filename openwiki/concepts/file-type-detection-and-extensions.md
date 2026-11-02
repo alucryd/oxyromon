@@ -6,6 +6,8 @@ tags: [mimetype, file-type-detection, magic-bytes, extensions, infer, format-dis
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
+  - id: openwiki-source-6d75d76a696ce11e4a57aab8
+    resource: repo://migrations/20261028000001_mark_extensionless_roms_original.sql
   - id: openwiki-source-02628a361dd4faa0f62f87a2
     resource: repo://src/archive.rs
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
@@ -60,10 +62,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T19:36:29.623Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # File Type Detection and Extension Constants
@@ -103,7 +105,7 @@ is available too) and layers ten custom matchers on top:
 | `cso_matcher` | `43 49 53 4F` `"CISO"` | `application/x-cso` → `cso` | |
 | `ips_matcher` | `50 41 54 43 48` `"PATCH"` | `application/x-ips` → `ips` | 5 bytes |
 | `ird_matcher` | `33 49 52 44` `"3IRD"` | `application/x-ird` → `ird` | |
-| `rdsk_matcher` | `52 44 53 4B` `"RDSK"` | `application/x-rdsk` → `rdsk` | Saturn HD image |
+| `rdsk_matcher` | `52 44 53 4B` `"RDSK"` | `application/x-rdsk` → `rdsk` | raw hard disk starting with an Amiga Rigid Disk Block |
 | `riff_matcher` | `52 49 46 46` `"RIFF"` | `application/x-riff` → `riff` | Saturn/LaserDisc container |
 | `rvz_matcher` | `52 56 5A 01` `"RVZ"` + `0x01` | `application/x-rvz` → `rvz` | version byte pinned to 1 |
 | `xdelta_matcher` | `D6 C3 C4` | `application/x-xdelta` → `xdelta` | 3 bytes |
@@ -159,16 +161,16 @@ These are not documentation; they are the predicates that decide real behavior.
 | `NON_ORIGINAL_EXTENSIONS` | `import_dats`, `CommonRomfile::get_sorted_path` | a DAT ROM with such an extension is stored with `roms.original = false`; sorted paths name the file after the *game* instead of the DAT rom name |
 
 `NON_ORIGINAL_EXTENSIONS` is the seam between "the file the DAT describes" and "a
-recompression of it". `import_dats` sets `original = !NON_ORIGINAL_EXTENSIONS.contains(ext)`,
-and `convert-roms` then loads its work through `load_rom_data(connection, games, true)`,
+recompression of it". `import_dats::is_original` treats a disk as non-original, and
+otherwise a name unless its extension is in the list, and `convert-roms` then loads its work through `load_rom_data(connection, games, true)`,
 which filters on `original = true` (`export-roms` passes `false` and takes everything).
 Drop a format out of this list and conversion starts treating its compressed containers
 as catalog originals. The Wii U formats show the split: Redump lists a disc as an `.iso` (a `.wud` in
 older DATs), which stays an original, while `.wux` and a lossless `.wua` are
-recompressions of it and sit in the list. Note the corollary for MAME: its DATs list CHDs as `<disk name="game">`
-with **no extension at all**, so those rows are non-original because no extension is
-present, not because the list matched — `original` is computed with `is_some_and`, and a
-missing extension is itself a "not an original" answer.
+recompressions of it and sit in the list. MAME's DATs list CHDs as `<disk name="game">`
+with **no extension at all**, and those rows are non-original because they are disks.
+A ROM without an extension is otherwise original, as a Wii U title's contents, named by
+their bare ID, are; a migration corrects the rows imported before this rule.
 
 `get_sorted_path` takes an explicit `extension` override that production callers pass
 as `None`, falling back to the file's own extension, and then applies the same group:
@@ -247,7 +249,8 @@ name and *overridden by the mimetype* unless it is `iso`, then matched against
 `iso` / `rdsk` / `riff` to pick the CD/HD/LD CHD settings; and the leftover `others`
 partition (everything that is not archive, CUE/BIN, ISO, CSO, ZSO or CHD) is typed
 entirely by `get_mimetype`, because arcade RDSK and RIFF payloads carry no usable
-extension. Anything unmatched prints `"Unsupported file type, skipping"` rather than
+extension. Raw disks have no container magic, so only those starting with an Amiga
+Rigid Disk Block are recognised for conversion to a hard disk CHD. Anything unmatched prints `"Unsupported file type, skipping"` rather than
 failing the run. RDSK and RIFF matter here and nowhere else in dispatch: no import,
 check or export branch keys on those two constants, so content sniffing is the only
 route to them.
@@ -277,10 +280,11 @@ This has three consequences worth internalising:
   the single entry point `check_roms`, `convert_roms` and `export_roms` all use.
 - **Each type round-trips through its own neutral format.** `ChdType::Dvd` extracts to
   `.iso`, `ChdType::Hd` to `.rdsk`, `ChdType::Ld` to `.riff` (a RIFF/AVI, not a
-  sheet-and-BIN layout), and `ChdType::Cd` to a CUE plus per-track BINs. The extracted
-  file is then re-validated through `as_iso` / `as_rdsk` / `as_riff`, so the magic
-  matchers for `rdsk` and `riff` are what make a CHD extraction verifiable — the LD
-  route in particular goes through RIFF on the way out and back in again.
+  sheet-and-BIN layout), and `ChdType::Cd` to a CUE plus per-track BINs. An extracted
+  ISO or RIFF is then re-validated through `as_iso` / `as_riff`, and the LD route in
+  particular goes through RIFF on the way out and back in again. An extracted hard disk
+  is not: the `RDSK` magic only recognises raw disks on input, and most hard disks do
+  not carry it.
 
 After import has typed the container, the *naming* still follows the extension rules:
 `import_chd` renames the CHD to `{rom.name}.chd` for DVD/HD/LD (with a `{game.name}/`

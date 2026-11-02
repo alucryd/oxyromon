@@ -6,12 +6,16 @@ tags: [chd, chd-rs, formats, compression, cd, dvd, laserdisc, hard-disk, parents
 sources:
   - id: openwiki-source-f652141db50cb9f0dce8c6fe
     resource: repo://crates/chd-rs/README.md
+  - id: openwiki-source-451efc56b1b11560177f2d9a
+    resource: repo://crates/chd-rs/src/container.rs
   - id: openwiki-source-a057427619dc76389568b31f
     resource: repo://crates/chd-rs/src/flac.rs
   - id: openwiki-source-9e7b31d1c4f2e7701a37b802
     resource: repo://crates/chd-rs/src/lib.rs
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
+  - id: openwiki-source-e4132cadd2dc1ed973c3d42b
+    resource: repo://src/chd/test_hd.rs
   - id: openwiki-source-a380817ef07d05704067a359
     resource: repo://src/chd/test_ld.rs
   - id: openwiki-source-10fddfccad5d7bf89d675953
@@ -22,10 +26,10 @@ sources:
     resource: repo://src/import_roms.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-24T21:55:54.894Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T19:36:29.623Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # CHD Format and the chd-rs Crate
@@ -153,7 +157,10 @@ when the romfile has a parent, and then runs one crate call through
   then renames to each ROM's name from the DAT. The CUE is written hidden
   (a leading dot), so a caller keeping the original sheet can delete it.
 - **LaserDisc:** `extract_ld` writes the AVI.
-- **DVD and hard disk:** `Chd::extract` writes the raw image.
+- **DVD and hard disk:** `Chd::extract` writes the raw image. A hard disk's
+  output is not checked against the `RDSK` magic: that is the Amiga Rigid Disk
+  Block, which only picks raw disks out on input, and most arcade disks do not
+  start with it.
 
 ## Parent CHDs
 
@@ -170,6 +177,12 @@ for the discs of one multi-disc game. oxyromon picks a parent in three ways:
 - **On `export-roms` to CHD**, the same playlist lookup always applies,
   without consulting `CHD_PARENTS`: the library CHD of the playlist's first
   game becomes the parent of the exported one.
+
+Two details of clone reads follow `chd_file`, and only show on real discs. The
+v5 map's parent-self offsets are computed in 64 bits, because a DVD clone's hunks
+pass 4 GiB. A hunk read from the parent is bounded by the parent's hunks rather
+than its logical size, so a clone can map onto the parent's last, partial hunk,
+padding included; the public `Chd::read_bytes` keeps the logical bound.
 
 The database caches the parent SHA-1 in `romfiles.parent_id`, so the link
 survives without reopening files. See
@@ -215,6 +228,9 @@ when it is installed and skip otherwise; see
 - `src/convert_roms/` and `src/export_roms/` hold the CD round trips, including
   multi-track CUE/BIN to CHD and back, CHDs inside 7z archives, and the
   `test_chd_parents_to_chd_should_not_touch_parent` case.
+- `crates/chd-rs/src/container.rs` tests the map past 4 GiB and a clone reading
+  its parent's partial last hunk; `src/chd/test_hd.rs` round-trips a hard disk
+  without an Amiga Rigid Disk Block.
 - `src/import_roms/test_multiple_tracks_chd.rs` and
   `src/check_roms/test_multiple_tracks_chd.rs` cover per-track hashing.
 - `src/config/test_chd_settings.rs` covers unsetting every CHD key and the

@@ -44,10 +44,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T11:29:22.151Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # SSE Events and Progress Bridging
@@ -163,7 +163,7 @@ loopback origin, and production serves the embedded assets from the same listene
 ## The `{prefix}_started` / `_complete` / `_error` contract
 
 `spawn_cli_action` in [`src/mutation.rs`](../../src/mutation.rs#L21-L79) is the
-template: emit `{prefix}_started`, acquire a connection, run the subcommand, then
+template: emit `{prefix}_started`, wait for `WRITE_LOCK`, acquire a connection, run the subcommand, then
 emit `{prefix}_complete` (`success: true`) or `{prefix}_error` (`success: false`)
 with a human `message`. Every event carries a JSON object with at least a
 `message` field, because that string is what the browser shows verbatim.
@@ -201,12 +201,11 @@ emits `import_dat_error` and returns. A new action that can return early without
 terminal event leaves a menu spinner turning forever.
 
 The ordering difference between the two hosts is worth knowing when debugging a
-"nothing appeared" report: `spawn_cli_action` emits `started` *before* waiting
-for a connection, so a queued action announces itself even when the pool is
-saturated. `purge_system` and `download_dats` — which inline the sequence instead
-of using the helper — and MCP's `run_action` all acquire first, so an action
-waiting on a connection (or, for MCP, on the process-wide write lock) is
-invisible on `/events` until it actually starts.
+"nothing appeared" report: `spawn_cli_action` and the upload handlers emit `started` *before* waiting for the
+process-wide `WRITE_LOCK` and a connection, so a queued action announces itself.
+`purge_system` and `download_dats` — which inline the sequence instead of using the
+helper — and MCP's `run_action` take the lock and a connection first, so while they
+wait behind another action they are invisible on `/events`.
 
 ## Why the lossy channel is survivable: the frontend's rules
 

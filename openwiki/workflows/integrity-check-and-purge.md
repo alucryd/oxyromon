@@ -82,6 +82,8 @@ sources:
     resource: repo://src/purge_roms/test_trashed.rs
   - id: openwiki-source-c138af21b9b0996b6c64846f
     resource: repo://src/purge_systems.rs
+  - id: openwiki-source-bd26d089849852586034d459
+    resource: repo://src/purge_systems/test_purge_systems_arcade.rs
   - id: openwiki-source-e8369f7994ca9d75c8854ed6
     resource: repo://src/purge_systems/test_purge_systems.rs
   - id: openwiki-source-db13c01516e9bd04294e339d
@@ -92,14 +94,16 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
+  - id: openwiki-source-3b0fe7c4cde002b6efb0fc54
+    resource: repo://src/util/test_trash_path.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-28T17:34:44.685Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T17:34:44.685Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # Integrity Checking, Purging and Trash
@@ -169,10 +173,11 @@ identically ([src/purge_systems.rs](../../src/purge_systems.rs#L35-L53)).
 
 Within a system, `--game` patterns are collected, de-duplicated and handed to a
 game multiselect that is skipped entirely in test builds; with no `--game`, the
-work set is every game already at `completion = 2`. An empty selection prints
-`No matching games found` **only** when `--game` was given, and moves on rather
-than failing the run
-([src/check_roms.rs](../../src/check_roms.rs#L55-L100)).
+work set is every game already at `completion = 2`. An empty selection prints a message **only** when `--game` was given:
+`print_no_matching_games` says how many incomplete games match, since only complete
+ones are processed, or `No matching games found`. It then moves on rather than
+failing the run
+([src/check_roms.rs](../../src/check_roms.rs#L56-L84)).
 
 For each system, `check_system` loads only `original = true` roms that have a
 `romfile_id`, groups them by `romfile_id`, and dispatches on the romfile's
@@ -291,7 +296,9 @@ with `Chd::open_with_parent`.
 ### Failure is per-file, and expensive
 
 A failed file is renamed into the system's Trash with `rename` + `Persist::update`
-inside the same transaction; the run continues to the next romfile
+inside the same transaction, at the path `util::get_trash_path` picks: its file name,
+or when that is taken, as when an arcade parent and clone own a file of the same name,
+its path under the system directory, numbered if that is taken too; the run continues to the next romfile
 ([src/check_roms.rs](../../src/check_roms.rs#L200-L300)). Only if at least one
 file failed does `check_system` call `compute_system_completion`, which is what
 turns "complete" games back into "partial" ones in the UI. The summary line
@@ -432,8 +439,9 @@ also the function the GraphQL `purgeSystem` mutation calls directly, without
 going through argv.
 
 It moves **every romfile of the system** into that system's `Trash` (rename +
-row update, keeping `romfiles.size` fresh), then
-`delete_system_by_id`. Because `PRAGMA foreign_keys = ON` is set on every
+row update, keeping `romfiles.size` fresh, at the path `get_trash_path` picks), then
+`delete_system_by_id`, and finally removes the directories this emptied, such as an
+arcade game's directory of loose files. Because `PRAGMA foreign_keys = ON` is set on every
 connection and `games.system_id` cascades from `systems` while
 `roms.romfile_id` is `ON DELETE SET NULL`
 ([src/database.rs](../../src/database.rs#L38-L40),
@@ -533,8 +541,8 @@ destructive boundary.
 
 - **GraphQL drives them over SSE.** `mutation::check_roms`,
   `mutation::purge_roms`, `mutation::purge_irds` and `mutation::purge_games` hand the work to
-  `spawn_cli_action`, which acquires a pooled connection *inside* the task and
-  reports `{prefix}_started` / `_complete` / `_error` on the SSE stream; the
+  `spawn_cli_action`, which takes `WRITE_LOCK` and a pooled connection *inside* the
+  task and reports `{prefix}_started` / `_complete` / `_error` on the SSE stream; the
   mutation returns immediately. `purgeSystem` follows the same event contract but
   runs `purge_system` in its own spawned task because there is no argv form to
   reuse ([src/mutation.rs](../../src/mutation.rs#L21-L79),
@@ -595,7 +603,7 @@ The bundled `audit_system` prompt encodes the intended operator sequence:
   `compute_system_completion` chooses its SQL.
 - **`roms.original` decides what `check-roms` will even look at.**
   `find_original_roms_with_romfile_by_game_ids` filters `original = true`, and
-  DAT import sets that flag from whether the declared rom name carries a
+  DAT import clears that flag for a disk and for a declared rom name carrying a
   non-original extension (`chd`, `cso`, `nsz`, `rvz`, `wua`, `wux`, `zso`, `7z`, `zip`)
   ([src/mimetype.rs](../../src/mimetype.rs#L40-L49),
   [src/import_dats.rs](../../src/import_dats.rs#L786-L827)). IRD child roms are

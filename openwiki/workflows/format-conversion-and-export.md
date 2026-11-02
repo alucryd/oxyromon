@@ -40,6 +40,8 @@ sources:
     resource: repo://src/convert_roms/test_multiple_tracks_chd_to_cue_bin.rs
   - id: openwiki-source-abdf941cf9d154bfb215564f
     resource: repo://src/convert_roms/test_multiple_tracks_cue_bin_to_chd.rs
+  - id: openwiki-source-13a76116e12f6e2949c0ba51
+    resource: repo://src/convert_roms/test_nus_sevenzip_to_original.rs
   - id: openwiki-source-4bfb8a301239e7152c04ddc0
     resource: repo://src/convert_roms/test_zip_to_zip_should_do_nothing.rs
   - id: openwiki-source-69865de039e204c039a753a3
@@ -58,6 +60,8 @@ sources:
     resource: repo://src/export_roms/test_multiple_tracks_chd_to_cue_bin.rs
   - id: openwiki-source-430a01e0225c86cf50b7eddd
     resource: repo://src/export_roms/test_multiple_tracks_chd_to_zso_should_do_nothing.rs
+  - id: openwiki-source-f00e274f07426a69747a8ffd
+    resource: repo://src/export_roms/test_nus_sevenzip_to_original.rs
   - id: openwiki-source-9add64e166d8ef19bd58c5af
     resource: repo://src/import_roms.rs
   - id: openwiki-source-7fb657fead83b71b9836ddac
@@ -88,10 +92,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-28T19:36:29.623Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T19:36:29.623Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # Format Conversion and Export
@@ -248,7 +252,7 @@ global row ([Settings and Configuration](../architecture/settings-and-configurat
 | `7Z` | `SEVENZIP_COMPRESSION_ALGORITHM`, `SEVENZIP_COMPRESSION_LEVEL` / `SEVENZIP_ZSTD_COMPRESSION_LEVEL`, `SEVENZIP_SOLID_COMPRESSION` |
 | `ZIP` | `ZIP_COMPRESSION_ALGORITHM`, `ZIP_COMPRESSION_LEVEL` / `ZIP_ZSTD_COMPRESSION_LEVEL` (solid is hard-coded `false`) |
 | `CHD` | `CHD_CD/DVD/HD/LD_COMPRESSION_ALGORITHMS`, `CHD_CD/DVD/HD/LD_HUNK_SIZE`, `CHD_PARENTS` |
-| `RVZ` | `RVZ_COMPRESSION_ALGORITHM`, `RVZ_COMPRESSION_LEVEL`, `RVZ_BLOCK_SIZE`, plus `RVZ_SCRUB` in `export_roms` only |
+| `RVZ` | `RVZ_COMPRESSION_ALGORITHM`, `RVZ_COMPRESSION_LEVEL`, `RVZ_BLOCK_SIZE` |
 | `CSO`, `ZSO`, `NSZ`, `WUX`, `ORIGINAL` | none |
 | `WUA`, and `NUS` (export only) | none; they read the Wii U keys `import-keys` stored instead |
 
@@ -420,7 +424,9 @@ loop; the leftover loop is what packs plain loose files
 - Multi-file games collapse: each loose file is added to one archive named
   after the game, and for arcade systems the archive is written one directory up
   (`directory.parent()`) and the now-empty set directory removed
-  ([src/convert_roms.rs](../../src/convert_roms.rs#L1104-L1211)).
+  ([src/convert_roms.rs](../../src/convert_roms.rs#L1212-L1315)). A Wii U title's
+  folder, recognised by its TMD, does the same, except that the folder goes only
+  once it is empty, as it is not oxyROMon's alone.
 
 ### `to_chd`
 
@@ -479,9 +485,8 @@ These accept only a narrow source set and silently ignore the rest by
   `recompress`, in place
   ([src/convert_roms.rs](../../src/convert_roms.rs#L2172-L2291)).
 - `to_rvz`: ISOs, archives holding a single ISO, and RVZs re-encoded under
-  `recompress`. `convert_roms` always passes `scrub = false` and never reads
-  `RVZ_SCRUB`
-  ([src/convert_roms.rs](../../src/convert_roms.rs#L2293-L2437)).
+  `recompress`
+  ([src/convert_roms.rs](../../src/convert_roms.rs#L2623-L2763)).
 - `to_wux`: loose WUDs named `.wud` or `.iso`, archives holding a single ROM
   with either extension, and lossless WUAs, which are rebuilt. A WUD candidate
   that `as_wud` rejects, such as an ordinary ISO, is skipped. A WUX has no
@@ -505,9 +510,10 @@ The only target whose signature takes nothing but `check` — `recompress` and
 entries, unpacks CHDs according to `ChdType`, decodes CSO/ZSO→ISO, NSZ→NSP,
 RVZ→ISO and WUX or WUA→WUD. Two behaviours stand out:
 
-- Arcade systems get a directory: an extracted archive expands into a new
-  directory named after the archive stem rather than into the parent directory
-  ([src/convert_roms.rs](../../src/convert_roms.rs#L2509-L2527)).
+- Arcade systems and Wii U titles get a directory: an extracted archive expands
+  into a new directory named after the archive stem rather than into the parent
+  directory
+  ([src/convert_roms.rs](../../src/convert_roms.rs#L2833-L2855)).
 - A multi-track CD CHD explodes into one row per track plus the `.cue`, which is
   the inverse of the CUE/BIN→CHD collapse
   ([src/convert_roms.rs](../../src/convert_roms.rs#L2614-L2683),
@@ -541,7 +547,7 @@ export-side analogue of the `recompress` rule:
 | ZIP → ZIP, 7z → 7z | `copy_file` of the archive |
 | CHD → CHD | `copy_file` of the CHD |
 | CSO/ZSO → CSO/ZSO | `copy_file`, either subtype to either target |
-| RVZ → RVZ | copy; re-encode through a temp ISO only when `scrub` is on |
+| RVZ → RVZ | copy |
 | ISO → ISO | `copy_file` |
 | WUX → WUX | `copy_file`; a WUX has no settings to re-encode with |
 | WUA → WUX | rebuilt from the WUA and its store |

@@ -60,10 +60,14 @@ sources:
     resource: repo://src/rebuild_roms.rs
   - id: openwiki-source-df495719acffd15555777f18
     resource: repo://src/rebuild_roms/test_full_non_merged_to_non_merged.rs
+  - id: openwiki-source-58ba9477c498370023d4450e
+    resource: repo://src/rebuild_roms/test_merged_loose_to_non_merged.rs
   - id: openwiki-source-636c9200f8c3a86fd81fc8d6
     resource: repo://src/rebuild_roms/test_nothing_to_do.rs
   - id: openwiki-source-4545b1784b0c9ee632396db8
     resource: repo://src/rebuild_roms/test_split_to_merged.rs
+  - id: openwiki-source-ab261c9f9f98317e5cefcd42
+    resource: repo://src/rebuild_roms/test_split_to_non_merged_missing.rs
   - id: openwiki-source-0bf78c91e0736d89627ed389
     resource: repo://src/rebuild_roms/test_split_to_non_merged.rs
   - id: openwiki-source-0a9271029eb893aacec54c15
@@ -76,10 +80,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-af9ca7a4de06de516c2bef85
     resource: repo://tests/Test%20System%20(20200721)%20(MAME%20Rebuild).dat
-generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-27T21:16:24.550Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 # Arcade Rebuilds and M3U Playlists
@@ -269,11 +273,13 @@ difference between `NON_MERGED` and `FULL_NON_MERGED`
 Roms flagged `disk` (imported from Logiqx `<disk>` entries rather than `<rom>`) are
 dropped from the set, so rebuild never rewrites arcade disc media. Each remaining
 rom without a `romfile_id` is then satisfied from `rom.parent_id`'s rom, and the
-destination is decided by `add_rom`. If a parent rom has no file, `expand_game`
-prints `Missing "<rom>"` and returns `Ok(())` from inside the transaction *without
-committing*, so the dropped transaction rolls back the game's partial expansion and
+destination is decided by `add_rom`. `expand_game` resolves every source first: if a
+parent rom has no file, it prints `Missing "<rom>"` and returns `Ok(())` before opening
+the transaction or copying anything, so the game's directory gains no stray copy and
 the walk continues with the next game
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L299-L336)).
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L300-L330)). A source's extension is
+compared as an `Option`, so a loose file with none, such as HBMAME's `yrw801-m`, takes
+the file path instead of panicking.
 
 `add_rom` handles the four layout combinations, because arcade sets can be stored
 as loose files or as one ZIP per set
@@ -312,8 +318,9 @@ Note the asymmetry: expansion *creates* romfiles and rows, trimming only removes
 links and files, and neither ever deletes or mutates the parent's data. The full
 matrix is pinned by five tests: `test_nothing_to_do`, `test_split_to_non_merged`,
 `test_split_to_full_non_merged`, `test_non_merged_to_split`, and
-`test_full_non_merged_to_non_merged`, plus three merged ones below
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L729-L746)).
+`test_full_non_merged_to_non_merged`, plus `test_split_to_non_merged_missing` for a
+missing source and the merged ones below
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L734-L753)).
 
 ### merge_game and unmerge_game: the merged layout
 
@@ -351,6 +358,8 @@ copied. The merged tests build a parent and two clones covering a name clash and
 a shared file from `src/rebuild_roms/merged_set.rs`: `test_split_to_merged`
 (round trip back to split), `test_merged_to_non_merged` and
 `test_non_merged_to_merged`, each also running `check-roms` on the result.
+`test_merged_loose_to_non_merged` expands loose files that a merged ZIP's import left
+without an extension.
 
 ## generate-playlists: M3U creation for multi-disc games
 

@@ -36,6 +36,8 @@ sources:
     resource: repo://src/import_dats.rs
   - id: openwiki-source-8485a3ae73bdd8c6923a0bf4
     resource: repo://src/import_dats/test_dat_headered_skipped_header.rs
+  - id: openwiki-source-0ad541323389e44d86d51bdc
+    resource: repo://src/import_dats/test_dat_mame_listxml.rs
   - id: openwiki-source-799a986fffbd6d0361994608
     resource: repo://src/import_dats/test_dat_mame_mixed.rs
   - id: openwiki-source-e851f29de7bc17b747354e83
@@ -90,6 +92,8 @@ sources:
     resource: repo://tests/compute_sums.sh
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
+  - id: openwiki-source-83177d2c1f345aa579fa2a29
+    resource: repo://tests/hbmame.xml
   - id: openwiki-source-03238ed8280795dfd0fd3fae
     resource: repo://tests/header.xml
   - id: openwiki-source-9a02c1f55f47430403921057
@@ -120,10 +124,10 @@ sources:
     resource: repo://tests/Test%20System%20(20261025)%20(CDN).dat
   - id: openwiki-source-706217a392bda126ca145591
     resource: repo://tests/Test%20System%20(20261025)%20(WUD).dat
-generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
+generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T19:36:29.623Z
+    at: 2026-11-01T22:28:11.879Z
 ---
 
 
@@ -453,6 +457,7 @@ the `cetk` and checks that the update is left out of the WUA.
 
 | File | Role |
 | --- | --- |
+| `hbmame.xml` | A headerless MAME `-listxml` file with a `build` attribute, one machine with a `nodump` ROM and one device; `import_dats/test_dat_mame_listxml.rs` asserts the system takes its name from the file and its version from the build |
 | `header.xml` | A `clrmamepro` header detector (`NES` magic at offset 10) referenced by `<clrmamepro header="header.xml" />` in the Headered DATs; resolved next to the DAT, else from the embedded `data/` assets ([src/import_dats.rs](../../src/import_dats.rs#L283-L304)) |
 | `profile.xml` | A no-intro profile served by a wiremock `GET /profile.xml` in the DAT-download test ([src/download_dats/test_nointro.rs](../../src/download_dats/test_nointro.rs#L35-L50)) |
 | `Test System (20200721).zip` | The redump datfile payload a mocked `GET /datfile/…` returns ([src/download_dats/test_redump.rs](../../src/download_dats/test_redump.rs#L28-L70)) |

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9c010258806c3302fcade20e3c836cc2331fa4c9aae8cdfc62db6221926cc4cd",
+  "pageVersion": "sha256:2fd1e9f71b88ad0437c2878507819c53a8705ff27c8f5c3a5c6cf62ee699e89e",
   "claims": [
     {
       "id": "claim_56ecae6ff3f14ff0babfd3201239caab",
@@ -608,7 +608,7 @@
       "evidence": [
         {
           "resource": "repo://crates/wux-rs/tests/nus.rs",
-          "version": "repo-file-v1:sha256:0573a97d74a95cba5d6f3c09bec6441d29fd3e1be266a056319acda95bcdeddf"
+          "version": "repo-file-v1:sha256:de0b3c284d176880e1a449fb87995562e1fbf5dac1df1be5bf21e724bac24d3b"
         },
         {
           "resource": "repo://crates/wux-rs/tests/revert.rs",
@@ -639,6 +639,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-28T19:18:06.223Z"
+    "at": "2026-11-01T22:28:11.879Z"
   }
 }
