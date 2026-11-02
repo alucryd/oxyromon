@@ -2634,11 +2634,12 @@ pub async fn find_rom_by_size_and_crc_and_game_ids(
     game_ids: &[i64],
 ) -> Vec<Rom> {
     let crc = crc.to_lowercase();
+    // Pinned for callers passing a few game IDs. A ROM shared by thousands of
+    // machines makes the size and CRC index a scan, and the planner, without
+    // statistics in a first import, would not know.
     let sql = format!(
         "
         SELECT *
-        -- a ROM shared by thousands of machines makes the size and CRC index a
-        -- scan, which the planner cannot know without statistics, in a first import
         FROM roms INDEXED BY roms_game_parent_romfile
         WHERE size = {}
         AND crc = '{}'
