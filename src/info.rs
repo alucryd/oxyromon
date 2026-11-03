@@ -60,8 +60,11 @@ pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar)
 
     print_separator(progress_bar);
 
-    progress_bar.println("  If you find oxyromon useful, please consider buying me a coffee:");
-    progress_bar.println("  https://ko-fi.com/alucryd");
+    print_line(
+        progress_bar,
+        "  If you find oxyromon useful, please consider buying me a coffee:",
+    );
+    print_line(progress_bar, "  https://ko-fi.com/alucryd");
 
     progress_bar.finish_and_clear();
 

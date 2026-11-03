@@ -110,6 +110,13 @@ async fn main() -> Result<()> {
         LogWrapper::new(multi, logger).try_init().unwrap();
         log::set_max_level(level);
 
+        // indicatif hides the bars when stderr is not a terminal, and with them
+        // every line printed above them: the commands print those to stderr
+        // themselves then. `mcp` and `server` report to their clients, as before.
+        set_plain_output(
+            get_multi_progress().is_hidden() && !matches!(subcommand, "mcp" | "server"),
+        );
+
         let progress_bar = get_progress_bar(0, get_none_progress_style());
 
         print_separator(&progress_bar);
