@@ -60,6 +60,7 @@
 - Fixed `sort-roms` ignoring `LANGUAGES` unless `DISCARD_RELEASES` or `DISCARD_FLAGS` was also set
 - Fixed the CHD hard disk and LaserDisc settings refusing to be unset back to auto, and `config -a` sorting the hard disk codecs instead of keeping their order
 - Fixed importing a malformed or homebrew CIA taking oxyROMon down with it: a container with a bad TMD, a missing certificate chain, or no title metadata at all (a SimpleCIA) is now reported, naming what is wrong
+- Fixed a `server` build after one with `SKIP_TRUNK=true` skipping trunk too, and embedding whatever web UI `target/assets` held; changing `SKIP_TRUNK` now reruns the build script
 
 # 0.24.0
 
