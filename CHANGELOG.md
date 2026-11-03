@@ -59,6 +59,7 @@
 - Fixed `rebuild-roms` exiting silently when there are no arcade systems; it now says so
 - Fixed `sort-roms` ignoring `LANGUAGES` unless `DISCARD_RELEASES` or `DISCARD_FLAGS` was also set
 - Fixed the CHD hard disk and LaserDisc settings refusing to be unset back to auto, and `config -a` sorting the hard disk codecs instead of keeping their order
+- Fixed the commands printing nothing but a fatal error when stderr is not a terminal, as in a pipe, a log file or a service; they now print their usual lines there, without colours or progress bars
 - Fixed importing a malformed or homebrew CIA taking oxyROMon down with it: a container with a bad TMD, a missing certificate chain, or no title metadata at all (a SimpleCIA) is now reported, naming what is wrong
 
 # 0.24.0
