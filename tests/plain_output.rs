@@ -13,6 +13,8 @@ fn a_pipe_gets_the_lines_without_colors() {
         .env("OXYROMON_ROM_DIRECTORY", directory.path().join("roms"))
         .env("OXYROMON_TMP_DIRECTORY", directory.path())
         .env("OXYROMON_LOG_LEVEL", "off")
+        // colors on, as they are when stdout is a terminal, so they must be stripped
+        .env("CLICOLOR_FORCE", "1")
         .output()
         .expect("run oxyromon import-dats");
     let stderr = String::from_utf8(output.stderr).expect("UTF-8 on stderr");
