@@ -39,6 +39,14 @@ pub enum SubfolderScheme {
 
 #[derive(PartialEq, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
+pub enum GameSubfolders {
+    Never,
+    Multiple,
+    Always,
+}
+
+#[derive(PartialEq, EnumString, VariantNames)]
+#[strum(serialize_all = "lowercase")]
 pub enum PreferredVersion {
     None,
     New,
@@ -70,6 +78,7 @@ pub(crate) const BOOLEANS: &[&str] = &[
 ];
 pub(crate) fn choice_options(key: &str) -> Option<&[&str]> {
     match key {
+        "GAME_SUBFOLDERS" => Some(GameSubfolders::VARIANTS),
         "PREFER_FORMAT" => Some(crate::convert_roms::ALL_FORMATS),
         "PREFER_REGIONS" => Some(PreferredRegion::VARIANTS),
         "PREFER_VERSIONS" => Some(PreferredVersion::VARIANTS),

@@ -283,6 +283,18 @@ pub async fn set_bool(key: &str, value: bool, system_id: Option<i64>) -> Result<
     .map(|_: serde::de::IgnoredAny| ())
 }
 
+pub async fn set_game_subfolders(value: &str, system_id: Option<i64>) -> Result<(), String> {
+    let mutation = r#"mutation SetGameSubfolders($value: String!, $systemId: Int) {
+        setGameSubfolders(value: $value, systemId: $systemId)
+    }"#;
+    graphql(
+        mutation,
+        json!({ "value": value, "systemId": system_id_var(system_id) }),
+    )
+    .await
+    .map(|_: serde::de::IgnoredAny| ())
+}
+
 pub async fn set_prefer_regions(value: &str, system_id: Option<i64>) -> Result<(), String> {
     let mutation = r#"mutation SetPreferRegions($value: String!, $systemId: Int) {
         setPreferRegions(value: $value, systemId: $systemId)

@@ -471,13 +471,33 @@ impl CommonFile for CommonRomfile {
             sorted_path.push(compute_alpha_subfolder(&game.name));
         }
 
-        // arcade, jbfolder and NUS titles in subdirectories unless they are archives
+        // arcade, jbfolder and NUS titles in subdirectories unless they are archives, and other
+        // games as GAME_SUBFOLDERS says: every one, or those of several files, so a game stays
+        // together. The discs of a game share one, named as their playlist is
         let is_archive = extension.is_some_and(|ext| ARCHIVE_EXTENSIONS.contains(&ext));
         if (system.arcade && !is_archive)
             || game.jbfolder
             || (!is_archive && is_nus_title(connection, game).await)
         {
             sorted_path.push(&game.name);
+        } else if !system.arcade {
+            let nested = match get_game_subfolders(connection, system).await {
+                GameSubfolders::Never => false,
+                GameSubfolders::Always => true,
+                // a disc of a game of several, or a game whose ROMs are stored as they are
+                // rather than in one archive or disc image
+                GameSubfolders::Multiple => {
+                    DISC_REGEX.is_match(&game.name)
+                        || (!extension.is_some_and(|ext| NON_ORIGINAL_EXTENSIONS.contains(&ext))
+                            && find_roms_by_game_id_no_parents(connection, game.id)
+                                .await
+                                .len()
+                                > 1)
+                }
+            };
+            if nested {
+                sorted_path.push(DISC_REGEX.replace(&game.name, "").as_ref());
+            }
         }
 
         // file name
@@ -860,13 +880,25 @@ impl Playlist for Game {
         if subfolder_scheme == &SubfolderScheme::Alpha {
             playlist_path = playlist_path.join(compute_alpha_subfolder(&self.name));
         }
-        playlist_path = playlist_path.join(format!(
-            "{}.{}",
-            DISC_REGEX.replace(&self.name, ""),
-            M3U_EXTENSION
-        ));
+        let playlist_name = DISC_REGEX.replace(&self.name, "");
+        // beside the discs, in the folder they share, unless GAME_SUBFOLDERS is never
+        if !system.arcade && get_game_subfolders(connection, system).await != GameSubfolders::Never
+        {
+            playlist_path = playlist_path.join(playlist_name.as_ref());
+        }
+        playlist_path = playlist_path.join(format!("{}.{}", playlist_name, M3U_EXTENSION));
         Ok(playlist_path)
     }
+}
+
+/// The system's `GAME_SUBFOLDERS`, the global one where it sets none.
+async fn get_game_subfolders(connection: &mut SqliteConnection, system: &System) -> GameSubfolders {
+    GameSubfolders::from_str(
+        &get_string(connection, "GAME_SUBFOLDERS", Some(system.id))
+            .await
+            .unwrap(),
+    )
+    .unwrap()
 }
 
 // === TESTS ===
@@ -885,9 +917,21 @@ mod test_path_cso;
 #[cfg(test)]
 mod test_path_custom_extension;
 #[cfg(test)]
+mod test_path_game_subfolders;
+#[cfg(test)]
+mod test_path_game_subfolders_arcade_archive;
+#[cfg(test)]
+mod test_path_game_subfolders_disc;
+#[cfg(test)]
+mod test_path_game_subfolders_multiple;
+#[cfg(test)]
+mod test_path_game_subfolders_system;
+#[cfg(test)]
 mod test_path_original;
 #[cfg(test)]
 mod test_path_playlist;
+#[cfg(test)]
+mod test_path_playlist_game_subfolders;
 #[cfg(test)]
 mod test_path_playlist_subfolder_alpha;
 #[cfg(test)]

@@ -1,4 +1,4 @@
-use super::config::{PreferredRegion, PreferredVersion, SubfolderScheme};
+use super::config::{GameSubfolders, PreferredRegion, PreferredVersion, SubfolderScheme};
 use anyhow::Result;
 use async_graphql::{CustomValidator, InputValueError};
 use std::marker::PhantomData;
@@ -26,6 +26,7 @@ impl<E: VariantNames + 'static> CustomValidator<String> for VariantValidator<E> 
     }
 }
 
+pub type GameSubfoldersValidator = VariantValidator<GameSubfolders>;
 pub type PreferRegionValidator = VariantValidator<PreferredRegion>;
 pub type PreferVersionValidator = VariantValidator<PreferredVersion>;
 pub type SubfolderSchemeValidator = VariantValidator<SubfolderScheme>;
@@ -72,6 +73,8 @@ impl CustomValidator<String> for DirectoryValidator {
 
 #[cfg(test)]
 mod test_directory_validator;
+#[cfg(test)]
+mod test_game_subfolders_validator;
 #[cfg(test)]
 mod test_prefer_region_validator;
 #[cfg(test)]
