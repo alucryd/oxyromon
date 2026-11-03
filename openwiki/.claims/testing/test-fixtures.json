@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6b34bf17b5eeef4544bf6ae2e67ffb01fab2b52b8fd8147afa50752822f44763",
+  "pageVersion": "sha256:19c7ba84f0aecde78eaab5231062a25df167b29d3664f0cc3558b6820fbcbb8d",
   "claims": [
     {
       "id": "claim_62e2eb596fd1472683dffa8d1316579b",
-      "statement": "tests/ is primarily a read-only fixture corpus (30 Logiqx DAT files plus the ROM, disc-image, archive, patch and header files they declare) consumed by the src/<module>/test_*.rs modules, and only tests/crates.rs and tests/mcp_stdio.rs are actual integration-test targets of the root package. crates/chd-rs/tests/ additionally reads the repository's CHD fixtures from ../../tests as its byte-comparison corpus.",
+      "statement": "tests/ is primarily a read-only fixture corpus (30 Logiqx DAT files plus the ROM, disc-image, archive, patch and header files they declare) consumed by the src/<module>/test_*.rs modules, and only tests/crates.rs, tests/mcp_stdio.rs and tests/cli_output.rs are actual integration-test targets of the root package. crates/chd-rs/tests/ additionally reads the repository's CHD fixtures from ../../tests as its byte-comparison corpus.",
       "evidence": [
         {
           "resource": "repo://crates/chd-rs/tests/cli.rs#L14-L42",
@@ -17,6 +17,10 @@
         {
           "resource": "repo://tests/Test%20System%20(20200721).dat#L1-L64",
           "version": "repo-lines-v1:sha256:2d2ceb0d954ba433ccbc4017ec2201afa9c7bbd9cc4bd2f5c48c33c4fdfa15bc:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNzdkNGEzZGFkYTk0MjFmYWU1ZjIzZWIyMTVlNTA3YjIxZjVjOTAwMjY1ZjY5ODJiNzY3YTgyMDQ5NmQwMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0OTkwMzQyMmE4MzBiMThmMDcyZWU5NWI4M2ZkMDEwNjhjOGViNGM1NjFhNDBmOTA4MTM2YjQ3ZjE0NGRiYjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/cli_output.rs#L1-L19",
+          "version": "repo-lines-v1:sha256:001545a08afb0a11a1ebe3bc345ee5d5d7f9c081d19ffbb00cd14b5b97ff6c92:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3NmNkNDUxNDg3ZWQxYWNiZTg4YWExM2Q0MTU1MTVkODhkMjE4MGQ2NDgxNzAzYzY1MjU4NTI3YjgwYzMwNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://tests/crates.rs#L1-L19",
@@ -255,7 +259,7 @@
       "statement": "The MCP stdio harness spawns the real binary via CARGO_BIN_EXE_oxyromon with `mcp`, isolates it with OXYROMON_DATA_DIRECTORY pointing at a TempDir held by the Client (so a virgin oxyromon.db is created per test) and OXYROMON_LOG_LEVEL=off with stderr nulled, and speaks raw newline-delimited JSON-RPC over stdin/stdout with no SDK client - which is also what proves the wire format a real client would meet.",
       "evidence": [
         {
-          "resource": "repo://src/main.rs#L122-L129",
+          "resource": "repo://src/main.rs#L125-L132",
           "version": "repo-lines-v1:sha256:fb09b63b701dbe037aa69dccde353a4752f1c3b26977c5fa226a9c0131f5fa18:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGZlMjU0NjA0NDFmYzI4ZTRjM2IxNGVlZmI4ZDc5MjkzNmQ5Njk1MmEwMDdkNjkzNGQzZTMzOTQwYmJlYmMyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE5OWQ4NWU4NTA5N2RjNThkMzA2YWFjMWEwNDc5NzRjYTZhMzE2Y2UzMmQ4OTY5OGJhNjk0MDdhNjQ4MTcyYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDQxNjE4ZDFhMGI3MGRmMDBkNzAzYTczOTNiYjg5ZThmN2U1NDYxMjBjOTNiZjMwNmQ0ZGVmMThhYmJmMjg3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTViODc3ZjY3Mzg3ZmNjMTM2MDEzNGQyMzg5NjJjOWY1Y2M0MDMyYWM1NWM3MDU5ZDdlYTc1NjkxYzI3OWU1NSJ9"
         },
         {
@@ -619,6 +623,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-01T22:28:11.879Z"
+    "at": "2026-11-02T21:30:44.962Z"
   }
 }

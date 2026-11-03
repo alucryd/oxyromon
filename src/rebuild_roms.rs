@@ -198,6 +198,10 @@ async fn rebuild_system(
         return Ok(());
     }
 
+    // A game is rebuilt from its own files. The completion of the strategy it
+    // was last rebuilt with would also count the files a rebuild is to give it,
+    // so a clone imported since then would never get them.
+    update_split_games_completion_by_system_id(connection, system.id).await;
     let games = find_full_games_by_system_id(connection, system.id).await;
 
     // A merged set is a split one with each clone's files in its parent's ZIP,
@@ -214,27 +218,28 @@ async fn rebuild_system(
         merging => merging,
     };
 
-    if (current == Merging::Split || current == Merging::NonMerged)
-        && (target == Merging::NonMerged || target == Merging::FullNonMerged)
+    if current != target
+        && matches!(current, Merging::NonMerged | Merging::FullNonMerged)
+        && matches!(target, Merging::Split | Merging::NonMerged)
     {
+        for game in &games {
+            trim_game(connection, progress_bar, system, game, target).await?;
+        }
+    }
+    if matches!(target, Merging::NonMerged | Merging::FullNonMerged) {
         let compression =
             get_archive_compression(connection, &ArchiveType::Zip, Some(system.id)).await;
-        for game in games {
-            expand_game(
-                connection,
-                progress_bar,
-                system,
-                &game,
-                target,
-                &compression,
-            )
-            .await?;
+        for game in &games {
+            expand_game(connection, progress_bar, system, game, target, &compression).await?;
         }
-    } else if (current == Merging::NonMerged || current == Merging::FullNonMerged)
-        && (target == Merging::Split || target == Merging::NonMerged)
-    {
-        for game in games {
-            trim_game(connection, progress_bar, system, &game, target).await?;
+        for game in find_partial_games_by_system_id(connection, system.id).await {
+            print_warning(
+                progress_bar,
+                &format!(
+                    "\"{}\" is missing some of its own files, skipping",
+                    game.name
+                ),
+            );
         }
     }
 
@@ -731,6 +736,8 @@ async fn delete_rom(
 
 #[cfg(test)]
 pub(crate) mod merged_set;
+#[cfg(test)]
+mod test_already_rebuilt;
 #[cfg(test)]
 mod test_full_non_merged_to_non_merged;
 #[cfg(test)]

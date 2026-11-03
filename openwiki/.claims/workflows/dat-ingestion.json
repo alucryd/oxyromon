@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0af4391fa3defd87ee88ab788b8cc3a3f0e0ed417496284ee225571b47effaa7",
+  "pageVersion": "sha256:d3e06637155212ff83f49323d0b94d9aa1df9eef47d6640856f9abed5490e16a",
   "claims": [
     {
       "id": "claim_709f7ceeb611426f9818159498c3a446",
@@ -91,7 +91,7 @@
           "version": "repo-lines-v1:sha256:966a990c114d657e4c5764aaf2de78fff675139cea8530aad78352aef4b5b864:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMTJlNTgyZmU4NDc0ZDRmZjI1MTAyM2FjNjRlMjlmNDRmODJjZmJjZGIwNTg5OTY2YjA1NDY2ODZhZjllNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwMzI2NzFiZGY3NzQ0NDcyYzllOWU0MTU2MGJkZjQwMjU5ZGUyNjcyODYxOGU1MDE1ZmZlZDYzMzUxZDY4NWIifQ"
         },
         {
-          "resource": "repo://src/database.rs#L3094-L3177",
+          "resource": "repo://src/database.rs#L3097-L3180",
           "version": "repo-lines-v1:sha256:235d472e322db17417cd345fa5486c52becadbf085f7322fbc6841917d51d8c4:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3ZDAwNWYwZmQ5NTk5MmVjYjYzNzc5ZDdhYWZjYjI0OWFiOTNjOGM0NzU1YjQ2ZDBlYjhmNTNhOWIyNjgzYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5OTY5MTk0YTBjYTRhNWI3NDgxMjdlY2NhNDU1MTVjNGVkOTU5YzU1Nzg0NTBkMWE4MTk2ZmIzYjA2OWQzZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyZTA1MTQ2ZGU0NGU2MTRiOTE4NDViYzZlMzQ4ZWYzNzYyZTFlM2JiZTkwMjdlNzEyYTM3Y2RiOWUwZmI1OGIifQ"
         },
         {
@@ -421,11 +421,11 @@
       "statement": "import_ird builds a per-game catalog from the ISO 9660 header embedded in an IRD, aborting if the walked file count disagrees with the IRD's own count, then upserts one child rom per disc file keyed on its in-image path with the IRD's MD5 and marks games.jbfolder = true; only IRD version 9 is accepted.",
       "evidence": [
         {
-          "resource": "repo://src/import_irds.rs#L115-L118",
+          "resource": "repo://src/import_irds.rs#L116-L119",
           "version": "repo-lines-v1:sha256:e6d93800c9e6d101f6e777a41d2573434c422c249f4391e5b3d0afee5075bc3d:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzQyYzg3ZjE2OWU0NWQ1MTg2Y2Q1MTQ4NTJhZDE5NWI0ZjY1YjA5MzRiOTkzNTM0OWMzMGRhMDA0NzNhMjBkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTc3MzcwOGMyYTIwMTNkM2I5OWJiMmIxMmRmMWFlNjY0MDIyYzIyMzRhNjZhNGIwNmJkOGQyYjllNjg1NWRkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmRmNzFmNDA4YWRiYzMxZjZmZGExNzU3Y2ExNWM5NmQxNWJlZGU4ZTAxZmUxMTk5MzE5MzdmMjNhZWY0NGMzZCJ9"
         },
         {
-          "resource": "repo://src/import_irds.rs#L368-L459",
+          "resource": "repo://src/import_irds.rs#L369-L460",
           "version": "repo-lines-v1:sha256:e2ff36c4d613e0ac200f0def25fc817b444483013e7134e22c36308b8ecc733e:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNjI1ZjhlOTJkOGE1MTk4Y2RiNzcwYzlmOGEwNWNmODk1OTg3M2U3M2FiZGI2YmQxMmE1ZmQxMDFlY2ZkOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmZGUyMzIwZmI2ZjdhNDllNGFhYTRlNjQ5MTJiMmFlZDNhYjczN2EzODNlODgyYzZmMzUxOTI3YThkOTNlZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MjQzZWVmN2FjMzdjYjdiNjIyNzE0ZjY5ZDI5YzljNzU4M2M1MzZiNDMzZGM2NmQyY2EwNTI4ZDNjNjZkZTMifQ"
         }
       ]
@@ -435,7 +435,7 @@
       "statement": "IRD import reuses reimport_orphan_romfiles when a child rom's recorded size or MD5 changes, so JB-folder maintenance follows the same re-home-or-trash and empty-directory rules as a DAT revision.",
       "evidence": [
         {
-          "resource": "repo://src/import_irds.rs#L400-L454",
+          "resource": "repo://src/import_irds.rs#L401-L455",
           "version": "repo-lines-v1:sha256:4270d9216a4bfbde3fb51fa0ede8724cfc94e5859332f003c68de2ed97a5669d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYjljYjdlZTk4NDhkMTAzNTdjNDI1YmYxNTQwMGEwMzE5NGU2ZGI2ZTJjOTAyZmYxMzIxZTQwODI1N2I4NzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkZTk4NDRiYmYwZDhlN2U5YWZlYWVhNjBkNjk4NWZjY2M0ZTYwNjU4NTFmNzA5OTk5YzYzOGRkNjA0MmMyYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyYmZmMWY4NjYyMGY3YzJhNjZkMTQwZTU4OTc1MTgwOTZhODRhY2MwOThjNjJjZmNkMmU2YTk1MDY5ZGI3OGMifQ"
         },
         {
@@ -449,11 +449,11 @@
       "statement": "Unattended IRD import (--system) is strict by design: an empty catalog bails with 'import its DAT first', and the game is accepted only when exactly one name matches after title_key strips parenthetical/bracket tags and punctuation, avoiding a fuzzy best match writing the IRD onto the wrong game.",
       "evidence": [
         {
-          "resource": "repo://src/import_irds.rs#L162-L197",
+          "resource": "repo://src/import_irds.rs#L163-L198",
           "version": "repo-lines-v1:sha256:25a383764c6280c798fcbe1f6964e27d21002a591b9046692d5b0b6ee7d4509f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxNGVmMjNmMjg0ZjNmZjI5NWRiMDZhZmZkMjJiNjUxZWQzOWFiNDdlNDcxYmI5ZmNlYTc0Njk0MTc3M2UxZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkN2NiNWUzNzc4MTgxN2QzMGFkNDk4YzE4Nzk5OTkyYmEyNGEwODlmODQ0MjYwYTM0MmVkMjg0NzRhNDhiMTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3YzJmNTg2MjE4OTBkMzI5ZTkyZjViMjVlYTgzNDg0NDJmOTE4NjI5MzE1OWYwMTVkYTBiMTkxMGIxZDEwM2UifQ"
         },
         {
-          "resource": "repo://src/import_irds.rs#L61-L156",
+          "resource": "repo://src/import_irds.rs#L62-L157",
           "version": "repo-lines-v1:sha256:2aee4085b712039a39585913548a5e42a1c41abe3fa40e00a34c4a1c56b7f7d0:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMGY4MGY2MTJjODc0NGMwMjdhNjkyOWU5NTMxZjJmMTMxNWFiMjhjMzcyMTIyOTAzNTM3N2Y4YmU3YzU1NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg2MWUwNGY2NDY4OGJjOGZkYWY4ZDkyMzE5NmYyMmQ4NDc5NWMwZmUxNjY4OTg3MjZmMDM4ZDlhOWJhZjc1OGIifQ"
         },
         {
@@ -489,7 +489,7 @@
       "statement": "Cataloging a patch only records it: patch application is not wired up, and update_patch is kept behind an allow(dead_code) for the planned feature.",
       "evidence": [
         {
-          "resource": "repo://src/database.rs#L2723-L2728",
+          "resource": "repo://src/database.rs#L2726-L2731",
           "version": "repo-lines-v1:sha256:a108fcdf91078f45ba4c324e30719d2a2585013ace87e53853d3496c8b720231:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmJjNjEzNjk3OTdmZjk2ODZiMTMzNTdlOWIxMGNlY2M0YjlhODU2N2ViNWViNWU3NzEzMTI3NjUwZmVhNDRkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODhkZDJlMWVhNjg3NjAyMDQyYzljNDU5MTk5MDJhNDZlYmIxODE3YWUxYzc0YzRjMjkwMTk1ODgwZGYzOWY0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmIwZTM5NmY3YjJjZDk2YzNhM2M5OTZlODliMmZlYjM1NWJjYjRjMzk1Mzg0NmQyZDg3ZjE1YjgyNTBjODhiOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjEwMWRlODA3NzY5MjdkM2MzMzY2ODU4YzljZGQ1ZmMxNjE2YTAyNzVlM2VkOTliNzA4YjkxZDg3MzdhZmU5MCJ9"
         }
       ]
@@ -559,8 +559,8 @@
       "statement": "All five ingestion subcommands (import-dats, download-dats, create-dats, import-irds, import-patches) are registered as clap subcommands and run on the single CLI connection inside one scope, released before optimize_database acquires a connection.",
       "evidence": [
         {
-          "resource": "repo://src/main.rs#L71-L185",
-          "version": "repo-lines-v1:sha256:d2b859ba165e9efbac5a4cd0fd19113d045ba1e6d203b2aabd1dab89278e2a98:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNTc0NGY1MTRiYjAxOTRlMGFkNDhjNTdmYmY2ZjJlMDhlZGRiZGMwYWE5YjZhMmRmMTA3MGUxZDQ4M2YwNTBmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhMDQzOTBhMDJmNzQ0MDI3NDEzZWE0NDI4ZjMwZjMzNDJjZGMxNmUwOTNjMDU5ZWUwNWFhZGI1MGI2NzdkNjYxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2OTgwN2E2MTI4OWIxOTAwYTRiZmNjMDFkZWVjYjM0OGU1YTZiZTQ2YzY2YjlhOTRjYTFiYzBmNjY3Nzc4MmU3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0OWIzZWQ1ODFmOTg1ZTU5OWY5NWUzZTJlNmExM2QwNTE1Yzc0MzM4NTJhM2I0NjUxYzgyNWExMTRiMTliZmYxIn0"
+          "resource": "repo://src/main.rs#L71-L188",
+          "version": "repo-lines-v1:sha256:b5ebdcbac0f5a7d085c139f3c9d8e2fff75d773b8863dfdd6040b8aff21f74b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNTc0NGY1MTRiYjAxOTRlMGFkNDhjNTdmYmY2ZjJlMDhlZGRiZGMwYWE5YjZhMmRmMTA3MGUxZDQ4M2YwNTBmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhMDQzOTBhMDJmNzQ0MDI3NDEzZWE0NDI4ZjMwZjMzNDJjZGMxNmUwOTNjMDU5ZWUwNWFhZGI1MGI2NzdkNjYxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2OTgwN2E2MTI4OWIxOTAwYTRiZmNjMDFkZWVjYjM0OGU1YTZiZTQ2YzY2YjlhOTRjYTFiYzBmNjY3Nzc4MmU3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0OWIzZWQ1ODFmOTg1ZTU5OWY5NWUzZTJlNmExM2QwNTE1Yzc0MzM4NTJhM2I0NjUxYzgyNWExMTRiMTliZmYxIn0"
         }
       ]
     },
@@ -573,7 +573,7 @@
           "version": "repo-lines-v1:sha256:449e6d991bc225b48ce30449a4cef7b066852105aa6da28e5b2cab87373e4c5d:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzJlNmE3MTE2MmQwY2VhOGRhNDc2NWE3MzVkM2FiOWUwNzgzYzQ2OGEyNTYxYjhiYzQ5ODdmODE0NDAyNDFlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjE0MDVkMjAwZjEyYzczZjk5YmYxODk2OGYyZjY3NWM4OTUzYmQwMTZmZjhjZGExNzVjZjBjNmRiNjg2MjcxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWE3MTllMzZlM2Q0MmYwYTBjZGI5NGQ3M2YwOGQxNWY0YTliNzgzMTg0YmQzNjU0ZTA1NTk3MjljYjg4YjlhNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGQwMGEyNjdlMGI0NjY0MmUzOGMyNDllNDlhMWQ5NjhhOWM1NGM2MzVjZTJlMTkwODY5ZTc5MzJhYjdjMzllNCJ9"
         },
         {
-          "resource": "repo://src/import_irds.rs#L153-L155",
+          "resource": "repo://src/import_irds.rs#L154-L156",
           "version": "repo-lines-v1:sha256:79b3618426b4c5ba3fe305f34684fa4e0a61d5c07a06fb53b933411e803cd9bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjg4MGU3MzQyNWZlYjAyOTYyMzIwNTRiZjAwMWFjYTA5MTFjZjQ3NWQ3ZDg3ZjA4YWM5YjFhOWJiMDNhMTU2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg5NzcxZmUxYjY2Mjg4NzVhYTIzZTdkYmU0YWE3MTQ2MWQwMGNkZmI2NmRkZjExYjlkODIwYWM1ODk3ZmRmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjRmMmJkZDdiOWZmYTFiZGEwMzRlODI1OWUxYWE4MTI1M2EwNWE5ZjYxYjg4ZjNjNjBiOGE1ZDE1OTVlNmM4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmVlMzdjNGQ3ZGYyMDAzZGM1MjdmYjMyNDQ5OTMwMTFjZTgyNDQwMjU1YmNlNzY0YWQ1ODJjZDhjOWMzZDg3YyJ9"
         },
         {
@@ -607,10 +607,24 @@
           "version": "repo-file-v1:sha256:8de4fef0fb5a0b366c4a4680fcb67fe649d87c54be162ef9a62d78d6316f012b"
         }
       ]
+    },
+    {
+      "id": "claim_e04aceb249a84a71809da40beebee8ad",
+      "statement": "find_rom_by_size_and_crc_and_game_ids, the merge-attribute parent lookup called per merged rom by create_or_update_roms with at most three game IDs, pins the roms_game_parent_romfile index with INDEXED BY, because without statistics in a first import the planner would take the size and CRC index and scan every rom sharing that CRC, making imports of DATs with widely shared roms quadratic.",
+      "evidence": [
+        {
+          "resource": "repo://src/database.rs#L2630-L2650",
+          "version": "repo-lines-v1:sha256:ad0eff3838458fbc87446dbfd4d38ad3891a6d7824d834fa25b0a532f41cd2bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiNDJlZWM0NWNkYjZhNWNkNzZmMDYwNzAxNjdlNDhhYzNmNmRmMmUzYTU3MzU4ZTQ0MTY5OWVhNDBmOGFlZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYjE4NmZiMzNiZmNiNzI1ZmM2OWIwMGIxOWE1ZGRhZWNjZGMzNmYwOGZiNzdjYmY1OTg0NTZmM2FhY2NjZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwNjNjNGQxYWY4Y2Q4OWJiMGJkZDc2NTdmZmNiZjY4MDZhNjEwZDc5ZDZjOGQ0YzMwN2MyNDFkZjM5MDA1MjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0OWIxYzZjYTYxMWY0M2U0YWUzMjQ1NDRhZDlmNjUwNzhjNDY4ODQxYTk4YjQ5YjJlNGI3NGQyZmZkOTljOTkifQ"
+        },
+        {
+          "resource": "repo://src/import_dats.rs#L804-L822",
+          "version": "repo-lines-v1:sha256:e2a65c67c32deb11f24960ffc270506f93873a991f33c64602e7c65f340e33b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDc2NmNiNjk1OGU0Y2VkYTEwYzE4ODU4M2NhYTZhMjE0NzY5NThkNWJmNjc4ZDBmMTgzOTAzNTRiMzYxMzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzQ2NzllZDg5ZTI1MGI0ODk3YzU0YmE2YjkwYmViNzY0OTdlY2FjNWEzNWY4OGY1NzBiYzY5NmRkNDBmZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVlYzY2MzRhMTFmYTFlM2JjNTdlZGY4YmM1YzA3YjZjNzFhNzNjMzEyNTYxZjg4NmU4ZjkyYzVkYjVkNmJiYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhZmQwMGQ0OWY5MzNlZmIzM2E4MDUxMGE2ZGVhYmM5ODExNTQ2OTcwZTBjOTcyODAwYjk3NTJkN2UzNDI0NTIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-01T22:28:11.879Z"
+    "at": "2026-11-02T21:30:44.962Z"
   }
 }

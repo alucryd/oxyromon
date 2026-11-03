@@ -22,6 +22,8 @@ sources:
     resource: repo://src/chd.rs
   - id: openwiki-source-f1234afbb261ce7190a87845
     resource: repo://src/check_roms.rs
+  - id: openwiki-source-f026be5ceac01513e05fa46c
+    resource: repo://src/check_roms/test_check_by_name.rs
   - id: openwiki-source-ae112a898ad2b964864b4498
     resource: repo://src/check_roms/test_multiple_tracks_chd.rs
   - id: openwiki-source-de387659b991f4f153cbd6d1
@@ -100,10 +102,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-02T21:30:44.962Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-02T21:30:44.962Z
 ---
 
 # Integrity Checking, Purging and Trash
@@ -161,8 +163,9 @@ Two consequences matter when changing this area:
 
 ## check-roms: re-hash, report, trash
 
-`check-roms` takes `-a/--all`, `-g/--game`, `-s/--size` and `--system`
-([src/check_roms.rs](../../src/check_roms.rs#L19-L53)). `--system` is name-like
+`check-roms` takes `-a/--all`, `-g/--game`, `--size` and `-s/--system`
+([src/check_roms.rs](../../src/check_roms.rs#L20-L54)). `-s` means `--system` here as
+in the other commands with that option, so `--size` has no short form. `--system` is name-like
 and resolved by `resolve_systems_by_name_like`, which sorts by id and
 de-duplicates so two overlapping patterns cannot check the same system twice;
 without it, `-a` checks every system and anything else opens an interactive

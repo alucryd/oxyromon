@@ -98,14 +98,16 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
+  - id: openwiki-source-d3ba64341f3a424837662eeb
+    resource: repo://tests/cli_output.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-02T21:30:44.962Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-02T21:30:44.962Z
 ---
 
 # Test Harness and Conventions
@@ -124,10 +126,11 @@ directly with a synthesized clap `ArgMatches` — no process is spawned
 Roughly 300 such modules exist; `src/sort_roms/` alone holds 42, one per sorting
 scenario. `tests/` is **not** the ordinary Rust integration directory — it is the
 fixture corpus the in-module tests read
-([Test Fixtures and End-to-End Suites](test-fixtures.md)). Only two files there
-are test targets: the CLI-parity guard `tests/crates.rs` and the end-to-end
-`tests/mcp_stdio.rs`, which is the sole case that spawns the real binary via
-`env!("CARGO_BIN_EXE_oxyromon")` ([tests/mcp_stdio.rs](../../tests/mcp_stdio.rs#L1-L43)).
+([Test Fixtures and End-to-End Suites](test-fixtures.md)). Only three files there
+are test targets: the CLI-parity guard `tests/crates.rs`, the end-to-end
+`tests/mcp_stdio.rs` and `tests/cli_output.rs`, the two that spawn the real binary
+via `env!("CARGO_BIN_EXE_oxyromon")` ([tests/mcp_stdio.rs](../../tests/mcp_stdio.rs#L1-L43),
+[tests/cli_output.rs](../../tests/cli_output.rs#L1-L19)).
 A third style exists once, inline: `#[cfg(test)] mod tests { … }` inside
 [src/iso.rs](../../src/iso.rs#L186-L192) for the CUE-parsing helpers.
 

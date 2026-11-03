@@ -111,6 +111,9 @@ async fn main() -> Result<()> {
         log::set_max_level(level);
 
         let progress_bar = get_progress_bar(0, get_none_progress_style());
+        if !matches!(subcommand, "mcp" | "server") {
+            enable_plain_output_if_hidden();
+        }
 
         print_separator(&progress_bar);
         print_header(

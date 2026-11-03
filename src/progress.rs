@@ -1,6 +1,8 @@
 use anyhow::Context;
 use console::Style;
+use std::io::Write;
 use std::sync::LazyLock;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tokio::task::spawn_blocking;
 
@@ -15,13 +17,14 @@ const COUNT_TEMPLATE: &str = "  {spinner:.cyan} {wide_msg}\n        {pos}/{len} 
 const BYTES_TEMPLATE: &str = "  {spinner:.cyan} {wide_msg}\n        {bytes}/{total_bytes} [{bar:40.cyan/dim}] {bytes_per_sec} {elapsed_precise} (ETA {eta_precise})";
 
 static MULTI_PROGRESS: LazyLock<MultiProgress> = LazyLock::new(MultiProgress::new);
-// Prefixed styles
-static STYLE_HEADER: LazyLock<Style> = LazyLock::new(|| Style::new().bold().cyan());
-static STYLE_SUBHEADER: LazyLock<Style> = LazyLock::new(|| Style::new().bold());
-static STYLE_SUCCESS: LazyLock<Style> = LazyLock::new(|| Style::new().green());
-static STYLE_WARNING: LazyLock<Style> = LazyLock::new(|| Style::new().yellow());
-static STYLE_ERROR: LazyLock<Style> = LazyLock::new(|| Style::new().red().bold());
-static STYLE_DIM: LazyLock<Style> = LazyLock::new(|| Style::new().dim());
+static PLAIN_OUTPUT: AtomicBool = AtomicBool::new(false);
+// Prefixed styles, for stderr, where all messages go
+static STYLE_HEADER: LazyLock<Style> = LazyLock::new(|| Style::new().for_stderr().bold().cyan());
+static STYLE_SUBHEADER: LazyLock<Style> = LazyLock::new(|| Style::new().for_stderr().bold());
+static STYLE_SUCCESS: LazyLock<Style> = LazyLock::new(|| Style::new().for_stderr().green());
+static STYLE_WARNING: LazyLock<Style> = LazyLock::new(|| Style::new().for_stderr().yellow());
+static STYLE_ERROR: LazyLock<Style> = LazyLock::new(|| Style::new().for_stderr().red().bold());
+static STYLE_DIM: LazyLock<Style> = LazyLock::new(|| Style::new().for_stderr().dim());
 
 /// Returns the global MultiProgress instance.
 /// All progress bars should be added to this instance.
@@ -98,75 +101,115 @@ where
 
 // ── Categorized output helpers ──────────────────────────────────────────────
 
+/// Writes messages straight to stderr when it is not a terminal, where a bar
+/// hides itself and drops them. Only for a one-shot command: the server and the
+/// MCP server hide their bars on purpose.
+pub fn enable_plain_output_if_hidden() {
+    PLAIN_OUTPUT.store(MULTI_PROGRESS.is_hidden(), Ordering::Relaxed);
+}
+
+/// Print a line above the progress bar.
+pub fn print_line(progress_bar: &ProgressBar, line: impl AsRef<str>) {
+    if PLAIN_OUTPUT.load(Ordering::Relaxed) {
+        let _ = writeln!(std::io::stderr(), "{}", line.as_ref());
+    } else {
+        progress_bar.println(line);
+    }
+}
+
 /// Print a bold cyan header, e.g. system names or section titles.
 /// Example: "◆ Processing \"Nintendo - Game Boy\""
 pub fn print_header(progress_bar: &ProgressBar, message: &str) {
-    progress_bar.println(format!(
-        "  {} {}",
-        STYLE_HEADER.apply_to("◆"),
-        STYLE_HEADER.apply_to(message),
-    ));
+    print_line(
+        progress_bar,
+        format!(
+            "  {} {}",
+            STYLE_HEADER.apply_to("◆"),
+            STYLE_HEADER.apply_to(message),
+        ),
+    );
 }
 
 /// Print a subheader for steps within a section.
 /// Example: "  ▸ Processing games"
 pub fn print_subheader(progress_bar: &ProgressBar, message: &str) {
-    progress_bar.println(format!(
-        "    {} {}",
-        STYLE_SUBHEADER.apply_to("▸"),
-        STYLE_SUBHEADER.apply_to(message),
-    ));
+    print_line(
+        progress_bar,
+        format!(
+            "    {} {}",
+            STYLE_SUBHEADER.apply_to("▸"),
+            STYLE_SUBHEADER.apply_to(message),
+        ),
+    );
 }
 
 /// Print an informational message.
 /// Example: "  ℹ System: Test System"
 pub fn print_info(progress_bar: &ProgressBar, message: &str) {
-    progress_bar.println(format!("    {} {}", STYLE_DIM.apply_to("ℹ"), message,));
+    print_line(
+        progress_bar,
+        format!("    {} {}", STYLE_DIM.apply_to("ℹ"), message,),
+    );
 }
 
 /// Print a success/completion message.
 /// Example: "  ✔ Imported Test Game (USA)"
 pub fn print_success(progress_bar: &ProgressBar, message: &str) {
-    progress_bar.println(format!("    {} {}", STYLE_SUCCESS.apply_to("✔"), message,));
+    print_line(
+        progress_bar,
+        format!("    {} {}", STYLE_SUCCESS.apply_to("✔"), message,),
+    );
 }
 
 /// Print a warning message.
 /// Example: "  ⚠ Converted file doesn't match the original"
 pub fn print_warning(progress_bar: &ProgressBar, message: &str) {
-    progress_bar.println(format!(
-        "    {} {}",
-        STYLE_WARNING.apply_to("⚠"),
-        STYLE_WARNING.apply_to(message),
-    ));
+    print_line(
+        progress_bar,
+        format!(
+            "    {} {}",
+            STYLE_WARNING.apply_to("⚠"),
+            STYLE_WARNING.apply_to(message),
+        ),
+    );
 }
 
 /// Print an error message.
 /// Example: "  ✖ Failed to parse DAT file"
 pub fn print_error(progress_bar: &ProgressBar, message: &str) {
-    progress_bar.println(format!(
-        "    {} {}",
-        STYLE_ERROR.apply_to("✖"),
-        STYLE_ERROR.apply_to(message),
-    ));
+    print_line(
+        progress_bar,
+        format!(
+            "    {} {}",
+            STYLE_ERROR.apply_to("✖"),
+            STYLE_ERROR.apply_to(message),
+        ),
+    );
 }
 
 /// Print a skip/dim message.
 /// Example: "  ↪ Already at version \"20200721\""
 pub fn print_skip(progress_bar: &ProgressBar, message: &str) {
-    progress_bar.println(format!(
-        "    {} {}",
-        STYLE_DIM.apply_to("↪"),
-        STYLE_DIM.apply_to(message),
-    ));
+    print_line(
+        progress_bar,
+        format!(
+            "    {} {}",
+            STYLE_DIM.apply_to("↪"),
+            STYLE_DIM.apply_to(message),
+        ),
+    );
 }
 
 /// Print an action message for file operations (create, copy, move, delete, etc.)
 /// Example: "  → Moving to \"/path/to/file\""
 pub fn print_action(progress_bar: &ProgressBar, message: &str) {
-    progress_bar.println(format!("    {} {}", STYLE_DIM.apply_to("→"), message,));
+    print_line(
+        progress_bar,
+        format!("    {} {}", STYLE_DIM.apply_to("→"), message,),
+    );
 }
 
 /// Print a blank separator line.
 pub fn print_separator(progress_bar: &ProgressBar) {
-    progress_bar.println("");
+    print_line(progress_bar, "");
 }

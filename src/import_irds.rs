@@ -50,6 +50,7 @@ pub fn subcommand() -> Command {
         )
         .arg(
             Arg::new("SYSTEM")
+                .short('s')
                 .long("system")
                 .help("Select the system to import into, matching the game and ROM automatically")
                 .required(false)
