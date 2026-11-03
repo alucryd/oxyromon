@@ -9,13 +9,14 @@ use leptos::task::spawn_local;
 
 use crate::api::{
     add_to_list, get_raw_settings, remove_from_list, report_error, set_bool, set_directory,
-    set_prefer_format, set_prefer_regions, set_prefer_versions, set_subfolder_scheme,
+    set_game_subfolders, set_prefer_format, set_prefer_regions, set_prefer_versions,
+    set_subfolder_scheme,
     unset_prefer_format,
 };
 use crate::model::Setting;
 use crate::state::{
     ALL_REGIONS_KEY, ALL_REGIONS_SUBFOLDERS_KEY, AppState, DISCARD_FLAGS_KEY, DISCARD_RELEASES_KEY,
-    GROUP_SUBSYSTEMS_KEY, LANGUAGES_KEY, ONE_REGIONS_KEY, ONE_REGIONS_SUBFOLDERS_KEY,
+    GAME_SUBFOLDERS_CHOICES, GAME_SUBFOLDERS_KEY, GROUP_SUBSYSTEMS_KEY, LANGUAGES_KEY, ONE_REGIONS_KEY, ONE_REGIONS_SUBFOLDERS_KEY,
     PREFER_FLAGS_KEY, PREFER_FORMAT_CHOICES, PREFER_FORMAT_KEY, PREFER_PARENTS_KEY,
     PREFER_REGIONS_CHOICES, PREFER_REGIONS_KEY, PREFER_VERSIONS_CHOICES, PREFER_VERSIONS_KEY,
     ROM_DIRECTORY_KEY, STRICT_ONE_REGIONS_KEY, SUBFOLDER_SCHEMES_CHOICES, TMP_DIRECTORY_KEY,
@@ -36,6 +37,7 @@ struct Local {
     prefer_parents: RwSignal<bool>,
     prefer_format: RwSignal<String>,
     group_subsystems: RwSignal<bool>,
+    game_subfolders: RwSignal<String>,
     prefer_regions: RwSignal<String>,
     prefer_versions: RwSignal<String>,
     one_regions_subfolders: RwSignal<String>,
@@ -57,6 +59,7 @@ impl Local {
             prefer_parents: RwSignal::new(true),
             prefer_format: RwSignal::new(String::new()),
             group_subsystems: RwSignal::new(true),
+            game_subfolders: RwSignal::new("never".to_string()),
             prefer_regions: RwSignal::new("none".to_string()),
             prefer_versions: RwSignal::new("none".to_string()),
             one_regions_subfolders: RwSignal::new("none".to_string()),
@@ -88,6 +91,8 @@ impl Local {
         self.prefer_format
             .set(find(PREFER_FORMAT_KEY).unwrap_or_default());
         self.group_subsystems.set(not_false(GROUP_SUBSYSTEMS_KEY));
+        self.game_subfolders
+            .set(find(GAME_SUBFOLDERS_KEY).unwrap_or_else(|| "never".to_string()));
         self.prefer_regions
             .set(find(PREFER_REGIONS_KEY).unwrap_or_else(|| "none".to_string()));
         self.prefer_versions
@@ -141,6 +146,15 @@ pub fn SettingsModal(
         });
     };
 
+    let choose_game_subfolders = move |value: String| {
+        let sid = system_id.get_untracked();
+        spawn_local(async move {
+            if let Err(e) = set_game_subfolders(&value, sid).await {
+                report_error(state.notifier, "Updating settings", &e);
+            }
+            reload.run(());
+        });
+    };
     let choose_prefer_regions = move |value: String| {
         let sid = system_id.get_untracked();
         spawn_local(async move {
@@ -218,6 +232,13 @@ pub fn SettingsModal(
                             hint="Group subsystems in the main system directory (eg: PS3 DLCs and updates)"
                             value=local.group_subsystems
                             on_toggle=Callback::new(move |v| toggle(GROUP_SUBSYSTEMS_KEY, v))
+                        />
+                        <SelectField
+                            label="Game Subfolders"
+                            hint="Store games in folders named after them: never, those of several files, or always; the discs of a game share one with their playlist"
+                            value=local.game_subfolders
+                            choices=&GAME_SUBFOLDERS_CHOICES
+                            on_select=Callback::new(choose_game_subfolders)
                         />
                         <SelectField
                             label="1G1R Subfolders"

@@ -14,6 +14,7 @@
 - A Wii U update or DLC counts as complete with its newest TMD and the files that TMD lists: No-Intro's CDN DAT lists every version a title went through in one game, while Nintendo's servers deliver only the newest, so the older TMDs and the contents only older versions use are ignored
 - Exporting a Wii U update or DLC rebuilds the H3 files its TMD lists that the library lacks, checked against the TMD: No-Intro's CDN DAT sometimes leaves one out, and a title installs only with all of them. Importing such a title says so of the H3 file it leaves behind, rather than reporting no match
 - Importing a Wii U title's folder keeps the ticket a downloader made when no DAT lists it, as No-Intro lists none for DLC, in a `wiiu_tickets` folder in the data directory, by title ID, even when the title itself was already imported. Exporting a disc to WUA bundles the DLC it decrypts, and exporting the title as ORIGINAL adds it as `title.tik`
+- Added the `GAME_SUBFOLDERS` setting, storing games in folders named after them so a game of several files stays together: `never`, the default, `multiple`, for games stored as several files, or `always`. Under either of the last two, the discs of a game share one folder with their playlist, as frontends such as RomM read a multi-disc game. Arcade games stored as archives stay as they are
 
 ## Changes
 
