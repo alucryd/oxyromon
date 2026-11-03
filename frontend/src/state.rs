@@ -33,10 +33,12 @@ pub const PREFER_VERSIONS_KEY: &str = "PREFER_VERSIONS";
 pub const PREFER_FLAGS_KEY: &str = "PREFER_FLAGS";
 pub const ROM_DIRECTORY_KEY: &str = "ROM_DIRECTORY";
 pub const TMP_DIRECTORY_KEY: &str = "TMP_DIRECTORY";
+pub const GAME_SUBFOLDERS_KEY: &str = "GAME_SUBFOLDERS";
 pub const GROUP_SUBSYSTEMS_KEY: &str = "GROUP_SUBSYSTEMS";
 pub const ONE_REGIONS_SUBFOLDERS_KEY: &str = "REGIONS_ONE_SUBFOLDERS";
 pub const ALL_REGIONS_SUBFOLDERS_KEY: &str = "REGIONS_ALL_SUBFOLDERS";
 
+pub const GAME_SUBFOLDERS_CHOICES: [&str; 3] = ["never", "multiple", "always"];
 pub const PREFER_REGIONS_CHOICES: [&str; 3] = ["none", "broad", "narrow"];
 pub const PREFER_VERSIONS_CHOICES: [&str; 3] = ["none", "new", "old"];
 pub const PREFER_FORMAT_CHOICES: [&str; 10] = [

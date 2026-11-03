@@ -156,6 +156,7 @@ These environment variables change where things go:
 | `DISCARD_RELEASES`       | Releases to discard (eg: `Beta,Proto`)                                                       |         |
 | `LANGUAGES`              | Languages to keep, for games that list theirs (eg: `En,Ja`)                                  |         |
 | `GROUP_SUBSYSTEMS`       | Put every variant of a system in the same directory                                          | `true`  |
+| `GAME_SUBFOLDERS`        | Put games in folders named after them: `never`, `multiple` (those stored as several files) or `always` | `never` |
 
 ### Formats
 
@@ -197,6 +198,10 @@ ${ROM_DIRECTORY}
 ```
 
 `GROUP_SUBSYSTEMS` controls `${SYSTEM_NAME}`: when on, every variant of a system shares one directory.
+`GAME_SUBFOLDERS` puts games in folders named after them within their system's directory, so a game of several files stays together.
+With `always`, every game gets one; with `multiple`, only a game stored as several files does, a CUE and its BINs, while one in a single archive or disc image stays as it is.
+Under either, the discs of a game share one folder with their playlist, named after the game without its `(Disc N)` tag, as frontends such as RomM read a multi-disc game.
+Arcade games stored as archives stay as they are.
 
 ## Supported formats
 

@@ -206,6 +206,18 @@ impl Mutation {
         Ok(true)
     }
 
+    async fn set_game_subfolders(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(custom = "GameSubfoldersValidator::new()"))] value: String,
+        system_id: Option<i64>,
+    ) -> Result<bool> {
+        log::debug!("mutation::set_game_subfolders({})", value);
+        let pool = ctx.data_unchecked::<SqlitePool>();
+        let mut connection = acquire_connection(pool).await?;
+        set_string(&mut connection, "GAME_SUBFOLDERS", &value, system_id).await;
+        Ok(true)
+    }
     async fn set_subfolder_scheme(
         &self,
         ctx: &Context<'_>,

@@ -124,6 +124,18 @@ async fn test() -> Result<()> {
         .await;
         assert_eq!(v["data"]["setSubfolderScheme"], json!(true));
 
+        let v = gql(
+            &client,
+            r#"{"query":"mutation { setGameSubfolders(value: \"multiple\") }"}"#,
+        )
+        .await;
+        assert_eq!(v["data"]["setGameSubfolders"], json!(true));
+        let v = gql(&client, r#"{"query":"{ settings { key value } }"}"#).await;
+        assert_eq!(
+            setting_value(&v["data"]["settings"], "GAME_SUBFOLDERS"),
+            Some("multiple".to_string())
+        );
+
         // set_directory accepts an existing directory
         let dir = tmp_directory.to_str().unwrap().replace('\\', "/");
         let v = gql(
