@@ -37,6 +37,10 @@ fn main() {
     // an empty folder still yields a working binary, just with an empty UI.
     let _ = std::fs::create_dir_all(Path::new("target").join("assets"));
 
+    // Cargo reruns a build script for the environment variables it is told
+    // of, and no others: without this, a build after one with SKIP_TRUNK=true
+    // reuses that run, and embeds whatever `target/assets` holds.
+    println!("cargo:rerun-if-env-changed=SKIP_TRUNK");
     println!("cargo:rerun-if-changed=frontend/src");
     println!("cargo:rerun-if-changed=frontend/index.html");
     println!("cargo:rerun-if-changed=frontend/styles.css");
