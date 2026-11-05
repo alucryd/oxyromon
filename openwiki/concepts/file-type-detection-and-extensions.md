@@ -62,10 +62,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # File Type Detection and Extension Constants
@@ -158,7 +158,7 @@ These are not documentation; they are the predicates that decide real behavior.
 | --- | --- | --- |
 | `ARCHIVE_EXTENSIONS` | `import_roms::main` (`--extract`), `import_rom`, `rebuild_roms`, `check_roms`, `CommonRomfile::get_sorted_path` | the file is unpacked and its entries matched individually instead of being hashed as one file; arcade games and NUS titles stop getting a per-game subfolder |
 | `PS3_EXTENSIONS` | `import_roms::import_archive` | a single-file archive whose inner ROM is `pkg`/`pup`/`rap` is renamed `{game.name}.{archive ext}` rather than `{rom name}.{archive ext}` |
-| `NON_ORIGINAL_EXTENSIONS` | `import_dats`, `CommonRomfile::get_sorted_path` | a DAT ROM with such an extension is stored with `roms.original = false`; sorted paths name the file after the *game* instead of the DAT rom name |
+| `NON_ORIGINAL_EXTENSIONS` | `import_dats`, `CommonRomfile::get_sorted_path` | a DAT ROM with such an extension is stored with `roms.original = false`; sorted paths name the file after the *game* instead of the DAT rom name; under `GAME_SUBFOLDERS = multiple` a game stored this way counts as one file and gets no game folder |
 
 `NON_ORIGINAL_EXTENSIONS` is the seam between "the file the DAT describes" and "a
 recompression of it". `import_dats::is_original` treats a disk as non-original, and

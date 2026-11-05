@@ -76,10 +76,10 @@ sources:
     resource: repo://src/query.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
-generated: { by: "claude-code", at: "2026-10-28T17:34:44.685Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # Web UI (Leptos SPA + Web Awesome)
@@ -143,7 +143,8 @@ serves from the embedding root rather than relative to the current page.
 The native build drives trunk automatically. `build.rs` runs `trunk build --release`
 with `current_dir("frontend")` when the `server` feature is enabled and
 `SKIP_TRUNK != "true"`, then unconditionally creates `target/assets` so rust-embed
-still compiles. That `create_dir_all` is load-bearing: building the **published
+still compiles. It declares `SKIP_TRUNK` with `rerun-if-env-changed`, so clearing
+it makes the next build run trunk. That `create_dir_all` is load-bearing: building the **published
 crate** (cargo omits nested packages from the tarball, so `frontend/` is simply
 absent) still produces a linkable binary rather than a compile error — but with an
 empty asset set, so `serve_index`'s `Assets::get("index.html").unwrap()` has nothing
@@ -450,7 +451,10 @@ write-through: the change goes out as its own GraphQL mutation and then the sett
 for the current `system_id` are reloaded, so the server stays the source of truth
 for what was stored. Note `set_directory` ignores an empty value and
 `SelectField`'s "No conversion" option routes to `unset_prefer_format` rather than
-writing an empty string.
+writing an empty string. The Game Subfolders select offers `never`, `multiple` and
+`always` from `GAME_SUBFOLDERS_CHOICES`, falls back to `never` when no row is
+found, and writes through `set_game_subfolders`, which sends the
+`setGameSubfolders` mutation.
 
 The UI keeps its own copies of the server's format lists. `PREFER_FORMAT_CHOICES` in
 `frontend/src/state.rs` feeds the settings `SelectField`, and `FORMATS` in

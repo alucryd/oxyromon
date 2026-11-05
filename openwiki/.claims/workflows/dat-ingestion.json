@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0af4391fa3defd87ee88ab788b8cc3a3f0e0ed417496284ee225571b47effaa7",
+  "pageVersion": "sha256:4c26a9471a17ded8a504e3919d180670f6056268dce04afd72d16b83815e67d7",
   "claims": [
     {
       "id": "claim_709f7ceeb611426f9818159498c3a446",
@@ -87,7 +87,7 @@
       "statement": "The detector XML becomes matching data: rule/@start_offset is parsed as hexadecimal into headers.size and each <data> element into a rules row with a hex start_byte, and at hash time get_file_and_header_size reads that many bytes, requires every rule's magic to match, and otherwise rewinds to hash the file whole.",
       "evidence": [
         {
-          "resource": "repo://src/common.rs#L607-L639",
+          "resource": "repo://src/common.rs#L627-L659",
           "version": "repo-lines-v1:sha256:966a990c114d657e4c5764aaf2de78fff675139cea8530aad78352aef4b5b864:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMTJlNTgyZmU4NDc0ZDRmZjI1MTAyM2FjNjRlMjlmNDRmODJjZmJjZGIwNTg5OTY2YjA1NDY2ODZhZjllNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwMzI2NzFiZGY3NzQ0NDcyYzllOWU0MTU2MGJkZjQwMjU5ZGUyNjcyODYxOGU1MDE1ZmZlZDYzMzUxZDY4NWIifQ"
         },
         {
@@ -375,8 +375,8 @@
           "version": "repo-lines-v1:sha256:40fb54961b01168c1f9032e679c3f03f44018c713746b76a23c2ec44bbea2091:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2E2ZWExYjE4ZTBiOTY2OGE5NGE5MzA5MDgyZmNmZDQ2Yjk5YTUwMDE3NWIzZTczMzMxYzM0MTVkNTU4M2U2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDc5NTdiMzg1MGM2OWRiZjcyODU4NTIyZTMxNTcyMTQ2M2ZiZjA2YTVkMWMyYmVjMDk2NzUwODY4ZTQwNThiYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjY0OGNiNzY1NThlMmM3OWEzYjZiMWYzMzRjMTNkZDI2ZGNmMzk0MjllZjQ4YTRmZjQ3NTM5NGI1ZGM4MDcyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGZlMTBjOWZlYjk2NDY2MWFhYmZhODY1NDQ0NjExOTllZGZiZGM1NjQyYzk3NTY3NzljZGI3YzJiNTAxZWIwYiJ9"
         },
         {
-          "resource": "repo://src/download_dats.rs#L470-L557",
-          "version": "repo-lines-v1:sha256:d2baefe7106464106ed70ee5840dae92b0fc61377d555a775c98e9c22e8579e0:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjUzNjRhOTVmNWExZGM2YWNkYmNhMDVjZWRkZmQ5YTIwNTA4Njc2MjE1MDk4YWEzY2M0YjNkOWRhN2Q5YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxOGFjMDkzNGNmODczMTNiMjNlZjU0YmI1ZDJjNmNjNDNmZDBlZDg2MGEwOGQ2ZTE0ODczM2E3MmE2ODliNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMzg1YjI3Y2JlZjFkNzc3OTgxYmI0YzYyOWFjYWU3MGQ1MDMxMWZiNWZlZTdhYjU5YzE4N2Y0ZGU5ZjVjNzcifQ"
+          "resource": "repo://src/download_dats.rs#L470-L561",
+          "version": "repo-lines-v1:sha256:cc1b56850d7e6d25a8db5dd178ee474836c358d770ea744e5cba057f6002c4eb:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjUzNjRhOTVmNWExZGM2YWNkYmNhMDVjZWRkZmQ5YTIwNTA4Njc2MjE1MDk4YWEzY2M0YjNkOWRhN2Q5YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxOGFjMDkzNGNmODczMTNiMjNlZjU0YmI1ZDJjNmNjNDNmZDBlZDg2MGEwOGQ2ZTE0ODczM2E3MmE2ODliNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMzg1YjI3Y2JlZjFkNzc3OTgxYmI0YzYyOWFjYWU3MGQ1MDMxMWZiNWZlZTdhYjU5YzE4N2Y0ZGU5ZjVjNzcifQ"
         }
       ]
     },
@@ -559,8 +559,8 @@
       "statement": "All five ingestion subcommands (import-dats, download-dats, create-dats, import-irds, import-patches) are registered as clap subcommands and run on the single CLI connection inside one scope, released before optimize_database acquires a connection.",
       "evidence": [
         {
-          "resource": "repo://src/main.rs#L71-L185",
-          "version": "repo-lines-v1:sha256:d2b859ba165e9efbac5a4cd0fd19113d045ba1e6d203b2aabd1dab89278e2a98:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNTc0NGY1MTRiYjAxOTRlMGFkNDhjNTdmYmY2ZjJlMDhlZGRiZGMwYWE5YjZhMmRmMTA3MGUxZDQ4M2YwNTBmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhMDQzOTBhMDJmNzQ0MDI3NDEzZWE0NDI4ZjMwZjMzNDJjZGMxNmUwOTNjMDU5ZWUwNWFhZGI1MGI2NzdkNjYxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2OTgwN2E2MTI4OWIxOTAwYTRiZmNjMDFkZWVjYjM0OGU1YTZiZTQ2YzY2YjlhOTRjYTFiYzBmNjY3Nzc4MmU3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0OWIzZWQ1ODFmOTg1ZTU5OWY5NWUzZTJlNmExM2QwNTE1Yzc0MzM4NTJhM2I0NjUxYzgyNWExMTRiMTliZmYxIn0"
+          "resource": "repo://src/main.rs#L71-L193",
+          "version": "repo-lines-v1:sha256:3a63517ff9885172ac286941b0cbc88777f2c4a1c091b65cf76de51a4107cba1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNTc0NGY1MTRiYjAxOTRlMGFkNDhjNTdmYmY2ZjJlMDhlZGRiZGMwYWE5YjZhMmRmMTA3MGUxZDQ4M2YwNTBmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODkzZjQwZTM3ODFlYjg5NmM4MmQwNDZhMDgwNjdhMTFlMzVjZGYyZjFkZmFmMjZmZWE5MGI4ZGI2Njc2NDEzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2OTgwN2E2MTI4OWIxOTAwYTRiZmNjMDFkZWVjYjM0OGU1YTZiZTQ2YzY2YjlhOTRjYTFiYzBmNjY3Nzc4MmU3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxMWZiMzZmMDQ2ZDQxZWJhMWYzMjM0Yzk4NDJhYjRiMmQzNDc1MjZkMTY0Nzk2OGI1ODVlOTBjMTE4ZWFlNWRhIn0"
         }
       ]
     },
@@ -611,6 +611,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-01T22:28:11.879Z"
+    "at": "2026-11-05T21:35:44.503Z"
   }
 }

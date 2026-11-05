@@ -5,7 +5,7 @@ description: How src/main.rs registers clap subcommands, runs global startup (do
 tags: [cli, entrypoint, clap, subcommands, connection-scope, tokio, sqlite, info]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -57,7 +57,7 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 ---
 
 # CLI Entrypoint and the Subcommand Contract
@@ -95,21 +95,28 @@ Inside the guard, in order:
    bridge's own logger would decide verbosity instead of the env var. Bridging
    `log` records through the MultiProgress is what keeps log lines from
    tearing the animated progress bars apart.
-3. One shared progress bar (`get_progress_bar(0, get_none_progress_style())`) is
+3. `set_plain_output(...)` switches the output helpers to plain lines when the
+   global MultiProgress is hidden, which indicatif does when stderr is not a
+   terminal, for every subcommand except `mcp` and `server`. A hidden bar's
+   `println` prints nothing, so without this a run in a pipe, a log file or a
+   service would show only a fatal error. In plain mode the helpers write
+   straight to stderr with their colours stripped; `mcp` and `server` keep
+   reporting to their clients as before.
+4. One shared progress bar (`get_progress_bar(0, get_none_progress_style())`) is
    created and used to print the version banner. This same bar object is handed
    to the subcommand, which is free to restyle it, set its length, and tick it —
    the entrypoint never touches it again.
-4. The data directory, from `config::get_data_directory()`:
+5. The data directory, from `config::get_data_directory()`:
    `OXYROMON_DATA_DIRECTORY`, else `dirs::data_dir()/oxyromon`, created with
    `create_directory`. `oxyromon.db` is created there if absent, and
    `establish_connection` is called with that path. The same function locates
    `wiiu_keys.txt`, the keys `import-keys` stores next to the database, so the
    two never disagree about where the data directory is.
-5. `establish_connection` configures the pool's SQLite pragmas (`foreign_keys`,
+6. `establish_connection` configures the pool's SQLite pragmas (`foreign_keys`,
    `locking_mode`, WAL journal, `synchronous`, `temp_store`, `mmap_size`,
    `cache_size`, `auto_vacuum = INCREMENTAL`) and runs the embedded migrations.
    Any failure here panics: the process cannot run without a usable database.
-6. `get_rom_directory` and `get_tmp_directory` are each called on a short-lived
+7. `get_rom_directory` and `get_tmp_directory` are each called on a short-lived
    acquired connection. Their return values are discarded on purpose: calling
    them persists the first-run defaults (`OXYROMON_ROM_DIRECTORY` or
    `~/Emulation`; `OXYROMON_TMP_DIRECTORY` or the system temp dir) into the
@@ -122,7 +129,8 @@ flowchart TD
   A["clap parses argv against the registered subcommands"] --> B{"subcommand present"}
   B -->|"no"| C["main returns Ok, no startup side effects"]
   B -->|"yes"| D["dotenv then OXYROMON_LOG_LEVEL logger bridged onto MultiProgress"]
-  D --> E["shared progress bar then version banner"]
+  D --> P["plain stderr output if the bars are hidden and not mcp or server"]
+  P --> E["shared progress bar then version banner"]
   E --> F["create data directory, create oxyromon.db if missing, establish pool with pragmas and migrations"]
   F --> G["seed ROM and TMP directory settings on short-lived connections"]
   G --> H["scope opens: acquire the single pooled connection"]
@@ -245,7 +253,8 @@ file-deleting modules (`sort-roms`, `purge-roms`) expose `-y/--yes` so the
 `confirm()` prompt can be answered programmatically, and all user-facing output
 goes through the categorized `print_header` / `print_subheader` / `print_info` /
 `print_success` / `print_warning` / `print_error` / `print_skip` / `print_action`
-helpers rather than raw `println!` (`import_roms` carries an explicit comment at
+helpers rather than raw `println!`. They all go through `print_line`, which
+prints above the bars or, in plain mode, straight to stderr (`import_roms` carries an explicit comment at
 the one place a stray `println!` used to live: stdout can be the MCP protocol
 channel). `cfg!(test)` is used where a selection would otherwise hang headless
 (`prompt_for_games(games, cfg!(test))`).
@@ -289,7 +298,7 @@ instead of mid-compression or mid-export.
 
 The **Statistics** section is three counts against the connected database
 (`count_systems`, `count_games`, `count_roms`), followed by the project's
-donation footer and `progress_bar.finish_and_clear()` — the subcommand, not the
+donation footer, printed through `print_line` so it survives plain mode, and `progress_bar.finish_and_clear()` — the subcommand, not the
 entrypoint, ends the bar it was handed.
 
 ## Adding a subcommand

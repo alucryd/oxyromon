@@ -52,10 +52,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T12:28:25.132Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # Quickstart & Task Routing
@@ -193,7 +193,7 @@ directory, and only WUA and NUS exports need them.
 | `CommonRomfile` and its trait system                                                                      | [Romfile Trait System](concepts/romfile-trait-system.md)                       |
 | DAT parsing, header definitions, Redump/No-Intro downloads                                                | [Catalog Ingestion: DATs, Headers and Downloads](workflows/dat-ingestion.md)   |
 | hashing, matching, placement, `PREFER_FORMAT` on import                                                   | [ROM Import Pipeline](workflows/rom-import-pipeline.md)                        |
-| region and 1G1R election, discard filters, subfolder schemes, `Trash` placement                            | [Sorting and the 1G1R Election](workflows/sorting-and-1g1r-election.md)        |
+| region and 1G1R election, discard filters, subfolder schemes, `GAME_SUBFOLDERS`, `Trash` placement         | [Sorting and the 1G1R Election](workflows/sorting-and-1g1r-election.md)        |
 | `convert-roms` / `export-roms` and the conversion matrix (CHD via in-process chd-rs)                       | [Format Conversion and Export](workflows/format-conversion-and-export.md)      |
 | `check-roms`, the purge family (including purge-games), empty-directory cleanup                           | [Integrity Checking, Purging and Trash](workflows/integrity-check-and-purge.md) |
 | arcade merging strategies and M3U playlists                                                               | [Arcade Rebuilds and M3U Playlists](workflows/arcade-rebuild-and-playlists.md) |
@@ -252,7 +252,8 @@ rather than fail when the tool is absent.
   it on the way out; treating the column as absolute silently corrupts the library.
 - **All user-facing output goes through the `progress.rs` helpers** bound to the global
   `MultiProgress`. Never `println!` from a code path the MCP server can reach: with `oxyromon mcp`
-  (or `/mcp`) stdout carries JSON-RPC.
+  (or `/mcp`) stdout carries JSON-RPC. When stderr is not a terminal, the CLI subcommands print
+  those lines plain and uncoloured to stderr instead of above the hidden bars.
 - **Every notable change updates `README.md` and `CHANGELOG.md`** — new flags, behavior changes and
   fixes alike, under the current version's section.
 - **One module per action, one interface.** `subcommand()` declares argv and does no I/O;

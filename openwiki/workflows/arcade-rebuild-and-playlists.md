@@ -34,6 +34,8 @@ sources:
     resource: repo://src/export_roms.rs
   - id: openwiki-source-316c0afa4f03f2eedd9022b5
     resource: repo://src/generate_playlists.rs
+  - id: openwiki-source-04fd408157b0d50e4ea2915d
+    resource: repo://src/generate_playlists/test_iso_complete_game_subfolders.rs
   - id: openwiki-source-c4701589d9c0532fcaf3a526
     resource: repo://src/generate_playlists/test_iso_complete.rs
   - id: openwiki-source-583ec65582541e8ef23c2670
@@ -80,10 +82,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-af9ca7a4de06de516c2bef85
     resource: repo://tests/Test%20System%20(20200721)%20(MAME%20Rebuild).dat
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # Arcade Rebuilds and M3U Playlists
@@ -384,7 +386,11 @@ strips whatever follows the disc marker, so `(Disc 1) (Reprint)` and `(Disc 2)
 ([src/generate_playlists.rs](../../src/generate_playlists.rs#L21-L71)). The same
 regex is reused by `Game::get_playlist_path` in `src/common.rs`, which is what keeps
 the generated filename and the sorted filename identical
-([src/common.rs](../../src/common.rs#L797-L838)).
+([src/common.rs](../../src/common.rs#L850-L892)). Unless `GAME_SUBFOLDERS` is
+`never`, that path also puts the playlist inside a folder of the same stripped
+name, the folder `get_sorted_path` gives the discs, so the M3U sits beside the
+discs it lists. `test_iso_complete_game_subfolders` pins this for
+`generate-playlists` and checks that a later `sort-roms` leaves it there.
 
 ```mermaid
 flowchart TD
@@ -531,7 +537,7 @@ LaserDisc, `lzma,zlib,huff,flac` for HD).
   `Game::get_playlist_path`, which honours the 1G1R directory and the
   `REGIONS_*_SUBFOLDERS` alpha scheme
   ([src/sort_roms.rs](../../src/sort_roms.rs#L705-L713),
-  [src/common.rs](../../src/common.rs#L799-L837)). The end-to-end proof is
+  [src/common.rs](../../src/common.rs#L850-L892)). The end-to-end proof is
   `test_sort_1g1r_playlist`: after importing two discs, generating playlists and
   sorting with one-region settings, both ISOs **and** `Test Game (USA, Europe).m3u`
   live under `system_directory/1G1R`

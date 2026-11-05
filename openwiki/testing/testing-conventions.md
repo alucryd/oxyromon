@@ -102,10 +102,12 @@ sources:
     resource: repo://tests/crates.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+  - id: openwiki-source-4090e615029907c2fb175f07
+    resource: repo://tests/plain_output.rs
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # Test Harness and Conventions
@@ -124,10 +126,14 @@ directly with a synthesized clap `ArgMatches` — no process is spawned
 Roughly 300 such modules exist; `src/sort_roms/` alone holds 42, one per sorting
 scenario. `tests/` is **not** the ordinary Rust integration directory — it is the
 fixture corpus the in-module tests read
-([Test Fixtures and End-to-End Suites](test-fixtures.md)). Only two files there
-are test targets: the CLI-parity guard `tests/crates.rs` and the end-to-end
-`tests/mcp_stdio.rs`, which is the sole case that spawns the real binary via
-`env!("CARGO_BIN_EXE_oxyromon")` ([tests/mcp_stdio.rs](../../tests/mcp_stdio.rs#L1-L43)).
+([Test Fixtures and End-to-End Suites](test-fixtures.md)). Only three files there
+are test targets: the CLI-parity guard `tests/crates.rs`, and two that spawn the
+real binary via `env!("CARGO_BIN_EXE_oxyromon")`. The end-to-end
+`tests/mcp_stdio.rs` drives the MCP server over JSON-RPC
+([tests/mcp_stdio.rs](../../tests/mcp_stdio.rs#L1-L43)).
+`tests/plain_output.rs` runs `import-dats` with stderr piped and colours forced
+on, and checks the lines reach stderr uncoloured with stdout empty
+([tests/plain_output.rs](../../tests/plain_output.rs#L1-L32)).
 A third style exists once, inline: `#[cfg(test)] mod tests { … }` inside
 [src/iso.rs](../../src/iso.rs#L186-L192) for the CUE-parsing helpers.
 

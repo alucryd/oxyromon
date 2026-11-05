@@ -38,6 +38,8 @@ sources:
     resource: repo://migrations/20260811000001_add_prefer_format_setting.sql
   - id: openwiki-source-eba856d35532bf0484543b16
     resource: repo://migrations/20261101000001_drop_rvz_scrub_setting.sql
+  - id: openwiki-source-5aa2204b5a14a10be61af8db
+    resource: repo://migrations/20261103000001_add_game_subfolders_setting.sql
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
   - id: openwiki-source-02628a361dd4faa0f62f87a2
@@ -98,10 +100,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # Settings and Configuration Model
@@ -240,8 +242,9 @@ option sets are not local to config: `PREFER_FORMAT` borrows
 `VariantNames::VARIANTS` from `rvz.rs` and `archive.rs`, the four
 `CHD_*_COMPRESSION_ALGORITHMS` keys borrow them from the
 `ChdCd/Dvd/Hd/LdCompressionAlgorithm` enums in `chd.rs`, and the
-`REGIONS_*_SUBFOLDERS` / `PREFER_REGIONS` / `PREFER_VERSIONS` choices come from
-the `SubfolderScheme`, `PreferredRegion` and `PreferredVersion` strum enums
+`REGIONS_*_SUBFOLDERS` / `GAME_SUBFOLDERS` / `PREFER_REGIONS` / `PREFER_VERSIONS`
+choices come from the `SubfolderScheme`, `GameSubfolders`, `PreferredRegion` and
+`PreferredVersion` strum enums
 declared in `config.rs` itself. Value casing follows those enums
 (`serialize_all = "lowercase"`, so `none`/`broad`/`narrow`), except
 `PREFER_FORMAT`, whose choices are the uppercase format names `ORIGINAL`, `7Z`,
@@ -284,6 +287,7 @@ row is seeded `NULL` and the consumer picks a value itself.
 | `REGIONS_ONE` | `LISTS`, `SORTED_LISTS` | empty | yes |
 | `REGIONS_ALL_SUBFOLDERS`, `REGIONS_ONE_SUBFOLDERS` | `choice_options` (`none`, `alpha`) | `none` | no |
 | `REGIONS_ONE_STRICT` | `BOOLEANS` | `false` | no |
+| `GAME_SUBFOLDERS` | `choice_options` (`never`, `multiple`, `always`) | `never` | no |
 | `REGIONS_ALL_ARCADE`, `REGIONS_ONE_ARCADE` | `choice_list_options` (`bios`, `clone`, `parent`) | empty | yes |
 | `PREFER_PARENTS` | `BOOLEANS` | `true` | no |
 | `PREFER_REGIONS` | `choice_options` (`none`, `broad`, `narrow`) | `none` | no |
@@ -507,8 +511,10 @@ question for any change is whether they reuse config's classification:
   `settings` returns global rows only; `systemSettings(systemId)` returns the
   merged effective view the frontend needs. Mutations are thin wrappers over the
   same config functions — `addToList`, `removeFromList`, `setBool`,
-  `setDirectory`, `setSubfolderScheme`, `setPreferRegions`, `setPreferVersions`,
-  `setPreferFormat`, `unsetPreferFormat`. Choice validation moves into
+  `setDirectory`, `setSubfolderScheme`, `setGameSubfolders`, `setPreferRegions`,
+  `setPreferVersions`, `setPreferFormat`, `unsetPreferFormat`.
+  `setGameSubfolders` is fixed to the `GAME_SUBFOLDERS` key and validates its
+  value with `GameSubfoldersValidator`. Choice validation moves into
   `src/validator.rs`: `VariantValidator<E>` checks a string against
   `E::VARIANTS` (the very slices `choice_options` exposes),
   `PreferFormatValidator` checks `ALL_FORMATS`, and `DirectoryValidator` requires

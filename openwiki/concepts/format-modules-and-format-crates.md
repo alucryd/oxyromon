@@ -62,10 +62,10 @@ sources:
     resource: repo://src/xps/test_patch.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # Format Modules and Their Crate Backends
@@ -269,7 +269,11 @@ Three consequences worth knowing before changing this file:
 nowhere else.** The `zip` dependency is built with `deflate` + `zstd` and
 `sevenz-rust2` with `zstd`; `sevenz-rust2` is confined to this module, while
 `zip` also appears in `download_dats.rs` and `import_dats.rs`, where it only ever
-*unpacks* a downloaded DAT archive and never chooses a codec.
+*unpacks* a downloaded DAT archive and never chooses a codec. Since zip 9 an
+entry's name, and each item `file_names()` yields, is a `Result`, because a name
+may not decode. Every production caller propagates that error with `?` and takes an owned
+`String`, so an undecodable ZIP entry name fails the operation instead of
+panicking.
 `get_archive_compression` maps the settings keys onto an `ArchiveCompression`
 variant with the algorithm's own scale: `SEVENZIP_COMPRESSION_ALGORITHM` /
 `ZIP_COMPRESSION_ALGORITHM` select `lzma2`, `deflate` (ZIP only) or `zstd`, with

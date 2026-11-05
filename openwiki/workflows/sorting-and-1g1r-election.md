@@ -6,6 +6,8 @@ tags: [sort-roms, 1g1r, regions, election, discard, languages, arcade, subfolder
 sources:
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
+  - id: openwiki-source-04fd408157b0d50e4ea2915d
+    resource: repo://src/generate_playlists/test_iso_complete_game_subfolders.rs
   - id: openwiki-source-762e9c43ab8143e7dda872d3
     resource: repo://src/mcp/write.rs
   - id: openwiki-source-528b2bf14ffa06b3842b8c96
@@ -24,10 +26,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-25T14:55:31.619Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # Sorting and the 1G1R Election
@@ -193,9 +195,17 @@ file of the game, its destination with `get_sorted_path`:
 - Arcade games that are not archives, PS3 JB folders, and Wii U NUS titles
   (updates and DLC) that are not archives get a directory named after the game.
   A NUS title needs one because every title names its contents alike.
+- Any other non-arcade game gets a directory named after it as the system's
+  `GAME_SUBFOLDERS` setting says, falling back to the global value. `never`, the
+  default, adds none. `always` adds one for every game. `multiple` adds one for
+  a disc of a multi-disc game and for a game stored as several original files,
+  such as a CUE and its BINs, but not for a game in one archive or disc image.
+  The directory name drops the ` (Disc N)` tag, so every disc of a game shares
+  it.
 
 Patches move with their ROM file, keeping their own extension, and a game's
-M3U playlist moves with the game. Only files whose path actually changes are
+M3U playlist moves with the game. Unless `GAME_SUBFOLDERS` is `never`, the
+playlist goes into that shared game directory, beside the discs. Only files whose path actually changes are
 planned.
 
 A clone of a system stored as `MERGED` plans no move for its files that are in

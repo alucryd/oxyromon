@@ -58,10 +58,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # Builds, Distribution and Releases
@@ -283,7 +283,7 @@ rejects git dependencies.
 That pin is a mandatory dependency, not an optional feature (0.25.0 deleted the
 `nod` feature when RVZ/WBFS stopped requiring `dolphin-tool` and `wit`), so it must
 return to a plain version requirement before release. The sibling case is already
-resolved: `sevenz-rust2` is back to a normal `version = "0.24.0"` requirement with
+resolved: `sevenz-rust2` is back to a normal `version = "0.24.2"` requirement with
 the `zstd` feature, no longer a fork pinned by revision, so `nod` is the only
 git-sourced dependency left. `rusty_flac` is git-sourced differently: a
 `[patch.crates-io]` entry in the root manifest supplies its unreleased

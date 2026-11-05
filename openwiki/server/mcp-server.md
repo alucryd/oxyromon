@@ -62,10 +62,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # MCP Server: Tools, Resources and Prompts
@@ -103,10 +103,12 @@ The constraint every contributor must respect, verbatim from
 > write to stderr.
 
 `src/mcp.rs` records the same rule where the last offender used to live, and
-[`src/import_roms.rs`](../../src/import_roms.rs#L309-L312) keeps a guard comment
+[`src/import_roms.rs`](../../src/import_roms.rs#L362-L370) keeps a guard comment
 at the site of the former stray `println!`. Progress bars, the
-`indicatif_log_bridge` logger and every `print_*` helper already land on stderr;
-see [Progress Bars, Categorized Output and Prompts](../concepts/cli-output-progress-and-prompts.md).
+`indicatif_log_bridge` logger and every `print_*` helper already land on stderr.
+`main` never enables plain output for `mcp` or `server`, so even with stderr
+redirected their helper lines stay on the progress renderer and never reach
+stdout; see [Progress Bars, Categorized Output and Prompts](../concepts/cli-output-progress-and-prompts.md).
 
 ## Transports and lifecycle
 

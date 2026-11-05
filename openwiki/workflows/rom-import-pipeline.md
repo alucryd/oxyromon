@@ -86,10 +86,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # ROM Import Pipeline
@@ -344,6 +344,11 @@ represents exactly one complete game, otherwise take the members out.**
 | WUX | hashed as it decompresses and matched against the DAT's disc row, then moved to the system directory as the rom name with a `.wux` extension | 1 romfile → 1 rom |
 | lossless WUA | hash and size taken from its disc info, matched against the DAT's disc row, its store entries copied into the system's `.update-partitions` store, then moved as the rom name with a `.wua` extension; an entry found nowhere gets a warning that the disc can't be rebuilt | 1 romfile → 1 rom |
 | NUS title folder | each file the DAT lists moved into `<system directory>/<game name>/`; unlisted files such as `title.cert` stay | 1 romfile per file |
+
+Every destination above comes from `get_sorted_path`, so the `GAME_SUBFOLDERS`
+setting also applies at import: under `always`, or under `multiple` for a disc
+or a game of several original files, a non-arcade game lands in a folder named
+after it without its ` (Disc N)` tag.
 
 The archive decision is the interesting one
 ([src/import_roms.rs](../../src/import_roms.rs#L931-L1029)): the archive is kept

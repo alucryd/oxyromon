@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6b34bf17b5eeef4544bf6ae2e67ffb01fab2b52b8fd8147afa50752822f44763",
+  "pageVersion": "sha256:b98573f509054ffcca4fc837f753293abd31aef6cc8426732c9b70eda40f8dc9",
   "claims": [
     {
       "id": "claim_62e2eb596fd1472683dffa8d1316579b",
@@ -119,7 +119,7 @@
       "statement": "Each DAT <rom> row is a checksum contract with a file in tests/: the name must match byte for byte (including double extensions and '(Track 01)' spacing) and size plus one hash must match the bytes, since matching uses CRC first, then MD5, then SHA1, and fails with 'Size mismatch' or 'Checksum mismatch'.",
       "evidence": [
         {
-          "resource": "repo://src/common.rs#L572-L605",
+          "resource": "repo://src/common.rs#L592-L625",
           "version": "repo-lines-v1:sha256:3a7739d1feac6c93f30d32cfd6ffdfc4dcad22b6b1d904f41b848717b35a907a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViZWM1NGQ1YzVmYjYzZGNhNWU3MmQ3ZTI5YTlhNzY1OTUzZTE5MDMyNjk1M2NiYzEyMTBjMjI5NWFiZTA3NmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlZTA2NmE5ZmRlZDc4OTI5N2Q1NzQ5YzZhMjFkNTI0OTA5M2JiZGQ5ZjI2MThjYWRkOWRmNGUwNGVmZjEzZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzZmIxYmYxOTQxODU5MTgxZThlZDEzZjA0NDQ4ZTllMzRhZmJkYTQ0ODA3MzlkODA1NmIyMDgwZmY5ZmZmZGMifQ"
         },
         {
@@ -255,7 +255,7 @@
       "statement": "The MCP stdio harness spawns the real binary via CARGO_BIN_EXE_oxyromon with `mcp`, isolates it with OXYROMON_DATA_DIRECTORY pointing at a TempDir held by the Client (so a virgin oxyromon.db is created per test) and OXYROMON_LOG_LEVEL=off with stderr nulled, and speaks raw newline-delimited JSON-RPC over stdin/stdout with no SDK client - which is also what proves the wire format a real client would meet.",
       "evidence": [
         {
-          "resource": "repo://src/main.rs#L122-L129",
+          "resource": "repo://src/main.rs#L129-L136",
           "version": "repo-lines-v1:sha256:fb09b63b701dbe037aa69dccde353a4752f1c3b26977c5fa226a9c0131f5fa18:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGZlMjU0NjA0NDFmYzI4ZTRjM2IxNGVlZmI4ZDc5MjkzNmQ5Njk1MmEwMDdkNjkzNGQzZTMzOTQwYmJlYmMyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE5OWQ4NWU4NTA5N2RjNThkMzA2YWFjMWEwNDc5NzRjYTZhMzE2Y2UzMmQ4OTY5OGJhNjk0MDdhNjQ4MTcyYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDQxNjE4ZDFhMGI3MGRmMDBkNzAzYTczOTNiYjg5ZThmN2U1NDYxMjBjOTNiZjMwNmQ0ZGVmMThhYmJmMjg3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTViODc3ZjY3Mzg3ZmNjMTM2MDEzNGQyMzg5NjJjOWY1Y2M0MDMyYWM1NWM3MDU5ZDdlYTc1NjkxYzI3OWU1NSJ9"
         },
         {
@@ -491,7 +491,7 @@
       "statement": "The shared fixture-test setup skeleton is a test-only API: config.rs declares MUTEX, set_rom_directory and set_tmp_directory inside cfg_if!/cfg(test) blocks, so no production build can register a scratch ROM or tmp directory.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L647-L664",
+          "resource": "repo://src/config.rs#L656-L673",
           "version": "repo-lines-v1:sha256:bc28a67f7c450053b9dd200ccd4feee65987b5f9bcd3049d0f18edaf83976964:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiOTIxMWJkZDdjN2RhMDMyNGI1OGNmNTJiNmQ5NDM5ZDkzOGI0ZGI5MzZmMWE2NGFmM2FhOWRiYWRlN2YyZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxM2EyZGU5ZDE1ZmMxNGJjZDJlMzkzNDRhYzgzOTgwMDJkNDFhMzA5OTE1MjljMmJjZDM1YWVlYTY3NmY2MTUifQ"
         },
         {
@@ -562,7 +562,7 @@
       "evidence": [
         {
           "resource": "repo://src/rebuild_roms/merged_set.rs",
-          "version": "repo-file-v1:sha256:0a8f17c3280ff68cb31eecb6e8e1723ef015947033ac0b3f7a577ab1f1961095"
+          "version": "repo-file-v1:sha256:f64f77958f46ae18417c36574ae17d68aa6026bbb9b4fc302a00a32d138629a9"
         },
         {
           "resource": "repo://tests/Test%20System%20(20200721)%20(MAME%20Merged).dat",
@@ -619,6 +619,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-01T22:28:11.879Z"
+    "at": "2026-11-05T21:35:44.503Z"
   }
 }

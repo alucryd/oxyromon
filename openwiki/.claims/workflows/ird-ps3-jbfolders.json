@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:22c1ee0c82ae38390d948e791590fc0250dfa0d97b14f7bfa0d2c0112746e25a",
+  "pageVersion": "sha256:45d489c6549bc7202f7ce9f32ec9c264543da4274ea39757f32fc0864d5a83f9",
   "claims": [
     {
       "id": "claim_be7e331717cf488b9632566ef15e50ac",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://README.md#L436-L457",
-          "version": "repo-lines-v1:sha256:bcaf9d7ead0ac19f6714d9ba6abb88860d3c9e18b2bcf119f21fa37b4f90c3f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4M2JjYjY3OGZlNDY4YWJmN2RmOWQwODU1MzMyZjkxZjQxZWIwZmNhMjg4Y2QzMzFkYTU4OTIzY2ZkZjg2YTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3M2U3M2FiYjc0NTgwMmMzMzNiODcyNjQ0MzVlMjQ5NDdiNmI3YmYwZjU2ZmUzMDI4ZThmMjBlODljODVmYmEifQ"
+          "version": "repo-lines-v1:sha256:341b2240696a30d19cd3637b96b20e6ffdcc717764545d03ef1bc85f2d872362:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjMjA4YTdjYjI0NDcxMTllNDEzMTBkMWM5YjQ1ZjFkYWVmY2IyM2M2MGFjYzk4OGI5MjkyODI3NjA1NDFjMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhNmQ0YzhmOGViYTA0YmZhMTFlZWNiZGRiMTdiM2VlOTJkN2MzYTE5NWY2YjUyNjYxMTUyY2NkMTRkYjZhOGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwOTM1ZjU5M2NhNDQyN2YyMGZkMDQ3YWFiYTkxZjY0NDgwMDYzNGVlYTExMDQyMDJkYjdiOTRhMzBkMTgxODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzZWQ2MmIyY2ZmNTkyMjYyZDUxY2FhNDliM2RjZTVlYjIxODFjMGI1ODViMTc5YzBkMGUwMmI4MjQwOTc2OGQifQ"
         },
         {
           "resource": "repo://src/import_irds.rs#L22-L59",
@@ -19,8 +19,8 @@
           "version": "repo-lines-v1:sha256:68fc51ac8ff8be72d30098b65b70943a4fed6fba448fc31479b5919cdc4bd75a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjY2ZjOWVlZWExODhlMDAwNzU3OTJhNmZjMDk1NDZlMGFhODRiY2UyNDA2ZWZmMDg1ZmY4Y2FhMGVhMzRkODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyZDgyOGEwMzdhYzFjODE1MzViMWQ1NTAwODMyMzIzYmZiYjg2NmEzYTNmODdlN2E2OGMxM2EyYmFlNTZmZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkZjcxZjQwOGFkYmMzMWY2ZmRhMTc1N2NhMTVjOTZkMTViZWRlOGUwMWZlMTE5OTMxOTM3ZjIzYWVmNDRjM2QifQ"
         },
         {
-          "resource": "repo://src/main.rs#L71-L173",
-          "version": "repo-lines-v1:sha256:e7921fe309d59b973f6521348c3f997ffcd8d7be9531fdb451bafd7070180aec:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNTc0NGY1MTRiYjAxOTRlMGFkNDhjNTdmYmY2ZjJlMDhlZGRiZGMwYWE5YjZhMmRmMTA3MGUxZDQ4M2YwNTBmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NTIyYzQyY2QxOWM2ZDAzZDgwOGM0NTI3MjA1NTI4MjViN2VhMWM1YjQ5MWIyMTg1MTFjYWM3NDE1Y2Y5ZDliIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2OTgwN2E2MTI4OWIxOTAwYTRiZmNjMDFkZWVjYjM0OGU1YTZiZTQ2YzY2YjlhOTRjYTFiYzBmNjY3Nzc4MmU3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNDgzYzNjYzUyMGRlMGMzNjVhMTU2NzRiMThjZTdkZDkwZDYwYjhkZDY1NDczM2U5M2NkODllMTRhZTJkNmRmIn0"
+          "resource": "repo://src/main.rs#L71-L180",
+          "version": "repo-lines-v1:sha256:5e9cdab0fc650a30c2202f8f2c913cd3e125681886201753b479a70050fab7e7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNTc0NGY1MTRiYjAxOTRlMGFkNDhjNTdmYmY2ZjJlMDhlZGRiZGMwYWE5YjZhMmRmMTA3MGUxZDQ4M2YwNTBmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NTIyYzQyY2QxOWM2ZDAzZDgwOGM0NTI3MjA1NTI4MjViN2VhMWM1YjQ5MWIyMTg1MTFjYWM3NDE1Y2Y5ZDliIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2OTgwN2E2MTI4OWIxOTAwYTRiZmNjMDFkZWVjYjM0OGU1YTZiZTQ2YzY2YjlhOTRjYTFiYzBmNjY3Nzc4MmU3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNDgzYzNjYzUyMGRlMGMzNjVhMTU2NzRiMThjZTdkZDkwZDYwYjhkZDY1NDczM2U5M2NkODllMTRhZTJkNmRmIn0"
         }
       ]
     },
@@ -123,8 +123,8 @@
       "statement": "games.jbfolder also changes file placement: get_sorted_path always appends the game name for jbfolder games (as it does for non-archive arcade games and NUS titles), so a JB folder stays a directory of files rather than a single loose file.",
       "evidence": [
         {
-          "resource": "repo://src/common.rs#L474-L482",
-          "version": "repo-lines-v1:sha256:53840703ed94ccd6414c1cb6289d7c5de52520bcc51d4adb52ddb61f9178b11e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGY1NzcxMjc3MDRiY2Y5ZWY4NmY0ZDQ1OWRkMDAzM2E5MDQyNGI3MWM0ZWUzMWIzYzc3OGZiNGRjOTM1MzZmMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzAwZTk4OGE2NTI4NTZmYjhjZGEwOWZmNDFlNDA3OTJhNTZiMGIxYTFkMzBkYmJkODg2MDBjOWM5YjA3ZGU2OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjNmOTk2N2FmYmNiYzFmOGJiOWUwY2U0MDNjZGY5YzBiNGZiNzYxN2Q0YTcxNWFjMWNkMzUzYjhhN2QxZjA3ZiJ9"
+          "resource": "repo://src/common.rs#L474-L483",
+          "version": "repo-lines-v1:sha256:400b1b433600b56d06f8c5ced66821f566feefb181f4359938bd2ddb09192cb1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMmY0YmU1ZDgyMjE0M2VlNGYzMWExNzAwODAwN2U3MWZjODY3NmE4MGVjNzlhMmI2ZDJlN2FkNDQ1NzEwNjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2MGU1NWE4YWJhYzgzOTI5YWVlOTcwYjJkNjQ5MTMzMjQwODZjYmNjMmQzNzY2ZTYxYTliNzM4OGMzZDQzMDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwMGU5ODhhNjUyODU2ZmI4Y2RhMDlmZjQxZTQwNzkyYTU2YjBiMWExZDMwZGJiZDg4NjAwYzljOWIwN2RlNjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjMDg1ZTkxZTE2YzVlMjc3ODhhOGM4YTUxN2YzMjg5MDcwNDMzNGYyNjE0ZTEzMjYzMjI3OTRhMWJhNTg0MWYifQ"
         }
       ]
     },
@@ -159,7 +159,7 @@
           "version": "repo-lines-v1:sha256:dd20ee3d22aa140a6c49ecc9126d5fbb5e7880357f999356f8580b9c96336ac6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkYjY4M2UzMGY5MWUwNDFlMjgzMDJhOTU2OGFiZWEyZThlMzkzZmJlNTVmODQwZDI4OGZhZmVkOGMwNjY4NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3OWM3MjVkZjY3NGNkNGFjNjhhZmFkOGE2NzlhZTBhY2U0YjBhZDliMjQ5OGVhNTVmM2I3MjMzMjJhNjJjYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
-          "resource": "repo://src/mutation.rs#L716-L752",
+          "resource": "repo://src/mutation.rs#L728-L764",
           "version": "repo-lines-v1:sha256:a29639bf65a9510d3cf2766558fc5b2644dd7904992e4495fcf4a7e89e4ad2f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1MGQ2YzRlNGVlMWNkNjNkOWE2Yzk0MDhiOWUzOGU5MzIyNWIzMWU0YzQ4NGFmYzI5MGEzZGQ0ZjVhNGI5ODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlYjkwMjQwM2UyODY0NDY4YmI4ZGQ2YTU5MDk3ZjAxNzlkN2YxYjYzZjRlMjJkNGFiYjhjMDI5Nzg1MmJkNDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkMWVhMGNmOWUyMTE3NmU5NmU2NjhiYmJmYmQ3ZmFhZmRlZDMxOTQyYzhjOWJlYzZhMTQ0OTE3YWM2NjJjNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUifQ"
         },
         {
@@ -223,7 +223,7 @@
       "statement": "The files an IRD describes arrive through import-roms: a directory containing PS3_DISC.SFB is routed to import_jbfolder, which identifies the game from the SFB's size and MD5, hashes every other file with MD5 forced (the only hash IRDs provide), matches it against roms sharing the SFB rom's parent, and moves it to <system>/<game name>/<rom name>; without a system, unattended mode warns 'PlayStation 3 folder needs a system, skipping'.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L155-L155",
+          "resource": "repo://src/config.rs#L164-L164",
           "version": "repo-lines-v1:sha256:3263e200d45f683e22cae24777295846272e2640fbb3437cb6a038ba366f5e1c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzI2M2UyMDBkNDVmNjgzZTIyY2FlMjQ3NzcyOTU4NDYyNzJlMjY0MGZiYjM0MzdjYjZhMDM4YmEzNjZmNWUxYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzI2M2UyMDBkNDVmNjgzZTIyY2FlMjQ3NzcyOTU4NDYyNzJlMjY0MGZiYjM0MzdjYjZhMDM4YmEzNjZmNWUxYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmE1MDRlNWJhZjcwMzJmNDE3MTU4YTVjNTJhOWMwMWEyNGNjZDJmNjQ2ZjVmNDAwYTFjNTIyM2U5N2JlYzEyZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Y1NDZkMjdlYjNkYTgwNDgyNTQ5MTY4YjhhZTJjNjBkN2I1NjdmN2NlN2UxOWJjZjRjYTZmNjY1YzdlNGUxOCJ9"
         },
         {
@@ -263,7 +263,7 @@
       "statement": "The IRD/PS3 path has only four focused tests (import_irds/test_ird.rs asserting 208 roms, test_ird_orphan_subfolder.rs asserting Trash plus emptied-subfolder cleanup, purge_irds/test_ird.rs, mimetype/test_ird_matcher.rs); src/iso/iso9660.rs has no unit tests of its own, and the README TODO still asks for tests for IRD and PS3 in general and for PS3 ISO rebuilding, which is unimplemented.",
       "evidence": [
         {
-          "resource": "repo://README.md#L791-L798",
+          "resource": "repo://README.md#L796-L803",
           "version": "repo-lines-v1:sha256:79b5cb9ad94e111179bfd2345cbde503f0a6062721a9fe07306e0b3e57ed349e:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmIzMGEyMmNiN2M3MjYxMDU0YjRkZDY1N2I1ZGIxNDY4MThjM2JkZGNkMTRmOWQyZTBkZmI0ZmQ3ZDliNWNmNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJjN2JhYmEwYjdlZTIwZTA3OTc3ZmUzMTQ5YjU1YmQyYjNmMTRkZmNmODdjMDlhMTE0NjBjMGMzOWQ4NWYzMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWQyYzcwMjA0YjQ2ZmJmODkwMWRhOGZkMjM5ODliNzIwZGNkMTg5NzQ0MTI1MzUxOWQ5MDViZTU3YjY1OWQ5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzU5MTJiMDQxNTBjZDVjMmJhZTliYTRhNmEwNTZkNmQ2N2U4MGJkMTE1YWIyM2U0N2ZhZWQ3ZWIzMGNlMTY1YSJ9"
         },
         {
@@ -297,6 +297,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-01T22:28:11.879Z"
+    "at": "2026-11-05T21:35:44.503Z"
   }
 }
