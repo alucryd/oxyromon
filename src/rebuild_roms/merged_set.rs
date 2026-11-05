@@ -29,7 +29,7 @@ pub fn entry_names(path: &Path) -> Vec<String> {
     let mut names: Vec<String> = zip::ZipArchive::new(File::open(path).unwrap())
         .unwrap()
         .file_names()
-        .map(String::from)
+        .map(|name| name.unwrap().into_owned())
         .collect();
     names.sort();
     names
