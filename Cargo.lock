@@ -3766,6 +3766,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "rvz-rs"
+version = "0.1.0"
+dependencies = [
+ "aes 0.9.4",
+ "bzip2",
+ "clap",
+ "console",
+ "indicatif",
+ "lzma-rust2 0.25.0",
+ "rayon",
+ "sha1 0.11.0",
+ "tempfile",
+ "thiserror 2.0.21",
+ "zstd 0.14.3",
+]
+
+[[package]]
 name = "ryu"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
