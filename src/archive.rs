@@ -569,7 +569,7 @@ async fn parse<P: AsRef<Path>>(path: P) -> Result<Vec<(String, u64, String)>> {
                     continue;
                 }
                 entries.push((
-                    entry.name().to_string(),
+                    entry.name()?.into_owned(),
                     entry.size(),
                     format!("{:08x}", entry.crc32()),
                 ));
@@ -734,8 +734,9 @@ where
             let mut kept = 0;
             for index in 0..archive.len() {
                 let entry = archive.by_index_raw(index)?;
-                match map(entry.name()) {
-                    Some(name) if name == entry.name() => writer.raw_copy_file(entry)?,
+                let old_name = entry.name()?.into_owned();
+                match map(&old_name) {
+                    Some(name) if name == old_name => writer.raw_copy_file(entry)?,
                     Some(name) => writer.raw_copy_file_rename(entry, name)?,
                     None => continue,
                 }

@@ -522,8 +522,12 @@ async fn fetch_redump_dat(
     zip_archive
         .extract(&tmp_directory)
         .context("Failed to extract ZIP")?;
-    let dat_file_name = zip_archive.file_names().next().unwrap();
-    let dat_file_path = tmp_directory.path().join(dat_file_name);
+    let dat_file_name = zip_archive
+        .file_names()
+        .next()
+        .context("Empty Redump ZIP")??
+        .into_owned();
+    let dat_file_path = tmp_directory.path().join(&dat_file_name);
 
     // Save DAT file to specified directory if requested
     if let Some(save_directory) = save_directory {
@@ -532,7 +536,7 @@ async fn fetch_redump_dat(
         copy_file(
             progress_bar,
             &dat_file_path,
-            &save_directory.join(dat_file_name),
+            &save_directory.join(&dat_file_name),
             false,
         )
         .await?;
