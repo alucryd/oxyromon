@@ -80,10 +80,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # System Architecture Overview
@@ -308,7 +308,9 @@ on the `model.rs` types is what turns the same structs into GraphQL
 - **stdout may be a protocol channel.** Under `oxyromon mcp` (or `/mcp`) stdout
   carries MCP JSON-RPC. All user-facing output goes through the `print_*` helpers
   in `progress.rs`, which write through the `MultiProgress` on stderr, and
-  `log::*` records are bridged there too.
+  `log::*` records are bridged there too. When stderr is not a terminal the bars
+  are hidden, and every subcommand but `mcp` and `server` switches the helpers to
+  plain, uncoloured lines written straight to stderr.
 - **Blocking work stays off the async runtime.** Format-crate entry points are
   synchronous and take a `&mut dyn FnMut(u64)` progress callback;
   `run_blocking` runs them on the blocking pool, resetting the bar to a bytes

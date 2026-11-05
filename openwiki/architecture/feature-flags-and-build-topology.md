@@ -76,10 +76,10 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # Feature Flags and Build Topology
@@ -229,12 +229,13 @@ and no prebuilt assets compiles fine and then panics when the first request hits
 
 Finally the script declares `rerun-if-changed` for `frontend/src`,
 `frontend/index.html`, `frontend/styles.css`, `frontend/Trunk.toml` and
-`frontend/Cargo.toml`. `SKIP_TRUNK` itself is **not** declared with
-`cargo:rerun-if-env-changed`, so flipping it on an already-built tree does not
-re-run the script — once you clear `SKIP_TRUNK`, the wasm bundle only gets rebuilt
-when one of the listed frontend paths changes or the build is otherwise fresh.
-Rebuilding the UI out of band (`cd frontend && trunk build --release`) is the
-supported way to refresh assets under `SKIP_TRUNK=true`.
+`frontend/Cargo.toml`, and declares `SKIP_TRUNK` itself with
+`cargo:rerun-if-env-changed`. Cargo reruns a build script only for what it was
+told of, so before that declaration a `server` build after one with
+`SKIP_TRUNK=true` reused the run that skipped trunk and embedded whatever
+`target/assets` held. Now clearing or changing `SKIP_TRUNK` reruns the script,
+and the next build runs trunk. Under `SKIP_TRUNK=true`, rebuilding the UI out of
+band (`cd frontend && trunk build --release`) is still how assets get refreshed.
 
 ## Trunk, rust-embed, and the contract between them
 
@@ -451,7 +452,7 @@ published as-is, because crates.io rejects git dependencies:
   version; the patch is then dropped.
 
 `sevenz-rust2`, which an earlier release pinned to a fork revision, is back on the
-registry (`0.24.0`, `features = ["zstd"]`) and no longer blocks anything. Both
+registry (`0.24.2`, `features = ["zstd"]`) and no longer blocks anything. Both
 archive libraries are mandatory dependencies rather than optional features: 0.25.0
 removed the `nod` and `sevenz` features when RVZ/WBFS and 7z/ZIP support stopped
 shelling out to `dolphin-tool`, `wit` and 7-Zip.

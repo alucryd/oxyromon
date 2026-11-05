@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8a74087ca73412858323a34158efdc95a9f5b852e385a90f162aecfc64aa3fea",
+  "pageVersion": "sha256:3adbc6d436b3ad68783f8a17f756ea9b8a27f5ba252adf35cd0b2cdeec35bfa9",
   "claims": [
     {
       "id": "claim_cb1540e6994f491db3adbd31fdb7589f",
@@ -25,7 +25,7 @@
       "statement": "`mcp::main` serves `rmcp::transport::stdio()` and then waits in `tokio::select!` on `server.waiting()` (transport/EOF end) against Ctrl+C and, on Unix, SIGTERM; either signal cancels the token to unwind in-flight mutating actions, and `src/main.rs` runs the server outside the single-connection subcommand scope before `optimize_database`.",
       "evidence": [
         {
-          "resource": "repo://src/main.rs#L175-L185",
+          "resource": "repo://src/main.rs#L182-L192",
           "version": "repo-lines-v1:sha256:8e3603c5f67de7c39964516a1cd57fca37626548faf5d3661e550cc9f0e05fae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlYTM0OGUzZmIzOWE5MGJmYzI3NmUxZGMyNDA0YmE2OWM0OGM4Y2FlZjE2MGRiZGQzNTE2ZGMxOTRlNDQzY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNDM5MGEwMmY3NDQwMjc0MTNlYTQ0MjhmMzBmMzM0MmNkYzE2ZTA5M2MwNTllZTA1YWFkYjUwYjY3N2Q2NjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwZjU4N2Q2ZGJiOWY4MGEwYTk1NDMxZWQxZmFjNDMyYWQ1OTI2NDUzNDU2YTlmMTQ5M2MyOGExN2FlMzY5YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5YjNlZDU4MWY5ODVlNTk5Zjk1ZTNlMmU2YTEzZDA1MTVjNzQzMzg1MmEzYjQ2NTFjODI1YTExNGIxOWJmZjEifQ"
         },
         {
@@ -69,7 +69,7 @@
           "version": "repo-lines-v1:sha256:6a18183d846b22f67192ff059700feddb3a859c30bdc8a7787acd0d8b7590828:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNzYzMDQxNTlhNGI4OGQxMTMxYTU3MmIxOTcxMmVhYTdlOGI3MjJmYWQ3ZjEzNTUyMzhmNzg0ZmJiZjFlYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzOGUxOWM3OThkYTQ2NDNiMzZhNDk5ZmMzNDE0NmNjNDQzZDgyN2ViZmU0MTQ4MGY0NDZiZjc2MGI0YTlmMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwYzYzYjRjNzc4MzA1ZWZjYWQ3YjkwOGQ1Njc1OTc4OGUwMDU0YjI0MWQ3MTlmZjZkYTRmODg0OTU2YjYyODQifQ"
         },
         {
-          "resource": "repo://src/mutation.rs#L495-L511",
+          "resource": "repo://src/mutation.rs#L507-L523",
           "version": "repo-lines-v1:sha256:d48174ab4cb2c1d43a3b91bff637a2d681195aa00a6781dfcff98ba63868583b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MWIwMzM3NTkxMjQ5ZDMzNDIyMmYwZmViNzVmNWQ5YWFkZWU1ZDNiNzc3MDIzY2I3NDBlMWY1YWVkMDM4MTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlMGQ2YjQwZGZlYTQyNmVhNWZiZDE3OWRhNmZlMDBkYjQ3ZjcyYzcxMDczZDU3YzMzYjhlNDA5ODBhOGJhZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0ZjViOWE2NmQxNzI1OWM1MmE1YTJhMDA5YTZlMDJkMTlhM2NmZGY1OTY2YzVhNWQwODExMDI2OTk0Yjk3OTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmMjYwYzI2N2ZjYmYzNTNmMDcxMTkwZDJkYjBiOTU5OTQ0ZjdjYmQ4YWY5ZWVhNjJlNDFmMzljN2ZmOGUwNzQifQ"
         }
       ]
@@ -324,11 +324,11 @@
       "evidence": [
         {
           "resource": "repo://.github/workflows/continuous_integration.yml#L107-L110",
-          "version": "repo-lines-v1:sha256:0f9eef2de5dac028ad5944e93bd9cc3f356cf9f401beb0136ea17122b778a130:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTNjZjY2MDhiZjE1MTkxNzRmZGNkZGI5MTk0M2MwODhmNTc3Y2Q1MjA4NmQ0NmJiMWE5MjdlZGRkZjY4YmM3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ1MjkxN2U3Y2EwZDRhMjFjMjVjZjg1YzA0ZjRmMmUxMzVhMzZmNmM4NDVmNzk3Y2MzNGE0NzYxNTdiZGVhYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNjZTFkYWIwYmI2YTcyMGEwZGJhNzEyNDU5MTQ0ZTIzNTU1Yzk3YzgyOTU1ZGZlM2FiN2JkNTcyZDdlZjVlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODA5ZWE4MDViMTlmMmNlMzM4MjQ4ZDlkYzMyYzljNTRhMDYyNzZjMTZjNGVlNmZlZTdiZDhkYzI5M2I2YWZkNiJ9"
+          "version": "repo-lines-v1:sha256:0f9eef2de5dac028ad5944e93bd9cc3f356cf9f401beb0136ea17122b778a130:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTNjZjY2MDhiZjE1MTkxNzRmZGNkZGI5MTk0M2MwODhmNTc3Y2Q1MjA4NmQ0NmJiMWE5MjdlZGRkZjY4YmM3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ1MjkxN2U3Y2EwZDRhMjFjMjVjZjg1YzA0ZjRmMmUxMzVhMzZmNmM4NDVmNzk3Y2MzNGE0NzYxNTdiZGVhYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNjZTFkYWIwYmI2YTcyMGEwZGJhNzEyNDU5MTQ0ZTIzNTU1Yzk3YzgyOTU1ZGZlM2FiN2JkNTcyZDdlZjVlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmM4NWQ5ZDYyZmUxZTM4ZmVkOThjZTgxYjE5OWU1YmZiNWU3YjU3Y2M3NWY2MjJkNzk2OTQxYzY5NzU4YTQwMSJ9"
         },
         {
-          "resource": "repo://Cargo.toml#L119-L124",
-          "version": "repo-lines-v1:sha256:4b1dbb5f96b7fa3f1ff0330cf7b6af8dea640fd9730ff85af3c9d707ad578474:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODk0ZTJiOGU3YTBkNjY3N2ZmZjdkZGNiMTIzMjQwYjMxZmE3ODljZTY3MmVjNGE3NDY0NmUyMThmZWUyM2Q0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTgxNjUxODEzNTk2NjIzNmM1NDMxMzA3NDhiMmM1NjAyOGRlNjRhYzQ2ZjJjOTRkOWIxMjA2ZWNlZGQ4NTNiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTQ3NWUwNDg2NjAwZDg3ZmZjNDMyNzRiZTUzOTc1ZmNiNTcyNTUzNGUxZDBiNzNlNDg3NTAwNjcyYmM0OTZjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTMwODdlMzE1MmYyMmJhZDliYmE2MTc5YTQ0YzRkZTI5OTZiY2I3MjU5OGY1ZTBiN2Q0ZDYxNWY3ZDIwMmQ2ZSJ9"
+          "resource": "repo://Cargo.toml#L118-L125",
+          "version": "repo-lines-v1:sha256:1af0206d0d7438283fb0b67e2c10d69ba70865a8fbd7cc5ff54844eac0985e5e:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmI0ZDM2ZDE3OGFhZmYxYjU2NjA3MWQzM2MyNzUwMGVjMGJjMjU5ZDRmM2VkNGM0MTNjMWU1MDhmOWUzODZlMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWYzNDc3M2NlNmVjMmUzMmQyZGY4NDAzNTM2NzQ4NzEyYWEzOWY5NTZmODA1Nzk1NTcyNGRlYzIwOWNiODczNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmM4MzNkMzJjOWMyMTM4MGU4NWNjZmM2ZTAzOTgxMTY1MDkwMWEyY2MwM2RlMWJjMGFmYWJkMmI0ZWI3Y2VhYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjNhMmZiNTdiOTQxNmFlOGQxZWU2MjlmOGRkZjc5YTRiNmY4NjEyNjcyMGY3MTFlMTljMGFhYTM2YmVhZWVkMCJ9"
         },
         {
           "resource": "repo://Cargo.toml#L46-L57",
@@ -525,10 +525,20 @@
           "version": "repo-lines-v1:sha256:2a3a3677e69258e11092079407b112d7d83b51ddb9a615644f508f967e52d6dd:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMmIwYjA5YTk2MzVkZTNlN2NlZDkyYmYxNzdlNWJlMzM3MzRiMTgyNGZmMDkxN2Y0MTc0YjY4Y2UxYzg1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjNDJlMGE1MzFmZGZhMWNkOWRmMTQ4OTM5MTE0MmZlMzkwZmQyMWNlNTkyNzMxMTA3NTBmZDI0OWFlYjg1NDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNGM2NzE5Njg3Nzk2MDZkYWIwYjFkNWE5NTMwYmE3ZDcxZGMxMDlmZTcwYTQxYTNkZTJiNTNhMmU3MmUxN2MifQ"
         }
       ]
+    },
+    {
+      "id": "claim_c5beb39b06964ba7a18df958d0ae7a91",
+      "statement": "main excludes the mcp and server subcommands from plain output, so their output helpers keep printing through the progress renderer even when stderr is not a terminal.",
+      "evidence": [
+        {
+          "resource": "repo://src/main.rs#L113-L118",
+          "version": "repo-lines-v1:sha256:01234501c9d74d7cf9fec5c70d63f03a5bfe669ef674d9850e0bd52f6cabadcf:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDk2OGE5MTc5MWM3ZTU2MWI0MDkxMjc5ODUwODJiMDQ4MGUzYzkxZDBmY2RlNWE5MWNhY2RjZmFhNjE3YjRkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWU3NWM3MGQ5NDYzNjI1ZTEwNzlmZDhmYzhlZTYyYWQyZTkyYzQyYmVhYWJmZDg1Yjc4ZDhlMGE0OTc5Yjk0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWNkYzVlMGMxNmIxM2M3MDAzZjc1NzE1YTg5MThmMGY3ZjNkZDllYzYxMGE5ZjhhMGIyNjk1YjI3ZWZkMTk3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTlkNjFlMWViOGEwZTM4N2E2ZDNlNDlkNjg1MjNlMjhlYjRhN2JkZmEwZGIzOGZlZTRiMmY2YWUwMDk4N2Q5MSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-01T22:28:11.879Z"
+    "at": "2026-11-05T21:35:44.503Z"
   }
 }

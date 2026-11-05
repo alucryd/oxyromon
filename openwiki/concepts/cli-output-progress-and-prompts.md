@@ -78,10 +78,12 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+  - id: openwiki-source-4090e615029907c2fb175f07
+    resource: repo://tests/plain_output.rs
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # Progress Bars, Categorized Output and Prompts
@@ -195,7 +197,7 @@ sequenceDiagram
 
 ## The categorized output helpers
 
-Every user-facing line is one of nine helpers, each a `ProgressBar::println`
+Every user-facing line is one of nine helpers, each a call to `print_line`
 with a fixed icon, indent and `console::Style`:
 
 | Helper | Icon | Purpose |
@@ -217,10 +219,29 @@ with another bar's redraw. [`AGENTS.md`](../../AGENTS.md#L616-L632) records the
 same rule for contributors, and its "Common Pitfalls" list repeats it as the
 reason nothing may `println!` on a path the MCP server can reach
 ([AGENTS.md](../../AGENTS.md#L676-L676)).
-The only surviving direct calls outside `progress.rs` are the two
-donation-footer lines in `info::main`, which are printed after the useful output
-and immediately followed by `finish_and_clear()` — an exception, not a pattern
-to copy.
+Text that fits none of the categories, such as the two donation-footer lines in
+`info::main`, goes through `print_line` itself, so no direct `println` call is
+left outside `progress.rs`.
+
+## Plain output when stderr is not a terminal
+
+indicatif hides its bars when stderr is not a terminal, and a hidden bar's
+`println` prints nothing. Before plain output existed, a run in a pipe, a log
+file or a service printed nothing but a fatal error. `print_line` is the single
+choke point that fixes this. It checks a process-wide `PLAIN_OUTPUT` flag:
+
+- **Off:** it calls `progress_bar.println`, which prints above the bars.
+- **On:** it writes the line straight to stderr with `eprintln!`, after
+  `console::strip_ansi_codes` removes the colours.
+
+`main` sets the flag once at startup with `set_plain_output`. It turns it on when
+`get_multi_progress().is_hidden()` and the subcommand is neither `mcp` nor
+`server`, which keep reporting to their clients as before. Stdout stays empty in
+both modes. `tests/plain_output.rs` runs `import-dats` with stderr piped and
+`CLICOLOR_FORCE=1`. It checks that the header and info lines arrive on stderr
+without escape codes and that stdout is empty. Forcing colours matters: over a
+pipe `console` colours nothing, so without it the test would pass even if the
+stripping were removed.
 
 Shared helpers take the bar so the categorization stays uniform:
 `util::is_update` expresses version comparison entirely as
@@ -242,7 +263,7 @@ outcome) reach the terminal rather than the protocol stream.
 
 ```mermaid
 flowchart TD
-  A["subcommand or format module"] -->|"print_header, print_info, print_error"| B["ProgressBar.println on the shared bar"]
+  A["subcommand or format module"] -->|"print_header, print_info, print_error"| B["print_line, ProgressBar.println or plain eprintln"]
   A -->|"log macros"| C["LogWrapper installed in main"]
   D["format crate byte callback"] -->|"run_blocking increments"| E["global MultiProgress"]
   B --> E
@@ -252,7 +273,7 @@ flowchart TD
   H --> I["stdout, JSON-RPC only"]
 ```
 
-*Caption: every rendered line reaches stderr through the MultiProgress; stdout carries only JSON-RPC frames.*
+*Caption: every rendered line reaches stderr, through the MultiProgress or directly in plain mode; stdout carries only JSON-RPC frames.*
 
 `indicatif` and `env_logger` both draw to stderr by default, and nothing in
 `src/` sets a `ProgressDrawTarget` of its own, so the invariant rests on those

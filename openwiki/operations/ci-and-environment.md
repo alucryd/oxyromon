@@ -76,10 +76,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # CI Pipelines and Runtime Environment
@@ -214,8 +214,9 @@ Why each step exists:
   `target/assets` when it is missing, which is all the `RustEmbed` derive needs
   to compile, and no test reads the embedded UI. So this job, the slowest, needs
   neither trunk nor the wasm target and starts at once. `build.rs` honors
-  `SKIP_TRUNK` only when `server` is enabled, and it is **not** declared with
-  `cargo:rerun-if-env-changed`, so flipping it does not itself re-run the script.
+  `SKIP_TRUNK` only when `server` is enabled, and declares it with
+  `cargo:rerun-if-env-changed`, so changing it re-runs the script on the next
+  local build.
 - **A Format job** runs `cargo fmt --check` in the root workspace and again in
   `frontend/` and `desktop/`: each declares its own `[workspace]`, so the root's
   `cargo fmt --all` never reaches them. It installs only `rustfmt` and needs no
@@ -451,6 +452,10 @@ a no-op — append `server` (or any other subcommand).
   `cd frontend && trunk build --release` refreshes assets under `SKIP_TRUNK=true`.
 - Writing to stdout from a code path the MCP server can reach? Don't — stdout is
   the JSON-RPC channel; use `log::*` or the `progress.rs` helpers.
+- Running a CLI command in a pipe, a log file or a service? stderr is not a
+  terminal there, so the progress bars are hidden and the output helpers print
+  plain, uncoloured lines straight to stderr instead. `mcp` and `server` are the
+  exceptions and keep reporting to their clients.
 - Debugging a container? Shell in with a subcommand
   (`docker run --rm -it alucryd/oxyromon server`) and check `/data` and `/roms`,
   which the image fixes by environment rather than by the host's platform paths.

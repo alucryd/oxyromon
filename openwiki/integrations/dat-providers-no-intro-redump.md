@@ -85,7 +85,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-26T22:40:03.236Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # DAT Providers and Naming Conventions

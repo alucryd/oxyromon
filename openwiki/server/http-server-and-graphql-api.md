@@ -58,10 +58,10 @@ sources:
     resource: repo://src/validator.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # HTTP Server, GraphQL API and Uploads
@@ -326,14 +326,14 @@ the generic `purge` prefix (not `purge_system`) is what the frontend listens for
 Mutations that only touch settings stay outside `WRITE_LOCK`, so they answer during
 a long action — `setBool`, `setString`-backed
 `setPreferRegions` / `setPreferVersions` / `setPreferFormat` /
-`setSubfolderScheme`, `setDirectory`, `addToList`, `removeFromList`,
-`unsetPreferFormat` — run synchronously on the request path and return `true`.
+`setSubfolderScheme` / `setGameSubfolders`, `setDirectory`, `addToList`,
+`removeFromList`, `unsetPreferFormat` — run synchronously on the request path and return `true`.
 
 ## Validators and up-front rejection
 
 `src/validator.rs` provides `VariantValidator<E>` over `strum::VariantNames`,
-aliased to `PreferRegionValidator`, `PreferVersionValidator` and
-`SubfolderSchemeValidator`, plus `PreferFormatValidator` (checked against
+aliased to `GameSubfoldersValidator`, `PreferRegionValidator`,
+`PreferVersionValidator` and `SubfolderSchemeValidator`, plus `PreferFormatValidator` (checked against
 `convert_roms::ALL_FORMATS`) and `DirectoryValidator`, which canonicalises the
 path and requires it to be an existing directory. They are attached with
 `#[graphql(validator(custom = "…"))]`, so a bad value is rejected as an

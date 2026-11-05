@@ -18,6 +18,10 @@ sources:
     resource: repo://src/common/test_path_archive_single_file.rs
   - id: openwiki-source-82966a917a34a1bc19c13d43
     resource: repo://src/common/test_path_custom_extension.rs
+  - id: openwiki-source-eb79984d64749bfb0e21d8b6
+    resource: repo://src/common/test_path_game_subfolders_multiple.rs
+  - id: openwiki-source-fee99485a3c97946c704d63e
+    resource: repo://src/common/test_path_playlist_game_subfolders.rs
   - id: openwiki-source-91de67d63579950c326c1195
     resource: repo://src/common/test_path_playlist.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
@@ -66,10 +70,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-05T21:35:44.503Z
 ---
 
 # Romfile Trait System
@@ -238,7 +242,14 @@ to be moved, copied or deleted is first reduced to its inner file (via
   NUS titles (games whose ROMs include a TMD, per `wux::is_nus_title`), again
   unless the extension is an archive, and finally the filename. NUS titles need
   the folder because every update and DLC names its contents alike, `00000000`
-  and on. The extension override
+  and on. Every other non-arcade game gets a game folder as the system's
+  `GAME_SUBFOLDERS` setting decides, read with the global value as fallback:
+  `never` adds none, `always` adds one, and `multiple` adds one for a disc of a
+  multi-disc game or for a game stored as several original files, such as a CUE
+  and its BINs. Under `multiple`, a game in one archive or disc image, meaning a
+  `NON_ORIGINAL_EXTENSIONS` file, stays where it is. The folder is named after
+  the game with `DISC_REGEX` stripping ` (Disc N)…`, so all discs of a game
+  share it. The extension override
   argument matters: for extensions in `NON_ORIGINAL_EXTENSIONS` (chd, cso, nsz,
   rvz, wua, wux, zso, 7z, zip) the file is named after the *game*, not the DAT rom, because
   those containers are derived files; otherwise `System.custom_extension` wins over
@@ -418,7 +429,9 @@ row while the code explicitly deletes the file it produced.
 `Playlist` is the odd one out: it is implemented for `Game`, not for a romfile,
 because the M3U path is a function of the game's sorting and subfolder scheme
 mirroring `get_sorted_path`, with `DISC_REGEX` stripping ` (Disc N)…` from the name
-to get the shared `<game>.m3u`.
+to get the shared `<game>.m3u`. Unless `GAME_SUBFOLDERS` is `never`, a
+non-arcade playlist goes inside the folder of the same name, beside the discs it
+lists, which is the layout frontends such as RomM read as one game.
 
 ## How a format module plugs in
 
@@ -463,7 +476,11 @@ original-extension case at `rom name.rom`; `test_path_cso` and `test_path_rvz` p
 those formats; `test_path_chd_single_track` / `test_path_chd_multiple_tracks` pin CHD
 naming; `test_path_subfolder_alpha_letter` / `test_path_subfolder_alpha_other` pin
 the alpha subfolder; and `test_path_playlist` and
-`test_path_playlist_subfolder_alpha` pin `Playlist`. Format-level behaviour is
+`test_path_playlist_subfolder_alpha` pin `Playlist`. The
+`test_path_game_subfolders*` cases pin the game folder: under `always`, with a
+per-system value beating the global one, left out for an arcade archive, for a
+disc, and under `multiple`. `test_path_playlist_game_subfolders` pins the
+playlist inside it. Format-level behaviour is
 pinned next to the modules: `src/chd/test_ld.rs` round-trips a LaserDisc RIFF
 through `to_chd` → `as_chd` → `to_riff` → `to_chd` and asserts the two CHDs are
 byte-identical, and the unit tests in `src/iso.rs` pin the CUE parsing that
