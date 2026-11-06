@@ -1,4 +1,4 @@
-//! Crate-wide error type.
+//! The error type of every crate embedding this one.
 
 use thiserror::Error;
 

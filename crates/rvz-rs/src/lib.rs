@@ -28,18 +28,17 @@
 //! [Dolphin]: https://dolphin-emu.org
 
 mod compression;
-mod crypto;
-mod disc;
-mod error;
 mod format;
-mod fst;
-mod io;
-mod keys;
+// The GameCube and Wii disc specifics, shared with wbfs-rs: `src/gcwii` is a
+// symlink to the gcwii crate's source, which publishing copies in
+#[allow(dead_code, unused_imports)]
+#[path = "gcwii/lib.rs"]
+mod gcwii;
 mod lfg;
 mod reader;
-mod scrub;
-mod wii;
 mod writer;
+
+use gcwii::{crypto, disc, error, fst, io, keys, scrub, wii};
 
 use std::fs::File;
 use std::io::Write;

@@ -60,6 +60,10 @@ same, and the RVZ is smaller, though by little, since RVZ already stores
 padding as a seed. A scrubbed disc is no longer the disc it was, and no
 longer matches its dump's hashes.
 
+Scrubbing refuses a disc without a boot DOL, as Dolphin does: Datel's discs
+and homebrew loaders such as Swiss boot an apploader of their own, which
+loads code from where no file points, so nothing on them can be told unused.
+
 ## Scope
 
 - **RVZ only.** WIA, RVZ's predecessor, is refused rather than misread.
@@ -133,6 +137,13 @@ refused without it, and an RVZ is rewritten without one.
 cargo test -p rvz-rs
 RVZ_RS_REAL=game.rvz cargo test --release -p rvz-rs -- --ignored
 ```
+
+## Source layout
+
+The GameCube and Wii disc specifics, partitions, encryption, the file system,
+keys and scrubbing, live in oxyROMon's unpublished `gcwii` crate, shared with
+wbfs-rs. `src/gcwii` is a symlink to its source, and so is `tests/common` to
+its synthetic discs; publishing copies them in, so this crate stands alone.
 
 ## Credits
 

@@ -1,0 +1,43 @@
+[package]
+name = "wbfs-rs"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "WBFS (Wii and GameCube disc image) creation and extraction, interchangeable with wit"
+license = "GPL-2.0-or-later"
+repository.workspace = true
+keywords = ["wbfs", "wii", "gamecube", "wit", "usb-loader"]
+categories = ["command-line-utilities"]
+# The tests check against gcwii and rvz-rs, unpublished dev-dependencies, so
+# they stay out of the package
+include = ["src/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+
+[lib]
+name = "wbfs_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "wbfsrs"
+path = "src/bin/wbfsrs/main.rs"
+required-features = ["cli"]
+
+[dependencies]
+# What the embedded gcwii crate depends on
+aes = "0.9"
+rayon.workspace = true
+sha1.workspace = true
+thiserror.workspace = true
+clap = { workspace = true, optional = true }
+console = { workspace = true, optional = true }
+indicatif = { workspace = true, optional = true }
+
+[dev-dependencies]
+# What the tests check against: the clusters a disc uses, and RVZs as sources;
+# neither is published with the crate, nor are the tests
+gcwii = { path = "../gcwii" }
+rvz-rs = { path = "../rvz-rs" }
+tempfile.workspace = true
+
+[features]
+default = ["cli"]
+cli = ["dep:clap", "dep:console", "dep:indicatif"]

@@ -6,11 +6,11 @@ use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
 
-use crate::crypto::Key;
-use crate::error::{Error, Result};
-use crate::fst::{self, FileSystem};
-use crate::io::read_exact_at;
-use crate::wii::{self, BLOCK_DATA_SIZE, BLOCK_HEADER_SIZE, BLOCK_TOTAL_SIZE};
+use super::crypto::Key;
+use super::error::{Error, Result};
+use super::fst::{self, FileSystem};
+use super::io::read_exact_at;
+use super::wii::{self, BLOCK_DATA_SIZE, BLOCK_HEADER_SIZE, BLOCK_TOTAL_SIZE};
 
 pub const GAMECUBE_MAGIC: u32 = 0xC2339F3D;
 pub const WII_MAGIC: u32 = 0x5D1C9EA3;

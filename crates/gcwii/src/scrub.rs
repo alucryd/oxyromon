@@ -3,12 +3,13 @@
 //! nothing. A scrubbed disc plays the same, but is no longer the disc it was.
 //! A port of Dolphin's `DiscScrubber`.
 
-use crate::disc::{
+use super::crypto::Key;
+use super::disc::{
     PARTITION_CERT_CHAIN_OFFSET, PARTITION_CERT_CHAIN_SIZE, PARTITION_DATA_OFFSET,
     PARTITION_H3_OFFSET, PARTITION_H3_SIZE, PARTITION_TMD_OFFSET, PARTITION_TMD_SIZE, Partition,
     Source, Volume,
 };
-use crate::error::{Error, Result};
+use super::error::{Error, Result};
 
 pub const CLUSTER_SIZE: u64 = 0x8000;
 
@@ -17,6 +18,11 @@ pub struct Scrubber {
     free: Vec<bool>,
     has_hashes: bool,
     size: u64,
+    /// Whether a disc without a boot DOL is kept whole rather than refused.
+    /// Such discs, as Datel's and homebrew loaders such as Swiss, boot an
+    /// apploader of their own that loads code from where no file points, so
+    /// nothing on them can be told unused.
+    whole_without_dol: bool,
 }
 
 fn unreadable(what: &str) -> Error {
@@ -24,13 +30,20 @@ fn unreadable(what: &str) -> Error {
 }
 
 impl Scrubber {
-    /// Find what a disc uses, failing if any of it cannot be read.
-    pub fn new(volume: &mut Volume, source: &mut dyn Source) -> Result<Self> {
+    /// Find what a disc uses, failing if any of it cannot be read. A disc
+    /// without a boot DOL is refused, as Dolphin refuses it, or with
+    /// `whole_without_dol` taken as used throughout.
+    pub fn new(
+        volume: &mut Volume,
+        source: &mut dyn Source,
+        whole_without_dol: bool,
+    ) -> Result<Self> {
         let size = source.size();
         let mut scrubber = Self {
             free: vec![true; size.div_ceil(CLUSTER_SIZE) as usize],
             has_hashes: volume.has_hashes,
             size,
+            whole_without_dol,
         };
         if volume.partitions.is_empty() {
             scrubber.parse_partition(volume, source, None)?;
@@ -96,15 +109,16 @@ impl Scrubber {
             .wrapping_add(read(0x2440 + 0x14)?)
             .wrapping_add(read(0x2440 + 0x18)?);
         self.mark_in(data_offset, 0, apploader as u64);
-        let dol = volume
-            .dol_offset(source, partition)
-            .ok()
-            .flatten()
-            .ok_or_else(|| unreadable("DOL"))?;
-        let dol_size = volume
-            .dol_size(source, partition, dol)
-            .map_err(|_| unreadable("DOL"))?;
-        self.mark_in(data_offset, dol, dol_size as u64);
+        match volume.dol_offset(source, partition) {
+            Ok(Some(dol)) => {
+                let dol_size = volume
+                    .dol_size(source, partition, dol)
+                    .map_err(|_| unreadable("DOL"))?;
+                self.mark_in(data_offset, dol, dol_size as u64);
+            }
+            Ok(None) if self.whole_without_dol => self.mark(0, self.size),
+            _ => return Err(unreadable("DOL")),
+        }
         let (fst_offset, fst_size) = volume
             .fst(source, partition)
             .map_err(|_| unreadable("file system"))?;
@@ -149,6 +163,11 @@ impl Scrubber {
         }
     }
 
+    /// Whether each cluster is used, the opposite of free to scrub.
+    pub fn used(&self) -> Vec<bool> {
+        self.free.iter().map(|free| !free).collect()
+    }
+
     /// Whether the cluster at `offset` is free to scrub.
     pub fn is_free(&self, offset: u64) -> bool {
         self.free
@@ -170,4 +189,14 @@ impl Scrubber {
             buf = &mut buf[length..];
         }
     }
+}
+
+/// Which clusters of a disc anything on it points to: what scrubbing keeps,
+/// the clusters wit keeps too. A disc without a boot DOL, which scrubbing
+/// refuses, is used throughout: its own apploader loads code from where no
+/// file points. `keys` are the Wii common keys to try on each partition.
+pub fn used_clusters(source: &mut dyn Source, keys: &[Key]) -> Result<Vec<bool>> {
+    let mut volume = Volume::new(source, keys)?
+        .ok_or_else(|| Error::Unsupported("not a GameCube or Wii disc".into()))?;
+    Ok(Scrubber::new(&mut volume, source, true)?.used())
 }
