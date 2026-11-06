@@ -1,0 +1,43 @@
+[package]
+name = "rvz-rs"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "RVZ (GameCube and Wii disc image) compression and decompression, scrubbing included, interchangeable with Dolphin"
+license = "GPL-2.0-or-later"
+repository.workspace = true
+keywords = ["rvz", "gamecube", "wii", "dolphin", "compression"]
+categories = ["compression", "command-line-utilities"]
+include = ["src/**/*", "tests/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+
+[lib]
+name = "rvz_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rvzrs"
+path = "src/bin/rvzrs/main.rs"
+required-features = ["cli"]
+
+[dependencies]
+aes = "0.9"
+# The pure Rust port of libbzip2, which writes what libbzip2 writes.
+bzip2 = "0.6"
+lzma-rust2 = { workspace = true, features = ["encoder"] }
+rayon.workspace = true
+sha1.workspace = true
+thiserror.workspace = true
+zstd.workspace = true
+clap = { workspace = true, optional = true }
+console = { workspace = true, optional = true }
+indicatif = { workspace = true, optional = true }
+
+[dev-dependencies]
+# To build a synthetic Wii disc.
+aes = "0.9"
+sha1.workspace = true
+tempfile.workspace = true
+
+[features]
+default = ["cli"]
+cli = ["dep:clap", "dep:console", "dep:indicatif"]
