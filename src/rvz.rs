@@ -1,19 +1,20 @@
-//! RVZ, and the GameCube/Wii disc handling it shares with WBFS, by way of nod.
+//! RVZ, Dolphin's compressed GameCube and Wii disc image, by way of rvz-rs.
+//!
+//! Only writing an RVZ from a Wii ISO needs a key, the Wii common key, which
+//! oxyromon does not ship: `import-keys` stores it. Reading an RVZ, or
+//! rewriting one, needs none, and neither does a GameCube disc.
 
 use super::common::*;
 use super::config::*;
+use super::import_keys::WIIU_KEYS_FILE;
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
 use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
-use nod::common::{Compression, Format};
-use nod::read::{DiscOptions, DiscReader, PartitionEncryption};
-use nod::write::{DiscWriter, DiscWriterWeight, FormatOptions, ProcessOptions, ScrubLevel};
+use rvz_rs::{Compression, Options, Reader};
 use sqlx::SqliteConnection;
-use std::fs::File;
-use std::io::{Seek, Write};
 use std::path::Path;
 use strum::{Display, EnumString, VariantNames};
 use tokio::task::spawn_blocking;
@@ -118,7 +119,12 @@ impl ToIso for RvzRomfile {
             .join(self.romfile.path.file_name().unwrap())
             .with_extension(ISO_EXTENSION);
 
-        extract_iso(&self.romfile.path, &path, progress_bar).await?;
+        let (input, output) = (self.romfile.path.clone(), path.clone());
+        run_blocking(progress_bar, input.metadata()?.len(), move |progress| {
+            rvz_rs::decompress(&input, &output, progress)
+        })
+        .await
+        .with_context(|| format!("Failed to extract \"{}\"", self.romfile.path.display()))?;
 
         stop_action(progress_bar);
 
@@ -161,15 +167,20 @@ impl ToRvz for IsoRomfile {
             ),
         );
 
-        write_rvz(
-            &self.romfile.path,
-            &path,
-            progress_bar,
-            compression_algorithm,
-            compression_level,
-            block_size,
-        )
-        .await?;
+        let options = options(compression_algorithm, compression_level, block_size);
+        let keys = load_wii_keys()?;
+        let (input, output) = (self.romfile.path.clone(), path.clone());
+        run_blocking(progress_bar, input.metadata()?.len(), move |progress| {
+            rvz_rs::compress(&input, &output, &options, &keys, progress)
+        })
+        .await
+        .map_err(|error| match error.downcast_ref() {
+            Some(rvz_rs::Error::MissingKey(_)) => {
+                error.context("A Wii disc needs the Wii common key: run import-keys")
+            }
+            _ => error,
+        })
+        .with_context(|| format!("Failed to create \"{}\"", path.display()))?;
 
         stop_action(progress_bar);
 
@@ -198,172 +209,62 @@ impl AsRvz for CommonRomfile {
     }
 }
 
-/// Threads nod uses to read ahead while decoding a compressed image.
-const PRELOADER_THREADS: usize = 4;
-
-/// Open a disc image, reproducing it exactly: partition hashes and encryption
-/// are left as they are on the source, so an extracted ISO is byte for byte
-/// what went in.
-fn open(path: &Path) -> Result<DiscReader> {
-    DiscReader::new(
-        path,
-        &DiscOptions {
-            partition_encryption: PartitionEncryption::Original,
-            preloader_threads: PRELOADER_THREADS,
-        },
-    )
-    .with_context(|| format!("Failed to open \"{}\"", path.display()))
-}
-
-/// How much of the machine to give the writer, following nod's own guidance
-/// that a heavier writer earns more threads.
-fn processor_threads(weight: DiscWriterWeight) -> usize {
-    let available = std::thread::available_parallelism()
-        .map(|available| available.get())
-        .unwrap_or(1);
-    match weight {
-        DiscWriterWeight::Light => 0,
-        DiscWriterWeight::Medium => available.min(4),
-        DiscWriterWeight::Heavy => available,
+/// The Wii common key, which `import-keys` stores with the Wii U keys, as it
+/// comes from a Wii U's `otp.bin` as often as from a Wii. Only writing an RVZ
+/// from a Wii ISO needs it; without it, that fails, and nothing else does.
+fn load_wii_keys() -> Result<Vec<rvz_rs::Key>> {
+    let path = get_data_directory()?.join(WIIU_KEYS_FILE);
+    if !path.is_file() {
+        return Ok(Vec::new());
     }
+    rvz_rs::load_keys(&path).with_context(|| format!("Failed to read \"{}\"", path.display()))
 }
 
-/// Map oxyromon's configured algorithm and level onto nod's [`Compression`].
+/// Map oxyromon's configured algorithm and level onto rvz-rs's options.
 ///
 /// `RVZ_COMPRESSION_LEVEL` ranges over 1..=22, which only Zstandard accepts in
 /// full: the others cap at 9. The level is clamped rather than rejected, so an
 /// existing configuration keeps working instead of failing the conversion.
-fn compression(algorithm: &RvzCompressionAlgorithm, level: usize) -> Compression {
-    match algorithm {
+fn options(algorithm: &RvzCompressionAlgorithm, level: usize, block_size: usize) -> Options {
+    let compression = match algorithm {
         RvzCompressionAlgorithm::None => Compression::None,
-        RvzCompressionAlgorithm::Bzip2 => Compression::Bzip2(level.clamp(1, 9) as u8),
-        RvzCompressionAlgorithm::Lzma => Compression::Lzma(level.clamp(1, 9) as u8),
-        RvzCompressionAlgorithm::Lzma2 => Compression::Lzma2(level.clamp(1, 9) as u8),
-        RvzCompressionAlgorithm::Zstd => Compression::Zstandard(level.clamp(1, 22) as i8),
+        RvzCompressionAlgorithm::Bzip2 => Compression::Bzip2,
+        RvzCompressionAlgorithm::Lzma => Compression::Lzma,
+        RvzCompressionAlgorithm::Lzma2 => Compression::Lzma2,
+        RvzCompressionAlgorithm::Zstd => Compression::Zstd,
+    };
+    let levels = compression.levels();
+    Options {
+        compression,
+        level: (level as i32).clamp(*levels.start(), *levels.end()),
+        // The setting is in KiB, rvz-rs wants bytes
+        chunk_size: (block_size * 1024) as u32,
+        scrub: false,
     }
 }
 
-/// Extract any nod-supported disc image to a raw ISO.
-pub(super) async fn extract_iso<P: AsRef<Path>, Q: AsRef<Path>>(
-    source: P,
-    destination: Q,
-    progress_bar: &ProgressBar,
-) -> Result<()> {
-    let source = source.as_ref().to_path_buf();
-    let destination = destination.as_ref().to_path_buf();
-    let progress_bar = progress_bar.clone();
-    spawn_blocking(move || {
-        let mut disc = open(&source)?;
-        let mut file = File::create(&destination)
-            .with_context(|| format!("Failed to create \"{}\"", destination.display()))?;
-        // Unlike a subprocess, the decoder can say how far along it is
-        progress_bar.reset();
-        progress_bar.set_style(get_bytes_progress_style());
-        progress_bar.set_length(disc.disc_size());
-        nod::util::buf_copy(&mut disc, &mut progress_bar.wrap_write(&mut file))
-            .with_context(|| format!("Failed to write \"{}\"", destination.display()))?;
-        file.flush()?;
-        Ok(())
-    })
-    .await
-    .context("Disc reader task failed")?
-}
-
-/// Hash a disc image's contents without writing the decoded ISO anywhere.
+/// Hash an RVZ's disc without writing the decoded ISO anywhere.
 ///
 /// This is what the extract-then-hash path costs on a dual layer Wii disc:
 /// several gigabytes written to the temp directory and read straight back. The
 /// decoder is just a reader, so the digest can consume it directly.
-async fn hash_disc<P: AsRef<Path>>(
-    source: P,
+async fn hash_disc(
+    source: &Path,
     progress_bar: &ProgressBar,
     hash_algorithm: &HashAlgorithm,
 ) -> Result<(String, u64)> {
-    let source = source.as_ref().to_path_buf();
+    let source = source.to_path_buf();
     let hash_algorithm = *hash_algorithm;
     let progress_bar = progress_bar.clone();
     spawn_blocking(move || {
-        let mut disc = open(&source)?;
+        let mut disc = Reader::open(&source)
+            .with_context(|| format!("Failed to open \"{}\"", source.display()))?;
         progress_bar.set_style(get_bytes_progress_style());
-        progress_bar.set_length(disc.disc_size());
+        progress_bar.set_length(disc.size());
         hash_reader(&mut disc, &progress_bar, &hash_algorithm)
     })
     .await
     .context("Disc reader task failed")?
-}
-
-/// Convert an ISO to RVZ.
-async fn write_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
-    source: P,
-    destination: Q,
-    progress_bar: &ProgressBar,
-    compression_algorithm: &RvzCompressionAlgorithm,
-    compression_level: usize,
-    block_size: usize,
-) -> Result<()> {
-    write_disc(
-        source,
-        destination,
-        progress_bar,
-        FormatOptions {
-            format: Format::Rvz,
-            compression: compression(compression_algorithm, compression_level),
-            // The setting is in KiB, nod wants bytes
-            block_size: (block_size * 1024) as u32,
-        },
-    )
-    .await
-}
-
-/// Run a disc writer to completion, streaming its output to `destination`.
-pub(super) async fn write_disc<P: AsRef<Path>, Q: AsRef<Path>>(
-    source: P,
-    destination: Q,
-    progress_bar: &ProgressBar,
-    options: FormatOptions,
-) -> Result<()> {
-    let source = source.as_ref().to_path_buf();
-    let destination = destination.as_ref().to_path_buf();
-    let progress_bar = progress_bar.clone();
-    spawn_blocking(move || {
-        let disc = open(&source)?;
-        let writer = DiscWriter::new(disc, &options)
-            .with_context(|| format!("Failed to set up the {} writer", options.format))?;
-        let mut file = File::create(&destination)
-            .with_context(|| format!("Failed to create \"{}\"", destination.display()))?;
-        let process_options = ProcessOptions {
-            processor_threads: processor_threads(writer.weight()),
-            digest_crc32: false,
-            digest_md5: false,
-            digest_sha1: false,
-            digest_xxh64: false,
-            scrub: ScrubLevel::None,
-        };
-        // The writer reports how far through the source it is, which for a
-        // compressing format bears no relation to the bytes written out
-        progress_bar.reset();
-        progress_bar.set_style(get_bytes_progress_style());
-        progress_bar.set_length(writer.progress_bound());
-        let finalization = writer
-            .process(
-                |data, progress, _| {
-                    file.write_all(data.as_ref())?;
-                    progress_bar.set_position(progress);
-                    Ok(())
-                },
-                &process_options,
-            )
-            .with_context(|| format!("Failed to write \"{}\"", destination.display()))?;
-        // RVZ and WBFS only know their header once every block has been written
-        if !finalization.header.is_empty() {
-            file.rewind()?;
-            file.write_all(finalization.header.as_ref())?;
-        }
-        file.flush()?;
-        Ok(())
-    })
-    .await
-    .context("Disc writer task failed")?
 }
 
 /// Reported by `info`.

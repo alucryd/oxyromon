@@ -10,6 +10,7 @@ fn every_cli_shares_one_ui() {
         "crates/cia-rs/src/bin/ciars/ui.rs",
         "crates/gdi-rs/src/bin/gdirs/ui.rs",
         "crates/nsz-rs/src/bin/nszrs/ui.rs",
+        "crates/rvz-rs/src/bin/rvzrs/ui.rs",
         "crates/xdelta-rs/src/bin/xdeltars/ui.rs",
         "crates/wux-rs/src/bin/wuxrs/ui.rs",
         "crates/xps-rs/src/bin/xpsrs/ui.rs",

@@ -65,19 +65,7 @@ async fn system_size(
 /// Build the status payload; shared by the `status` tool and the
 /// `oxyromon://status` resource.
 pub(crate) async fn build_status(connection: &mut SqliteConnection, read_only: bool) -> StatusOut {
-    let mut dependencies = vec![
-        ("sevenz-rust2", crate::archive::get_version().await),
-        ("chd-rs", crate::chd::get_version().await),
-        ("cia-rs", crate::cia::get_version().await),
-        ("xps-rs", crate::xps::get_version().await),
-        ("xso-rs", crate::xso::get_version().await),
-        ("nsz-rs", crate::nsz::get_version().await),
-        ("xdelta-rs", crate::xdelta::get_version().await),
-        ("wux-rs", crate::wux::get_version().await),
-        // RVZ and WBFS both come from nod
-        ("nod", crate::rvz::get_version().await),
-    ];
-    dependencies.sort_by_key(|(name, _)| *name);
+    let dependencies = crate::info::dependencies().await;
     StatusOut {
         version: env!("CARGO_PKG_VERSION").to_string(),
         read_only,
