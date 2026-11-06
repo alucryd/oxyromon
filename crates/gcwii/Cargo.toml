@@ -1,0 +1,24 @@
+[package]
+name = "gcwii"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "GameCube and Wii disc specifics shared by rvz-rs and wbfs-rs"
+license = "GPL-2.0-or-later"
+repository.workspace = true
+# Never published: each crate using it embeds its source, symlinked into its
+# own, so that each publishes standalone
+publish = false
+
+[lib]
+name = "gcwii"
+path = "src/lib.rs"
+
+[dependencies]
+aes = "0.9"
+rayon.workspace = true
+sha1.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

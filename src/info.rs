@@ -32,7 +32,7 @@ pub async fn dependencies() -> Vec<(&'static str, Result<String>)> {
         ("xdelta-rs", xdelta::get_version().await),
         ("wux-rs", wux::get_version().await),
         ("rvz-rs", rvz::get_version().await),
-        ("nod", wbfs::get_version().await),
+        ("wbfs-rs", wbfs::get_version().await),
     ];
     deps.sort_by_key(|(name, _)| *name);
     deps

@@ -3,12 +3,12 @@
 //! Vendored from the `opticaldiscs` crate v0.14.0 (GPL-3.0), which is licence
 //! compatible with oxyromon's GPL-3.0+: <https://github.com/danifunker/opticaldiscs-rs>
 //!
-//! It lives here rather than as a dependency because `opticaldiscs` depends
-//! unconditionally on `nod` 1.4, which pins `liblzma-sys` 0.3, while `nod` 2.x
-//! needs `liblzma-sys` 0.4. Both declare `links = "lzma"` and Cargo permits only
-//! one package per `links` value, so the two cannot be resolved together —
-//! and oxyromon wants `nod` 2 for native RVZ/WBFS conversion. Once `nod` is
-//! optional upstream, this module goes away and the crate comes back.
+//! It was vendored when oxyromon depended on `nod` 2, whose `liblzma-sys`
+//! clashed over `links = "lzma"` with the `nod` 1.4 `opticaldiscs` depends on
+//! unconditionally. oxyromon no longer depends on `nod`, so that clash is
+//! gone, but the crate would still bring `nod` 1.4 and its C compression
+//! libraries back for a directory walk: it stays here until `nod` is optional
+//! upstream.
 //!
 //! Trimmed to the directory walking `import-irds` needs: volume descriptors, the
 //! Rock Ridge / Joliet / primary tree preference, and directory records. File

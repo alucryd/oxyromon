@@ -5,7 +5,7 @@
 use rayon::prelude::*;
 use sha1::{Digest, Sha1};
 
-use crate::crypto::{Key, cbc_decrypt, cbc_encrypt};
+use super::crypto::{Key, cbc_decrypt, cbc_encrypt};
 
 pub const BLOCK_HEADER_SIZE: u64 = 0x400;
 pub const BLOCK_DATA_SIZE: u64 = 0x7C00;
