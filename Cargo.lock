@@ -9,12 +9,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fe438c63458706e03479442743baae6c88256498e6431708f6dfc520a26515d3"
 
 [[package]]
-name = "adler2"
-version = "2.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
-
-[[package]]
 name = "adler32"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -652,16 +646,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f3a53fac24f34a81bc9954b5d6cfce0c21e18ec6959f44f56e8e90e4bb7c346c"
 dependencies = [
  "libbz2-rs-sys",
-]
-
-[[package]]
-name = "bzip2-sys"
-version = "0.1.13+1.0.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "225bff33b2141874fe80d71e07d6eec4f85c5c216453dd96388240f96e1acc14"
-dependencies = [
- "cc",
- "pkg-config",
 ]
 
 [[package]]
@@ -2425,17 +2409,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "liblzma-sys"
-version = "0.4.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c7e3581f367a78d7b7e7ae948d023310556f0cfc13156c2e4e00e25616492b9"
-dependencies = [
- "cc",
- "libc",
- "pkg-config",
-]
-
-[[package]]
 name = "libm"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2695,12 +2668,10 @@ name = "nod"
 version = "2.0.0-alpha.12"
 source = "git+https://github.com/encounter/nod?tag=v2.0.0-alpha.12#ebd80cac99b48a323200d84365e07a58cc27412d"
 dependencies = [
- "adler2",
  "aes 0.9.4",
  "base16ct",
  "block-padding",
  "bytes",
- "bzip2-sys",
  "cbc",
  "crc32fast",
  "crossbeam-channel",
@@ -2710,8 +2681,6 @@ dependencies = [
  "dyn-clone",
  "encoding_rs",
  "itertools 0.14.0",
- "liblzma-sys",
- "libz-sys",
  "lru 0.18.5",
  "md-5",
  "polonius-the-crab",
@@ -2721,7 +2690,6 @@ dependencies = [
  "tracing",
  "xxhash-rust",
  "zerocopy",
- "zstd-sys",
 ]
 
 [[package]]
@@ -2902,6 +2870,7 @@ dependencies = [
  "reqwest",
  "rmcp",
  "rust-embed",
+ "rvz-rs",
  "schemars",
  "serde",
  "serde_json",

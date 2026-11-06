@@ -34,7 +34,9 @@ pub fn noise(len: usize, seed: u64) -> Vec<u8> {
 fn junk_block(seed: u32) -> Vec<u8> {
     let mut buffer = [0u32; 521];
     for (i, word) in buffer.iter_mut().take(17).enumerate() {
-        *word = seed.wrapping_mul(0x9E37_79B9).wrapping_add(i as u32 * 0x0101_0101);
+        *word = seed
+            .wrapping_mul(0x9E37_79B9)
+            .wrapping_add(i as u32 * 0x0101_0101);
     }
     for i in 17..521 {
         buffer[i] = (buffer[i - 17] << 23) ^ (buffer[i - 16] >> 9) ^ buffer[i - 1];
@@ -54,7 +56,12 @@ fn junk_block(seed: u32) -> Vec<u8> {
     let mut index = 0;
     while out.len() < 0x8000 {
         let word = buffer[index];
-        out.extend([(word >> 24) as u8, (word >> 18) as u8, (word >> 8) as u8, word as u8]);
+        out.extend([
+            (word >> 24) as u8,
+            (word >> 18) as u8,
+            (word >> 8) as u8,
+            word as u8,
+        ]);
         index += 1;
         if index == 521 {
             forward(&mut buffer);
@@ -121,7 +128,11 @@ fn lay_out(data: &mut [u8], shift: u32, seed: u32) {
     fst.resize(0x60, 0);
     data[0x20000..0x20060].copy_from_slice(&fst);
     for (i, &(offset, length)) in files.iter().enumerate() {
-        let contents = if i == 1 { vec![0x5A; length] } else { noise(length, 10 + i as u64) };
+        let contents = if i == 1 {
+            vec![0x5A; length]
+        } else {
+            noise(length, 10 + i as u64)
+        };
         data[offset..offset + length].copy_from_slice(&contents);
         let padded = (offset + length).next_multiple_of(4) + 0x20;
         data[offset + length..padded.min(size)].fill(0);
@@ -171,13 +182,14 @@ fn encrypt_partition(decrypted: &[u8], key: &[u8; 16], tamper: Option<(usize, us
         let mut hashes = vec![[0u8; 0x400]; 64];
         for (j, block) in data.iter().enumerate() {
             for k in 0..31 {
-                hashes[j][k * 20..k * 20 + 20].copy_from_slice(&sha1(&block[k * 0x400..(k + 1) * 0x400]));
+                hashes[j][k * 20..k * 20 + 20]
+                    .copy_from_slice(&sha1(&block[k * 0x400..(k + 1) * 0x400]));
             }
         }
         for j in 0..64 {
             let h1 = sha1(&hashes[j][..0x26C]);
-            for neighbour in j / 8 * 8..j / 8 * 8 + 8 {
-                hashes[neighbour][0x280 + j % 8 * 20..][..20].copy_from_slice(&h1);
+            for neighbour in &mut hashes[j / 8 * 8..j / 8 * 8 + 8] {
+                neighbour[0x280 + j % 8 * 20..][..20].copy_from_slice(&h1);
             }
         }
         for k in 0..8 {

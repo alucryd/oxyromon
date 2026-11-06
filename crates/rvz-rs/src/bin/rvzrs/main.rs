@@ -80,7 +80,11 @@ fn main() -> ExitCode {
 }
 
 /// Decompress `input` if it is an RVZ, compress it otherwise.
-fn convert(input: &Path, matches: &ArgMatches, outputs: &mut ui::Outputs) -> Result<String, String> {
+fn convert(
+    input: &Path,
+    matches: &ArgMatches,
+    outputs: &mut ui::Outputs,
+) -> Result<String, String> {
     let size = std::fs::metadata(input).map_err(|e| e.to_string())?.len();
     let dir = ui::output_dir(input, matches)?;
     let is_rvz = rvz_rs::is_rvz(input).map_err(|e| e.to_string())?;
@@ -125,7 +129,11 @@ fn convert(input: &Path, matches: &ArgMatches, outputs: &mut ui::Outputs) -> Res
     bar.finish_and_clear();
     let stats = result.map_err(|e| e.to_string())?;
     // How big the output is next to the original.
-    Ok(format!("{} ({:.1}%)", ui::wrote(&output), stats.ratio_percent()))
+    Ok(format!(
+        "{} ({:.1}%)",
+        ui::wrote(&output),
+        stats.ratio_percent()
+    ))
 }
 
 #[cfg(test)]
@@ -139,7 +147,9 @@ mod tests {
 
     #[test]
     fn takes_several_inputs_and_defaults_to_zstd() {
-        let matches = cli().try_get_matches_from(["rvzrs", "a.iso", "b.rvz"]).unwrap();
+        let matches = cli()
+            .try_get_matches_from(["rvzrs", "a.iso", "b.rvz"])
+            .unwrap();
         assert_eq!(matches.get_many::<PathBuf>("INPUTS").unwrap().count(), 2);
         assert_eq!(matches.get_one::<String>("compression").unwrap(), "zstd");
         assert_eq!(*matches.get_one::<u32>("block").unwrap(), 131072);

@@ -29,7 +29,11 @@ fn tool() -> Option<PathBuf> {
 /// Convert with dolphin-tool, `options` naming an RVZ's settings.
 fn dolphin(tool: &Path, input: &Path, output: &Path, options: Option<&Options>) {
     let mut command = Command::new(tool);
-    command.args(["convert", "-i"]).arg(input).arg("-o").arg(output);
+    command
+        .args(["convert", "-i"])
+        .arg(input)
+        .arg("-o")
+        .arg(output);
     match options {
         None => {
             command.args(["-f", "iso"]);
@@ -129,13 +133,19 @@ fn dolphin_reads_our_wii_rvzs() {
     rvz_rs::compress(&iso, &rvz, &Options::default(), &[COMMON_KEY], &mut |_| {}).unwrap();
     // dolphin-tool reads it back to the disc, with the title key it keeps
     dolphin(&tool, &rvz, &out, None);
-    assert!(std::fs::read(&out).unwrap() == disc, "dolphin-tool reads our Wii RVZ wrong");
+    assert!(
+        std::fs::read(&out).unwrap() == disc,
+        "dolphin-tool reads our Wii RVZ wrong"
+    );
     // Every way we write it
     for options in same_bytes().into_iter().filter(|options| !options.scrub) {
         let ours = dir.path().join("ours.rvz");
         rvz_rs::compress(&rvz, &ours, &options, &[], &mut |_| {}).unwrap();
         dolphin(&tool, &ours, &out, None);
-        assert!(std::fs::read(&out).unwrap() == disc, "dolphin-tool reads our {options:?} wrong");
+        assert!(
+            std::fs::read(&out).unwrap() == disc,
+            "dolphin-tool reads our {options:?} wrong"
+        );
     }
 }
 
@@ -153,10 +163,16 @@ fn each_reads_the_others_lzma() {
         let out = dir.path().join("out.iso");
         rvz_rs::compress(&iso, &ours, &options, &[], &mut |_| {}).unwrap();
         dolphin(&tool, &ours, &out, None);
-        assert!(std::fs::read(&out).unwrap() == disc, "dolphin-tool reads our {compression:?} wrong");
+        assert!(
+            std::fs::read(&out).unwrap() == disc,
+            "dolphin-tool reads our {compression:?} wrong"
+        );
         dolphin(&tool, &iso, &theirs, Some(&options));
         rvz_rs::decompress(&theirs, &out, &mut |_| {}).unwrap();
-        assert!(std::fs::read(&out).unwrap() == disc, "we read dolphin-tool's {compression:?} wrong");
+        assert!(
+            std::fs::read(&out).unwrap() == disc,
+            "we read dolphin-tool's {compression:?} wrong"
+        );
     }
 }
 

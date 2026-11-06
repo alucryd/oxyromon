@@ -6,6 +6,7 @@ use super::download_dats::find_redump_systems;
 use super::model::*;
 use super::nsz;
 use super::rvz;
+use super::wbfs;
 use super::wux;
 use super::xdelta;
 use super::xps;
@@ -249,9 +250,9 @@ impl QueryRoot {
             ("nsz-rs", nsz::get_version().await),
             ("xdelta-rs", xdelta::get_version().await),
             ("wux-rs", wux::get_version().await),
+            ("rvz-rs", rvz::get_version().await),
+            ("nod", wbfs::get_version().await),
         ];
-        // RVZ and WBFS both come from nod
-        deps.push(("nod", rvz::get_version().await));
         deps.sort_by_key(|(name, _)| *name);
         Ok(deps
             .into_iter()

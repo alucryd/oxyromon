@@ -1,7 +1,9 @@
 //! Import the keys oxyromon needs but does not ship into its data directory,
 //! so that a headless install needs no emulator alongside it. For now, the Wii
-//! U's: disc keys and the common key, in the format of Cemu's `keys.txt`, and
-//! the Wii U and vWii common keys from a console's OTP dump.
+//! U's and the Wii's: disc keys and common keys, in the format of Cemu's
+//! `keys.txt`, the Wii U, vWii and Wii common keys from a Wii U's OTP dump, and
+//! the Wii common key from a Wii's OTP dump or a BootMii `keys.bin`. They all
+//! go to one file, as every key is tried.
 
 use super::common::to_hex;
 use super::config::*;
@@ -14,15 +16,15 @@ use sqlx::sqlite::SqliteConnection;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-/// The Wii U keys in the data directory, one hex key per line.
+/// The Wii U and Wii keys in the data directory, one hex key per line.
 pub const WIIU_KEYS_FILE: &str = "wiiu_keys.txt";
 
 pub fn subcommand() -> Command {
     Command::new("import-keys")
-        .about("Import Wii U keys into oxyromon")
+        .about("Import Wii U and Wii keys into oxyromon")
         .arg(
             Arg::new("KEYS")
-                .help("Set the key files to import, as Cemu's keys.txt or a Wii U's otp.bin")
+                .help("Set the key files to import, as Cemu's keys.txt, a Wii U's or a Wii's otp.bin, or BootMii's keys.bin")
                 .required(true)
                 .num_args(1..)
                 .index(1)
@@ -53,8 +55,19 @@ fn import_keys(progress_bar: &ProgressBar, paths: &[&PathBuf], destination: &Pat
     let before = keys.len();
     for path in paths {
         print_action(progress_bar, &format!("Reading \"{}\"", path.display()));
-        let found = wux_rs::load_keys(path)
-            .with_context(|| format!("Failed to read \"{}\"", path.display()))?;
+        // Both read text alike; from binary dumps, wux-rs takes the Wii U and
+        // vWii common keys, rvz-rs the Wii's, from a BootMii keys.bin too
+        let found: Vec<wux_rs::Key> = match (wux_rs::load_keys(path), rvz_rs::load_keys(path)) {
+            (Err(error), Err(_)) => {
+                return Err(error)
+                    .with_context(|| format!("Failed to read \"{}\"", path.display()));
+            }
+            (wiiu, wii) => wiiu
+                .unwrap_or_default()
+                .into_iter()
+                .chain(wii.unwrap_or_default())
+                .collect(),
+        };
         if found.is_empty() {
             print_warning(
                 progress_bar,

@@ -74,8 +74,8 @@ pub(crate) async fn build_status(connection: &mut SqliteConnection, read_only: b
         ("nsz-rs", crate::nsz::get_version().await),
         ("xdelta-rs", crate::xdelta::get_version().await),
         ("wux-rs", crate::wux::get_version().await),
-        // RVZ and WBFS both come from nod
-        ("nod", crate::rvz::get_version().await),
+        ("rvz-rs", crate::rvz::get_version().await),
+        ("nod", crate::wbfs::get_version().await),
     ];
     dependencies.sort_by_key(|(name, _)| *name);
     StatusOut {
