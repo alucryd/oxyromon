@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use crate::error::Result;
+use super::error::Result;
 
 /// Where `output` is written until it is complete: next to it, so that moving
 /// it into place is a rename, and an existing file is only ever replaced by a

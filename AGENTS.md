@@ -128,7 +128,8 @@ global `MultiProgress`.
 - Subcommand tests run the real pipeline: import a DAT from `tests/`, import
   ROMs, run the subcommand, then assert the database and the filesystem.
 - `tests/mcp_stdio.rs` drives the real binary over JSON-RPC; `tests/crates.rs`
-  checks the format crates' shared CLI shell.
+  checks the format crates' shared CLI shell and the embedded crates'
+  symlinks.
 - HTTP tests use `wiremock`.
 
 ## Format Crates
@@ -170,9 +171,40 @@ follows wudd and Cemu instead, under wudd's GPL-3.0+, and ships no key. Every cr
   applies.
 - **Releases** are per crate: its own version, a `CHANGELOG.md` in oxyromon's
   format, and tags named `<crate>-<version>`. Publish a crate before an
-  oxyromon release that needs its new version, and before a crate depending
-  on it: `wbfs-rs` takes what a disc uses from `rvz-rs`, so `rvz-rs` goes
-  first. `dist.sh` builds the CLIs alongside oxyromon.
+  oxyromon release that needs its new version. `dist.sh` builds the CLIs
+  alongside oxyromon.
+- **Standalone.** A format crate depends on no other crate of this
+  repository. What several share goes in an embedded crate, below.
+
+### Embedded Crates
+
+What is specific to a system rather than a format, and shared by several
+format crates, lives in a small crate of its own that is never published:
+`gcwii`, the GameCube and Wii disc specifics shared by `rvz-rs` and
+`wbfs-rs`. Each format crate embeds it, so that the crate it publishes holds
+a copy and stands alone:
+
+- **Symlinked, not depended on.** `crates/<host>/src/<embedded>` is a symlink
+  to `../../<embedded>/src`, declared in the host's `lib.rs` as
+  `#[allow(dead_code, unused_imports)] #[path = "<embedded>/lib.rs"] mod
+  <embedded>;`. `cargo package` follows the symlink and packages the files.
+  A `#[path]` reaching outside the crate builds here but not once packaged.
+  Shared test fixtures go the same way, as `tests/common`. `tests/crates.rs`
+  checks every symlink, listed in its `EMBEDDED`.
+- **`super::`, never `crate::`,** within the embedded crate: embedded, its root
+  is the host's. `tests/crates.rs` checks this too.
+- **One error type.** The embedded crate's `error::Error`, following the
+  shared wording above, is each host's `Error`, re-exported. Two hosts' errors
+  are then distinct types with the same variants: convert between them in
+  oxyromon.
+- **Dependencies.** The embedded crate's are declared again in each host. It
+  takes `publish = false` and version `0.0.0`. A host's tests may use it, or
+  another crate here, as a `path`-only dev-dependency, which publishing drops;
+  such tests stay out of the package.
+- **Releases.** A change to an embedded crate is a change to every host: each
+  gets a `CHANGELOG.md` entry and a release.
+- **Windows checkouts** need git's `core.symlinks` and developer mode, or the
+  symlinks check out as text files. CI and `dist.sh` run on Linux.
 
 ## Checklists
 

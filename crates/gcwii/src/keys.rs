@@ -8,8 +8,8 @@
 
 use std::path::Path;
 
-use crate::crypto::Key;
-use crate::error::{Error, Result};
+use super::crypto::Key;
+use super::error::{Error, Result};
 
 /// Parse keys from text: one 32-digit hex key per line, anything after `#`
 /// or `;` ignored, and spaces, tabs, dashes and underscores dropped, as Cemu

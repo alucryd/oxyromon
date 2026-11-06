@@ -10,14 +10,14 @@ use clap::{Arg, ArgMatches, Command, value_parser};
 fn cli() -> Command {
     Command::new("wbfsrs")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("WBFS creation and extraction: GameCube and Wii ISOs and RVZs are written to WBFS, WBFSs extracted")
+        .about("WBFS creation and extraction: GameCube and Wii ISOs are written to WBFS, WBFSs extracted")
         .after_help(format!(
-            "A WBFS keeps only what the disc points to, as wit writes one: it is no longer the original disc. Writing one from a Wii ISO needs the Wii common key among the keys, which wbfsrs ships none of; an RVZ keeps its title keys, and needs none.\n\n{}",
+            "A WBFS keeps only what the disc points to, as wit writes one: it is no longer the original disc. Writing one from a Wii ISO needs the Wii common key among the keys; wbfsrs ships none.\n\n{}",
             ui::AFTER_HELP
         ))
         .arg(
             Arg::new("INPUTS")
-                .help("ISOs and RVZs to write to WBFS, WBFSs to extract")
+                .help("ISOs to write to WBFS, WBFSs to extract")
                 .required(true)
                 .num_args(1..)
                 .value_parser(value_parser!(PathBuf)),

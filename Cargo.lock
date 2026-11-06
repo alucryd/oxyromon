@@ -1586,6 +1586,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "gcwii"
+version = "0.0.0"
+dependencies = [
+ "aes 0.9.4",
+ "rayon",
+ "sha1 0.11.0",
+ "tempfile",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "gdi-rs"
 version = "0.1.0"
 dependencies = [
@@ -4996,7 +5007,9 @@ dependencies = [
  "aes 0.9.4",
  "clap",
  "console",
+ "gcwii",
  "indicatif",
+ "rayon",
  "rvz-rs",
  "sha1 0.11.0",
  "tempfile",

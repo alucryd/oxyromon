@@ -28,53 +28,32 @@
 //! [Dolphin]: https://dolphin-emu.org
 
 mod compression;
-mod crypto;
-mod disc;
-mod error;
 mod format;
-mod fst;
-mod io;
-mod keys;
+// The GameCube and Wii disc specifics, shared with wbfs-rs: `src/gcwii` is a
+// symlink to the gcwii crate's source, which publishing copies in
+#[allow(dead_code, unused_imports)]
+#[path = "gcwii/lib.rs"]
+mod gcwii;
 mod lfg;
 mod reader;
-mod scrub;
-mod wii;
 mod writer;
+
+use gcwii::{crypto, disc, error, fst, io, keys, scrub, wii};
 
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-
-use disc::{Iso, Source, Volume};
-use scrub::Scrubber;
 
 pub use compression::Compression;
 pub use crypto::Key;
 pub use error::{Error, Result};
 pub use keys::{is_bootmii, load_keys, parse_key_file, parse_keys, parse_otp};
 pub use reader::Reader;
-pub use scrub::CLUSTER_SIZE;
 pub use writer::{Options, Stats, compress, is_rvz, is_valid_chunk_size};
 
 /// How much is decompressed at a time: a Wii group, which is what is
 /// hashed and encrypted together.
 const STEP: u64 = wii::GROUP_TOTAL_SIZE;
-
-/// Which 32 KiB clusters of `input`, a raw GameCube or Wii disc or an RVZ,
-/// anything on the disc points to: what scrubbing keeps, the clusters wit
-/// keeps too. A disc without a boot DOL, which scrubbing refuses, is used
-/// throughout: its own apploader loads code from where no file points.
-/// `keys` are the Wii common keys, as for [`compress`].
-pub fn used_clusters(input: &Path, keys: &[Key]) -> Result<Vec<bool>> {
-    let mut source: Box<dyn Source> = if is_rvz(input)? {
-        Box::new(Reader::open(input)?)
-    } else {
-        Box::new(Iso::open(input)?)
-    };
-    let mut volume = Volume::new(&mut *source, keys)?
-        .ok_or_else(|| Error::Unsupported("not a GameCube or Wii disc".into()))?;
-    Ok(Scrubber::new(&mut volume, &mut *source, true)?.used())
-}
 
 /// Write an RVZ out as the disc it holds.
 ///

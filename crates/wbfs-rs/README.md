@@ -10,11 +10,9 @@ without a boot DOL, which wit breaks.
 ```rust
 use std::path::Path;
 
-// A raw Wii disc needs the Wii common key, which ships with nothing here
+// A Wii disc needs the Wii common key, which ships with nothing here
 let keys = wbfs_rs::load_keys(Path::new("keys.bin")).unwrap();
 wbfs_rs::create(Path::new("game.iso"), Path::new("game.wbfs"), &keys, &mut |_| {}).unwrap();
-// An RVZ keeps its title keys, and needs none
-wbfs_rs::create(Path::new("game.rvz"), Path::new("game.wbfs"), &[], &mut |_| {}).unwrap();
 wbfs_rs::extract(Path::new("game.wbfs"), Path::new("out.iso"), &mut |_| {}).unwrap();
 ```
 
@@ -30,8 +28,8 @@ header and boot files, its file system and files, and on a Wii disc each
 partition's ticket, TMD, certificates and hashes. wit zeroes the clusters
 nothing points to in the blocks it stores, so a WBFS is scrubbed: it plays
 the same, but is no longer the disc it was, and no longer matches its dump's
-hashes. Which clusters are used is found by [rvz-rs](../rvz-rs), whose
-scrubber, a port of Dolphin's, keeps exactly the clusters wit does.
+hashes. Which clusters are used is found by a port of Dolphin's scrubber,
+which keeps exactly the clusters wit does.
 
 What wit writes holds one more thing: wit lays a new WBFS out for the largest
 disc, then trims it to what it holds, and up to 512 bytes of the first table
@@ -46,14 +44,15 @@ wit zeroes all but what its file system lists and the disc no longer boots.
 
 ## Keys
 
-Finding what a raw Wii disc uses decrypts its partitions, which takes the Wii
+Finding what a Wii disc uses decrypts its partitions, which takes the Wii
 common key. No key ships with this crate: [`load_keys`] reads one from a text
 file of hex keys, a BootMii `keys.bin`, or a Wii's or a Wii U's OTP dump.
-Every key given is tried.
+Every key given is tried. A GameCube disc needs none, nor does extracting a
+WBFS.
 
-An RVZ keeps each partition's title key, so writing a WBFS from one needs no
-key, and decodes no ISO on the way. Nor does a GameCube disc need one, or
-extracting a WBFS.
+`create_from` reads the disc through a `Source`, which can hand over each
+partition's title key itself: an RVZ keeps them, so oxyROMon writes a WBFS
+from one through rvz-rs's reader, with no key and no ISO decoded on the way.
 
 ## Scope
 
@@ -67,13 +66,13 @@ extracting a WBFS.
 
 ## CLI
 
-`wbfsrs` writes ISOs and RVZs to WBFS and extracts WBFSs, telling which from
-each file, and writes next to each one unless told otherwise:
+`wbfsrs` writes ISOs to WBFS and extracts WBFSs, telling which from each
+file, and writes next to each one unless told otherwise:
 
 ```
 cargo build --release -p wbfs-rs
-wbfsrs game.rvz                         # to game.wbfs, next to it
-wbfsrs --keys keys.bin -o out/ *.iso    # raw Wii discs, to out/
+wbfsrs game.iso                         # a GameCube disc, to game.wbfs
+wbfsrs --keys keys.bin -o out/ *.iso    # Wii discs, to out/
 wbfsrs game.wbfs                        # back to game.iso
 ```
 
@@ -93,7 +92,8 @@ input's output.
 
 - Our WBFS of a synthetic GameCube disc is wit's byte for byte but for the
   leftover table, and we extract it as wit does.
-- An ignored test takes a real RVZ from `$WBFS_RS_REAL`: our WBFS of it is
+- An ignored test takes a real RVZ from `$WBFS_RS_REAL`, read through
+  rvz-rs so that no key is needed: our WBFS of it is
   wit's of the ISO it holds, byte for byte but for the leftover table, and
   extracts as wit extracts it. It passed on five Wii discs, one of them
   dual-layer, and a GameCube disc.
@@ -104,12 +104,21 @@ first block is also pinned in unit tests, as it wrote it for two real discs.
 WBFS, the rest as zeros, a disc without a boot DOL comes back whole, a Wii
 disc's common key is refused without it, an
 RVZ gives the same WBFS without one, and what is not a disc or a WBFS is
-refused. The tests borrow rvz-rs's synthetic discs, so they are not packaged.
+refused. The tests check against the unpublished `gcwii` crate and read RVZs
+through rvz-rs, both dev-dependencies, so they are not packaged.
 
 ```sh
 cargo test -p wbfs-rs
 WBFS_RS_REAL=game.rvz cargo test --release -p wbfs-rs -- --ignored
 ```
+
+## Source layout
+
+The GameCube and Wii disc specifics, partitions, encryption, the file system,
+keys and what a disc uses, live in oxyROMon's unpublished `gcwii` crate,
+shared with rvz-rs. `src/gcwii` is a symlink to its source, and so is
+`tests/common` to its synthetic discs; publishing copies them in, so this
+crate stands alone.
 
 ## Credits
 

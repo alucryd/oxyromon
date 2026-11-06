@@ -21,14 +21,24 @@
 //!
 //! [wit]: https://wit.wiimm.de
 
-mod error;
+// The GameCube and Wii disc specifics, shared with rvz-rs: `src/gcwii` is a
+// symlink to the gcwii crate's source, which publishing copies in
+#[allow(dead_code, unused_imports)]
+#[path = "gcwii/lib.rs"]
+mod gcwii;
 
 use std::fs::File;
 use std::io::{Seek, SeekFrom, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-pub use error::{Error, Result};
-pub use rvz_rs::{Key, load_keys};
+use gcwii::disc::Iso;
+use gcwii::io::{finish, part, read_exact_at};
+use gcwii::scrub::used_clusters;
+
+pub use gcwii::crypto::Key;
+pub use gcwii::disc::Source;
+pub use gcwii::error::{Error, Result};
+pub use gcwii::keys::load_keys;
 
 const MAGIC: [u8; 4] = *b"WBFS";
 /// wit's sectors, its unit of the file's size: 512 bytes.
@@ -38,7 +48,7 @@ const SECTOR_SHIFT: u32 = 9;
 const BLOCK_SHIFT: u32 = 21;
 pub const BLOCK_SIZE: u64 = 1 << BLOCK_SHIFT;
 const SECTORS_PER_BLOCK: u64 = BLOCK_SIZE >> SECTOR_SHIFT;
-const CLUSTER_SIZE: u64 = rvz_rs::CLUSTER_SIZE;
+const CLUSTER_SIZE: u64 = gcwii::scrub::CLUSTER_SIZE;
 const CLUSTER_SHIFT: u32 = CLUSTER_SIZE.trailing_zeros();
 /// A single-layer Wii disc, in clusters, and the largest disc, a dual-layer
 /// one, as wit counts them.
@@ -56,48 +66,6 @@ pub struct Stats {
     pub output_size: u64,
 }
 
-/// Where `output` is written until it is complete: next to it, so that moving
-/// it into place is a rename, and an existing file is only ever replaced by a
-/// complete one.
-fn part(output: &Path) -> PathBuf {
-    let mut name = output.file_name().unwrap_or_default().to_os_string();
-    name.push(".part");
-    output.with_file_name(name)
-}
-
-/// Move `part` into place at `output` if its write succeeded, and remove it
-/// otherwise: a failed run leaves nothing behind, and `output` as it was.
-fn finish<T>(part: &Path, output: &Path, result: Result<T>) -> Result<T> {
-    let result = result.and_then(|value| {
-        std::fs::rename(part, output)?;
-        Ok(value)
-    });
-    if result.is_err() {
-        let _ = std::fs::remove_file(part);
-    }
-    result
-}
-
-fn read_exact_at(file: &File, buf: &mut [u8], offset: u64) -> std::io::Result<()> {
-    #[cfg(unix)]
-    return std::os::unix::fs::FileExt::read_exact_at(file, buf, offset);
-    #[cfg(windows)]
-    {
-        let mut buf = buf;
-        let mut offset = offset;
-        while !buf.is_empty() {
-            match std::os::windows::fs::FileExt::seek_read(file, buf, offset)? {
-                0 => return Err(std::io::ErrorKind::UnexpectedEof.into()),
-                n => {
-                    buf = &mut buf[n..];
-                    offset += n as u64;
-                }
-            }
-        }
-        Ok(())
-    }
-}
-
 /// Whether `path` is a WBFS, by its magic.
 pub fn is_wbfs(path: &Path) -> Result<bool> {
     let file = File::open(path)?;
@@ -105,25 +73,9 @@ pub fn is_wbfs(path: &Path) -> Result<bool> {
     Ok(read_exact_at(&file, &mut magic, 0).is_ok() && magic == MAGIC)
 }
 
-/// A disc read raw, or through the RVZ holding it.
-enum Disc {
-    Iso(File),
-    Rvz(Box<rvz_rs::Reader>),
-}
-
-impl Disc {
-    fn read_at(&mut self, buf: &mut [u8], offset: u64) -> Result<()> {
-        match self {
-            Self::Iso(file) => Ok(read_exact_at(file, buf, offset)?),
-            Self::Rvz(reader) => Ok(reader.read_at(offset, buf)?),
-        }
-    }
-}
-
-/// Write `input`, a raw GameCube or Wii disc or an RVZ, to `output` as a
-/// WBFS. `keys` are the Wii common keys to decrypt a raw Wii disc's
-/// partitions with, to find what they use; an RVZ keeps its title keys, and
-/// a GameCube disc has none, so neither needs any.
+/// Write `input`, a raw GameCube or Wii disc, to `output` as a WBFS. `keys`
+/// are the Wii common keys to decrypt a Wii disc's partitions with, to find
+/// what they use; a GameCube disc needs none.
 ///
 /// `progress` is called with the input bytes consumed since the last call.
 pub fn create(
@@ -132,20 +84,27 @@ pub fn create(
     keys: &[Key],
     progress: &mut dyn FnMut(u64),
 ) -> Result<Stats> {
-    let input_size = std::fs::metadata(input)?.len();
-    let (mut source, disc_size) = if rvz_rs::is_rvz(input)? {
-        let reader = rvz_rs::Reader::open(input)?;
-        let size = reader.size();
-        (Disc::Rvz(Box::new(reader)), size)
-    } else {
-        (Disc::Iso(File::open(input)?), input_size)
-    };
+    create_from(&mut Iso::open(input)?, output, keys, progress)
+}
+
+/// Write the disc `source` reads to `output` as a WBFS, as [`create`] does.
+/// A source keeping its Wii partitions' title keys, as an RVZ does, needs no
+/// common key.
+///
+/// `progress` is called with the disc's bytes consumed since the last call.
+pub fn create_from(
+    source: &mut dyn Source,
+    output: &Path,
+    keys: &[Key],
+    progress: &mut dyn FnMut(u64),
+) -> Result<Stats> {
+    let disc_size = source.size();
     if disc_size > MAX_DISC_SIZE {
         return Err(Error::Unsupported(format!(
             "a disc of {disc_size} bytes, larger than a dual-layer Wii disc"
         )));
     }
-    let used = rvz_rs::used_clusters(input, keys)?;
+    let used = used_clusters(source, keys)?;
 
     // Each block of the disc holding a used cluster is stored, in order
     let clusters_per_block = (BLOCK_SIZE / CLUSTER_SIZE) as usize;
@@ -163,10 +122,9 @@ pub fn create(
     let result = (|| {
         let mut file = File::create(&part)?;
         let mut disc_header = [0; DISC_HEADER_SIZE];
-        source.read_at(&mut disc_header, 0)?;
+        source.read_at(0, &mut disc_header)?;
         file.write_all(&header(blocks, &disc_header, &table))?;
         let mut buf = vec![0; BLOCK_SIZE as usize];
-        let mut reported = 0;
         for (block, &stored) in table.iter().enumerate() {
             let offset = block as u64 * BLOCK_SIZE;
             if offset >= disc_size {
@@ -175,7 +133,7 @@ pub fn create(
             let length = BLOCK_SIZE.min(disc_size - offset);
             if stored != 0 {
                 buf.fill(0);
-                source.read_at(&mut buf[..length as usize], offset)?;
+                source.read_at(offset, &mut buf[..length as usize])?;
                 // Zero the clusters nothing points to
                 let first = block * clusters_per_block;
                 for (i, cluster) in buf.chunks_mut(CLUSTER_SIZE as usize).enumerate() {
@@ -185,15 +143,11 @@ pub fn create(
                 }
                 file.write_all(&buf)?;
             }
-            // Scale the progress through the disc to the file, an RVZ smaller
-            let consumed =
-                ((offset + length) as u128 * input_size as u128 / disc_size as u128) as u64;
-            progress(consumed - reported);
-            reported = consumed;
+            progress(length);
         }
         file.sync_all()?;
         Ok(Stats {
-            input_size,
+            input_size: disc_size,
             output_size: file.metadata()?.len(),
         })
     })();

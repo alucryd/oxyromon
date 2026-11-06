@@ -3,12 +3,13 @@
 //! nothing. A scrubbed disc plays the same, but is no longer the disc it was.
 //! A port of Dolphin's `DiscScrubber`.
 
-use crate::disc::{
+use super::crypto::Key;
+use super::disc::{
     PARTITION_CERT_CHAIN_OFFSET, PARTITION_CERT_CHAIN_SIZE, PARTITION_DATA_OFFSET,
     PARTITION_H3_OFFSET, PARTITION_H3_SIZE, PARTITION_TMD_OFFSET, PARTITION_TMD_SIZE, Partition,
     Source, Volume,
 };
-use crate::error::{Error, Result};
+use super::error::{Error, Result};
 
 pub const CLUSTER_SIZE: u64 = 0x8000;
 
@@ -188,4 +189,14 @@ impl Scrubber {
             buf = &mut buf[length..];
         }
     }
+}
+
+/// Which clusters of a disc anything on it points to: what scrubbing keeps,
+/// the clusters wit keeps too. A disc without a boot DOL, which scrubbing
+/// refuses, is used throughout: its own apploader loads code from where no
+/// file points. `keys` are the Wii common keys to try on each partition.
+pub fn used_clusters(source: &mut dyn Source, keys: &[Key]) -> Result<Vec<bool>> {
+    let mut volume = Volume::new(source, keys)?
+        .ok_or_else(|| Error::Unsupported("not a GameCube or Wii disc".into()))?;
+    Ok(Scrubber::new(&mut volume, source, true)?.used())
 }

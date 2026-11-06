@@ -12,8 +12,8 @@ use std::process::Command;
 
 use tempfile::TempDir;
 
-#[path = "../../rvz-rs/tests/common/mod.rs"]
 mod common;
+mod rvz_source;
 use common::{gamecube_disc, write};
 
 fn wit() -> Option<PathBuf> {
@@ -141,7 +141,7 @@ fn a_real_disc_is_written_and_extracted_as_wit_does() {
     rvz_rs::decompress(&rvz, &iso, &mut |_| {}).unwrap();
     wit_copy(&wit, &iso, &theirs, "--wbfs");
     std::fs::remove_file(&iso).unwrap();
-    wbfs_rs::create(&rvz, &ours, &[], &mut |_| {}).unwrap();
+    wbfs_rs::create_from(&mut rvz_source::open(&rvz), &ours, &[], &mut |_| {}).unwrap();
     assert_same_wbfs(&ours, &theirs);
     std::fs::remove_file(&ours).unwrap();
 

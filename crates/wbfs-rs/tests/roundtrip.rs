@@ -7,8 +7,8 @@ use std::path::Path;
 use tempfile::TempDir;
 use wbfs_rs::Error;
 
-#[path = "../../rvz-rs/tests/common/mod.rs"]
 mod common;
+mod rvz_source;
 use common::{COMMON_KEY, gamecube_disc, wii_disc, write};
 
 const CLUSTER: usize = 0x8000;
@@ -34,7 +34,8 @@ fn round_trip(dir: &Path, disc: &[u8], keys: &[[u8; 16]], size: u64) -> Vec<u8> 
     let mut file = std::fs::File::open(&back).unwrap();
     let mut back = vec![0; disc.len()];
     std::io::Read::read_exact(&mut file, &mut back).unwrap();
-    let used = rvz_rs::used_clusters(&iso, keys).unwrap();
+    let mut source = gcwii::disc::Iso::open(&iso).unwrap();
+    let used = gcwii::scrub::used_clusters(&mut source, keys).unwrap();
     for (i, (ours, theirs)) in back.chunks(CLUSTER).zip(disc.chunks(CLUSTER)).enumerate() {
         if used[i] {
             assert_eq!(ours, theirs, "used cluster {i}");
@@ -82,9 +83,10 @@ fn an_rvz_needs_no_key_and_gives_the_same_wbfs() {
     let wbfs = dir.path().join("rvz.wbfs");
     let options = rvz_rs::Options::default();
     rvz_rs::compress(&iso, &rvz, &options, &[COMMON_KEY], &mut |_| {}).unwrap();
+    let mut source = rvz_source::open(&rvz);
     let mut consumed = 0;
-    wbfs_rs::create(&rvz, &wbfs, &[], &mut |n| consumed += n).unwrap();
-    assert_eq!(consumed, std::fs::metadata(&rvz).unwrap().len());
+    wbfs_rs::create_from(&mut source, &wbfs, &[], &mut |n| consumed += n).unwrap();
+    assert_eq!(consumed, disc.len() as u64, "progress adds up to the disc");
     assert!(std::fs::read(&wbfs).unwrap() == from_iso);
 }
 
