@@ -1,16 +1,6 @@
-use super::archive;
-use super::chd;
-use super::cia;
 use super::database::*;
 use super::download_dats::find_redump_systems;
 use super::model::*;
-use super::nsz;
-use super::rvz;
-use super::wbfs;
-use super::wux;
-use super::xdelta;
-use super::xps;
-use super::xso;
 use async_graphql::dataloader::{DataLoader, Loader};
 use async_graphql::{ComplexObject, Context, Error, Object, Result};
 use futures::stream::TryStreamExt;
@@ -241,20 +231,8 @@ impl QueryRoot {
     }
 
     async fn dependencies(&self) -> Result<Vec<Dependency>> {
-        let mut deps = vec![
-            ("sevenz-rust2", archive::get_version().await),
-            ("chd-rs", chd::get_version().await),
-            ("cia-rs", cia::get_version().await),
-            ("xps-rs", xps::get_version().await),
-            ("xso-rs", xso::get_version().await),
-            ("nsz-rs", nsz::get_version().await),
-            ("xdelta-rs", xdelta::get_version().await),
-            ("wux-rs", wux::get_version().await),
-            ("rvz-rs", rvz::get_version().await),
-            ("nod", wbfs::get_version().await),
-        ];
-        deps.sort_by_key(|(name, _)| *name);
-        Ok(deps
+        Ok(super::info::dependencies()
+            .await
             .into_iter()
             .map(|(name, result)| Dependency {
                 name: name.to_string(),

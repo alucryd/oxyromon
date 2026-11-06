@@ -502,7 +502,7 @@ impl<'a> Writer<'a> {
             if self.source.read_at(partition, &mut signature).is_err()
                 || u32::from_be_bytes(signature) != 0x10001
             {
-                // Most likely garbage, as some WBFS tools leave of a scrubbed partition
+                // Most likely garbage, as some WBFS tools leave off a scrubbed partition
                 continue;
             }
             let volume = self.volume.as_mut().unwrap();

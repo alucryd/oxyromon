@@ -8,7 +8,7 @@
 use super::common::to_hex;
 use super::config::*;
 use super::progress::*;
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::{Arg, ArgMatches, Command, value_parser};
 use indexmap::IndexSet;
 use indicatif::ProgressBar;
@@ -58,10 +58,14 @@ fn import_keys(progress_bar: &ProgressBar, paths: &[&PathBuf], destination: &Pat
         // Both read text alike; from binary dumps, wux-rs takes the Wii U and
         // vWii common keys, rvz-rs the Wii's, from a BootMii keys.bin too
         let found: Vec<wux_rs::Key> = match (wux_rs::load_keys(path), rvz_rs::load_keys(path)) {
-            (Err(error), Err(_)) => {
+            (Err(_), Err(error @ rvz_rs::Error::Io(_))) => {
                 return Err(error)
                     .with_context(|| format!("Failed to read \"{}\"", path.display()));
             }
+            (Err(_), Err(_)) => bail!(
+                "Failed to read \"{}\": expected Cemu's keys.txt, a Wii U's or a Wii's otp.bin, or BootMii's keys.bin",
+                path.display()
+            ),
             (wiiu, wii) => wiiu
                 .unwrap_or_default()
                 .into_iter()

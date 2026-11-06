@@ -38,6 +38,7 @@ struct Group {
 /// any offset with [`Reader::read_at`].
 pub struct Reader {
     file: File,
+    file_size: u64,
     header_2: Header2,
     iso_size: u64,
     compression: Compression,
@@ -93,6 +94,9 @@ impl Reader {
         if header_2_size < header_2_min_size {
             return Err(corrupt("second header too small"));
         }
+        if (HEADER_1_SIZE + header_2_size) as u64 > file_size {
+            return Err(corrupt("second header past the end of the file"));
+        }
         let mut bytes = vec![0; header_2_size];
         read_exact_at(&file, &mut bytes, HEADER_1_SIZE as u64)?;
         if sha1(&bytes) != header_1.header_2_hash {
@@ -116,6 +120,7 @@ impl Reader {
 
         let mut reader = Self {
             file,
+            file_size,
             iso_size: header_1.iso_file_size,
             compression,
             chunk_size,
@@ -130,11 +135,9 @@ impl Reader {
         };
 
         let entry_size = reader.header_2.partition_entry_size as usize;
-        let mut bytes = vec![0; entry_size * reader.header_2.partition_entries as usize];
-        read_exact_at(
-            &reader.file,
-            &mut bytes,
+        let bytes = reader.read_bytes(
             reader.header_2.partition_entries_offset,
+            entry_size * reader.header_2.partition_entries as usize,
         )?;
         if sha1(&bytes) != reader.header_2.partition_entries_hash {
             return Err(corrupt("partition entries hash mismatch"));
@@ -201,13 +204,24 @@ impl Reader {
 
     /// Read one of the compressed tables the second header points to.
     fn read_table(&self, offset: u64, size: u32, expected: usize) -> Result<Vec<u8>> {
-        let mut bytes = vec![0; size as usize];
-        read_exact_at(&self.file, &mut bytes, offset)?;
-        let table = compression::decompress(self.compression, self.compressor_data(), &bytes)?;
+        let bytes = self.read_bytes(offset, size as usize)?;
+        let table =
+            compression::decompress(self.compression, self.compressor_data(), &bytes, expected)?;
         if table.len() != expected {
             return Err(Error::Corrupt("table size mismatch".into()));
         }
         Ok(table)
+    }
+
+    /// Read `len` bytes at `offset`, refusing what would run past the end of
+    /// the file before allocating for it, as both come from the file.
+    fn read_bytes(&self, offset: u64, len: usize) -> Result<Vec<u8>> {
+        if offset.saturating_add(len as u64) > self.file_size {
+            return Err(Error::Corrupt("data past the end of the file".into()));
+        }
+        let mut bytes = vec![0; len];
+        read_exact_at(&self.file, &mut bytes, offset)?;
+        Ok(bytes)
     }
 
     fn compressor_data(&self) -> &[u8] {
@@ -519,11 +533,16 @@ impl Reader {
                 data: vec![0; size],
             }
         } else {
-            let mut bytes = vec![0; stored];
-            read_exact_at(&self.file, &mut bytes, (entry.data_offset as u64) << 2)?;
+            let mut bytes = self.read_bytes((entry.data_offset as u64) << 2, stored)?;
             let (exceptions, rest) = if compressed {
+                // The most each exception list can hold, then the group's data
+                let max = exception_lists as usize * (2 + u16::MAX as usize * EXCEPTION_SIZE)
+                    + match entry.packed_size {
+                        0 => size,
+                        packed_size => packed_size as usize,
+                    };
                 let mut out =
-                    compression::decompress(self.compression, self.compressor_data(), &bytes)?;
+                    compression::decompress(self.compression, self.compressor_data(), &bytes, max)?;
                 let (exceptions, used) = parse_exception_lists(&out, exception_lists)?;
                 out.drain(..used);
                 (exceptions, out)

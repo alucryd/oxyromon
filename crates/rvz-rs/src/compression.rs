@@ -155,27 +155,29 @@ impl Compressor {
 }
 
 /// Decompress a whole stream, `data` holding what the header keeps for the
-/// decompressor.
-pub fn decompress(compression: Compression, data: &[u8], input: &[u8]) -> Result<Vec<u8>> {
+/// decompressor, failing rather than expanding it past `max` bytes, so that a
+/// crafted file cannot exhaust memory.
+pub fn decompress(
+    compression: Compression,
+    data: &[u8],
+    input: &[u8],
+    max: usize,
+) -> Result<Vec<u8>> {
     let corrupt =
         |error: std::io::Error| Error::Corrupt(format!("{} stream: {error}", compression.name()));
     let mut out = Vec::new();
-    match compression {
-        Compression::None => out.extend_from_slice(input),
-        Compression::Bzip2 => {
-            bzip2::read::BzDecoder::new(input)
-                .read_to_end(&mut out)
-                .map_err(corrupt)?;
-        }
+    let reader: Box<dyn Read + '_> = match compression {
+        Compression::None => Box::new(input),
+        Compression::Bzip2 => Box::new(bzip2::read::BzDecoder::new(input)),
         Compression::Lzma => {
             if data.len() < 5 || data[0] >= 9 * 5 * 5 {
                 return Err(Error::Corrupt("bad LZMA properties".into()));
             }
             let dict_size = u32::from_le_bytes(data[1..5].try_into().unwrap());
-            LzmaReader::new_with_props(input, u64::MAX, data[0], dict_size, None)
-                .map_err(corrupt)?
-                .read_to_end(&mut out)
-                .map_err(corrupt)?;
+            Box::new(
+                LzmaReader::new_with_props(input, u64::MAX, data[0], dict_size, None)
+                    .map_err(corrupt)?,
+            )
         }
         Compression::Lzma2 => {
             if data.is_empty() || data[0] > 40 {
@@ -186,16 +188,19 @@ pub fn decompress(compression: Compression, data: &[u8], input: &[u8]) -> Result
             } else {
                 lzma2_dictionary_size(data[0])
             };
-            Lzma2Reader::new(input, dict_size, None)
-                .read_to_end(&mut out)
-                .map_err(corrupt)?;
+            Box::new(Lzma2Reader::new(input, dict_size, None))
         }
-        Compression::Zstd => {
-            zstd::stream::read::Decoder::new(input)
-                .map_err(corrupt)?
-                .read_to_end(&mut out)
-                .map_err(corrupt)?;
-        }
+        Compression::Zstd => Box::new(zstd::stream::read::Decoder::new(input).map_err(corrupt)?),
+    };
+    reader
+        .take(max as u64 + 1)
+        .read_to_end(&mut out)
+        .map_err(corrupt)?;
+    if out.len() > max {
+        return Err(Error::Corrupt(format!(
+            "{} stream expands past {max} bytes",
+            compression.name()
+        )));
     }
     Ok(out)
 }
@@ -225,8 +230,14 @@ mod tests {
             .unwrap();
             let packed = compressor.compress(&[&data[..10], &data[10..]]).unwrap();
             let (size, header) = compressor.header_data();
-            let unpacked = decompress(compression, &header[..size as usize], &packed).unwrap();
+            let header = &header[..size as usize];
+            let unpacked = decompress(compression, header, &packed, data.len()).unwrap();
             assert_eq!(unpacked, data, "{compression:?}");
+            // One byte short of what it expands to is a corrupt stream
+            assert!(matches!(
+                decompress(compression, header, &packed, data.len() - 1),
+                Err(Error::Corrupt(_))
+            ));
         }
     }
 
