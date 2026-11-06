@@ -70,7 +70,13 @@ pub struct Stats {
 pub fn is_wbfs(path: &Path) -> Result<bool> {
     let file = File::open(path)?;
     let mut magic = [0; 4];
-    Ok(read_exact_at(&file, &mut magic, 0).is_ok() && magic == MAGIC)
+    match read_exact_at(&file, &mut magic, 0) {
+        Ok(()) => Ok(magic == MAGIC),
+        // Too short to hold a magic: not a WBFS, but an unreadable file is
+        // not one either way
+        Err(error) if error.kind() == std::io::ErrorKind::UnexpectedEof => Ok(false),
+        Err(error) => Err(error.into()),
+    }
 }
 
 /// Write `input`, a raw GameCube or Wii disc, to `output` as a WBFS. `keys`
@@ -201,11 +207,25 @@ pub fn extract(input: &Path, output: &Path, progress: &mut dyn FnMut(u64)) -> Re
     {
         return Err(corrupt("bad sector or block size"));
     }
+    if head[10] != 1 {
+        return Err(Error::Unsupported(format!("WBFS version {}", head[10])));
+    }
     if sectors << sector_shift != input_size {
         return Err(corrupt("file size mismatch"));
     }
-    if head[12] == 0 {
-        return Err(Error::Unsupported("a WBFS holding no disc".into()));
+    // The table of discs, a byte a slot to the end of the first sector: a
+    // WBFS file holds one disc, in the first
+    let mut slots = vec![0; (1 << sector_shift) - 12];
+    read_exact_at(&source, &mut slots, 12)?;
+    if slots[1..].iter().any(|&slot| slot != 0) {
+        return Err(Error::Unsupported(
+            "a WBFS partition holding several discs".into(),
+        ));
+    }
+    match slots[0] {
+        1 => {}
+        0 => return Err(Error::Unsupported("a WBFS holding no disc".into())),
+        slot => return Err(Error::Unsupported(format!("a WBFS disc slot of {slot}"))),
     }
     let block_size = 1u64 << block_shift;
     let blocks_in_file = input_size >> block_shift;

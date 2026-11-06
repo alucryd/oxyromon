@@ -172,3 +172,34 @@ fn a_disc_without_a_dol_is_kept_whole() {
     let error = rvz_rs::compress(&iso, &rvz, &options, &[], &mut |_| {}).unwrap_err();
     assert!(matches!(error, rvz_rs::Error::Corrupt(_)), "{error}");
 }
+
+#[test]
+fn refuses_what_it_cannot_represent() {
+    let dir = TempDir::new().unwrap();
+    let iso = dir.path().join("disc.iso");
+    let wbfs = dir.path().join("disc.wbfs");
+    let other = dir.path().join("other.wbfs");
+    let back = dir.path().join("back.iso");
+    write(&iso, &gamecube_disc(0x80_0000));
+    wbfs_rs::create(&iso, &wbfs, &[], &mut |_| {}).unwrap();
+    let good = std::fs::read(&wbfs).unwrap();
+    // Another version, a second disc, no disc, a slot of another kind
+    for (at, value) in [(10, 2), (13, 1), (12, 0), (12, 2)] {
+        let mut bad = good.clone();
+        bad[at] = value;
+        write(&other, &bad);
+        let error = wbfs_rs::extract(&other, &back, &mut |_| {}).unwrap_err();
+        assert!(matches!(error, Error::Unsupported(_)), "byte {at}: {error}");
+        assert!(!back.exists());
+    }
+}
+
+#[test]
+fn a_file_too_short_for_a_magic_is_not_a_wbfs() {
+    let dir = TempDir::new().unwrap();
+    let short = dir.path().join("short.wbfs");
+    write(&short, b"WB");
+    assert!(!wbfs_rs::is_wbfs(&short).unwrap());
+    // Where one that cannot be read fails rather than passing for an ISO
+    assert!(wbfs_rs::is_wbfs(&dir.path().join("missing.wbfs")).is_err());
+}

@@ -242,8 +242,7 @@ impl AsNsz for CommonRomfile {
     }
 }
 
-/// Reported by `info`. Like nod, a linked library has no version to query at
-/// runtime. It never fails, since only compressing NCAs needs keys, but says
+/// Reported by `info`. A linked library has no version to query at runtime. It never fails, since only compressing NCAs needs keys, but says
 /// when `prod.keys` is missing so that isn't first discovered mid-compression.
 pub async fn get_version() -> Result<String> {
     Ok(match keys_path().is_some_and(|path| path.is_file()) {
