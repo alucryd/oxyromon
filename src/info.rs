@@ -5,6 +5,7 @@ use super::database::*;
 use super::nsz;
 use super::progress::*;
 use super::rvz;
+use super::wbfs;
 use super::wux;
 use super::xdelta;
 use super::xps;
@@ -18,13 +19,10 @@ pub fn subcommand() -> Command {
     Command::new("info").about("Print system information")
 }
 
-pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar) -> Result<()> {
-    start_action(progress_bar, None);
-
-    // Dependencies
-    print_header(progress_bar, "Dependencies");
-
-    let mut deps: Vec<(&str, Result<String, _>)> = vec![
+/// The libraries each format comes from, by name, with their versions; shared
+/// by `info`, GraphQL and MCP.
+pub async fn dependencies() -> Vec<(&'static str, Result<String>)> {
+    let mut deps = vec![
         ("sevenz-rust2", archive::get_version().await),
         ("chd-rs", chd::get_version().await),
         ("cia-rs", cia::get_version().await),
@@ -33,12 +31,20 @@ pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar)
         ("nsz-rs", nsz::get_version().await),
         ("xdelta-rs", xdelta::get_version().await),
         ("wux-rs", wux::get_version().await),
+        ("rvz-rs", rvz::get_version().await),
+        ("nod", wbfs::get_version().await),
     ];
-    // RVZ and WBFS both come from nod
-    deps.push(("nod", rvz::get_version().await));
     deps.sort_by_key(|(name, _)| *name);
+    deps
+}
 
-    for (name, result) in &deps {
+pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar) -> Result<()> {
+    start_action(progress_bar, None);
+
+    // Dependencies
+    print_header(progress_bar, "Dependencies");
+
+    for (name, result) in &dependencies().await {
         match result {
             Ok(version) => print_success(progress_bar, &format!("{}: {}", name, version)),
             Err(_) => print_skip(progress_bar, &format!("{}: not found", name)),

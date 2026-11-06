@@ -64,7 +64,7 @@ From there, `convert-roms` switches formats, `check-roms` verifies integrity, an
 
 ## Building
 
-The command-line tool has no special requirement beyond a C toolchain, which the RVZ backend needs:
+The command-line tool has no special requirement beyond a C toolchain, which Zstandard needs:
 
 ```sh
 cargo build --release
@@ -96,7 +96,7 @@ The repository also holds oxyROMon's format crates, under `crates/`.
 Each is a library and a standalone command-line tool:
 
 ```sh
-cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p wux-rs -p xdelta-rs -p xps-rs -p xso-rs
+cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p rvz-rs -p wux-rs -p xdelta-rs -p xps-rs -p xso-rs
 ```
 
 ### Features
@@ -212,8 +212,8 @@ Arcade games stored as archives stay as they are.
 | CHD                     | ✔                | ✔       | ✔      | chd-rs                                                       |
 | CSO, ZSO                | ✔                | ✔       | ✔      | xso-rs                                                       |
 | NSZ                     | ✔                | ✔       | ✔      | nsz-rs                                                       |
-| RVZ                     | ✔                | ✔       | ✔      | [nod](https://crates.io/crates/nod)                          |
-| WBFS                    |                  |         | ✔      | nod                                                          |
+| RVZ                     | ✔                | ✔       | ✔      | rvz-rs                                                       |
+| WBFS                    |                  |         | ✔      | [nod](https://crates.io/crates/nod)                          |
 | WUX (Wii U)             | ✔                | ✔       | ✔      | wux-rs                                                       |
 | WUA (Wii U)             | ✔                | ✔       | ✔      | wux-rs                                                       |
 | NUS folder (Wii U)      |                  |         | ✔      | wux-rs                                                       |
@@ -224,13 +224,15 @@ Arcade games stored as archives stay as they are.
 | BPS, IPS, XDELTA patches | ✔               |         |        | xps-rs, xdelta-rs                                            |
 
 The crates without a link are oxyROMon's own, in `crates/`.
-Each began as a port of the tool oxyROMon used to run: chdman, ctrtool, maxcso, nsz, gdidrop, Flips and xdelta3.
+Each began as a port of the tool oxyROMon used to run: chdman, ctrtool, maxcso, nsz, gdidrop, Flips, xdelta3 and Dolphin's.
 wux-rs instead follows wudd and Cemu, as oxyROMon never ran a tool for the Wii U.
 
 Your Switch keys, at `~/.switch/prod.keys`, are only needed to compress NSPs that contain NCAs.
 Importing, checking and decompressing NSZs never need them.
 
-RVZ files are interchangeable with Dolphin's in both directions.
+RVZ files are interchangeable with Dolphin's in both directions, and with Zstandard, bzip2 or no compression, the same byte for byte.
+Compressing a Wii ISO to RVZ needs the Wii common key, which oxyROMon does not ship: `import-keys` stores it.
+Reading an RVZ, or rewriting one, needs no key, and neither does a GameCube disc.
 
 Wii U discs are WUDs, which Redump lists as ISOs, so that is what converting back to the original gives; a `.wud` found in the wild is matched and renamed all the same.
 WUX compresses a WUD losslessly, as wudd dumps it and Cemu reads it.
@@ -321,7 +323,7 @@ Commands:
   download-dats       Download No-Intro and Redump DAT files and import them into oxyromon
   import-irds         Parse and import PlayStation 3 IRD files into oxyromon
   import-patches      Import patch files into oxyromon
-  import-keys         Import Wii U keys into oxyromon
+  import-keys         Import Wii U and Wii keys into oxyromon
   import-roms         Validate and import ROM files or directories into oxyromon
   purge-games         Move the files of games to the trash
   purge-irds          Unassociate games from IRD files
@@ -519,16 +521,17 @@ Options:
 
 ### import-keys
 
-Imports Wii U keys, which exporting to WUA needs, from files in the format of Cemu's `keys.txt`: one 32-digit hex key per line, with anything after `#` or `;` ignored.
+Imports Wii U and Wii keys, which exporting to WUA and compressing Wii discs to RVZ need, from files in the format of Cemu's `keys.txt`: one 32-digit hex key per line, with anything after `#` or `;` ignored.
 Disc keys and the Wii U common key can share a file.
 A console's OTP dump, `otp.bin`, can be imported too: its Wii U and vWii common keys are taken from it, the vWii key serving the vWii titles a disc's update partition can carry.
-The keys are merged into `wiiu_keys.txt` in oxyROMon's data directory, readable by its owner only, each key kept once, so importing again after new dumps only adds the new ones.
+The Wii common key, which compressing a Wii ISO to RVZ needs, comes from a Wii U's or a Wii's `otp.bin`, from BootMii's `keys.bin`, or from a line of its own in a keys file.
+The keys are all merged into `wiiu_keys.txt` in oxyROMon's data directory, as every key is tried, readable by its owner only, each key kept once, so importing again after new dumps only adds the new ones.
 
 ```text
 Usage: oxyromon import-keys <KEYS>...
 
 Arguments:
-  <KEYS>...  Set the key files to import, as Cemu's keys.txt or a Wii U's otp.bin
+  <KEYS>...  Set the key files to import, as Cemu's keys.txt, a Wii U's or a Wii's otp.bin, or BootMii's keys.bin
 
 Options:
   -h, --help  Print help
