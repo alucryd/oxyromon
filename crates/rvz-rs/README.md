@@ -60,6 +60,13 @@ same, and the RVZ is smaller, though by little, since RVZ already stores
 padding as a seed. A scrubbed disc is no longer the disc it was, and no
 longer matches its dump's hashes.
 
+`used_clusters` gives what scrubbing keeps, without writing anything: the
+clusters wit keeps too, which is how wbfs-rs writes a WBFS as wit does.
+Scrubbing refuses a disc without a boot DOL, as Dolphin does: Datel's discs
+and homebrew loaders such as Swiss boot an apploader of their own, which
+loads code from where no file points. `used_clusters` keeps such a disc
+whole instead.
+
 ## Scope
 
 - **RVZ only.** WIA, RVZ's predecessor, is refused rather than misread.

@@ -133,10 +133,10 @@ global `MultiProgress`.
 
 ## Format Crates
 
-`crates/` holds `chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `rvz-rs`, `xdelta-rs`,
-`xps-rs` and `xso-rs`, each a port of the tool oxyromon used to run (chdman,
-ctrtool, gdidrop, nsz, Dolphin, xdelta3, Flips, maxcso), published on its own
-and keeping its upstream's license — MIT for `cia-rs`, whose upstream shipped none. `wux-rs`
+`crates/` holds `chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `rvz-rs`, `wbfs-rs`,
+`xdelta-rs`, `xps-rs` and `xso-rs`, each a port of the tool oxyromon used to
+run (chdman, ctrtool, gdidrop, nsz, Dolphin, wit, xdelta3, Flips, maxcso),
+published on its own and keeping its upstream's license — MIT for `cia-rs`, whose upstream shipped none. `wux-rs`
 follows wudd and Cemu instead, under wudd's GPL-3.0+, and ships no key. Every crate follows these, and a new one must too:
 
 - **Library first, CLI behind a default `cli` feature.** oxyromon depends on a
@@ -170,8 +170,9 @@ follows wudd and Cemu instead, under wudd's GPL-3.0+, and ships no key. Every cr
   applies.
 - **Releases** are per crate: its own version, a `CHANGELOG.md` in oxyromon's
   format, and tags named `<crate>-<version>`. Publish a crate before an
-  oxyromon release that needs its new version. `dist.sh` builds the CLIs
-  alongside oxyromon.
+  oxyromon release that needs its new version, and before a crate depending
+  on it: `wbfs-rs` takes what a disc uses from `rvz-rs`, so `rvz-rs` goes
+  first. `dist.sh` builds the CLIs alongside oxyromon.
 
 ## Checklists
 

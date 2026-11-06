@@ -96,7 +96,7 @@ The repository also holds oxyROMon's format crates, under `crates/`.
 Each is a library and a standalone command-line tool:
 
 ```sh
-cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p rvz-rs -p wux-rs -p xdelta-rs -p xps-rs -p xso-rs
+cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p rvz-rs -p wbfs-rs -p wux-rs -p xdelta-rs -p xps-rs -p xso-rs
 ```
 
 ### Features
@@ -213,7 +213,7 @@ Arcade games stored as archives stay as they are.
 | CSO, ZSO                | ✔                | ✔       | ✔      | xso-rs                                                       |
 | NSZ                     | ✔                | ✔       | ✔      | nsz-rs                                                       |
 | RVZ                     | ✔                | ✔       | ✔      | rvz-rs                                                       |
-| WBFS                    |                  |         | ✔      | [nod](https://crates.io/crates/nod)                          |
+| WBFS                    |                  |         | ✔      | wbfs-rs                                                      |
 | WUX (Wii U)             | ✔                | ✔       | ✔      | wux-rs                                                       |
 | WUA (Wii U)             | ✔                | ✔       | ✔      | wux-rs                                                       |
 | NUS folder (Wii U)      |                  |         | ✔      | wux-rs                                                       |
@@ -224,7 +224,7 @@ Arcade games stored as archives stay as they are.
 | BPS, IPS, XDELTA patches | ✔               |         |        | xps-rs, xdelta-rs                                            |
 
 The crates without a link are oxyROMon's own, in `crates/`.
-Each began as a port of the tool oxyROMon used to run: chdman, ctrtool, maxcso, nsz, gdidrop, Flips, xdelta3 and Dolphin's.
+Each began as a port of the tool oxyROMon used to run: chdman, ctrtool, maxcso, nsz, gdidrop, Flips, xdelta3, Dolphin's and wit.
 wux-rs instead follows wudd and Cemu, as oxyROMon never ran a tool for the Wii U.
 
 Your Switch keys, at `~/.switch/prod.keys`, are only needed to compress NSPs that contain NCAs.
@@ -233,6 +233,9 @@ Importing, checking and decompressing NSZs never need them.
 RVZ files are interchangeable with Dolphin's in both directions, and with Zstandard, bzip2 or no compression, the same byte for byte.
 Compressing a Wii ISO to RVZ needs the Wii common key, which oxyROMon does not ship: `import-keys` stores it.
 Reading an RVZ, or rewriting one, needs no key, and neither does a GameCube disc.
+
+WBFS files are those `wit copy --wbfs` writes: only what the disc points to is kept, so a WBFS is no longer the original disc, which is why it is an export format only.
+Exporting an RVZ to WBFS needs no key and decodes no ISO on the way; exporting a Wii ISO needs the Wii common key, as compressing it to RVZ does.
 
 Wii U discs are WUDs, which Redump lists as ISOs, so that is what converting back to the original gives; a `.wud` found in the wild is matched and renamed all the same.
 WUX compresses a WUD losslessly, as wudd dumps it and Cemu reads it.

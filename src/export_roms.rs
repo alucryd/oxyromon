@@ -1488,12 +1488,12 @@ async fn to_wbfs(
 
     // export RVZs
     for roms in rvzs.values() {
-        let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        rvz_to_iso(connection, progress_bar, romfile, &tmp_directory)
+        romfile
+            .as_common(connection)
             .await?
-            .inner
+            .as_rvz()?
             .to_wbfs(progress_bar, destination_directory)
             .await?;
     }

@@ -1,0 +1,39 @@
+[package]
+name = "wbfs-rs"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "WBFS (Wii and GameCube disc image) creation and extraction, interchangeable with wit"
+license = "GPL-2.0-or-later"
+repository.workspace = true
+keywords = ["wbfs", "wii", "gamecube", "wit", "usb-loader"]
+categories = ["command-line-utilities"]
+# The tests borrow rvz-rs's synthetic discs, so they stay out of the package
+include = ["src/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+
+[lib]
+name = "wbfs_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "wbfsrs"
+path = "src/bin/wbfsrs/main.rs"
+required-features = ["cli"]
+
+[dependencies]
+# Finds the clusters a disc uses, as wit does.
+rvz-rs = { path = "../rvz-rs", version = "0.1.0", default-features = false }
+thiserror.workspace = true
+clap = { workspace = true, optional = true }
+console = { workspace = true, optional = true }
+indicatif = { workspace = true, optional = true }
+
+[dev-dependencies]
+# To build rvz-rs's synthetic Wii disc.
+aes = "0.9"
+sha1.workspace = true
+tempfile.workspace = true
+
+[features]
+default = ["cli"]
+cli = ["dep:clap", "dep:console", "dep:indicatif"]

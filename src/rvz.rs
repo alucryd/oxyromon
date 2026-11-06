@@ -211,8 +211,9 @@ impl AsRvz for CommonRomfile {
 
 /// The Wii common key, which `import-keys` stores with the Wii U keys, as it
 /// comes from a Wii U's `otp.bin` as often as from a Wii. Only writing an RVZ
-/// from a Wii ISO needs it; without it, that fails, and nothing else does.
-fn load_wii_keys() -> Result<Vec<rvz_rs::Key>> {
+/// or a WBFS from a Wii ISO needs it; without it, that fails, and nothing
+/// else does.
+pub(super) fn load_wii_keys() -> Result<Vec<rvz_rs::Key>> {
     let path = get_data_directory()?.join(WIIU_KEYS_FILE);
     if !path.is_file() {
         return Ok(Vec::new());
