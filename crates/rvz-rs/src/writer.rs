@@ -203,7 +203,7 @@ impl<'a> Writer<'a> {
             let volume = volume.as_mut().ok_or_else(|| {
                 Error::Unsupported("scrubbing what is not a GameCube or Wii disc".into())
             })?;
-            Some(Scrubber::new(volume, source)?)
+            Some(Scrubber::new(volume, source, false)?)
         } else {
             None
         };

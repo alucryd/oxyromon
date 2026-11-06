@@ -192,8 +192,7 @@ impl AsXso for CommonRomfile {
     }
 }
 
-/// Reported by `info`. Like nod, a linked library has no version to query at
-/// runtime.
+/// Reported by `info`. A linked library has no version to query at runtime.
 pub async fn get_version() -> Result<String> {
     Ok(String::from("built-in"))
 }
