@@ -23,7 +23,7 @@ fn test() {
     std::fs::write(&bootmii, &bytes).unwrap();
 
     // when
-    import_keys(&progress_bar, &[&keys, &otp, &bootmii], &destination).unwrap();
+    import_keys(&progress_bar, &[&keys, &otp, &bootmii], directory.path()).unwrap();
 
     // then the Wii U common key is kept once, and the vWii's and the Wii's
     // are added

@@ -8,6 +8,9 @@
 //! is unverified so never needs them, and compression only does for NSPs
 //! holding NCAs. Homebrew NSPs, for instance, need no `prod.keys` at all.
 //!
+//! The keys are those `import-keys` stored in the data directory, `prod.keys`
+//! and `title.keys` merged, or else nsz's own `~/.switch/prod.keys`.
+//!
 //! The flag mapping from the old subprocess calls:
 //! - `to_nsp` ran `nsz -D -F` → [`decompress_nsz`] with `fix_padding = true`
 //!   (re-pad the header to 0x20), `verify = false`, `strict = false`.
@@ -19,6 +22,7 @@
 
 use super::common::*;
 use super::config::*;
+use super::import_keys::SWITCH_KEYS_FILE;
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
@@ -34,23 +38,34 @@ use std::path::{Path, PathBuf};
 /// zstd level nsz compresses at by default.
 const COMPRESSION_LEVEL: i32 = 18;
 
-/// `~/.switch/prod.keys`, where nsz keeps the Switch keys.
-fn keys_path() -> Option<PathBuf> {
-    dirs::home_dir().map(|home| home.join(".switch").join("prod.keys"))
+/// The Switch keys `import-keys` stored, and whether they are those: else
+/// `~/.switch/prod.keys`, where nsz keeps them.
+fn keys_path() -> Option<(PathBuf, bool)> {
+    if let Ok(path) = get_data_directory().map(|directory| directory.join(SWITCH_KEYS_FILE))
+        && path.is_file()
+    {
+        return Some((path, true));
+    }
+    dirs::home_dir().map(|home| (home.join(".switch").join("prod.keys"), false))
 }
 
 /// Load and derive the Switch key set.
 ///
 /// Keys are CRC-verified, matching the external tool's own sanity check: a
-/// tampered `prod.keys` is rejected rather than producing garbage output.
+/// tampered `prod.keys` is rejected rather than producing garbage output. The
+/// imported file holds `title.keys` too.
 fn load_keys() -> nsz_rs::Result<Keys> {
-    let path = keys_path().ok_or_else(|| {
+    let (path, imported) = keys_path().ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::NotFound,
-            "no home directory to look for .switch/prod.keys in",
+            "no Switch keys imported, run import-keys",
         )
     })?;
-    Keys::load(path, true)
+    let mut keys = Keys::load(&path, true)?;
+    if imported {
+        keys.load_title_keys(&path)?;
+    }
+    Ok(keys)
 }
 
 pub struct NspRomfile {
@@ -243,11 +258,11 @@ impl AsNsz for CommonRomfile {
 }
 
 /// Reported by `info`. A linked library has no version to query at runtime. It never fails, since only compressing NCAs needs keys, but says
-/// when `prod.keys` is missing so that isn't first discovered mid-compression.
+/// when they are missing so that isn't first discovered mid-compression.
 pub async fn get_version() -> Result<String> {
-    Ok(match keys_path().is_some_and(|path| path.is_file()) {
+    Ok(match keys_path().is_some_and(|(path, _)| path.is_file()) {
         true => String::from("built-in"),
-        false => String::from("built-in, prod.keys not found"),
+        false => String::from("built-in, no Switch keys imported"),
     })
 }
 
