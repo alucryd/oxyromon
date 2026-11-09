@@ -1,7 +1,7 @@
 ---
 type: build-topology
 title: Feature Flags and Build Topology
-description: How the mcp, server, use-rustls and use-native-tls cargo features gate modules, the SQLite pool shape and the served transports; how the root workspace plus crates/* (chd-rs and friends as path dependencies with their CLIs behind a `cli` feature), build.rs, Trunk, rust-embed and SKIP_TRUNK compose the CLI, the eight format CLIs, the embedded web UI and the Tauri desktop artifact.
+description: How the mcp, server, use-rustls and use-native-tls cargo features gate modules, the SQLite pool shape and the served transports; how the root workspace plus crates/* (chd-rs and friends as path dependencies with their CLIs behind a `cli` feature), build.rs, Trunk, rust-embed and SKIP_TRUNK compose the CLI, the ten format CLIs, the embedded web UI and the Tauri desktop artifact.
 tags: [cargo-features, cargo-workspace, path-dependencies, build-rs, trunk, rust-embed, skip-trunk, tauri, ci, publishing]
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
@@ -16,14 +16,16 @@ sources:
     resource: repo://Cargo.lock
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
-  - id: openwiki-source-ca6cb4b1a14fd7969dfae3ec
-    resource: repo://CHANGELOG.md
   - id: openwiki-source-1519e62b0bf12b3d41c2e1b8
     resource: repo://crates/chd-rs/Cargo.toml
   - id: openwiki-source-a057427619dc76389568b31f
     resource: repo://crates/chd-rs/src/flac.rs
-  - id: openwiki-source-ce853e79f786a28d42f8717a
-    resource: repo://crates/wux-rs/Cargo.toml
+  - id: openwiki-source-8bd2a10a08a7d902fe9f5c52
+    resource: repo://crates/gcwii/Cargo.toml
+  - id: openwiki-source-fe805238cef5394255c80d46
+    resource: repo://crates/rvz-rs/src/lib.rs
+  - id: openwiki-source-684e7c23899e93ed2899a7ad
+    resource: repo://crates/wbfs-rs/src/lib.rs
   - id: openwiki-source-0bc9c609aef896964e961315
     resource: repo://Cross.toml
   - id: openwiki-source-b5a80c315c8a39d6bc68be22
@@ -70,16 +72,18 @@ sources:
     resource: repo://src/mcp/actions.rs
   - id: openwiki-source-cc76cc07825d7eb399a2b402
     resource: repo://src/model.rs
+  - id: openwiki-source-db13c01516e9bd04294e339d
+    resource: repo://src/rvz.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # Feature Flags and Build Topology
@@ -184,8 +188,9 @@ which is what both the embedded SPA and the desktop webview rely on.
 Finally, these four are the whole set. The `nod` and `sevenz` features older
 releases carried are gone, and with them every gate around the tools they used to
 guard: no `#[cfg(feature = "nod")]` or `#[cfg(feature = "sevenz")]` survives in
-`src/`, because nod, sevenz-rust2, zip and the eight crates under `crates/` are now
-plain unconditional dependencies. `cargo build` always compiles the CHD, RVZ/WBFS,
+`src/`, because sevenz-rust2, zip and the ten format crates under `crates/` are
+now plain unconditional dependencies, and the `nod` crate itself is gone: rvz-rs
+and wbfs-rs replaced it. `cargo build` always compiles the CHD, RVZ/WBFS,
 7z and ZIP code paths — `src/chd.rs` has no feature gate at all — so only `mcp`
 and `server` still add or remove functionality.
 
@@ -320,9 +325,10 @@ equivalent of the release build (`trunk build --release`, then
 build --release)` on the host first — the wasm bundle is target-independent, so
 it is built once per loop iteration outside the container — then
 `cross build --release --target <t> --features server`. Then a second
-`cross build` with `-p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p wux-rs -p xdelta-rs
--p xps-rs -p xso-rs` builds all eight format-crate CLIs, and each of `chdrs`, `ciars`,
-`gdirs`, `nszrs`, `wuxrs`, `xdeltars`, `xpsrs` and `xsors` is archived next to
+`cross build` with `-p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p rvz-rs -p wbfs-rs
+-p xdelta-rs -p wux-rs -p xps-rs -p xso-rs` builds all ten format-crate CLIs, and
+each of `chdrs`, `ciars`, `gdirs`, `nszrs`, `rvzrs`, `wbfsrs`, `wuxrs`,
+`xdeltars`, `xpsrs` and `xsors` is archived next to
 `oxyromon` — `tar -cJf` for
 the four Linux and two macOS targets, `7z a` for
 `x86_64-pc-windows-gnullvm` — before `cargo clean` resets `target/` for the next
@@ -364,10 +370,15 @@ selves — while the frontend and desktop profiles both use `opt-level = "z"` to
 shrink a wasm payload and a bundled shell. The format crates carry no
 `[profile]` at all: only the root workspace's applies to them.
 
-`crates/` holds eight format crates — `chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`,
-`wux-rs`, `xdelta-rs`, `xps-rs` and `xso-rs` — seven of them ports of an external tool
-oxyromon used to shell out to, and `wux-rs` a Wii U crate following wudd and Cemu
-(GPL-3.0+, shipping no key). Each is published to crates.io on its own schedule
+`crates/` holds ten format crates — `chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`,
+`rvz-rs`, `wbfs-rs`, `wux-rs`, `xdelta-rs`, `xps-rs` and `xso-rs` — nine of them
+ports of an external tool oxyromon used to run (Dolphin's RVZ code and wit for
+the two GameCube and Wii crates), and `wux-rs` a Wii U crate following wudd and
+Cemu (GPL-3.0+, shipping no key). It also holds `gcwii`, an embedded crate that
+is a workspace member but never published nor depended on: rvz-rs and wbfs-rs
+each symlink its `src` into their own as `src/gcwii` and declare it a private
+module, so each publishes a standalone copy (see
+[GameCube and Wii formats](../concepts/gamecube-wii-formats-rvz-wbfs-gcwii.md)). Each is published to crates.io on its own schedule
 and under its upstream's license (MIT for `cia-rs`, whose upstream shipped none), and each taking `edition`, `rust-version`, `repository` and shared
 dependency versions from `[workspace.package]` / `[workspace.dependencies]`. The
 dependency contract is uniform and load-bearing: oxyromon depends on every crate
@@ -421,7 +432,7 @@ flowchart LR
     CRATES["crates format crates"]
   end
   PKG -->|"path plus version, default-features off"| CRATES
-  CRATES -->|"cli feature on, dist.sh -p"| CLI["chdrs, ciars, gdirs, nszrs, wuxrs, xdeltars, xpsrs, xsors"]
+  CRATES -->|"cli feature on, dist.sh -p"| CLI["chdrs, ciars, gdirs, nszrs, rvzrs, wbfsrs, wuxrs, xdeltars, xpsrs, xsors"]
   PKG --> BR["build.rs"]
   BR -->|server and not SKIP_TRUNK| TRUNK["trunk build in frontend"]
   TRUNK --> ASSETS["target/assets"]
@@ -432,16 +443,15 @@ flowchart LR
   SIDECAR --> DESK["desktop crate, own workspace"]
 ```
 
-*Caption: how one package plus eight path dependencies and two standalone crates compose the shipped artifacts.*
+*Caption: how one package plus ten path dependencies and two standalone crates compose the shipped artifacts.*
 
 ## What blocks publishing
 
 `Cargo.toml` carries a `ponytail` comment recording that the package cannot be
-published as-is, because crates.io rejects git dependencies:
+published as-is, because crates.io rejects git sources. One remains, the only
+git source in `Cargo.lock` (the `nod` git tag that used to be the other went
+with nod itself):
 
-- `nod = { git = "https://github.com/encounter/nod", tag = "v2.0.0-alpha.12" }` —
-  pinned to a git tag until `nod` publishes past 2.0.0-alpha.9 to crates.io. It
-  must return to a plain version requirement before a release.
 - `[patch.crates-io] rusty_flac = { git = "https://github.com/alucryd/rusty_flac",
   rev = "563068c…" }` — `chd-rs` asks for `rusty_flac = "0.2.2"`, but it calls
   `Encoder::set_block_size`, which only the fork's `feat/block-size` branch has
@@ -455,7 +465,8 @@ published as-is, because crates.io rejects git dependencies:
 registry (`0.24.2`, `features = ["zstd"]`) and no longer blocks anything. Both
 archive libraries are mandatory dependencies rather than optional features: 0.25.0
 removed the `nod` and `sevenz` features when RVZ/WBFS and 7z/ZIP support stopped
-shelling out to `dolphin-tool`, `wit` and 7-Zip.
+shelling out to `dolphin-tool`, `wit` and 7-Zip, and RVZ/WBFS then moved from
+nod to rvz-rs and wbfs-rs.
 
 The package also ships `exclude = [".github/", "crates/", "dist/", "tests/"]`, so
 a published tarball contains neither the format crates nor the integration

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f0cbf024e8da60b89570dc379eeee6f107a2f94dd8b7277ade7ac2896274ee69",
+  "pageVersion": "sha256:09bb75d51c82817a812700572800a40506a9d3dbfee96471cb3591a115256c32",
   "claims": [
     {
       "id": "claim_8eadae48e7a34ac3bc00654cd6a3d6d6",
@@ -175,7 +175,7 @@
           "version": "repo-lines-v1:sha256:79fa5efe7b223a66832785589e9a01670b87cf5407eb8142e582a70ebbb8a01a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4NGI5ZjRkMGYyYjViZGE1YWQxYmE5MzZmNzc1MTkyZDRlMzhmNGJiOTEyYjU0NTkzNWEzODlmMmU4NjFjZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0NDc0OTIzZWMzMzdiOWY3MTUxMjg5ZDI4MmM2MGQxYjcwMDFjYmVmZmY3MzQ2YjA3MDE5NzhjY2Q0OTdlMTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjYjlkODQxM2FiYzFhNTY2YzE1ZTY2ZDMzMzk2NzRhZWRhMDUyNTlkMTU2NWZlMjlhNWRjYTc1N2M0OWFmMjkifQ"
         },
         {
-          "resource": "repo://src/rvz.rs#L184-L199",
+          "resource": "repo://src/rvz.rs#L195-L210",
           "version": "repo-lines-v1:sha256:9962389f224447cb8922e2bd4883aa26ddb885a81c7ecad640df28d201f1ecb6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhM2M2YTUwODdkNzJhZDc3MzJhZDNlYmYxNDYyYjExOTE2ZjE0Y2RlMzliMGJjNTg3ZjM2YWVmODljNGZiZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiMmYyOTRmNzBiYmZhNDVjZjQ1MjZjY2JjYmU4ZWU3YmFhODVhN2UyNmIzZjU1YTgxMDFlZDJjYjQ2NGIwNjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmYTZjMzIxZWFhNTM4YTdmNDk0NzdkOWRhNDFkMGYyNDQ5N2IzOGMyYjRjMTRlMjQ3Y2RkMzU0Zjc1NDg5NDMifQ"
         },
         {
@@ -189,7 +189,7 @@
       "statement": "Patches rely on content with no filename fallback: parse_patch maps PatchType::from_str(mimetype.extension()) and a file no matcher recognizes is reported as \"Unsupported patch format\". parse_ird likewise requires a mimetype and uses it to choose the reader — gz triggers a GzDecoder wrapper, ird reads raw, anything else bails \"Not an IRD file\" — which only works because infer's built-in gzip matcher shares the same MATCHER table.",
       "evidence": [
         {
-          "resource": "repo://src/import_irds.rs#L199-L210",
+          "resource": "repo://src/import_irds.rs#L200-L211",
           "version": "repo-lines-v1:sha256:b2c932a6cae23b7b9bda4f10a7aba7e6993bc2d1e63efe865fa3c21aa5373b05:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhY2I3NzA4NWZiYmNkMzIyNDJhMjRhYWQ0NTBmMzc2YzFkZjc5YTBlOTYxZDUzYzZjZjAxMzZlYjFmOGUzMmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0MzRkNjM2OTJiMTMzNWQxNWFjN2Y2ZDY3N2JlYzM2OTdjYzhlOWI1N2UzMmQwZDU0MWEzYzZhYTljMDY2MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiZTVmNGVjOWMwNjM5MWUyMDYyMWNhNWZlNzkwYmRiMTNkZDMxNGY0Njc5NWVhOTYxYTA3YjA3MzhlMzI2MjgifQ"
         },
         {
@@ -221,7 +221,7 @@
       "statement": "Adding a format requires coordinated mimetype.rs edits that the compiler cannot enforce: add the lowercase extension constant, add a length-checked matcher plus a matcher.add registration when magic bytes exist, and update the extension groups downstream dispatch reads (NON_ORIGINAL_EXTENSIONS for recompressions, ARCHIVE_EXTENSIONS for multi-entry containers — which also changes arcade folder placement), then wire import_rom dispatch, check_roms and the partition_games_by_extensions splits in convert_roms/export_roms, which match path string suffixes rather than parsed extensions.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L185-L189",
+          "resource": "repo://AGENTS.md#L218-L222",
           "version": "repo-lines-v1:sha256:3d5872ef12b7021f0180607dd9f4f698587c84e63b40eec7d059bde3dedd16d7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmVlOTYyZGE1ZTdkM2ZiZmExYzAxYTBiMjVjZTU2OGQyNGFiZjAwMjE1MGI3M2MxYmE5OTcxZDFhN2Q2OWM1ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzZlZGE5NGJhNjNhZmQwNTNlMmVhZmQxNGE0ODE1ODcyNmYwZWExOGEzNzI0ZmE1MzRhNTFlNmZlMjdkNDAxZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzIxNjk0ODRlYjQyOTI1YzYyODAxYzI3ZTE4NWE3YTMxZDExZjc2NDkwOWMxZTNjM2JkN2M5NjFiMmYxOGFiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzM3ODAzNzBmYTllZjMwNTMyNTg0MjZlOTcwNmZmY2RlZGJlYmNlYTY3NDQ1Y2FmNjNkNTcyNzU3YjQ2MDAwMCJ9"
         },
         {
@@ -278,11 +278,11 @@
         },
         {
           "resource": "repo://src/chd.rs#L900-L902",
-          "version": "repo-lines-v1:sha256:13a791b70a5dc95040a73faf7b2aab84b2e8e4949fbd077c7c1deb1cfa8fdbbb:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4ZTdkMmU1YzEyNWU2Y2QyNzUxNGIzYjFhMTEyYmJkOTcyOGEzODhkMTU2Y2FmOGMxNDA0MGZlOTdkZTVkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmYyNDkxMDJhYjhkMDhmYWUyYmJmZjdiYjFhYmM4NjE2OWRhYzA5MTNhN2I2MzhlMTIzYWE3MGMxZmFhZWI3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDFlYzYyYWE0Y2Q1NzE3ZTUzZGZmN2VjNDI2YTU1NjAyMmIzZmU3ZDhiMGJkZDMzOTEwNGI3NWMzYmU0ZjkxMiJ9"
+          "version": "repo-lines-v1:sha256:13a791b70a5dc95040a73faf7b2aab84b2e8e4949fbd077c7c1deb1cfa8fdbbb:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4ZTdkMmU1YzEyNWU2Y2QyNzUxNGIzYjFhMTEyYmJkOTcyOGEzODhkMTU2Y2FmOGMxNDA0MGZlOTdkZTVkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmYyNDkxMDJhYjhkMDhmYWUyYmJmZjdiYjFhYmM4NjE2OWRhYzA5MTNhN2I2MzhlMTIzYWE3MGMxZmFhZWI3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGM0N2QwMjI0MjM5YzI3ZjU3NTg3OTNkYjIwN2UwZmZmNmExNGE1OTczNWRmNjQ2MTA5YzgxNzE2NDcwM2U0ZiJ9"
         },
         {
-          "resource": "repo://src/info.rs#L27-L38",
-          "version": "repo-lines-v1:sha256:91b8d9673cf0e74287b6884b5cc302dfecbeb4e51ce0ccecf139b4c20bf5184e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0YmVhMjg1OTRjYzc3Y2VmN2U1ZmFmYjc4ZjRiYmM2M2E5ZDdiYWYxYWZkYWI3ODQ1NjEwNmZhNGU1ZmFhNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmNWU3OWJmZjE5MjU5OTFkNDE3YTE3YjZlYjQyZmIxMGQwZTdlMTMzNDM5M2MzYWFjN2JiMmU3MjkzZjBhMWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiNWU4ODQxNjQxZWNlMmU0M2U0NDI4YWI2Mzk3NjIzYTAyNjNjMDI2ZWQwOTVmMTBkOWVlYTE2NzVmZGM3YTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0N2VhYmI1MmZiMTEyOWE2OWMwYWU0ZTdmYjU4MmZmOTRhMDYwZjBkODRkNDg2OGQ1MzhiNDI2MTI5M2M2MGIifQ"
+          "resource": "repo://src/info.rs#L24-L39",
+          "version": "repo-lines-v1:sha256:a996331b8ef3917340b36c9e81b90eb80b522565037520be1193bf31e8f9d44b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwZTMxNjllYmVlZmFmNTFjMWVkOWZhZjk2NWNkYzVjODBmOWFlZWEzNTI2NTk4OTM0OGRmMGY1OWFjNmQzYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5MzI3NTdmMzNjZWE0NTE1ZGUyYmJmZjZiOWY4M2ZlNTFiNGQzMmNmYjZlZGE3MzJhZTZiNDJhOTQ3ZGMzYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyNGZmZGJkZGNmMDFjMDNkMmU5NDRmZTMwZDA0OWY3MTkyZDk2OGZlNmVlOWRkYTFjNTRiYTdlYTM2MzhkOGUifQ"
         }
       ]
     },
@@ -429,6 +429,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-05T21:35:44.503Z"
+    "at": "2026-11-09T21:55:13.223Z"
   }
 }

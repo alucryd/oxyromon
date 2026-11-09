@@ -70,10 +70,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # Romfile Trait System
@@ -144,7 +144,8 @@ file has to survive its own conversion.
   until something reopens it — a caller that needs them calls `as_chd` on the
   result ([src/chd.rs](../../src/chd.rs#L279-L416)). `to_wbfs` returns `Result<()>`
   for the same reason: WBFS is an export target, never a wrapper anything converts
-  from.
+  from. `ToWbfs` is implemented for both `IsoRomfile` and `RvzRomfile`, the latter
+  reading the RVZ directly rather than going through an ISO.
 
 ```mermaid
 flowchart LR
@@ -171,6 +172,7 @@ flowchart LR
     ISO -->|to_rvz| RVZ
     ISO -->|to_chd| CHD
     ISO -->|to_wbfs| WBFS["WBFS output"]
+    RVZ -->|to_wbfs| WBFS
     CUEBIN -->|to_chd| CHD
     CUEBIN -->|to_gdi| GDI["GdiRomfile"]
     RIFF -->|to_chd| CHD
@@ -277,7 +279,7 @@ implement.
 - `HashAndSize for CommonRomfile` funnels through the free function `hash_reader`,
   which hashes *anything that implements `Read`* while advancing the progress bar.
   That is the seam that lets a decoder be hashed without being written to disk:
-  `RvzRomfile::hash_disc` feeds the `nod` `DiscReader` straight into it, so a
+  `RvzRomfile::hash_disc` feeds an `rvz_rs::Reader` straight into it, so a
   dual-layer Wii disc is verified without several gigabytes of temporary ISO.
   `XsoRomfile` and `NszRomfile` do the opposite — decode to a temp directory, hash
   the decoded file, delete it. `ChdRomfile` short-circuits only the SHA1 it already

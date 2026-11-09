@@ -4,8 +4,6 @@ title: "PS3 IRD Files and JB Folders"
 description: The PlayStation 3 path — import-irds parsing of v9 IRD files, the vendored ISO 9660 reader that walks the embedded disc header, the child-rom rows and jbfolder flag they create, re-import and Trash behaviour when a file stops matching, and purge-irds unassociation.
 tags: [ps3, ird, jb-folder, import-irds, purge-irds, iso9660, jbfolder, psn, pkg, rap, trash]
 sources:
-  - id: openwiki-source-651d1fb6c9e49916a916ab51
-    resource: repo://Cargo.toml
   - id: openwiki-source-54edf7114c06b7ecbcf46350
     resource: repo://frontend/src/components/import_ird_modal.rs
   - id: openwiki-source-5d0bfd830d431dc56dd8187c
@@ -54,10 +52,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-2209a68ba11f4f6225c7aec7
     resource: repo://tests/Test%20System%20(20230527)%20(PSN).dat
-generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # PS3 IRD Files and JB Folders
@@ -80,7 +78,7 @@ that recognises an IRD is in
 
 `import-irds <IRDS>...` and `purge-irds [GAMES]...` are ordinary clap subcommands
 registered in [`src/main.rs`](../../src/main.rs#L69-L170), each taking an optional
-`--system <NAME>` that turns the run unattended
+`-s/--system <NAME>` that turns the run unattended
 ([src/import_irds.rs](../../src/import_irds.rs#L24-L59),
 [src/purge_irds.rs](../../src/purge_irds.rs#L13-L31)). `import-irds` additionally
 takes `-i/--info` (print and stop) and `-f/--force` (re-import over an
@@ -218,15 +216,15 @@ looked up under the **first** extent's location
 [src/iso/iso9660.rs](../../src/iso/iso9660.rs#L188-L209)).
 
 The reader itself (`src/iso/iso9660.rs`) is **vendored from the `opticaldiscs`
-crate v0.14.0**, GPL-3.0 like oxyromon, and its presence is a dependency
-constraint rather than a preference: `opticaldiscs` depends unconditionally on
-`nod` 1.4, which pins `liblzma-sys` 0.3, while `nod` 2.x needs `liblzma-sys` 0.4;
-both declare `links = "lzma"` and Cargo permits only one package per `links` value
-— and oxyromon needs `nod` 2 for native RVZ/WBFS conversion
-([src/iso/iso9660.rs](../../src/iso/iso9660.rs#L1-L17),
-[Cargo.toml](../../Cargo.toml#L96-L98)). Once `nod` is optional upstream the module
-is meant to be deleted and the crate restored, which is why the surviving API keeps
-upstream names.
+crate v0.14.0**, GPL-3.0 like oxyromon. It was vendored over a dependency clash:
+`opticaldiscs` depends unconditionally on `nod` 1.4, whose `liblzma-sys` 0.3
+clashed over `links = "lzma"` with the `nod` 2 oxyromon then used for RVZ and
+WBFS. oxyromon no longer depends on `nod` — rvz-rs and wbfs-rs replaced it — so
+the clash is gone, but restoring the crate would bring `nod` 1.4 and its C
+compression libraries back for a directory walk, so the module stays until
+`nod` is optional upstream
+([src/iso/iso9660.rs](../../src/iso/iso9660.rs#L1-L17)). That is why the
+surviving API keeps upstream names: swapping back is mostly deleting the file.
 
 It is trimmed to exactly the directory walking `import-irds` needs — file reading,
 El Torito, Rock Ridge timestamps, POSIX and symlink entries are all omitted — and

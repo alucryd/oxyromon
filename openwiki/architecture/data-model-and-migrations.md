@@ -34,6 +34,8 @@ sources:
     resource: repo://migrations/20220104132512_add_merging_to_system.sql
   - id: openwiki-source-efb6a3fc480abeea3bb0f670
     resource: repo://migrations/20220105084202_add_bios_and_bios_id_to_games.sql
+  - id: openwiki-source-efbb47c16365ec3839548868
+    resource: repo://migrations/20220112115657_create_roms_complete_index.sql
   - id: openwiki-source-376489f3151829962ffa54bd
     resource: repo://migrations/20220209075226_make_crc_optional.sql
   - id: openwiki-source-2302250b7b0616cdaf2160cb
@@ -96,6 +98,8 @@ sources:
     resource: repo://src/import_patches.rs
   - id: openwiki-source-9add64e166d8ef19bd58c5af
     resource: repo://src/import_roms.rs
+  - id: openwiki-source-7fb657fead83b71b9836ddac
+    resource: repo://src/info.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
   - id: openwiki-source-389985405c3e5c30c5b6cede
@@ -120,10 +124,10 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # Data Model, SQLite Usage and Migrations
@@ -413,6 +417,14 @@ the DataLoader `WHERE id in (…)`). These paths lose compile-time checking, whi
 is the trade to keep in mind when adding a query shape. A handful of finders are
 `#[cfg(test)]`-only (e.g. `find_games`, `find_roms`) and exist so assertions in
 tests can read whole tables; they are part of the offline query data too.
+
+One composed query pins its index: `find_rom_by_size_and_crc_and_game_ids`
+selects `FROM roms INDEXED BY roms_game_parent_romfile`. Its callers pass a few
+game ids, but a ROM shared by thousands of machines — HBMAME's clones share
+most of their parents' files — turns the size-and-CRC index into a scan, and on
+a first import SQLite has no statistics to know better. The `(game_id,
+parent_id, romfile_id)` index narrows by game first, which is what kept
+`import-dats` from crawling on such DATs.
 
 Error handling is panic-based, deliberately. Query failures `expect` or
 `unwrap_or_else(|_| panic!(…))` with a message naming the operation and the id

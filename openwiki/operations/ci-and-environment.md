@@ -76,10 +76,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # CI Pipelines and Runtime Environment
@@ -308,7 +308,7 @@ the three workspaces fails the Format job.
 
 | Variable | Read at | Effect | Default |
 | --- | --- | --- | --- |
-| `OXYROMON_DATA_DIRECTORY` | `config::get_data_directory`, from `src/main.rs` every run, and from `import-keys` and the Wii U exports | Directory that holds `oxyromon.db` and the imported `wiiu_keys.txt`; created if missing | `dirs::data_dir()/oxyromon` |
+| `OXYROMON_DATA_DIRECTORY` | `config::get_data_directory`, from `src/main.rs` every run, and from `import-keys`, the Wii U exports and the Wii RVZ and WBFS writers | Directory that holds `oxyromon.db` and the imported `wiiu_keys.txt`, which also holds the Wii common key; created if missing | `dirs::data_dir()/oxyromon` |
 | `OXYROMON_ROM_DIRECTORY` | `config::get_rom_directory` | Seeds `ROM_DIRECTORY` **only when no setting row exists**, then persisted | `dirs::home_dir()/Emulation` |
 | `OXYROMON_TMP_DIRECTORY` | `config::get_tmp_directory` | Seeds `TMP_DIRECTORY` under the same first-run rule | `std::env::temp_dir()` |
 | `OXYROMON_LOG_LEVEL` | `src/main.rs`, logger construction | `env_logger` filter (`off`, `debug`, `module=trace`, …) | unset, i.e. env_logger's own default filter |

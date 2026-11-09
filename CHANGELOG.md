@@ -2,71 +2,76 @@
 
 ## Features
 
-- Added the `MERGED` strategy to `rebuild-roms`, storing each clone's files in its parent's ZIP, once, with a clone's file whose name its parent already uses with other contents under `<clone>/`, as ClrMamePro does. `check-roms`, `export-roms` and the other commands find files filed that way, and `sort-roms` moves a merged ZIP with its parent rather than its clones
-- Added the `purge-games` subcommand, moving the files of individual games to their system's `Trash` and leaving the games missing, with a Delete entry in an actions menu on each game of the web UI's games list and a `purge_games` MCP tool. Files shared with games not being purged stay in place
-- Added `-s/--system` to `purge-systems`, selecting systems by name instead of prompting for them
-- Added `-a/--arcade` to `import-dats`, an Arcade switch to the web UI's DAT import and an `arcade` parameter to the MCP `import_dats` tool, importing DATs that list games instead of machines, such as FBNeo's, as arcade systems. An update keeps a system arcade, and `-f` reverts it
-- `import-dats` reads the output of MAME's or HBMAME's `-listxml` directly, naming the system after the file and versioning it after the build, instead of failing with "missing field `header`"
-- Added the `mcp` subcommand: a Model Context Protocol server on stdin/stdout, for AI assistants — read, mutate, and (behind `confirm: true`) purge the library, with progress notifications, cancellation, resources, and guided prompts; `--read-only` registers only the non-mutating tools
-- The web server serves the same MCP server over Streamable HTTP at `/mcp`, sharing its pool and its event stream, so most MCP-triggered actions show up in the web UI; ROM imports and setting changes do not yet
-- Added Wii U support, from the new wux-rs crate: WUX, the lossless compression of a WUD disc image, can be imported, checked, converted to and from, and exported; WUDs and WUXs can be exported to WUA, Cemu's archive of a disc's game files. Exporting to WUA needs the disc key and the Wii U common key, which oxyROMon does not ship: the new `import-keys` subcommand stores them in its data directory, from files in the format of Cemu's `keys.txt` or from a console's `otp.bin`, which gives the Wii U and vWii common keys, so a headless server needs no emulator. `create-dats` lists a WUX as the WUD it holds and a Wii U title's folder as one game. Wii U updates and DLC import as games, as No-Intro's CDN DAT lists them, from their title folders under a downloader's names or No-Intro's, each kept in a folder of its own; exporting a disc to WUA adds its newest update and DLC from the library, matched by title ID, as Cemu bundles them. Exporting a disc to NUS writes the folder WUP Installer GX2 installs on a console, its contents matching No-Intro's CDN DAT byte for byte; a folder already in its place is only replaced when it holds nothing the export wouldn't write. WUAs keep revert data, which Cemu ignores, so `wuxrs` can turn them back into those NUS folders. Its CLI (`wuxrs`) ships in the release archives too
-- WUA is a lossless format: a WUA oxyROMon writes keeps what rebuilds its disc byte for byte, so it can be imported, checked, converted to and from, and set as `PREFER_FORMAT`, and converts back to WUX or to the original ISO, checked against the disc's SHA-1. A disc's update partition goes to a hidden `.update-partitions` folder in its system's directory, decrypted and compressed, once for every disc carrying that update, as NKit keeps its recovery partitions. Importing a WUA brings the update partitions it needs from the folder beside it, and `purge-roms -f` deletes those no WUA needs, keeping them all when a WUA can't be read. Converting a Wii U disc back to its original gives the ISO Redump lists, rather than a `.wud`
-- A Wii U update or DLC counts as complete with its newest TMD and the files that TMD lists: No-Intro's CDN DAT lists every version a title went through in one game, while Nintendo's servers deliver only the newest, so the older TMDs and the contents only older versions use are ignored
-- Exporting a Wii U update or DLC rebuilds the H3 files its TMD lists that the library lacks, checked against the TMD: No-Intro's CDN DAT sometimes leaves one out, and a title installs only with all of them. Importing such a title says so of the H3 file it leaves behind, rather than reporting no match
-- Importing a Wii U title's folder keeps the ticket a downloader made when no DAT lists it, as No-Intro lists none for DLC, in a `wiiu_tickets` folder in the data directory, by title ID, even when the title itself was already imported. Exporting a disc to WUA bundles the DLC it decrypts, and exporting the title as ORIGINAL adds it as `title.tik`
-- Added the `GAME_SUBFOLDERS` setting, storing games in folders named after them so a game of several files stays together: `never`, the default, `multiple`, for games stored as several files, or `always`. Under either of the last two, the discs of a game share one folder with their playlist, as frontends such as RomM read a multi-disc game. Arcade games stored as archives stay as they are
+- Added the `MERGED` strategy to `rebuild-roms`, storing each clone's files in its parent's ZIP, as ClrMamePro does
+- Added the `purge-games` subcommand, moving individual games' files to `Trash`, with a Delete action in the web UI and a `purge_games` MCP tool
+- Added `-s/--system` to `purge-systems`
+- Added `-a/--arcade` to `import-dats`, with an Arcade switch in the web UI and an `arcade` MCP parameter, to import game-based DATs such as FBNeo's as arcade systems
+- `import-dats` now reads MAME's and HBMAME's `-listxml` output directly
+- Added the `mcp` subcommand: a Model Context Protocol server on stdio, with progress notifications, cancellation, resources and prompts; `--read-only` exposes only the non-mutating tools, and purges need `confirm: true`
+- The web server also serves MCP over Streamable HTTP at `/mcp`, sharing its event stream with the web UI
+- Added Wii U support from the new wux-rs crate: import, check, convert and export WUX, and export WUDs and WUXs to WUA and NUS folders; its CLI (`wuxrs`) ships in the release archives too
+- Added the `import-keys` subcommand, storing Wii U keys from Cemu's `keys.txt` or a console's `otp.bin` in the data directory
+- WUA is lossless: a WUA oxyROMon writes rebuilds its disc byte for byte, so it can be imported, checked, converted back to WUX or ISO, and set as `PREFER_FORMAT`; update partitions are shared in a hidden `.update-partitions` folder
+- Wii U updates and DLC import as games from No-Intro's CDN DAT, count as complete with their newest TMD, and are bundled into WUA exports
+- Exporting a Wii U update or DLC rebuilds the H3 files No-Intro's DAT sometimes leaves out
+- Importing a Wii U title keeps a ticket no DAT lists in a `wiiu_tickets` folder, and exports use it
+- `create-dats` lists a WUX as the WUD it holds and a Wii U title's folder as one game
+- Added the `GAME_SUBFOLDERS` setting (`never`, `multiple` or `always`), storing games in folders of their own, with multi-disc games sharing one folder with their playlist
 
 ## Changes
 
-- `-s` now means `--system` in every command with that option but `config`, where it stays `--set` and `--system` is `-n`: `check-roms -s` selects systems instead of recalculating sizes, `--size` no longer has a short form, and `import-irds` and `purge-irds` gain it
-- RVZ support now comes from the new rvz-rs crate, a port of Dolphin's RVZ code, and WBFS support from the new wbfs-rs crate, a port of wit's: `dolphin-tool` and `wit` are no longer needed, and the `nod` feature and the nod dependency are gone. WBFSs it writes are `wit copy --wbfs`'s, a disc without a boot DOL such as Swiss's kept whole rather than broken, and an RVZ exports to WBFS without a key or decoding an ISO on the way; a Wii ISO needs the Wii common key, as for RVZ. Its CLI (`wbfsrs`) ships in the release archives too. RVZs it writes are interchangeable with Dolphin's, and byte-identical with Zstandard, bzip2 or no compression. Its CLI (`rvzrs`) ships in the release archives too. Compressing a Wii ISO to RVZ needs the Wii common key, which oxyROMon does not ship: `import-keys` now also takes it from a Wii U's or a Wii's `otp.bin` or from BootMii's `keys.bin`. Reading or rewriting an RVZ, and GameCube discs, need no key. The `RVZ_SCRUB` setting is gone: with it set, `export-roms` decoded and re-encoded every RVZ for nothing
+- `-s` now means `--system` in every command with that option but `config`: `check-roms --size` has no short form any more, and `import-irds` and `purge-irds` gain `-s`
+- RVZ support now comes from the new rvz-rs crate, a port of Dolphin's RVZ code, instead of `dolphin-tool`; its CLI (`rvzrs`) ships in the release archives too
+- WBFS support now comes from the new wbfs-rs crate, a port of wit, instead of `wit`, and exports from RVZ without decoding an ISO; its CLI (`wbfsrs`) ships in the release archives too
+- The `nod` feature is gone
+- Compressing a Wii ISO to RVZ or WBFS needs the Wii common key, which `import-keys` takes from a Wii's or a Wii U's `otp.bin` or BootMii's `keys.bin`
+- Removed the `RVZ_SCRUB` setting
 - 7z and ZIP support now always comes from the sevenz-rust2 and zip crates: 7-Zip is no longer needed, and the `sevenz` feature is gone
-- BPS and IPS support now comes from the new xps-rs crate, a port of Flips, instead of the external `flips` tool; its CLI (`xpsrs`) ships in the release archives too
-- XDELTA support now comes from the new xdelta-rs crate, a port of xdelta3, instead of the external `xdelta3` tool; its CLI (`xdeltars`) ships in the release archives too
-- CHD support now comes from the new chd-rs crate, a port of chdman, instead of the external `chdman` tool, for CDs, DVDs, hard disks and LaserDiscs. Its CLI (`chdrs`) ships in the release archives too. CHDs it creates are interchangeable with chdman 0.289's, and byte-identical except for LZMA-, deflate- and FLAC-compressed hunks; its FLAC codec is the pure-Rust rusty_flac, so building needs no CMake; it compresses on every core, as chdman does, and decodes faster. The minimum chdman versions for Dreamcast and split-bin support are gone
-- CIA support now comes from the new cia-rs crate, a port of ctrtool, instead of the external `ctrtool` tool: oxyROMon no longer needs any external tool installed. Its CLI (`ciars`) ships in the release archives too. It extracts the same bytes ctrtool's `--plain` mode does, so imported CIAs keep matching the same DATs, and it reads the container families the reference turned away by title type, DSiWare included
-- The Docker images are one image: the Alpine one, now on `latest` and on the version tags. The Arch Linux image is gone, and so are the `-alpine` suffix tags — with nothing left to install alongside it, one base carries it all
-- Renaming, deleting or adding an entry in a 7z copies the rest of the archive as it is encoded rather than going to 7-Zip or re-encoding it; only deleting from a solid block re-encodes the entries left in it
-- `purge-roms`, and updates by `import-dats`, `download-dats` and `import-irds`, now delete the directories they leave empty, except for the ROM, system and `Trash` directories
-- `download-dats` keeps going when one Redump system fails, reporting it, and fails the run at the end naming every system that did; an empty ZIP, or one with several DATs, is now such a failure rather than a warning
-- `download-dats` fetches Redump DATs from its new home, redump.info, and offers its new systems: PlayStation 4 and 5, Xbox One and Series X, Wii U, Polymega, more arcade boards, and video and audio discs among them. Systems already imported from redump.org move to redump.info, and those Redump renamed take their new name, keeping their directory through a custom name
-- The web UI's Upload and Download menus are one Import menu, where fetching Redump DATs is "DATs from Redump…": a Download menu read as saving files to the browser
+- BPS and IPS support now comes from the new xps-rs crate, a port of Flips, instead of `flips`; its CLI (`xpsrs`) ships in the release archives too
+- XDELTA support now comes from the new xdelta-rs crate, a port of xdelta3, instead of `xdelta3`; its CLI (`xdeltars`) ships in the release archives too
+- CHD support now comes from the new chd-rs crate, a port of chdman, instead of `chdman`, for CDs, DVDs, hard disks and LaserDiscs; its CLI (`chdrs`) ships in the release archives too
+- CIA support now comes from the new cia-rs crate, a port of ctrtool, instead of `ctrtool`; its CLI (`ciars`) ships in the release archives too
+- oxyROMon no longer needs any external tool installed
+- The Docker image is now Alpine only, on `latest` and the version tags; the Arch Linux image and `-alpine` tags are gone
+- Editing a 7z now copies the untouched entries as they are instead of re-encoding them
+- `purge-roms`, and updates by `import-dats`, `download-dats` and `import-irds`, now delete the directories they leave empty
+- `download-dats` keeps going when a Redump system fails, and fails the run at the end naming each one
+- `download-dats` now fetches Redump DATs from redump.info, with its new systems; existing systems move over and take Redump's new names
+- Merged the web UI's Upload and Download menus into one Import menu
 
 ## Fixes
 
-- Fixed `rebuild-roms -f` skipping every clone that shares files with its parent when the set was already `NON_MERGED` or `FULL_NON_MERGED`, as a set imported into after a first rebuild is: such a clone counted as incomplete for lacking the very files the rebuild gives it. `FULL_NON_MERGED` to itself also did nothing at all, and going down to `NON_MERGED` now completes those clones too. A game left out for missing some of its own files now gets a warning
-- Fixed `import-dats` slowing down as it goes on a DAT with ROMs shared by many machines, such as HBMAME's Neo Geo sets
-- Fixed commands printing nothing when stderr is not a terminal, such as when redirected to a file: their messages now go there, without the progress bar
-- Fixed actions started from the web UI or an MCP client running at the same time, which could collide moving the same files; they now run one at a time, in the order they started, and a waiting MCP tool can be cancelled
-- Fixed checking, sizing and converting a hard disk CHD failing with "Not a valid rdsk" unless the disk began with an Amiga Rigid Disk Block, which most arcade hard disks do not
-- The web UI's system deletion dialog no longer says the files on disk are left alone: they move to the system's `Trash`
-- Fixed `create-dats` reading each file three times, once per checksum; it now reads it once
-- Fixed `create-dats` sometimes writing a DAT cut short, and `import-roms` sometimes hashing a CIA's TMD before its certificates were written to it
-- Fixed `purge-systems`, `check-roms` and `import-dats` panicking when two games own a file of the same name, such as an arcade parent and clone in their own directories, after moving one onto the other in `Trash`. A trashed file whose name is taken in `Trash` now keeps its path under the system directory there, and is numbered when that is taken too
-- Fixed `import-roms` panicking when "None" is picked at the "Please select a ROM" prompt; the file is now skipped, without the same prompt coming back once per hash algorithm, or the file going to the trash because an earlier hash matched nothing
-- Fixed `rebuild-roms` computing completion with the strategy it rebuilt from, leaving games partial after a switch until the next completion update
-- Fixed `export-roms -f ORIGINAL` putting an arcade game's files directly in the output directory, next to the empty directory meant for them
-- Fixed converting a Wii U title's folder to 7Z or ZIP: its content files, named by their bare ID, were left out of the archive, because a DAT ROM named without an extension was taken for a converted format. Such ROMs are now original unless they are disks, the CHDs MAME lists, and a migration corrects those already imported
-- Fixed converting a Wii U title's folder to 7Z or ZIP writing the archive inside that folder; the archive now takes its place, and converting or exporting it back to ORIGINAL puts its files back in a folder of their own instead of next to it
-- Fixed `purge-roms -t` skipping the ROM directory's own `Trash`, where `import-roms -t` puts files that match no system
-- Fixed `import-dats` and `download-dats` dropping a system's custom name and extension when updating it
-- Fixed 7z extraction and rewrites holding entire entries in memory, which could run to gigabytes for a disc image
-- Fixed copying entries between ZIP archives panicking on an entry it could not read, and reporting success when the archive's central directory failed to write, leaving it corrupt
-- Fixed a 7z and a ZIP of the same name in one directory sharing a scratch file when both were rewritten at once
+- Fixed `rebuild-roms -f` skipping clones in sets already `NON_MERGED` or `FULL_NON_MERGED`
+- Fixed `rebuild-roms` computing completion with the strategy it rebuilt from
+- Fixed `rebuild-roms` leaving a parent's files in a clone's directory when another of the clone's files was missing
+- Fixed `rebuild-roms` exiting silently when there are no arcade systems
+- Fixed `import-dats` slowing down on DATs with ROMs shared by many machines, such as HBMAME's
+- Fixed commands printing nothing but fatal errors when stderr is not a terminal
+- Fixed web UI and MCP actions colliding when run at the same time; they now run one at a time, and a waiting MCP tool can be cancelled
+- Fixed hard disk CHDs failing with "Not a valid rdsk" unless they began with an Amiga Rigid Disk Block
+- Fixed the web UI's system deletion dialog saying files are left on disk; they move to `Trash`
+- Fixed `create-dats` reading each file once per checksum, and sometimes writing a truncated DAT
+- Fixed `import-roms` sometimes hashing a CIA's TMD before its certificates were written
+- Fixed `purge-systems`, `check-roms` and `import-dats` panicking when two games own a file of the same name in `Trash`
+- Fixed `import-roms` panicking when "None" is picked at the ROM prompt
+- Fixed `export-roms -f ORIGINAL` putting an arcade game's files next to their directory instead of in it
+- Fixed converting a Wii U title's folder to 7Z or ZIP leaving its extensionless contents out, and writing the archive inside the folder
+- Fixed `purge-roms -t` skipping the ROM directory's own `Trash`
+- Fixed `import-dats` and `download-dats` dropping a system's custom name and extension on update
+- Fixed 7z extraction and rewrites holding whole entries in memory
+- Fixed ZIP copies panicking on an unreadable entry and reporting success on a failed write
+- Fixed a 7z and a ZIP of the same name sharing a scratch file
 - The desktop app's Debian package no longer depends on `p7zip`
-- Fixed `download-dats` panicking when redump.org or No-Intro could not be reached, and silently doing nothing when No-Intro's profile could not be read
-- Fixed the MCP `download_dats` tool reporting every system as downloaded; it now lists each as imported, already up to date or failed, and its description says it imports
-- Fixed `import-roms -s` matching against every system when the name matched none, as after a typo; it now fails with "No matching system found"
-- Fixed `purge-systems` leaving behind the directories it emptied, such as an arcade game's directory of loose files
-- Fixed `rebuild-roms` and `check-roms` panicking on a loose file whose name has no extension, such as HBMAME's `yrw801-m` after importing a merged ZIP, or a Wii U title's contents
-- Fixed `rebuild-roms` leaving copies of a parent's files in a clone's directory when another of the clone's files was missing from its parent
-- Fixed `check-roms`, `convert-roms` and `export-roms` saying "No matching games found" when the games named with `-g` exist but are incomplete; they now say how many incomplete games match, as only complete ones are processed
-- Fixed `rebuild-roms` exiting silently when there are no arcade systems; it now says so
-- Fixed `sort-roms` ignoring `LANGUAGES` unless `DISCARD_RELEASES` or `DISCARD_FLAGS` was also set
-- Fixed the CHD hard disk and LaserDisc settings refusing to be unset back to auto, and `config -a` sorting the hard disk codecs instead of keeping their order
-- Fixed the commands printing nothing but a fatal error when stderr is not a terminal, as in a pipe, a log file or a service; they now print their usual lines there, without colours or progress bars
-- Fixed importing a malformed or homebrew CIA taking oxyROMon down with it: a container with a bad TMD, a missing certificate chain, or no title metadata at all (a SimpleCIA) is now reported, naming what is wrong
-- Fixed a `server` build after one with `SKIP_TRUNK=true` skipping trunk too, and embedding whatever web UI `target/assets` held; changing `SKIP_TRUNK` now reruns the build script
+- Fixed `download-dats` panicking when redump.org or No-Intro is unreachable
+- Fixed the MCP `download_dats` tool reporting every system as downloaded
+- Fixed `import-roms -s` matching every system when the name matches none
+- Fixed `purge-systems` leaving behind the directories it emptied
+- Fixed `rebuild-roms` and `check-roms` panicking on loose files without an extension
+- Fixed `check-roms`, `convert-roms` and `export-roms` saying "No matching games found" for incomplete games
+- Fixed `sort-roms` ignoring `LANGUAGES` unless `DISCARD_RELEASES` or `DISCARD_FLAGS` was set
+- Fixed the CHD hard disk and LaserDisc settings refusing to be unset, and `config -a` reordering hard disk codecs
+- Fixed malformed or homebrew CIAs crashing the import instead of being reported
+- Fixed a `server` build after one with `SKIP_TRUNK=true` skipping trunk too
 
 # 0.24.0
 

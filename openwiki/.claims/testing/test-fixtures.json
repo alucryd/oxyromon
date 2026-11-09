@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b98573f509054ffcca4fc837f753293abd31aef6cc8426732c9b70eda40f8dc9",
+  "pageVersion": "sha256:5a0561bdb9b15e331c39065df42e02cd6dd966e897840c393edb6ff3b0e82e32",
   "claims": [
     {
       "id": "claim_62e2eb596fd1472683dffa8d1316579b",
-      "statement": "tests/ is primarily a read-only fixture corpus (30 Logiqx DAT files plus the ROM, disc-image, archive, patch and header files they declare) consumed by the src/<module>/test_*.rs modules, and only tests/crates.rs and tests/mcp_stdio.rs are actual integration-test targets of the root package. crates/chd-rs/tests/ additionally reads the repository's CHD fixtures from ../../tests as its byte-comparison corpus.",
+      "statement": "tests/ is primarily a read-only fixture corpus (33 Logiqx DAT files plus the ROM, disc-image, archive, patch and header files they declare) consumed by the src/<module>/test_*.rs modules, and only tests/crates.rs, tests/mcp_stdio.rs, tests/plain_output.rs and tests/cli_output.rs are actual integration-test targets of the root package. crates/chd-rs/tests/ additionally reads the repository's CHD fixtures from ../../tests as its byte-comparison corpus.",
       "evidence": [
         {
           "resource": "repo://crates/chd-rs/tests/cli.rs#L14-L42",
@@ -15,16 +15,20 @@
           "version": "repo-lines-v1:sha256:3226201979a3742b9474d99709399a53a222c4a9ce78320b8ff7fa986ba62e40:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5NDVlOTdjMTBiMTE5YTgzNTU3NDk1ZTE5OWU4MjUzODY3MzczN2ZmMTdkYTQ0NjJhOGU1ZjE0ZDUwZTdjNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1MjQxYzRmYmQyMWQ3MGM2YjQyZDRiNjU2NDVmYzU4Y2Y5YjUxYTZhYzRhNGM4NzNhMThhZGNiYjVhMmUwYTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0M2M3YTBhNGZlYzcxN2U0MzVlOWQyMTdlMmFhMDJmZmJmNGQ3ZDJjYTI4YmI1MTY2MDI0Yzk3ZjBiZjExMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlNDlkNmY3Njc3ZDZiY2M4ODhhNWM3ZDQ2NzM5MmMxMjYzOTFmMTA3NTEyZTRmNTI3ZTFhZDMyYjAwNDAzOTQifQ"
         },
         {
-          "resource": "repo://tests/Test%20System%20(20200721).dat#L1-L64",
-          "version": "repo-lines-v1:sha256:2d2ceb0d954ba433ccbc4017ec2201afa9c7bbd9cc4bd2f5c48c33c4fdfa15bc:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNzdkNGEzZGFkYTk0MjFmYWU1ZjIzZWIyMTVlNTA3YjIxZjVjOTAwMjY1ZjY5ODJiNzY3YTgyMDQ5NmQwMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0OTkwMzQyMmE4MzBiMThmMDcyZWU5NWI4M2ZkMDEwNjhjOGViNGM1NjFhNDBmOTA4MTM2YjQ3ZjE0NGRiYjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://tests/cli_output.rs#L1-L19",
+          "version": "repo-lines-v1:sha256:001545a08afb0a11a1ebe3bc345ee5d5d7f9c081d19ffbb00cd14b5b97ff6c92:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3NmNkNDUxNDg3ZWQxYWNiZTg4YWExM2Q0MTU1MTVkODhkMjE4MGQ2NDgxNzAzYzY1MjU4NTI3YjgwYzMwNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://tests/crates.rs#L1-L19",
-          "version": "repo-lines-v1:sha256:fb405f23097fb316aef70ab5ad213f96b4de7b4a723b8ff36a0352feccf8bf41:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5YTY2MDgwMzhhM2M4N2U1YWU2YjQ0Mjg1MDQwNDk2YWM5NmQ5ODRmNzgwMDQ1YzVjYjY3ZDY3MDhlYTRmM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://tests/crates.rs#L1-L21",
+          "version": "repo-lines-v1:sha256:d3a37b4d57a8b30731b89b14f0cd3b5c5d2398d434884e8cf94d0a13d78de26e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5YTY2MDgwMzhhM2M4N2U1YWU2YjQ0Mjg1MDQwNDk2YWM5NmQ5ODRmNzgwMDQ1YzVjYjY3ZDY3MDhlYTRmM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiM2JmNWZlNWFjZjZlZmZiN2RiMmUxYjJhYmM2ZWZkZDFhMmJhYTZlOGQ2MjUyMDFlMzRhYmYwYjZlMWI3NDUifQ"
         },
         {
           "resource": "repo://tests/mcp_stdio.rs#L1-L10",
           "version": "repo-lines-v1:sha256:5c40cb765d74f4ed64ead91159055b6212ff9a9147ed06612a3f9dfc781c9134:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNDFjZDA4ZWU2NDNjODRhOGZlYWMzYzhiZWVjZGRkYTQ4NjMyNDg3YmI1YzM4ZjJkMWI1MzI0YmMwNWQxMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxNjI4NmE4YWUyMGZhYjUyMGMxM2UyOTliMTBhOThlN2M2MGJiNGIzZDIwZmVkOTI2MWI4ZDkyZTBmYWEyYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3YmQ3ZjE4MTFhMjVjOTQ5YzI1YWUxMDJkYjRjZDg3NjQyNzNkNmVkOTMzMzRkOTFkZGI1ZDQ1NDkzZWIxYTQifQ"
+        },
+        {
+          "resource": "repo://tests/plain_output.rs",
+          "version": "repo-file-v1:sha256:6053ccc3cf26b58cd3d823e1cabdfbe0aad2151f6fccbee3d60460fd40f9e489"
         }
       ]
     },
@@ -242,11 +246,11 @@
     },
     {
       "id": "claim_31bf6917aafd497f944e1a17cee08f50",
-      "statement": "tests/crates.rs is a workspace-level parity guard, not a behaviour test: its every_cli_shares_one_ui reads crates/xso-rs/src/bin/xsors/ui.rs and asserts the copies in chdrs, ciars, gdirs, nszrs, wuxrs, xdeltars and xpsrs are byte-identical, so changing one CLI shell without the other seven fails with \"<path> differs from xsors's ui.rs\" and all eight must always be edited together.",
+      "statement": "tests/crates.rs is a workspace-level parity guard, not a behaviour test: its every_cli_shares_one_ui reads crates/xso-rs/src/bin/xsors/ui.rs and asserts the copies in chdrs, ciars, gdirs, nszrs, rvzrs, wbfsrs, xdeltars, wuxrs and xpsrs are byte-identical, so changing one CLI shell without the other nine fails with \"<path> differs from xsors's ui.rs\" and all ten must always be edited together.",
       "evidence": [
         {
-          "resource": "repo://tests/crates.rs#L1-L19",
-          "version": "repo-lines-v1:sha256:fb405f23097fb316aef70ab5ad213f96b4de7b4a723b8ff36a0352feccf8bf41:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5YTY2MDgwMzhhM2M4N2U1YWU2YjQ0Mjg1MDQwNDk2YWM5NmQ5ODRmNzgwMDQ1YzVjYjY3ZDY3MDhlYTRmM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://tests/crates.rs#L1-L21",
+          "version": "repo-lines-v1:sha256:d3a37b4d57a8b30731b89b14f0cd3b5c5d2398d434884e8cf94d0a13d78de26e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5YTY2MDgwMzhhM2M4N2U1YWU2YjQ0Mjg1MDQwNDk2YWM5NmQ5ODRmNzgwMDQ1YzVjYjY3ZDY3MDhlYTRmM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiM2JmNWZlNWFjZjZlZmZiN2RiMmUxYjJhYmM2ZWZkZDFhMmJhYTZlOGQ2MjUyMDFlMzRhYmYwYjZlMWI3NDUifQ"
         }
       ]
     },
@@ -315,7 +319,7 @@
           "version": "repo-lines-v1:sha256:3e3018eb113b0339da492411c087811dfbb3566a0c3b9d84714418381fc82f7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0ZDU2NDJjZTIwOTUzYzAyMzc0OTc3NjAwNjk0MDkyNWRjZDUyMGU5YzIzMzk5ZDVhOWQ1NjBkYjg3MjJiNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwYjBlODVjZWE0NGU2MDhmN2MwMjE2ZjgwOGQ4NjdiNmFmMzhlYzQ4OWExMGE2YWYwNWZjYjg1NmM1YjI2OGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlNTdkM2MwNDgzYmQ5NDA2YWI3M2RmNmZhMzMxODcyYjM2ZjViOTI3YTJiNjU3MGMyMzc3MjAyMjZiOGVmOTYifQ"
         },
         {
-          "resource": "repo://src/mcp/read.rs#L146-L146",
+          "resource": "repo://src/mcp/read.rs#L134-L134",
           "version": "repo-lines-v1:sha256:f031f6196f0519455d76f2e8615ca8dfc54fc1a4fb368dc000fada851690874d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjAzMWY2MTk2ZjA1MTk0NTVkNzZmMmU4NjE1Y2E4ZGZjNTRmYzFhNGZiMzY4ZGMwMDBmYWRhODUxNjkwODc0ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjAzMWY2MTk2ZjA1MTk0NTVkNzZmMmU4NjE1Y2E4ZGZjNTRmYzFhNGZiMzY4ZGMwMDBmYWRhODUxNjkwODc0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmM2ZWUxNmNmOTQ4ODNhNjlmNDdiM2U0MTY2NzcyYmYwYzRiODZhOTVkYzAxYTQ4ZDViZjZmN2MzMTBkZDE3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGIzYmE5ODZiMjE4YmQ0OTNhNTEzYzQxNTIwNzZmNDhhY2RiY2EzY2MwMTc3NTM0NTM1NDFlNWVmNTg4NGIzOSJ9"
         },
         {
@@ -615,10 +619,24 @@
           "version": "repo-file-v1:sha256:8de4fef0fb5a0b366c4a4680fcb67fe649d87c54be162ef9a62d78d6316f012b"
         }
       ]
+    },
+    {
+      "id": "claim_87e72b1f92604291bfba0257ab5f974f",
+      "statement": "The GameCube and Wii test discs and the dolphin-tool lookup live once in crates/gcwii/tests/common/mod.rs, symlinked as tests/common into rvz-rs and wbfs-rs, and tests/crates.rs checks those symlinks resolve.",
+      "evidence": [
+        {
+          "resource": "repo://crates/gcwii/tests/common/mod.rs#L283-L291",
+          "version": "repo-lines-v1:sha256:004d71a0284becc5ca63cbb3fc44ac90b4abbac8fe8da81db490fa7758461c42:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODQxMzQxMmRhNjEyODYxY2QzMGMzMDgzNjRhZDUwZDg5ZWY1NTRiZThhNDYwMTIxNmIzMDM2YTc5YzU3Mjk3ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQ4ZmQxODAzMDhlYmUxYjZjOGVjNWZhODEwZDFmYjdmODY2NjU1ZDVlZTMxZDE2ZmU1MjAzYzFkNzMwZmE0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://tests/crates.rs#L23-L53",
+          "version": "repo-lines-v1:sha256:4af264a6e8441489ef4edc1a630d92019728d5097431fe80955d6d8b3a74eb1f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkOTQxZmQ1YWExOGQ3ODZjNGQzZDc2ODZjOTg3MDIwNmQzMzAxY2Y4OGE1Y2U0Y2E3NDFhOTJkZTkxY2EyMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmOWFkNDYzYmU3MWM1ZjQyMDk0NmFmYmYwN2QwZmU5ZjVmMTFkYTgyZjFlOTQ5MDNjYzMzOTVkOGMxYTBiMzgifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-05T21:35:44.503Z"
+    "at": "2026-11-09T21:55:13.223Z"
   }
 }

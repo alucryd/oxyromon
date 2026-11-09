@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:41a1cc7e3029bcd07f5586a30b94e05c8790e8c8bf6b87eb12f49686869502a3",
+  "pageVersion": "sha256:a63140faa69e23fed92157545a1da94cbe5ef5fc92538bbceeae250fc1d6cf0e",
   "claims": [
     {
       "id": "claim_1d69630e40104e7987b6990c779738e8",
@@ -47,7 +47,7 @@
       "statement": "The GraphQL Rom::ignored resolver derives whether a merged rom is needed from the system's merging value: always ignored under Split and Merged, ignored only when its parent rom belongs to a BIOS game under NonMerged, never ignored under FullNonMerged/FullMerged.",
       "evidence": [
         {
-          "resource": "repo://src/query.rs#L116-L153",
+          "resource": "repo://src/query.rs#L107-L144",
           "version": "repo-lines-v1:sha256:7820b0c2ab95260bb60bc21200302790fc554e9c6458f93df254aea0b5584990:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwMDRkZGQ3NDZkOTMzZmI0NzMwYmJiZTRhZTc4MDgzZDhmZDgwNzkyOGVjNGZmOTQ2ZDUyZGQzODQxYjYwYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViOWEwOGJjMjlmNmViZWJlOWE1ZjAxOTAzZDk4NDVkYmNiNTg0MmE0NTVmMDdkNWY0MDAyZGFjMzJhNWM2MDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwMzRmYWQxNGEwY2QzOTc0ZDliZWJlZGUxMzNhMzczNjE2NTU5ZGM4Y2NlNjIyY2QzMzliMTU2N2FlZWZlZjkifQ"
         }
       ]
@@ -108,11 +108,11 @@
     },
     {
       "id": "claim_f7a6d668dc7b428ba3e457e006f5b9b4",
-      "statement": "rebuild_system reaches MERGED through Split both ways: leaving Merged first unmerges every game and treats the stored strategy as Split, a Merged target is treated as Split for the expand-or-trim test and then merges every game. That test is two-branch on (stored, target): Split/NonMerged -> NonMerged/FullNonMerged expands, NonMerged/FullNonMerged -> Split/NonMerged trims, any other pair does no file work; both branches iterate find_full_games_by_system_id so Partial games are never expanded or trimmed, and --force bypasses the unchanged-strategy early return.",
+      "statement": "rebuild_system reaches MERGED through Split both ways: leaving Merged first unmerges every game and treats the stored strategy as Split, a Merged target is treated as Split and then merges every game. In between, it trims when the stored strategy differs from the target, is NonMerged or FullNonMerged, and the target is Split or NonMerged, and expands whenever the target is NonMerged or FullNonMerged; both steps iterate the games that hold all their own files, warn about the others, and --force bypasses the unchanged-strategy early return.",
       "evidence": [
         {
-          "resource": "repo://src/rebuild_roms.rs#L196-L258",
-          "version": "repo-lines-v1:sha256:0a28800649b6723390807d1f424b9009a31b25598fe13d2e561e88b373fb699b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkYjEwN2EyZGZlOGUxZTM5ZDY5MzI5MjAxMzFhNDAzMWFiNDMwNTAwYjJhMTA5OGY5ZjIwYjM0YTI2NTk5OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4ZGZlMjAzYjA3ZWU5MDljNzM1M2VhNTgxZjEwYzA5NzQ5ZDI1YzJlYjdiZDZhMGMwNDI1NWY2MTJhMzQwM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2MWJiNzcxODE3MGFjM2Q0YTdhNTUzZmYyMjI5ZDAzMjVjYjEwYjRhZDc1MGNjYTdjMWRmMWVjOGQyNDM3MWUifQ"
+          "resource": "repo://src/rebuild_roms.rs#L194-L264",
+          "version": "repo-lines-v1:sha256:271bb320ccc911cd7345168f3afc9305ed20933cb3c7000e887962e86f2322d6:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjOTk2YTU0NjU5YzE0NThlNGM4YmNkNDdhNThmY2U4NDlkZDYyYWZhM2NkZTUwODhkYTg2MzFiZjRiNWI2YmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YWI4YmM2MTg1MjQ3ZmRiNDk1YTMwYjk1NjE5YTAxZDQwNjUxN2QxZjFhYTM3YjcxOTc0Yzc3NDMwNWU3MjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViYTMxMWY3ZmJlMGMyNjZmNTc3Y2E0NThmZDNjZTAwNmM3ZGI3MjM4NjVhYWQ1ZTY5ZjllYzAyMzMzOTlmMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3MWE0Njk1OWY4YzNkYzBmNjBjZDVhYTg3M2IxNmQ2NWQ2ZjgyNmRkMmUxMmFiNDYyYzAwNTBmOWMzMmI0NDAifQ"
         }
       ]
     },
@@ -125,7 +125,7 @@
           "version": "repo-lines-v1:sha256:8da44cfffee45d0516abdbaa0b8c2cb90608e13e29187275fe696530357b6a83:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmODVhM2ZiOGUwMTYyNGFjYzY5YTMxYjQ2NDE1NTg0Y2JhMTgxNWYxMDA3MTg2ODg1YTA1MGIyYzY0NjQ4MjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkODlhZWIyNjliYzQ3OGM3Y2Q0ZWI0ZDUwZTAxMjdmOGM1MzhhNzk0ZDgxZDY2NmJhY2QwZTcyOWUxNDgzNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlNDkzNmU0MjRmMmQ2MGE0ZDQ3YTljZGMzYmJiODM2MDk2NDU2MTE5OWY1M2Y2ZGRhNTgwMWQ4NzRhMzhlNTAifQ"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L290-L299",
+          "resource": "repo://src/rebuild_roms.rs#L295-L304",
           "version": "repo-lines-v1:sha256:e71a3f449fac4f3a4a79cfad48fe3a831af93b4b6e26c38872e5320dfabff195:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMjU5MTBiODgxMThkYjRlYTlkN2NiYzA2YTA3YzY0YmNhMTVlODZkNWZkMmFiMmZjOTI2Y2E3OWNlNGViMzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3ZTQ4MTNiMDM4Mzk2ZWQyN2Y3M2VkMWQ2YzY4YTBhMzZmYmE3N2YyYzBjNmIyNTkzZmNiNDIzYjI3NGQ4NGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3NDA0NjI2OTY2OWU3OWI1N2QyNzRhN2VjMzYzMDAzZWJjMTVjMDY1MGY0ZTUwNmZmMjVhMDMyOTcwODc1MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4ZWI2ZDVmOGQyYjVhMzIxOTE4MmM4MzUzMDc4OGQ2MWI0ODZjZmIzMTMzOTU2NGE0NjhhYjA5MmQ4Yjk3MWYifQ"
         }
       ]
@@ -139,7 +139,7 @@
           "version": "repo-lines-v1:sha256:1ed0546a0d53a998de85e70ffe6904efa499e406cf1d1d7bbc62b9b953b6ecda:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyOTljZjNlZTIzMzBlMWI2OWNjYWZlZDZiODE1Mzg1OGZjYjFiM2I4OTJiNmY2MjM2M2RiMzFhNjA3N2QwYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4ZjBiMjdhNmFhNjFhNDYxZDY2NmIxNDg0OTE2Zjg2ZjEwZTY4YWQ0ZWMyYzk1NWI1ZDUyYmU0MmRkZTRiNzIifQ"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L379-L455",
+          "resource": "repo://src/rebuild_roms.rs#L384-L460",
           "version": "repo-lines-v1:sha256:458f6f4059ced0810bbd3ee407f76c4c5642161320bc2fb5f74c93fe9caed217:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4ZjA5MTZlZGYyYmVjMjM5OTg5YWMzZGEyNjVhYTlmMWVjZjNjNjk4NTY3ZGQzOTFkMDYyYmZhOTNkNTFmZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjMjJmYzliNjA2M2I3YmE3MWQxN2UyY2RlNzAzODdhMTM2MTUxZDk0MzJhM2FlNjZmOTgwZjhhZGE2OTg3ZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwNGVhOTUyOWE1NjI2NzRmNDcyNjMzY2MyYmU0ZTQwNGE4MjBiNGY2NjFiN2RlMzhhMzAwNGIyOWVkOTcwZjQifQ"
         },
         {
@@ -153,7 +153,7 @@
       "statement": "expand_game resolves every source rom in the parents before opening its transaction: if a merged rom's parent has no file, it prints Missing \"<rom>\" and returns Ok(()) with nothing copied, so the game's directory gains no stray copy and the rebuild continues with the next game rather than failing.",
       "evidence": [
         {
-          "resource": "repo://src/rebuild_roms.rs#L300-L330",
+          "resource": "repo://src/rebuild_roms.rs#L305-L335",
           "version": "repo-lines-v1:sha256:8a122f8dfe043dc2534eee9128a0b974e025a225438b4f27f78d5f714f96a361:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYmMyNDcwMTYzYTYwMGNkOGE0MTMzYWM2YTBlYTI0OTUyMGU0NzE4YjE0YWZkMzk2ZmI3OGJjZmQxMTkxZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2ZmFiYTQyMTNkNWY5OTlkMjEyM2M3Mjg5NmUyNWY1NDE2OTRmMDdmY2E5NDlkMDEzYTc0NDlhNzgwOTVkZmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2MjNkMTg4OTA3ZDFmNGJhMmNlMjQ4MWEyOWMyYTE2ZjIzYzcxOGZkNzcyMmJkNzZkYzhmYzE2OThlZGYzZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiZWM1OWEzM2U3OTU0ZWRlYWI1NWY2MmM1NWZiNmU0ZTQwZTRiZDQ4YWZkZmE4OGU3MTE3MzA2ZTZkMDlmNmEifQ"
         },
         {
@@ -175,7 +175,7 @@
           "version": "repo-lines-v1:sha256:757d03fbbb66bd6619395b08d29f3aa293dfa06040725ca0d9232575a057481d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxOTU1MDUyNjg3YTg4ZTMwY2ZkMzNiZTk2Yjk0ZTkyNDU0YjYyNzhlOWI3NGNmODNlN2VjNDlkZmNjYjI4NDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzYmQzNjYwNmJlMWZhOWM0MWViNWIwMTgwZGJkMGQ0MDFmM2FjZTIzODQ5NjQxYjQxNGYzOGIwYjA4ZDk0OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlNjdiZjBmYmExNTg2NDNkYzQ1MDNmMzdjYjEwNTcxMzVlZTM0ZjJmN2Y3MDEyMTk4ZGU5NDVjODc0M2Y2YTQifQ"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L341-L376",
+          "resource": "repo://src/rebuild_roms.rs#L346-L381",
           "version": "repo-lines-v1:sha256:dc0c06e96209cfa5a3ed41d2929be70cdade93f85f1cccad1a2e6b48b647c3bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2OGYwYzk5MTA5NGViODc4MmEyZWI4NjFjZTdjNjM2OGFkYmMwNjEwNTkxZDc0ZDNjMTZjMDI3NmI4NWVhMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4YTljOTU3NjNiNGY4ZmJmNDA4NGJkMTk0YzBjNGQ3NzNkMzUwNzY2NDZmMDgzM2U4OTNjYjQ3MjE5ZTI3MzAifQ"
         }
       ]
@@ -185,7 +185,7 @@
       "statement": "The merging transition matrix is pinned by in-module tests under src/rebuild_roms: those driven by the MAME Rebuild fixture (test_nothing_to_do, test_split_to_non_merged, test_split_to_full_non_merged, test_non_merged_to_split, test_full_non_merged_to_non_merged, test_split_to_non_merged_missing) and merged ones (test_split_to_merged, test_merged_to_non_merged, test_non_merged_to_merged, test_merged_loose_to_non_merged), all through the real subcommand matches.",
       "evidence": [
         {
-          "resource": "repo://src/rebuild_roms.rs#L734-L753",
+          "resource": "repo://src/rebuild_roms.rs#L741-L760",
           "version": "repo-lines-v1:sha256:32c634e97795d71cdeb15f0f82fc039b85cb3afae9a69b75921086a5b0a8374e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1Y2Y1ZmMyM2YyYTZkMjNjM2VhNTFlNzJmNWU4OTZjNzU1NWZiYWEwNWNkNWIxZWExODJiZjk2MThhOGU4MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiN2Y0ZWUyZjgxZmQ3YWI2ZGEwOThkYzAzNzU0NzRkMDc4MjcxNmU2NWZhMTNjNWQ2YWRkNjA5MzNlMDBkZjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhOWQ4NTIwMjE3MWMyYjA3MzgyMDIyMGZlNzM5YWYzOTA5OTU3NjY1ZThiZjUxYWJkY2I2NzBkODA4NjA4ZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
@@ -275,7 +275,7 @@
           "version": "repo-lines-v1:sha256:ac79eddb13ba2bc99b1108364ea17f821e2d329e8867f8a98767406ef1479c26:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiMmJkMTgwMzJhNDQ0ZjlmNTgxYjk4YzU4OTlhMDEzYWY5MjI2ZGM5NDQwZjRiOGVlMGZkNzczZjlkYzI5NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3OGZlNTBiZjA2ZGJlNGJmYzI3N2E1MmE5NjBiNDNlYmIwMzk5OTE5ZTE4OTk4Yzg4MmZhNzUzZjNlMzQ0OTAifQ"
         },
         {
-          "resource": "repo://src/database.rs#L3048-L3064",
+          "resource": "repo://src/database.rs#L3051-L3067",
           "version": "repo-lines-v1:sha256:3f2c872233927e85d68ecb699c049b480a3254d945d5b640095ba56b600750e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NjQzNjNkODAzZGFkNDAzZjQzOWUwNzEzN2RkMmE1ZGIwOThlNWNhZGQ0NjQzNGQ5Njc1ODc3ZmNmYmNjNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwNjNjNGQxYWY4Y2Q4OWJiMGJkZDc2NTdmZmNiZjY4MDZhNjEwZDc5ZDZjOGQ0YzMwN2MyNDFkZjM5MDA1MjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyMTNkNGE4ZWZmMmM4ZGQ1OTM4YzQ3YzgyZDBkYjdhZThmYzkzNGRhMTlmY2JhM2NjZTJjNDkzYzg0NTJlMmYifQ"
         },
         {
@@ -357,7 +357,7 @@
           "version": "repo-lines-v1:sha256:d9784f27184ed6e6031fcefbaf6761f80871862ee74b44ecb8c05e04024c0a6e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NTQwYzQ1NmFkOTEyNzU3NmZhYzU0YWJiMjAyYTQ2NTc3ZTQyMGJlNTYwMDQzNWY2ZGVlZGNhZmYxMTc4OWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3NjBkYTI1YWYwZjUxYjc1MDk1YTI3Y2YwNDg5NWUzYjAwZjNjMGEzNDQyOWExNjRmYzYxMzlkOGE0ZTkzZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyZDI1YWFmZWNhMDQ2NjhmZjVmOGYxMWZkN2I4YmViZDJhNzMzYTQzMjVhYzY3MDI0ZWJlZmI1ODQ3Njk2YTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkNDk5NDdmODc1ZmE3YjM0Y2M2ODVjNmE4YzIwMWM0OTc5OTIzZTU3ODAwNzgxNmNiMmNjMWIxMjAxMmYyOTEifQ"
         },
         {
-          "resource": "repo://src/database.rs#L2902-L2930",
+          "resource": "repo://src/database.rs#L2905-L2933",
           "version": "repo-lines-v1:sha256:bbe68668a30ceb4c01d2c4940d7d8f20f763a020d42b7bee6d1a5b0529f3ea67:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxOTYzYTc0OWJlN2ViNTk4Y2QwMTZiZjM5Mzk4Y2RmOGZlNzZhMThlOGVjZWMzZDQ0Y2YzYjk5ODcyMGU2M2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1NTgxNjE4NTA2MDZlNzdmYmViNTM1YTI2ZjA1YmNiZDFkOTRhZDdiMjY1ZDhjODZhZjNjOGMwMWY2MTY5M2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhNzU3YTEyMWRiZjczMTU2MjY3NGRmYzBmNDQ3NTg3Y2UyYjUxNTgxYjdmYjgyNGQxMGEwOGQxNDE0NDNlYWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhNzU3YTEyMWRiZjczMTU2MjY3NGRmYzBmNDQ3NTg3Y2UyYjUxNTgxYjdmYjgyNGQxMGEwOGQxNDE0NDNlYWUifQ"
         },
         {
@@ -397,7 +397,7 @@
       "statement": "Playlist rows are protected from cleanup: find_orphan_romfiles excludes any romfile referenced by games.playlist_id, so purge-roms --orphan cannot delete an M3U that has no roms pointing at it.",
       "evidence": [
         {
-          "resource": "repo://src/database.rs#L2953-L2975",
+          "resource": "repo://src/database.rs#L2956-L2978",
           "version": "repo-lines-v1:sha256:e71ae82debf17c3fe99783c257ce84b1abc35d15cabfbcc93559bce81830e208:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5YTU0ZWYyZWQ4MWQwNTY4YmU5ODJhMTQ2ZjNiNzQxNDA5NzEzNmZiZjU4OTYyZjc2NTU1MDNkY2Y0NDc4YjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0MTEzMmE3MGVmNmU3NzMyZjJhODc5ZTY0MGE0NzFhZDAwODE0YjI5YzhhMmY1YTk1YzA2NzQ4ZWRiNTc4OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhNzBhMzU3MGVjNWMwMjkxMzA0Y2QxOWRhNDY5Mjg3MDMxMWZiODVmNGRkN2U0YzNhMTU2NDFhN2E4OTExZjMifQ"
         },
         {
@@ -415,7 +415,7 @@
           "version": "repo-lines-v1:sha256:c4467afd8c03d927a6c791399fad986d9a55fb3ec1bccf224cfdc5218a5529a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMmY0YmU1ZDgyMjE0M2VlNGYzMWExNzAwODAwN2U3MWZjODY3NmE4MGVjNzlhMmI2ZDJlN2FkNDQ1NzEwNjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwMGU5ODhhNjUyODU2ZmI4Y2RhMDlmZjQxZTQwNzkyYTU2YjBiMWExZDMwZGJiZDg4NjAwYzljOWIwN2RlNjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyZTFiZmU3YWI5ZjRlZTliZmMzODA5Mjc2ZWVlMDIxYTVkNTQ0Y2IyM2U1Zjg5OTZkNjg2MTIzOTVjOWYyM2UifQ"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L275-L290",
+          "resource": "repo://src/rebuild_roms.rs#L280-L295",
           "version": "repo-lines-v1:sha256:f91ded0d079cf12a1ddc7738988198de34401761918e250c2ba38a0d331d8923:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiMGZjZWI2YzJlYTA4MzI5YjRmZDljNzkyZGM0YTRjNDgzNGI3ZTYzZTU5M2JmNjhjZDM1NWQ0ZTRiZjBhYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMjU5MTBiODgxMThkYjRlYTlkN2NiYzA2YTA3YzY0YmNhMTVlODZkNWZkMmFiMmZjOTI2Y2E3OWNlNGViMzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0ODhjMGQwM2QyYmRhZjE2NGU3YTMwZDQwMDQ2NzIxMzY5MGY5YTdjY2Q2YjA2MWU3YzEwZmNkMzc2ZDc4MmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1MjA3MzJhNWYwMTFjNzRkMTE4Njc5NGFjYzhhNDU5ZjI4MDEwMDQwM2E2YzVhYTE0Mjg5YzdhNDc1NzNiNDAifQ"
         }
       ]
@@ -436,15 +436,15 @@
     },
     {
       "id": "claim_0b989f8f26c8417abee58c1017560db5",
-      "statement": "generate-playlists is not re-run automatically after format conversion: sort-roms relocates playlists with the games, but after convert-roms the command must be run again to reflect new filenames, and a rebuild only expands or trims games that are Full under the currently stored strategy, so incomplete BIOS sets leave clones Partial until a second rebuild.",
+      "statement": "generate-playlists is not re-run automatically after format conversion: sort-roms relocates playlists with the games, but after convert-roms the command must be run again to reflect new filenames; and a rebuild only expands or trims games holding all their own files, so incomplete BIOS sets leave clones Partial until a later rebuild.",
       "evidence": [
         {
           "resource": "repo://README.md#L743-L756",
-          "version": "repo-lines-v1:sha256:18bb4f63777d6983dcf2c10133861a281d5695b7b877f260c99d070963d84543:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MDQ2ZGU2NWU4MTc3NzQyOWU4MmQ5MjExNjkzNTk3MTI3MjRmMzQ3ZjRlNTA2ZjYzNGE1YzMyYzE3MmYwYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyMzkxMzliMjBhZjdlN2FlZDU3YTY4OTMyMWFkZjNmMTQ3NzY0M2EzMmExNjhjNWVmM2UwYmNlOTE2NmJlNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiNWM2ODAwZWM0YmNiYjNiZDZiNGQwMjhlYjc3NzkxM2YzZjg3M2IxNmE4NDM0NjZmZjg4MjdjNjRjYzM0ZGQifQ"
+          "version": "repo-lines-v1:sha256:e8dfb7c30ddd97c3859a8d1c36329519a5a57081116fee03070ea926747232de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlNzNiOTE4MjIxN2RkZjk0ZTVhYzQ2OTM1ODAxMTk3OWZjMDNmZjA5MTVmOGU0NmMxZTM3ZmUwM2ZhMzU2YTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5NGMyNmM2ZjQ5MTA4MjYzNWJiMDdhMTQ1YmY1NTI2MzM2MzUyNjJiZjAyMGE1MmRhYmRkNTIyNmY2ZWRmY2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4NDhkOWQ2OGIwNzk0YjYyMGEyMDlkZTU0MDY1MGViNmI3OGY1NGM3NzM0ZDAyOTczZWZhMDljZmIzYzAyNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlNjVjZDE0YmI4YjRkNTQxNjlhNDIwNmZiY2JjMTM4NGYyNjBlMWM4MDA3NTE5MTU4M2JlNTFjZmM4YzNkMjMifQ"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L201-L239",
-          "version": "repo-lines-v1:sha256:5a459fa0096199b103a0f1c2e953490794889895ac77c0f148b5501d93350c3b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OWNkNzBhYTk2YTJmYTBiOWFhZDU0MjZkYmJmNGRlZjcwMGEzYTBhZTZiNmMzMWI0Y2I4Zjg3YTIyY2U3OTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzNjEzOTdhOWM1ZWZlMjg4ZWNiZjhmYWE0YTAyNDRmNzQ3ZDgwODZhYmVlZWE4NjBmYzgyNDYyZmRkODNlNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkZDhkNDZlZGMzODZmZjFlZmZiMjA1ODVjZTkyOGVmNDU3ODM0ZmMyMDQ3NTZhYzQzMjhiNDg5YjQ0NjU3YjEifQ"
+          "resource": "repo://src/rebuild_roms.rs#L201-L245",
+          "version": "repo-lines-v1:sha256:b6750bcc9c8a733c6887fe0a3dc9bb9a4504864191966b75fbc3ac5bd4ddecdd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlMzE4ZjlkYjE4N2YwNDNmOTdhNjQyOWJlZDJkMGRiYWZlZDJjMzUyOTk0OTlhOWJmMDUwZjFmMDM4MDQ0ZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzNjEzOTdhOWM1ZWZlMjg4ZWNiZjhmYWE0YTAyNDRmNzQ3ZDgwODZhYmVlZWE4NjBmYzgyNDYyZmRkODNlNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2ZGRkODQ2NWY4NmQ4ZGY1YzJhMGM2NWQ2MTc1ZmJjZTUxMmNmYTA5ZjJiMDQyNDg4ZDFkYjhjYzJlZjE3NWYifQ"
         }
       ]
     },
@@ -509,11 +509,11 @@
       "statement": "merge_game moves a clone's own ZIP-stored roms into its parent's ZIP: an entry with the same name and CRC is reused, a same-name entry with another CRC sends the rom under `<clone>/<name>`, otherwise the entry is raw-copied; disk roms stay put, and a clone with any non-ZIP source is left untouched and counted, rebuild_system then warning how many clones to convert to ZIP.",
       "evidence": [
         {
-          "resource": "repo://src/rebuild_roms.rs#L241-L257",
+          "resource": "repo://src/rebuild_roms.rs#L246-L262",
           "version": "repo-lines-v1:sha256:53b6f0ca063adb6e056521bcc8ce0a3b54717b1b128b6ed36ff5df958c7a520d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZjgxNWExMjJiNzU3MjZkMGUyN2Q3ZTNjZjVkNTEyOTNkYjlmZjQ1NzIxZjVjNzRlNTI0ODllN2E3MjYzMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5OWJkZWZlZWFjYTYzNDBlMDI5MGRjODZlODg5Yzg5ZDVlMTg5YWE1YmE0NGI1ODViM2I3MDczNGY0YTYyZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4YzVkM2JmODg2MWE2ZWFjNTdiNDUyNmQ5ZDBkZWExODBmZTZmODk0NmFmODgwNDBlZDljZjk5ZTMxYTRiZmUifQ"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L488-L607",
+          "resource": "repo://src/rebuild_roms.rs#L493-L612",
           "version": "repo-lines-v1:sha256:54f4e9aa0e9987cc54403827e9bffd6b40662177dc9d2a1aafe7369745158c34:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2Y2JjYzkxNWMxYmE2YWFiYmU1NmJmNDg0NGU5YzFkN2FhZDNjMDFkNGExNDQ4MWM3MGRkNjZhMjZiYTkxOGYyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhNjAxNzUwNmJmZWRmOTJiZWY4ZGQ1ZWIwMzFiZDA1OTEzODg3ZjlmNDZkZjdjNTU0Y2UzY2NhMWQwYTQwYzMyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2Mzg1OWM4YzlhYWZiNGFhZWZjMjZmZWUzMTZjZGJlNmI0MjhmNTY1ZDk1ZTE4ZjgyZGY3NWIxZjUxOTc2MGIyIn0"
         }
       ]
@@ -523,7 +523,7 @@
       "statement": "prune_archive deletes the entries of an archive no linked rom resolves to any more, and the archive file and its romfile row once no rom is linked to it, so a file shared by sibling clones stays in the parent's ZIP until the last of them is unmerged.",
       "evidence": [
         {
-          "resource": "repo://src/rebuild_roms.rs#L609-L702",
+          "resource": "repo://src/rebuild_roms.rs#L614-L707",
           "version": "repo-lines-v1:sha256:d884ec216f884fca9b7d20a90d2148ed3ad10a46da342ad22db8ea5b081dd12d:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmMzkxOWJlZTRjZWRhZjA0M2JhOWYxMTA0MDc3M2M2M2UwY2ZkMTdlY2FiNWUxMWNlNTg5ZTMxNzU2ZmE0NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZGU3NjNlOGYwODJkYTk4Y2Y2N2RkYTcxNjk0ZDFjZTQxODJjNmYxNmQzYmJkNjFhNTY3N2JhNDExZDI3ZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4OTEyY2YzY2JiYTY2YTJlOTZiYWQyMTBiNGIzMGYzNzYyMjMyNjc3NGIzZDg5Nzc3ZWM1ZDgzM2FhZWM2OTgifQ"
         }
       ]
@@ -533,11 +533,11 @@
       "statement": "Merge copies happen outside the database transaction, so a failed merge can leave unrecorded copies in the parent's ZIP; rerunning converges because an entry with the same name and CRC is reused rather than copied again.",
       "evidence": [
         {
-          "resource": "repo://src/rebuild_roms.rs#L488-L496",
+          "resource": "repo://src/rebuild_roms.rs#L493-L501",
           "version": "repo-lines-v1:sha256:22ff0fca8108957e9ce914f87fdfdce7b1346bf0197fbfb004b00f786e0d3de1:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmNiY2M5MTVjMWJhNmFhYmJlNTZiZjQ4NDRlOWMxZDdhYWQzYzAxZDRhMTQ0ODFjNzBkZDY2YTI2YmE5MThmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWEyMGJiZDgwZjk1M2U2MzVmNjc5NjY2OWJhN2JiOTc4NmIzYjUyZjAwNTQ5MmU1ODRiMjA4Njk5ZjA1NzNlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTYwMTc1MDZiZmVkZjkyYmVmOGRkNWViMDMxYmQwNTkxMzg4N2Y5ZjQ2ZGY3YzU1NGNlM2NjYTFkMGE0MGMzMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGNjOTk2ZWM2ODQ2YThlZWQxNDJjMDBhYjYxNzBmMTYxNTBkYzhhOTdjYmM3ZDA1NThkYWVlZTcxMTY2MDJhNCJ9"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L548-L593",
+          "resource": "repo://src/rebuild_roms.rs#L553-L598",
           "version": "repo-lines-v1:sha256:b23fabb9de93889f19360b8ea4a026bb9ea7191c2c8317f72032e57ec46816d6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0OTkzMWY4NGExYjQ3NzY3MThjN2YwNzRhNjQ5MGRiODk0YWQyZmE1YWM5YWRkY2JiOWNmODg2YTg2MTAxNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzMDBmYWIzNjZlMDQwZTcyOTM3YTI5ZTAxZmU3MGM3M2YwNThhZmJiNTRlM2UzYjY3Y2RjNmM2ZDVjY2U2NmUifQ"
         }
       ]
@@ -547,7 +547,7 @@
       "statement": "After recording the new strategy, rebuild_system re-reads the system row before compute_system_completion, so completion follows the strategy it rebuilt to rather than the one it rebuilt from.",
       "evidence": [
         {
-          "resource": "repo://src/rebuild_roms.rs#L259-L264",
+          "resource": "repo://src/rebuild_roms.rs#L264-L269",
           "version": "repo-lines-v1:sha256:868deb99c13ccae322f49b3b608a80126888a9b8c508ebf06db93e337cacf023:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzZhYjhiYzYxODUyNDdmZGI0OTVhMzBiOTU2MTlhMDFkNDA2NTE3ZDFmMWFhMzdiNzE5NzRjNzc0MzA1ZTcyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg5NzcxZmUxYjY2Mjg4NzVhYTIzZTdkYmU0YWE3MTQ2MWQwMGNkZmI2NmRkZjExYjlkODIwYWM1ODk3ZmRmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTk5YmRlZmVlYWNhNjM0MGUwMjkwZGM4NmU4ODljODlkNWUxODlhYTViYTQ0YjU4NWIzYjcwNzM0ZjRhNjJkOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWExMDljMzQ4NDljZWQ4MjlkYTc1OWU4YjkxYWQ1OTc0YmEzNDcyNzIwNzQ1ZTExYzM4NDJjM2FkMDM0ZGM2ZSJ9"
         }
       ]
@@ -567,11 +567,11 @@
       "statement": "add_rom compares a source file's extension as an Option, so a loose file with no extension, such as HBMAME's yrw801-m after a merged ZIP's import, takes the file path instead of panicking.",
       "evidence": [
         {
-          "resource": "repo://src/rebuild_roms.rs#L394-L396",
+          "resource": "repo://src/rebuild_roms.rs#L399-L401",
           "version": "repo-lines-v1:sha256:7fe9fdd4e7881240facc7173d6338c9398ccb6c659e1831b57dcd96257ecf936:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDE4ODU3ZWU1OWIyMDY4ZTliOTJlN2ZiNGZiMzVhYzQyMTRmM2ZmNWI2OTFmOGVlN2FlZTk2MmQxZGIzMGE3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE5M2ViYzUzMjBlODI2ZDFkMDNjMjg2NzdjNzc0NTQ5NWY2MmQzMTQyOGU3ODFhYTQ4Mzk5M2Q4MmNkMDY4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODg2YWE0Mzg1YTkxYzU0ZmRkYzFiMDg0NzhiM2Q5NjNjYmQ5NjIzOTg0YzYzYjI5Mzk0MTYxM2U1YjM5NjU1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzhmNDhhNjI4OTg1ZGI2MzE0OWZlMTA1N2E1ZTU2MzJhNmQzMDZmZWM2NjBjNGEyZWMyM2Y2YTljMjI5NjVmOSJ9"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L430-L432",
+          "resource": "repo://src/rebuild_roms.rs#L435-L437",
           "version": "repo-lines-v1:sha256:dec4a34a4995a961e9d1861e654529487b3884e5b29972b219564430e91209b5:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTE5YmUxMzZkZjZkNjE4YWJmNDYyYWE4ZTBlM2M5ODE4OTEzNjU3MDZlMDZhNWUwN2JhMDQxNzc5MDIxNTBjZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmU0OWNhYzlhY2I0ZjNmZGQzOGFkMDdhOWJhNmFkM2JkMmI5NmY4MzA1ZTI3Y2Q3ZWMwMTJiMWEyYzRiZTk5OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTNlMDE5ZDg4MmY4ZmRjYTM0MTEwNzkwNDY1YTUyZGYwOGQ3ZGMxZTMyMGYzNzA1NzJlYWMxMDE2ZWIwZmMzNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzM1YmExYzJkZjJmODFiMGQ2ZjA0YzNiZmNhZjM5YTcyMTU0M2MxZmY5MDU3YjU3ODcwZGJlNWI2N2NkOTJjYiJ9"
         },
         {
@@ -593,10 +593,28 @@
           "version": "repo-lines-v1:sha256:92cf8e620caf8b84f18707bf244157dd1ea29e20bf563db5d9cac2e8f2f4f1f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjYjM3MzE0MWU1YzhiZjliODc2MTMxYzdjYWMwOTMwZjEyZWJlMTA4NzA4NTNjMTIxN2U4Y2YzZDYzNmQyMWZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
+    },
+    {
+      "id": "claim_75ef9624418f4f1b85c0c885298c16d0",
+      "statement": "Before expanding or trimming, rebuild_system recomputes every game's completion from its own roms only (update_split_games_completion_by_system_id, parent_id IS NULL), so a clone imported into an already non-merged set still gets its parent's files on `rebuild-roms -f`; test_already_rebuilt covers NonMerged and FullNonMerged sets.",
+      "evidence": [
+        {
+          "resource": "repo://src/database.rs#L493-L520",
+          "version": "repo-lines-v1:sha256:d85b019aa35165b61951b893e1fbeef84501e476bcd4c025b1a93ea06241a687:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmNGJiOTlmNWJjNjYwMzc1NDJkYmZjZDM1ODY0MTZlYWNjOWU3MGRiNTU2NDk4YTg5ZmIwMWE0NzhmN2MxZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YmVkOTc5YmZhMmEwOWZiY2IxMjdkOGJmOWNiZWExMmE0ODAyM2E5MDQyOWY1YTk5Y2ZjMGM3ODVkNDNjZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1YmE0NzY3YTBkNTYwZDUyMGZkNzJiNDMxNDgzMGZjZmVjNzA1MTExMzZkOWRhNjRlMGZiYjgyNTg5NTU0ODAifQ"
+        },
+        {
+          "resource": "repo://src/rebuild_roms.rs#L200-L205",
+          "version": "repo-lines-v1:sha256:c1c15f26fc13f5c10ef719109c211ae5d84b5a7a4240fdc0a095f804b332dac5:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg5Y2Q3MGFhOTZhMmZhMGI5YWFkNTQyNmRiYmY0ZGVmNzAwYTNhMGFlNmI2YzMxYjRjYjhmODdhMjJjZTc5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzE4NWFhNmZiZDUyMTI4NTFhNThmMGFiZTgxZTU1ZWIyZjQ4ZGY1YjUwNjk2YjdjZWU5ZWYxMjNlNTVlZTZiNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmFjNjZhNGU3YzY5NjFkYjZlOTQyODgwYjM0MWYyMjI2MTk3OGQ3NWUwZjNjZWE1YzNjZDU0MDQ5NTFmY2YxMCJ9"
+        },
+        {
+          "resource": "repo://src/rebuild_roms/test_already_rebuilt.rs#L1-L120",
+          "version": "repo-lines-v1:sha256:47663f41a2413d75a10b06444e424c1ed6617d0ef52127f573df3f75264516ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlMGUzMDkwMWFkNDE3MWNiY2FhOGZmYzljNDY2MDE5YjQ4MTRmY2E5MzAwNTllOGYyZDAwNmEwMWQxZGFlZTZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-05T21:35:44.503Z"
+    "at": "2026-11-09T21:55:13.223Z"
   }
 }

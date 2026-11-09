@@ -10,12 +10,6 @@ sources:
     resource: repo://AGENTS.md
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
-  - id: openwiki-source-02628a361dd4faa0f62f87a2
-    resource: repo://src/archive.rs
-  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
-    resource: repo://src/chd.rs
-  - id: openwiki-source-db15f8427180aeec55b3a076
-    resource: repo://src/cia.rs
   - id: openwiki-source-10fddfccad5d7bf89d675953
     resource: repo://src/convert_roms.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
@@ -62,10 +56,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # MCP Server: Tools, Resources and Prompts
@@ -148,9 +142,10 @@ annotated `read_only_hint = true`, take a pooled connection per call and never
 touch the write lock — `parse_game_name` being the one that needs no connection at
 all. `status` and the `oxyromon://status` resource
 share `build_status`, which reports version, `read_only`, ROM/tmp directories,
-three counts and the same alphabetized dependency list `oxyromon info` prints —
-nine groups (`sevenz-rust2`, `chd-rs`, `cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`,
-`xdelta-rs`, `wux-rs`, `nod`). Every one of them is a linked crate whose `get_version()`
+three counts and the same alphabetized dependency list `oxyromon info` prints,
+taken from `info::dependencies()` — ten entries (`sevenz-rust2`, `chd-rs`,
+`cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `wux-rs`, `rvz-rs`,
+`wbfs-rs`). Every one of them is a linked crate whose `get_version()`
 returns the literal `"built-in"`, so none can come back missing or report
 `version: null`; `cia-rs` replaced `ctrtool`, the last optional external program,
 and the tool's description now speaks of format backends rather than external

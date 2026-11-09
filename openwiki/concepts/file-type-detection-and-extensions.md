@@ -65,7 +65,7 @@ sources:
 generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # File Type Detection and Extension Constants
