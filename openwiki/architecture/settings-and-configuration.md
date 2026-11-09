@@ -14,6 +14,8 @@ sources:
     resource: repo://crates/chd-rs/src/ld.rs
   - id: openwiki-source-84d75d6d1e1e60c51643c99f
     resource: repo://crates/chd-rs/src/writer.rs
+  - id: openwiki-source-507e22a3e1801299fc6560b5
+    resource: repo://crates/rvz-rs/src/compression.rs
   - id: openwiki-source-2d75c6f9d7c9aa4292af3447
     resource: repo://frontend/src/api.rs
   - id: openwiki-source-09f0260084265b9e66fa1efc
@@ -100,10 +102,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
-generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # Settings and Configuration Model
@@ -420,7 +422,7 @@ Validation therefore cannot drift from what the writers accept, and a format
 module changing its range or its enum changes what `config --set` / `--add` will
 accept. Note that these keys tune an *in-process library call*, not a subprocess:
 CHD comes from the in-workspace `chd-rs` crate (`crates/chd-rs`), 7z and ZIP from
-`sevenz-rust2` and `zip`, RVZ and WBFS from `nod`, so CHD has **no external
+`sevenz-rust2` and `zip`, RVZ from `rvz-rs` and WBFS from `wbfs-rs`, so CHD has **no external
 dependency** and there is no tool-path or tool-version setting anywhere — `PATHS`
 holds only `ROM_DIRECTORY` and `TMP_DIRECTORY`, and `info` reports `chd-rs` as
 `built-in`. The `sevenz` and `nod` Cargo features that once gated the external
@@ -437,11 +439,14 @@ records, so the HD and LD tuning keys and `CHD_PARENTS` itself affect
 (algorithm, level, zstd-level) key triple and produces an `ArchiveCompression`
 that carries the level on the chosen algorithm's own scale. The consumers apply
 the units and per-algorithm limits the setting layer deliberately does not:
-`rvz.rs` multiplies `RVZ_BLOCK_SIZE` by 1024 because nod wants bytes, clamps the
-level with `level.clamp(1, 9)` for bzip2/lzma/lzma2 and `clamp(1, 22)` for zstd
-(the `integer_range` entry is the union 1..22). There is no scrub setting: nod
-scrubs only CISO and WBFS output, so `RVZ_SCRUB` was removed, and a migration
-deletes the stored value.
+`rvz.rs::options` multiplies `RVZ_BLOCK_SIZE` by 1024 because rvz-rs wants a
+chunk size in bytes, and clamps the level to the chosen codec's own
+`Compression::levels()` — 1..9 for bzip2/lzma/lzma2, 1..22 for zstd, 0 for none
+(the `integer_range` entry is the union 1..22) — so an existing configuration
+keeps working instead of failing the conversion. There is no scrub setting:
+oxyromon always passes `scrub: false`, as a scrubbed RVZ no longer holds the
+original disc, so `RVZ_SCRUB` was removed and a migration deletes the stored
+value; WBFS, which is scrubbed by nature, is an export format only.
 
 CHD tuning is resolved inside `chd.rs::create_chd` as arguments to the `chd-rs`
 writer, not on a command line. An empty algorithm list is not "no compression":

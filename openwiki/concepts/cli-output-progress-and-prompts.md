@@ -20,8 +20,6 @@ sources:
     resource: repo://src/download_dats.rs
   - id: openwiki-source-bfaccf08e532321769e4b6b5
     resource: repo://src/export_roms.rs
-  - id: openwiki-source-7a3d5614c68ed1a3729171e7
-    resource: repo://src/gdi.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
     resource: repo://src/import_dats.rs
   - id: openwiki-source-d079c81879111b8d75173838
@@ -46,8 +44,6 @@ sources:
     resource: repo://src/mcp/write.rs
   - id: openwiki-source-528b2bf14ffa06b3842b8c96
     resource: repo://src/mutation.rs
-  - id: openwiki-source-d3402490d16a663b822e8a00
-    resource: repo://src/nsz.rs
   - id: openwiki-source-6330834d320d84b814c24c5f
     resource: repo://src/progress.rs
   - id: openwiki-source-fcdf0f9c4361c1ee384f2689
@@ -68,22 +64,20 @@ sources:
     resource: repo://src/server.rs
   - id: openwiki-source-0a9271029eb893aacec54c15
     resource: repo://src/sort_roms.rs
-  - id: openwiki-source-66dda2cecfc81c486446cc8e
-    resource: repo://src/util.rs
-  - id: openwiki-source-1c38b81542bfb683299ad2cd
-    resource: repo://src/xdelta.rs
-  - id: openwiki-source-9b5bca3734529131a5ec0d1b
-    resource: repo://src/xps.rs
+  - id: openwiki-source-856ac41ecb89a38b80d7e895
+    resource: repo://src/wbfs.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
+  - id: openwiki-source-d3ba64341f3a424837662eeb
+    resource: repo://tests/cli_output.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
   - id: openwiki-source-4090e615029907c2fb175f07
     resource: repo://tests/plain_output.rs
-generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # Progress Bars, Categorized Output and Prompts
@@ -129,7 +123,7 @@ chars:
 | --- | --- | --- |
 | `get_none_progress_style()` | spinner + `wide_msg`, no bar | default for every bar; `start_action` restores it |
 | `get_count_progress_style()` | spinner + msg, then `pos/len [bar] speed elapsed (ETA)` | `import_dats`, which counts catalog rows |
-| `get_bytes_progress_style()` | same, with `bytes/total_bytes` | `run_blocking`, plus the paths that drive `spawn_blocking` themselves: hashing in `common.rs`, CUE/BIN extraction in `iso.rs`, and `nod` reads and writes in `rvz.rs` |
+| `get_bytes_progress_style()` | same, with `bytes/total_bytes` | `run_blocking`, plus the paths that drive `spawn_blocking` themselves: hashing in `common.rs`, CUE/BIN extraction in `iso.rs`, and hashing an RVZ through rvz-rs's `Reader` in `rvz.rs` |
 
 `start_action(bar, Some(msg))` sets the message, forces the none style and
 starts a 100 ms steady tick, giving an animated "spinner + what we are doing"
@@ -158,8 +152,8 @@ task that panics surfaces as `"Conversion task failed"` from the `JoinError`,
 distinct from the crate's own error, which is mapped with
 `anyhow::Error::from`.
 
-Callers: `chd` (both `create_chd` and `extract_chd`), `gdi`, `nsz`, `xdelta`,
-`xps` and `xso`. CHD is the main path this replaced: through 0.24 the format
+Callers: `chd` (both `create_chd` and `extract_chd`), `cia`, `gdi`, `nsz`,
+`rvz` (compressing and decompressing), `wbfs`, `wux`, `xdelta`, `xps` and `xso`. CHD is the main path this replaced: through 0.24 the format
 module shelled out to the external `chdman` binary, whose stdout gave no
 measurable progress, so the only thing to draw was a spinner. Now
 `src/chd.rs` sizes the bar itself — `chd_rs::cd_input_size(&input)` for a CUE's
@@ -169,9 +163,13 @@ it consumes into `bar.inc(n)` ([chd.rs](../../src/chd.rs#L734-L788)). `cia`,
 which ran `ctrtool` and drew only the spinner, now runs `cia-rs` through
 `run_blocking` too, so CIA parsing and unpacking report real byte progress, and
 no subprocess-backed spinner-only path remains. `archive` is in-process too but edits
-archive entries rather than streaming a byte count. `rvz`/`wbfs` drive `nod` on
-`spawn_blocking` directly because that crate exposes a `Read`er and a
-writer callback rather than a bytes-consumed closure.
+archive entries rather than streaming a byte count. Hashing an RVZ is the one
+format path that calls `spawn_blocking` itself: it opens an `rvz_rs::Reader`,
+sizes the bar to the disc's size rather than the file's, and feeds the reader to
+the digest, so no ISO is written out. Exporting an RVZ to WBFS goes through
+`run_blocking` with the RVZ's size as the length, but wbfs-rs counts the disc's
+bytes, so `wbfs.rs` scales each call by the file-to-disc ratio before passing it
+on.
 
 ```mermaid
 sequenceDiagram
@@ -234,6 +232,12 @@ choke point that fixes this. It checks a process-wide `PLAIN_OUTPUT` flag:
 - **On:** it writes the line straight to stderr with `eprintln!`, after
   `console::strip_ansi_codes` removes the colours.
 
+Every style the helpers apply is built with `Style::new().for_stderr()`, as is
+the label style `import-dats` uses: `console` decides whether to colour from
+the stream a style is for, and the default is stdout. Without it, piping stdout
+alone — where nothing is written — turned the colours off on a stderr that is
+still a terminal.
+
 `main` sets the flag once at startup with `set_plain_output`. It turns it on when
 `get_multi_progress().is_hidden()` and the subcommand is neither `mcp` nor
 `server`, which keep reporting to their clients as before. Stdout stays empty in
@@ -241,7 +245,9 @@ both modes. `tests/plain_output.rs` runs `import-dats` with stderr piped and
 `CLICOLOR_FORCE=1`. It checks that the header and info lines arrive on stderr
 without escape codes and that stdout is empty. Forcing colours matters: over a
 pipe `console` colours nothing, so without it the test would pass even if the
-stripping were removed.
+stripping were removed. `tests/cli_output.rs` checks the plain case without
+forcing anything: `info` run with captured output must succeed, print its
+`oxyROMon` banner on stderr and leave stdout empty.
 
 Shared helpers take the bar so the categorization stays uniform:
 `util::is_update` expresses version comparison entirely as

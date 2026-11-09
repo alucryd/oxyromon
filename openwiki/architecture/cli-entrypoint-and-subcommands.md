@@ -5,14 +5,12 @@ description: How src/main.rs registers clap subcommands, runs global startup (do
 tags: [cli, entrypoint, clap, subcommands, connection-scope, tokio, sqlite, info]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
-  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
-    resource: repo://src/chd.rs
   - id: openwiki-source-f1234afbb261ce7190a87845
     resource: repo://src/check_roms.rs
   - id: openwiki-source-f026be5ceac01513e05fa46c
@@ -27,6 +25,8 @@ sources:
     resource: repo://src/config/test_cli.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
+  - id: openwiki-source-d079c81879111b8d75173838
+    resource: repo://src/import_irds.rs
   - id: openwiki-source-f7509e92ca643a1db54a74c4
     resource: repo://src/import_keys.rs
   - id: openwiki-source-7fb657fead83b71b9836ddac
@@ -47,6 +47,8 @@ sources:
     resource: repo://src/progress.rs
   - id: openwiki-source-fcdf0f9c4361c1ee384f2689
     resource: repo://src/prompt.rs
+  - id: openwiki-source-1365b33b317f3d0f1e82b7b0
+    resource: repo://src/purge_irds.rs
   - id: openwiki-source-313c10a1161be7da48ebd676
     resource: repo://src/purge_roms.rs
   - id: openwiki-source-db13c01516e9bd04294e339d
@@ -55,9 +57,11 @@ sources:
     resource: repo://src/server.rs
   - id: openwiki-source-0a9271029eb893aacec54c15
     resource: repo://src/sort_roms.rs
+  - id: openwiki-source-856ac41ecb89a38b80d7e895
+    resource: repo://src/wbfs.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 ---
 
 # CLI Entrypoint and the Subcommand Contract
@@ -232,13 +236,18 @@ subcommands, in vec order: `info`, `config`, `create-dats`, `import-dats`,
 `check-roms`, `purge-roms`, `purge-systems`, `generate-playlists`, and
 `benchmark`, plus the feature-gated `mcp` (`--read-only` exposes non-mutating
 tools only) and `server` (`--address`/`--port`). `import-keys` is the one
-subcommand that ignores its connection: it merges Wii U keys files, as Cemu's
-`keys.txt` or a console's `otp.bin`, into `wiiu_keys.txt` in the data
-directory, outside the database, so neither GraphQL nor MCP can ever return
-them.
+subcommand that ignores its connection: it merges key files — Cemu's
+`keys.txt`, a Wii U's or a Wii's `otp.bin`, or BootMii's `keys.bin` — into
+`wiiu_keys.txt` in the data directory, outside the database, so neither GraphQL
+nor MCP can ever return them. Each file is offered to both wux-rs (the Wii U and
+vWii keys) and rvz-rs (the Wii common key), and only when both refuse it does
+the import fail.
 
 Selection of work follows a consistent pattern across the batch subcommands:
 
+- `-s/--system` names systems wherever a command has that option
+  (`check-roms`, where `--size` lost its short form, `import-irds` and
+  `purge-irds` included); `config` is the exception, where `-s` stays `--set`.
 - `matches.get_many::<String>("SYSTEM")` present → resolve systems by
   name-glob with `resolve_systems_by_name_like` (sorted and deduped by id so
   overlapping patterns cannot process a system twice), no prompts.
@@ -265,36 +274,38 @@ channel). `cfg!(test)` is used where a selection would otherwise hang headless
 writes beyond what its queries do. It prints two sections on the shared bar and
 then finishes it.
 
-The **Dependencies** section is a table assembled from each format module's
-`get_version()`. The entries are collected into a vec and sorted by the name
-reported, so the display order is `chd-rs`, `cia-rs`, `nod`, `nsz-rs`,
-`sevenz-rust2`, `wux-rs`, `xdelta-rs`, `xps-rs`, `xso-rs` regardless of push
-order:
+The **Dependencies** section comes from `info::dependencies()`, the list the
+GraphQL `dependencies` query and the MCP `status` tool also report, so the
+three surfaces never disagree. It collects each format module's
+`get_version()` under the name of the library backing it and sorts by that
+name, so the display order is independent of push order:
 
 | Reported name | Backing module | Value on a working install |
 | --- | --- | --- |
 | `chd-rs` | `src/chd.rs` | `built-in` |
 | `cia-rs` | `src/cia.rs` | `built-in` |
-| `nod` | `src/rvz.rs` (also backs WBFS) | `built-in` |
 | `nsz-rs` | `src/nsz.rs` | `built-in`, or `built-in, prod.keys not found` |
+| `rvz-rs` | `src/rvz.rs` | `built-in` |
 | `sevenz-rust2` | `src/archive.rs` | `built-in` |
+| `wbfs-rs` | `src/wbfs.rs` | `built-in` |
 | `wux-rs` | `src/wux.rs` | `built-in`, or `built-in, no Wii U keys imported` |
 | `xdelta-rs` | `src/xdelta.rs` | `built-in` |
 | `xps-rs` | `src/xps.rs` | `built-in` |
 | `xso-rs` | `src/xso.rs` | `built-in` |
 
-Every backend is a linked library now: `ctrtool`, the last external program,
-was replaced by the in-tree `cia-rs` crate, and `util::tool_version` went with
-it. A compiled-in crate has no runtime version to query, so each entry reports
-the literal `built-in` — the fact worth knowing is that the module is present,
-not which point release it is. The `Err` arm still exists in the loop and would
-print a dim `↪ <name>: not found` through `print_skip`, but no `get_version()`
-returns an error any more, so `info` cannot report a missing dependency.
-`nsz-rs` and `wux-rs` add a second dimension — they never fail, but report a
-missing keys file: `built-in, prod.keys not found` when `~/.switch/prod.keys` is
-absent, and `built-in, no Wii U keys imported` when `wiiu_keys.txt` is not in
-the data directory. The missing-keys condition is discovered at `info` time
-instead of mid-compression or mid-export.
+Every backend is a linked library now: `ctrtool` went with the in-tree
+`cia-rs` crate, and `dolphin-tool`, `wit` and the `nod` crate with `rvz-rs` and
+`wbfs-rs`. A compiled-in crate has no runtime version to query, so each entry
+reports the literal `built-in` — the fact worth knowing is that the module is
+present, not which point release it is. The `Err` arm still exists in the loop
+and would print a dim `↪ <name>: not found` through `print_skip`, but no
+`get_version()` returns an error any more, so `info` cannot report a missing
+dependency. `nsz-rs` and `wux-rs` add a second dimension — they never fail, but
+report a missing keys file: `built-in, prod.keys not found` when
+`~/.switch/prod.keys` is absent, and `built-in, no Wii U keys imported` when
+`wiiu_keys.txt` is not in the data directory. The missing-keys condition is
+discovered at `info` time instead of mid-compression or mid-export. `rvz-rs`
+says nothing of the Wii common key, which only compressing a Wii ISO needs.
 
 The **Statistics** section is three counts against the connected database
 (`count_systems`, `count_games`, `count_roms`), followed by the project's

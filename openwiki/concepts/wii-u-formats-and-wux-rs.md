@@ -3,8 +3,10 @@ type: concept
 title: Wii U Formats and the wux-rs Crate
 description: The four Wii U shapes oxyromon handles (WUD, WUX, lossless WUA and NUS folders), what the in-tree wux-rs crate does with each, how a lossless WUA rebuilds its disc and shares update partitions through a store, how keys reach it through import-keys, and how oxyromon wires discs, updates and DLC through import, convert, check, export, purge and create-dats.
 tags: [wii-u, wux, wud, wua, nus, wux-rs, keys, import-keys, cemu, zarchive, lossless, update-partitions]
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 sources:
+  - id: openwiki-source-88f5d4d337928122f15afc53
+    resource: repo://crates/gcwii/src/keys.rs
   - id: openwiki-source-ce853e79f786a28d42f8717a
     resource: repo://crates/wux-rs/Cargo.toml
   - id: openwiki-source-1877f90a07c967103e553a55
@@ -79,7 +81,7 @@ sources:
     resource: repo://tests/Test%20System%20(20261025)%20(CDN%20History).dat
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # Wii U Formats and the wux-rs Crate
@@ -251,6 +253,16 @@ An OTP dump has no magic or checksum, so `load_keys` refuses a 1 KiB binary
 file only when neither slot was programmed. Any other binary file is refused
 too, with an `Unsupported` error naming both accepted formats. An `otp.bin`
 carries no disc keys, so it covers the common keys only.
+
+`import-keys` offers every file to rvz-rs's `load_keys` as well, and the same
+`wiiu_keys.txt` takes the Wii common key it finds — at offset 0x14 of a Wii's or
+a Wii U's `otp.bin`, or of the OTP a BootMii `keys.bin` holds after its header —
+because RVZ and WBFS read
+that file too, and every key in it is tried. A file fails only when both crates
+refuse it; an I/O error from rvz-rs is reported as such, and otherwise the
+error names every accepted format: Cemu's `keys.txt`, a Wii U's or a Wii's
+`otp.bin`, or BootMii's `keys.bin`. See
+[GameCube and Wii formats](gamecube-wii-formats-rvz-wbfs-gcwii.md).
 
 WUA and NUS need keys, including rebuilding a disc from a WUA. WUD, WUX and
 importing a WUA work without them. `wux::get_version`, shown by `info`, says

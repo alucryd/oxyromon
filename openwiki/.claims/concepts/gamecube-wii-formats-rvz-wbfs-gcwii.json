@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:f33f6909ee3cb79411a0077f24b6450b638f185a70d48bdbfa1a55f80edd750e",
+  "claims": [
+    {
+      "id": "claim_47a8dfc5e8974db3a31af5cff110af19",
+      "statement": "rvz-rs is a port of Dolphin's RVZ code whose files are interchangeable with Dolphin's, byte for byte with Zstandard, bzip2 or no compression; it exposes compress, decompress and a Reader that reads an RVZ as the disc it holds.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L233-L235",
+          "version": "repo-lines-v1:sha256:421853740241ef47633ee3e4e1db217015165e7c9e19cddb61d94eac00532f7b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjRiNzY5YTg2OWI5NTc2ODJjOTBkMTI1ZTYzMGY5YWYyN2FjZjk4MDljMDZkNmJkNDg4NWQ3OTI3MGUyMDI1MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDQ0MzA4NmY1ZTMxY2VhYTZlMDBhYTA0NDZjMzExZTczNDNmMjU3NTMxNTk5OGIzZTI5ZWI0ZGIwNWFkZGY0NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjFhMzhmNzkzZDk0NzIzZjcxM2UwMDQ2ZGVmYmNhMTg0MTU0MTIyNTI3MTg5MmY5OWZmNDNiMWQzNmU4NzBjMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzYxZmY4NmQ1YjI1OGU4MjVmZWVkMmFkZTU5ZGJiZWVkYjg2NTQwNzdlY2MyOTk1YzI5NDg2YjVmNjEzMTUxMyJ9"
+        },
+        {
+          "resource": "repo://crates/rvz-rs/src/lib.rs#L1-L52",
+          "version": "repo-lines-v1:sha256:0d5da30bc6bfa92b0d5dd0f87829375872b45eb67eaff479fa85fe9d25d7ccc8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljNjkxNmI1OTM2ZjRkODU0ZDY0NzhiM2MzNDQ3NGEyNmQ1Y2ViNjc0ZDBmNGNmOWU0YjdkMTE3ZjQxYzJkYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1OTNhNWYwOTcwYTZlZmNlYjRjMmU1NzU2NDEyNTNjZjUzZmVmMjQ5Zjg5OWI5NGZmYzRjMmI4NmVhODUxODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5ZWRiN2IxZWI0Y2FlZmQ0MjQ5NGJkMDE3YzUwNjFiZDhiNWRkZTcxMzkwOTU1MzBhYmZmY2NkNDI0ZTU0YTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fd8a1146c0e74f4799972852c067186e",
+      "statement": "Only writing an RVZ from a Wii ISO needs the Wii common key; reading or rewriting an RVZ needs none because an RVZ keeps each partition's title key, and a GameCube disc needs none.",
+      "evidence": [
+        {
+          "resource": "repo://crates/gcwii/src/keys.rs#L1-L7",
+          "version": "repo-lines-v1:sha256:1cd147e97031bd1b47348b837d9c947f1b4b9b257896c240748fd379984a5a60:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjQzNGI0Y2M5YjU5NjI3YzkxNjc3NmRlYmFkNGQzMDY1MmY1OTQxMTQ4YjgzMWE3YzIxN2Y4MGU2MTNhYTBhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGY0ODNlMjVkNWNlYWVlNTRhZGM1NWNiN2ZhNWExNDU5OTYwZmU2OWEzM2EwMmY0ZmJiMzk5YjZjNGE3NzlhYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmU5ZWM4MDliMDA0NGExMTY5M2NmY2NkOTI5MjkxMjc0MWUxMzNmNDI0Mjg3ZDQ4MjgwMzg4ZGQxN2I5ZDI0MCJ9"
+        },
+        {
+          "resource": "repo://crates/rvz-rs/src/reader.rs#L579-L579",
+          "version": "repo-lines-v1:sha256:5d413a7c65e7a4781f1e2a73bf544e768ae2d90625dc2f63041320a2d29015a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ0MTNhN2M2NWU3YTQ3ODFmMWUyYTczYmY1NDRlNzY4YWUyZDkwNjI1ZGMyZjYzMDQxMzIwYTJkMjkwMTVhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ0MTNhN2M2NWU3YTQ3ODFmMWUyYTczYmY1NDRlNzY4YWUyZDkwNjI1ZGMyZjYzMDQxMzIwYTJkMjkwMTVhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDE1NDVkNTkyOTAyOGUwYmZhYmZkZWUxNTNhMDU2ZTg1ZDRlNmNhY2VlMjhmMzM4NDYyYWE3NDQwOGQwNWY2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjgxYTRjODFkY2RkYjI5MjUwM2FmZDZlZWRhMmQ4MWM4YTc5MmY2Mzc2NzNkZmM5NDlmOGM5ZWQ2MDdjMTI3YyJ9"
+        },
+        {
+          "resource": "repo://src/rvz.rs#L1-L5",
+          "version": "repo-lines-v1:sha256:b34e2bfab7948e830f768f43c248c5ad854dbfc5ff6a6a65cb8dbb0c46f288ed:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjNmYWI5NjBkODE5YWQ1NDlmNmRiYjRlOTE3ZTMzYTMwZDEwYmQ3NDZhYjA0MTU2ODFiYWY2ZWM1YzU2YThkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2ViMWNiODY2MzIzZGVjMTZlZTA3YTQ4YzgzZjhjMTQ3ZDJkNjU5M2FlMzQ2NTI4OTRiN2E4YzE1NWVmNWE1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzc0OTA2YmIzMDQ2YmMyMjFjMTQ2ZGQ1Njc4ZmMxYWM3MGQ1OWYyYzgzZTc2NWRiYzIxMmUwZmU1ZGJmOTIzMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a453c031d0fe4f629ba9f70302880352",
+      "statement": "wbfs-rs writes a WBFS as `wit copy --wbfs` does, storing only 2 MiB blocks holding a used 32 KiB cluster, so a WBFS is scrubbed; oxyromon therefore treats WBFS as an export-only format.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L237-L238",
+          "version": "repo-lines-v1:sha256:01e765d5b42c27a3cbf530fbcd09b5b1ebf7f80a6b68c5ba764dd5f93b1ef5b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzg1NjE5Yjg3OTU1NzBmMTdiNzE1MzU5YTE1NmU0M2Y0ZmYzNjNmZjgzMGE0NTBjYzZmMDY5MzBmNDgwZWIyOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc3Nzg4MzkyYjJmOGRmYzNjMDE0MTg1N2Y5ZDZjNTA2NWViYWQxZjJhZTNmOTJiMTc0ZWFhOWU3MDZkZmI2OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGFjNmVjNTMzZDMwOGZjYzM2MDM2NTFjNjExMTJkZGJjMTRjMjY1OTRlYjI4YTExM2RiYTIxOTU2ZjYzN2UwZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzlmYWEzYzA1NDBiNTExMWJmOGE1ZDQ0MzZkZWM1ZmRjMzI2YWYxNWMxMzgzZTI3YzBiMmI2OGU0NTBhMWEzNyJ9"
+        },
+        {
+          "resource": "repo://crates/wbfs-rs/src/lib.rs#L1-L10",
+          "version": "repo-lines-v1:sha256:bec0c70236436d367779cca184644e1051e70f0bc14c1ed07645153933051d48:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0N2UxOGNlZWJiN2MxM2JhN2JiMDA0NGMyYzFkYTVhNzdjMTAzZTZmYTExMDU2YTgxNjcxYzY2NmQ1NjRhYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjYTlhMWQ4YTUzMTBmYmNmZWZiODc5YWFkNTY4M2E1NjU0ZmNjOGQxMGZiYWI3MTJlMzE5NDg5YTRjN2UxYWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzNzFiZDZhZmYyMDAwOWQ4NzI3NjM3MWU2ZGEwNmU2MmQwNzUyNTJiYzE1YmU5ZmIxMjI3OThkMGFmYWNiOTUifQ"
+        },
+        {
+          "resource": "repo://src/wbfs.rs#L1-L6",
+          "version": "repo-lines-v1:sha256:350e925a0c8e9089f0ff8ce0560c3249709a1d039d64870cb199f99b987c194a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EyZmYyODAyOTVkYmVkY2NjZmMwYmM3MDdkYWE3ZGEwNzY0NWVjY2U2ZWMxMDFlN2M0ZDRkYWE3NWRiMDdlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGIxZmQwZjM4ZjQ4Y2I2ZDNmZGM4OGJmZjlmYTg3YmU1ZTc4YWM0ZDViYTJlZGJhZjBmNjVlODdjZTViYjBmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDVmYTQ5ZjBjYzJlMjMzMmY5NzkxNmE1ZTExYmRjMDMxOTAyYTAyOWQ5MDdlZDUxM2E4MDZlN2M5NTA3M2EyYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_25b2298392324acb8782f07b9215cdf0",
+      "statement": "wbfs_rs::create_from takes any gcwii Source (size, read_at and an optional title_key), so a source that keeps its title keys, such as an RVZ, needs no common key.",
+      "evidence": [
+        {
+          "resource": "repo://crates/gcwii/src/disc.rs#L28-L39",
+          "version": "repo-lines-v1:sha256:9d9533def353dd5697ccdda84033a0fa442928f48cd788067056d5faa4f407e7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjN2NmMjRiNTczOTAxNTdkMmU5YmU2MzZmZmRkNWM1NTkzODY2MGRmZjIzOTQ3YjczODlkNzc4ODYzZTdmOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NGVlM2U5YTc0OWU4ZGIzOTc5MjVlYTk0YmI3MWY4NWYwNTQwZDQ3NzhmMzc1MjI5OWE3ZTYzN2VkMjBmMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzNWI4MjhjNGU2YTEwZDZkNmUwNTU4MTI4NTlmYWFmNTcwNzFlZmM3NGUyNTNmMGE5MWE5ODBhYTk2MzNhMmIifQ"
+        },
+        {
+          "resource": "repo://crates/wbfs-rs/src/lib.rs#L96-L106",
+          "version": "repo-lines-v1:sha256:e72a622166f3e9cffacdc8c8143cbcdd36e232cbdec42e33d0ac5e5df62e33e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMDE0YzNkYTc4MTYwZjljYmI0ZjY1YzdmYTM1MTYxNjYyYWJjODY2ZDliZGRlZDIzNTA5YjZmZjI1MjY1NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3ZDI5YzBlOWRlZDNhODIwN2U1MWIxOTgxOWYyZDAxOWZjOGU4Y2Q4OTcwZDY0ZDJkYmVmNDM2NDcxOGYxMTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4OGE4NjJhMzE5NjZiZjE2M2ViZTcwODg3YzI0OGE5NzcwYmFlNjIyYjA2YmZjNmU5ZmI0MWNjYWZmM2RlZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyYWNhNWUyZGYzM2U0N2FmZjhmODAxNDkyMGQxZjU2NDYwNDAyZjI0MmM2M2I0YzdlZmRkNDdjMGE5YzZhOGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3160cb20628c4ee9a76b842ddb45b91f",
+      "statement": "wbfs-rs extraction rejects a WBFS whose disc table holds more than one disc.",
+      "evidence": [
+        {
+          "resource": "repo://crates/wbfs-rs/src/lib.rs#L214-L222",
+          "version": "repo-lines-v1:sha256:688f0b9359e733bda1b0e8025983b7d0ecfc0b91eb62e23106cdd8660dc6e625:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWZiMjVhZTZhNjc0NDc3ZWFjYjg4OTIwOGYwMjQzYTIxYzg4NzIxOTUzODhmYzQ0NDA3MTZhOTJmZjg5YjVkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjljOWM5ZmVlZWY0OWQ3OGM2NmQ4MTJhYjcyZjI0YjFmYTJhMjUwYWJlMTIzOWIxNzRhMDU4OWEyZGQxNGMwZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGMzYzk4MTY5NjgxMmQwY2JlNGM1Y2YxN2Q5YTFkMzNiMDczYjFjYzIwYTcxYjZjZmRlYzFlNTg4ODZkZTczMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTQ4NjM1N2UxNDM2MTEzYWE1ZWYyY2JkYTJhM2UwMTZjOGVlNTNiMTdlMzMzOTk1ZjE1YjIxNWU3ZjQ5MTlhZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_96480af7fa044068810e1f85d344defe",
+      "statement": "gcwii is never published (publish = false, version 0.0.0); rvz-rs and wbfs-rs embed it through a src/gcwii symlink declared with #[path = \"gcwii/lib.rs\"], uses only super:: paths, and its error type is re-exported as each host's Error.",
+      "evidence": [
+        {
+          "resource": "repo://crates/gcwii/Cargo.toml#L1-L11",
+          "version": "repo-lines-v1:sha256:78fa42e4800cc5361bd5de94010bfd81e84e23968cb7c52556b00af4ea037ef4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhM2NkNWE4MWIzZjlhNjIxYWE0OTNkOTBjNDVmNDJhYjU3MWQ0ZTQyYjhhZTVhZmYzNTFjYjBhMDJkMDZkODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyNjE1NjNkMjIzNmYwZWRhZjE1NjZlYzQzMGMyYmNiMDYyZDFkYWEzYWQ4M2RhNTdiMjEwM2I4MWEzZjlhMDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkMTc4NDEwZjA2ZTM5NTRlNTNkYzliZTYwOTcyZWQwNjFjZDc4YzU2ODU1NjY4ZTc2YzcwZGEzYzkyZmQ3YWIifQ"
+        },
+        {
+          "resource": "repo://crates/gcwii/src/lib.rs#L1-L23",
+          "version": "repo-lines-v1:sha256:44f5057eaee102dc70aacc68615121bd58c42186cceaed6ec779ef2ec7b9d27e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiNGZlNWI3NWEyYjBhNzJkNWM5MGYzNWUyYzc5MmE5YzIwMzM1OWNhZWEwMTNhMzdmMmJmMGQxZGQ2MjJhNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3ODZkNmEzYjY1MGZlM2M4MzgxYzM0NTQwNTdkMmNkOTU3NTliZjFmNGQyMDQwZWU2MTUzOGUxYzUxNzAyZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://crates/rvz-rs/src/lib.rs#L35-L49",
+          "version": "repo-lines-v1:sha256:e1e7125a0bb461a012bdd0c99f89e6255deeb5a2faaec52e7a177905f9f1ef12:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkZjFjYThlNjQ0NGVjZjNlMjcyY2FhZGM4YTk1NWZhYWZkOTA4MTNiMjMyYjRkNGViYTI1YjA3MzZmODJhNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiZGQ4ZjI2ZTU0ZmY0ZGUwYTdmZjMxNDJmNDMxOTY3NmJjNmMwY2NhNTkzNDI5MjM4NjI3ZjA1NjdkZWU2MDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhODJhYzMzZjNjZmQzNmRiYTIxMmQ1YTE0NjY1MjFjMzE0OTkzOTBiMGM5YzVlOTk4OWRiOTFmMzZkZWEyMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1NjVmYjk2ZTYyZDExNjhjYzBlNTI2MWVhZThlMDZmMmZjZTM1NjE3ZDZkZmRlNjdmNzhhMjg4ZTdmZDE1YTkifQ"
+        },
+        {
+          "resource": "repo://crates/wbfs-rs/src/lib.rs#L27-L41",
+          "version": "repo-lines-v1:sha256:20e3c716c502cb7a950fc8a09c479eabc7ba719cb871071be270797642622faf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkZjFjYThlNjQ0NGVjZjNlMjcyY2FhZGM4YTk1NWZhYWZkOTA4MTNiMjMyYjRkNGViYTI1YjA3MzZmODJhNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwYzYzMWY1NThjMGQ4ODQ0MDcwMzFlNzEzMzc1ZTIxMjAwNTZmMGM1Y2YyYzYwNzI1ZWI1ZDcyMDA3YmMxODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhN2I3Yjg1ODYzZDBhNTJmMGFkODAzMzZhYWU5YzhkNDFkNGUxNTkwMTBmZTM5YjliNjY4NjJjZTUyMTRiZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjMDIwNGU2MTk1MTUxMTJkZjczNjkxMjU0MDY2NzE4YTcxYTgxMWZlMjY2YjE5NzVlNzUzZTFiOThhMmNmMzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_415016d8801f4eabbd43604c7d82da57",
+      "statement": "tests/crates.rs checks that each embedded-crate symlink listed in EMBEDDED resolves to gcwii's src or tests/common, and that no gcwii source line uses crate::.",
+      "evidence": [
+        {
+          "resource": "repo://tests/crates.rs#L23-L76",
+          "version": "repo-lines-v1:sha256:18671c0b7ec8e1e03ebf0d6f3c2bd4cc6ceecc2d889ac6ab2cb22862d6bd4f83:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkOTQxZmQ1YWExOGQ3ODZjNGQzZDc2ODZjOTg3MDIwNmQzMzAxY2Y4OGE1Y2U0Y2E3NDFhOTJkZTkxY2EyMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5c43d61bb72e492888431b208fb8ee8c",
+      "statement": "RvzRomfile hashes an RVZ by streaming an rvz_rs::Reader into common::hash_reader on the blocking pool, without writing an ISO; Check extracts an ISO only when the DAT declares a header.",
+      "evidence": [
+        {
+          "resource": "repo://src/rvz.rs#L247-L269",
+          "version": "repo-lines-v1:sha256:d37a951ac5b8974c6d41a83e2f425a96798f57b0506b086b3aa94b9818121887:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzOTk4Y2FhYzUzODNlNzY0MzE1YzZmYTFhOTMyY2E0YjQ3OTQ2OWU0YTg4OTYxMGM3YzhiMzg2MDg2MjRjOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4ZjBiMjdhNmFhNjFhNDYxZDY2NmIxNDg0OTE2Zjg2ZjEwZTY4YWQ0ZWMyYzk1NWI1ZDUyYmU0MmRkZTRiNzIifQ"
+        },
+        {
+          "resource": "repo://src/rvz.rs#L45-L98",
+          "version": "repo-lines-v1:sha256:146004a8ea2c932b68f0e384bc174d1af96735c2d9d03e72f68400e37bb6b048:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5OTdiMmE4M2U1YmU4MGE3Yjk5YWUxNjVkNDFjM2Y3MTE2NWFlMjBmYmU3NTNhM2U2Y2I1NjNjNGQxMGVjNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0MzRkM2Y4YTIxZjNiOWRlZDFlZDhkZTZkMWFhZGNjNGE3Y2U1ODczNGZkNGRlZDdjYWY3NjE2OTJhMzZlYjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0e551a8345624f449f3905e11e2c6bba",
+      "statement": "Exporting an RVZ to WBFS wraps the rvz_rs::Reader in RvzSource, passes no keys to wbfs_rs::create_from, and rescales wbfs-rs's disc-byte progress to the RVZ file's size.",
+      "evidence": [
+        {
+          "resource": "repo://src/wbfs.rs#L56-L119",
+          "version": "repo-lines-v1:sha256:2731cae7478f5f681a89beefc4404c8a779f6a46c68f8a2db989e482a0e3c66c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2MTZjNjFjZjc4MGJkZWY2ZGYxZTk1MjlmMTUxNGQ4ZTg2NDEzYzdkNDNjNWM5NTkyODQ1ZTRlNjA1OWE3ZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0NzVlOTRhOTA0YWM0OWIzMTU0ZDQ2NzJhNjZlODYyOWI4NmRhYzc0ZTNlMjkzN2JlNjkyN2FlM2RhMTFjNTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhZjk4NjQyNzMwZjFhNWU1NTM0N2U1ZjRjOTEwNDM1ZTgyZDM3ODc2ZGEwYTY0Zjc2Yzg0NzhiZjJiMWNhZGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_42edb9e35cfc4c86977f5e72966722b6",
+      "statement": "rvz-rs's interop tests run dolphin-tool and wbfs-rs's run wit, each found through an environment variable or PATH and skipped when missing; real dumps are opt-in through RVZ_RS_REAL and WBFS_RS_REAL.",
+      "evidence": [
+        {
+          "resource": "repo://crates/rvz-rs/tests/interop.rs#L1-L27",
+          "version": "repo-lines-v1:sha256:f837ea21ba473a14d2738a12cdf90bfdb5caeb47dfe33741ad9180604d4daa73:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNTNlOGZhMzhjZWE0MTRlN2I2NzgxOTNhMTIzYWY1OTUwOTU4OTdiZTZlM2RmNTg2YzgxODFlZGY4NzYxYjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkY2ZjM2QyYzU5YjEzY2NiNDM2MjNiYzk4ODAwMDRjZmVlODFjZWQ1MDJjYzAxYTJmYTY5ZDk4MWM5NWU0MTUifQ"
+        },
+        {
+          "resource": "repo://crates/rvz-rs/tests/interop.rs#L182-L188",
+          "version": "repo-lines-v1:sha256:ffa1159bac90651f4f4f781dba8b192d9a2756acfa4e77c5c191766c29104cb5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJjZDRkYjQ4YTM1MGU4ZjBiNDc5NDRjNDZlM2ZmZGJiYTEzMmQyMjkwYTkxZDcwMTJiNTZlYjQ2YzhhYjRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDJiNDA1YmExYTRkZDIyY2JkNzc5MGMwNzM3MmU0MjdhOGEzOTQ5MmJmZTc0MjIwZDgxYWJhMjE5ZDcxNmY0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjMzMWExNTM2ZDhjODNjNGQxMzcwNmIzM2UwNDRiZWY0NTRmNjA2NzIyNGViMDliZDQxNjJiN2RhZjExNGE4NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODM0MjBkYmVkYWEwYzBjNTI0MjE3MjU2OWE0M2M2NWVhM2ExOWE2N2I2NzJlM2YyNDg1YzE0OWEzMzdmNjA2ZiJ9"
+        },
+        {
+          "resource": "repo://crates/wbfs-rs/tests/interop.rs#L131-L135",
+          "version": "repo-lines-v1:sha256:fc34dd004d48b8a8cf39894891f53133b64dacfdd53b002139d27b5eff6b28d7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZkODZkYWI4ODc3NjRmMmNlZDMwNGZkNDU1MDVlNmZhY2U1YTFiZjUzNTUyOTk1MGE1ZTI1Mzc1YzZmZjAxNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDJiNDA1YmExYTRkZDIyY2JkNzc5MGMwNzM3MmU0MjdhOGEzOTQ5MmJmZTc0MjIwZDgxYWJhMjE5ZDcxNmY0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGYyY2Y3ZGI4OGQ4ZGQ5YzM5Y2UzNTc3Zjk1NGE4ODE4NDE0MWE3OWFhMjIzNTdkNDEzZmFjZTIzMDdlODgyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzNhZDFjYzdlNTk3YThmZDU0YmRhZmMyNmMwNzJkNzBiMDkyNzUxMGMwMzkxMTAxNzAyYTU2MDYxOTUyZDQxOSJ9"
+        },
+        {
+          "resource": "repo://crates/wbfs-rs/tests/interop.rs#L19-L31",
+          "version": "repo-lines-v1:sha256:85f34c91961ef5a6963d280b97ec6dac4b4a9ffba5610762ecdab7dfaf587fd2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlOTQ3ZjQwYjE0ZmNkZjRkNjE5ZDg4NDIyMjgxYTg1OTk1NmNjYTVkMTMzMTZmY2EzMDM0ZWI1YzA0ZmUwMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMTY5MjljOTgxMmQwNjQ0ZjJlNGQ4MzA3NTVkNzU3MTgxN2EwM2Y5Njg1N2ExMTEwZTIwOGI1Y2QxODVhZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZWE1NDVjN2Q3MDAwYzZiMzJlYzgwOTVkNmI0YWNjYzEyNzY0NmZjYTBiNzhmNjM2MWJjNjIxMTQ0ZjNhMTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b5d3e8addb3d4af99763d28eed1be36d",
+      "statement": "export-roms's to_wbfs converts single-ISO archives, ISOs and RVZs, while to_rvz copies an existing RVZ verbatim.",
+      "evidence": [
+        {
+          "resource": "repo://src/export_roms.rs#L1348-L1502",
+          "version": "repo-lines-v1:sha256:68608ab73ca2d66168eb34111d2df973db27b4bc3e568897514035534d973b0e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4YWQxNzM0ZjhkYTZmOTNmMWFiYTU0ZDk3N2ZhMzZlNzAzM2QzMTM3NTJkMTY0YTI0NjVjMzcyODVmN2Q5OTViIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1YzIyZmM5YjYwNjNiN2JhNzFkMTdlMmNkZTcwMzg3YTEzNjE1MWQ5NDMyYTNhZTY2Zjk4MGY4YWRhNjk4N2ViIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5MzA3YWJjZjllZWE3NDVkMTgyMTEzNDBmOGUxYjhhZmZmNjMwOTg5OWRlMTE0NmQ3YTNiYTc1NjllNTNkMjhiIn0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-11-09T21:55:13.223Z"
+  }
+}

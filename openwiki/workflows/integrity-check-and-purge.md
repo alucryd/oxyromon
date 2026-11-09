@@ -105,7 +105,7 @@ sources:
 generated: { by: "claude-code", at: "2026-11-02T21:30:44.962Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-02T21:30:44.962Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # Integrity Checking, Purging and Trash

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9016cc5538415dabec98a8c0daf9932342f6cfa57c8c992acd218a97cf8da66a",
+  "pageVersion": "sha256:3a63f41a57751d4ab0697a4f0d9ebd49749b59b9dca2ee4f03ebd2dea1d42a42",
   "claims": [
     {
       "id": "claim_752df5508f6c4a998b11e3b177d358bd",
@@ -69,8 +69,8 @@
       "statement": "import-keys merges the keys of each given file into wiiu_keys.txt in oxyromon's data directory, keeping each key once in first-seen order, writing a .part file with mode 0600 that is renamed into place, warning on a file with no keys and skipping the write when no key is new.",
       "evidence": [
         {
-          "resource": "repo://src/import_keys.rs#L33-L96",
-          "version": "repo-lines-v1:sha256:9157a04e83d729c492af1818b42974bbb8bf8f138aa71d926892b27c5ec3c0c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMGY4MGY2MTJjODc0NGMwMjdhNjkyOWU5NTMxZjJmMTMxNWFiMjhjMzcyMTIyOTAzNTM3N2Y4YmU3YzU1NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmNDYwYjFmYjFjNjU4MmE5ZDhiNjEyMzM5NWI4YTk1YWQ2YmZhOWQ4YWFkOWUxZDRmNDA0MmVlMjYzNjMwNjkifQ"
+          "resource": "repo://src/import_keys.rs#L35-L113",
+          "version": "repo-lines-v1:sha256:23ff747b90157870200c47c1d95afc779f00d02376d20933a99a214263946f62:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMGY4MGY2MTJjODc0NGMwMjdhNjkyOWU5NTMxZjJmMTMxNWFiMjhjMzcyMTIyOTAzNTM3N2Y4YmU3YzU1NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmNDYwYjFmYjFjNjU4MmE5ZDhiNjEyMzM5NWI4YTk1YWQ2YmZhOWQ4YWFkOWUxZDRmNDA0MmVlMjYzNjMwNjkifQ"
         }
       ]
     },
@@ -417,10 +417,24 @@
           "version": "repo-lines-v1:sha256:1fea928a35aacafe0d339987adc9647ed35b19eb89e502e011d7ed7c2479a317:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZGY0ZGNjNTE2NGRjOWYzMmZlOTAzNDU4NDllZjQ3MzkwMmI3MGFkNGE3Y2UwODI5MDZkNWNkMjgzYTI4NmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyNmM2NTBhNzRkNzE0OGViZWIwMzNhZjNmZjgyYTMzY2VhZGY4ZDdmMjJhMmYwYzY5ZTg1ODQ3NDM5ZDdjYzUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_4c81b9c4e9904f81878b3315b9b5ffd0",
+      "statement": "import-keys reads each file with both wux-rs and rvz-rs, so wiiu_keys.txt also takes the Wii common key, which gcwii's parse_otp reads at offset 0x14 of a Wii's or a Wii U's OTP or of the OTP in a BootMii keys.bin; a file fails only when both crates refuse it.",
+      "evidence": [
+        {
+          "resource": "repo://crates/gcwii/src/keys.rs#L40-L74",
+          "version": "repo-lines-v1:sha256:a8f9c99abed64b8e82b64b696082d9338dc293234f21c65e79be6ce9a9eec78c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiNDhjMDllYzIyZTQzNmRlOWNmZjhlMmY4MWM0ODg1ZGMwZGRlMzAzMTkyNmRjNGNjMjUxOWFiMjEwZWUzOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmMDBkOTUyNWI5MDM4ZmQ2MmEyODY2YTA5OGFkY2FjZTQ2N2NjNTFkOTM2MTBmNjMyYjVhZmVlMWMzMzJjYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5NWFhYmI5NGVkMmIwNmQyMWYxZWI1YjliMjY3MjYzNDJiMWZiNjZmNzlmZWYyZjNiMTJkNzI1YWE0YzE4NjYifQ"
+        },
+        {
+          "resource": "repo://src/import_keys.rs#L56-L82",
+          "version": "repo-lines-v1:sha256:da5ddd90233e06df0aea5736e01e5ae30aebc633158b00f93b00b662d909ee08:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MzhlZDU5MzA5MzMwNGZkNDc3NmMxYjQ5ZjIwYTk2NWRiZjgyZDg5ZTBhYTk5OGY5ZDg2NWMyMmRiNmJlYWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0M2U3ZWFmMjM2ZDFmMzliYjQ5OGY4MjUyMDQ3YzdhNzgwYTI5ZTJjNjJiY2MwN2YyNDU1OGIxYmRmODgyZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmNzk4MzRiN2Y2ZWU0NzRjZGIyNmM3YWU3ZDdmNjI1NzA5NDQ3NTlmMTZhYjNkNzdkZGU3YzQ3NWExZGNlODMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-01T22:28:11.879Z"
+    "at": "2026-11-09T21:55:13.223Z"
   }
 }

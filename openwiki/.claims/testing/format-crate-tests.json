@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2fd1e9f71b88ad0437c2878507819c53a8705ff27c8f5c3a5c6cf62ee699e89e",
+  "pageVersion": "sha256:1f3bf59bf8c8b432da35411a83dea1d62e3bf90d6dc431e226e0687fbf48c980",
   "claims": [
     {
       "id": "claim_56ecae6ff3f14ff0babfd3201239caab",
       "statement": "The standard of proof for every crate under crates/ is agreement with the upstream reference implementation rather than self-consistency, and the suites are split accordingly: roundtrip.rs / apply.rs / decode.rs / convert.rs exercise the crate alone, interop.rs runs the upstream binary as a child process, and where a reference cannot be run a pinned reference-made artifact or a generated vector file stands in for it.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L164-L166",
+          "resource": "repo://AGENTS.md#L165-L167",
           "version": "repo-lines-v1:sha256:f53ac784aec7eabbbd4a6614f73e43a10fdc1a1f395e2203037f7222ced4513d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU3MDRhNzlmNzdhNTBjYzg3ZDdlMjJmODUxZTEzMmQwOGY5YjhiNTdjYTJlZDcwMDNlNzdjNWVkZGIxOGYyZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIzODU2YjUyMTA2MDkzZGQ4MzJjNzZlMmEzZThhZTkyM2VkYzBjODlhYWQzZDVkODhhNTIwMmFhYzk3YmRlNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzUwNGMwMjkxZjI5ZWM4NTFlZDg3YTYxNDc0MDQzNjFlMTgxZTBlMTZkYTM5ZDNlZTZjMjcwODk4MjMzNThmMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDJhZmQyOTM3ZGU3NTllNzU1NDQ1NGVkYjM5OGM5NmFjMTA5NTlmOWU5ZjkyNmZkOGMxOWQ1NTE1Zjc5ZmFiZiJ9"
         },
         {
@@ -354,7 +354,7 @@
     },
     {
       "id": "claim_ef6e8d3366964afea14bc46ad1e239e1",
-      "statement": "The crates are executed as part of the workspace: `cargo test --workspace --features oxyromon/server` locally (test.sh is the same command under cargo llvm-cov), and in CI that llvm-cov step is what actually runs them since clippy only lints test targets. The root package adds the cross-crate check tests/crates.rs, which requires the seven copied src/bin/<cli>/ui.rs files (chdrs, ciars, gdirs, nszrs, wuxrs, xdeltars, xpsrs) to be byte-identical to xso-rs's.",
+      "statement": "The crates are executed as part of the workspace: `cargo test --workspace --features oxyromon/server` locally (test.sh is the same command under cargo llvm-cov), and in CI that llvm-cov step is what actually runs them since clippy only lints test targets. The root package adds the cross-crate check tests/crates.rs, which requires the nine copied src/bin/<cli>/ui.rs files (chdrs, ciars, gdirs, nszrs, rvzrs, wbfsrs, xdeltars, wuxrs, xpsrs) to be byte-identical to xso-rs's.",
       "evidence": [
         {
           "resource": "repo://.github/workflows/continuous_integration.yml#L103-L112",
@@ -365,8 +365,8 @@
           "version": "repo-lines-v1:sha256:2703166abc49dfec1db2d6604e612bc623327067bedc5f7e2f880346250e796c:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgwNzZkM2QyOGQyMWUwMjAxMmIyMGVhZjdkYmY3NTQwOWE2Mjc3MTM0NDM5MDI1ZjI4MmUzNjhlMzMwNWFiZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTU4ZWJiMmQ2N2M5NWY5YjAzZjY0YTEwMDczN2I2OTg4YjdkN2JjMGY2MTJkODBjYTYxYmY1YjM2YmYwZTJlMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://tests/crates.rs#L1-L19",
-          "version": "repo-lines-v1:sha256:fb405f23097fb316aef70ab5ad213f96b4de7b4a723b8ff36a0352feccf8bf41:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5YTY2MDgwMzhhM2M4N2U1YWU2YjQ0Mjg1MDQwNDk2YWM5NmQ5ODRmNzgwMDQ1YzVjYjY3ZDY3MDhlYTRmM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://tests/crates.rs#L1-L21",
+          "version": "repo-lines-v1:sha256:d3a37b4d57a8b30731b89b14f0cd3b5c5d2398d434884e8cf94d0a13d78de26e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5YTY2MDgwMzhhM2M4N2U1YWU2YjQ0Mjg1MDQwNDk2YWM5NmQ5ODRmNzgwMDQ1YzVjYjY3ZDY3MDhlYTRmM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiM2JmNWZlNWFjZjZlZmZiN2RiMmUxYjJhYmM2ZWZkZDFhMmJhYTZlOGQ2MjUyMDFlMzRhYmYwYjZlMWI3NDUifQ"
         }
       ]
     },
@@ -635,10 +635,42 @@
           "version": "repo-lines-v1:sha256:eb643f6cc497606b960993e78ea2ad0a1fd29d685e983aa1bcb6cd90f783c3a6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyY2Q0ZGI0OGEzNTBlOGYwYjQ3OTQ0YzQ2ZTNmZmRiYmExMzJkMjI5MGE5MWQ3MDEyYjU2ZWI0NmM4YWI0ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_08aa7166638b40edb2e6a2af8a171ec6",
+      "statement": "rvz-rs's and wbfs-rs's interop suites find dolphin-tool and wit through $DOLPHIN_TOOL and $WIT, else PATH, and return early when absent; neither tool is installed in CI.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L86-L92",
+          "version": "repo-lines-v1:sha256:1d629f15574656f74215cbcf407ec1190f9e61bd6086e90b80e736b1bce05a40:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQwYzM0NDZlNGM4YTA3M2E0MWNmZGM4MzMxMWE4ZDA1ZGZhOGM3ODNhNThkNThjNDcxZjI3YTlhMTM0NzQ4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1YTBlMzZhYTUxNTk0ZjAxMTQwOWVhNGFjMGJmMWRhZmIxNDM3NzEwMjMwNjQ3MjA2MzQwMWQ0MjJiYTE5ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDM3ZGNmNjM1MGYwZTdkODc2YjNiZGY1YTNjMThmM2YzZjQ3ZDI3NzI4MDA3MjVhM2FhOGI4NDhjZWQzNTViMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjBiNzQzMGM4MzRhNDU2NDViYWZiM2ZiMmMyMjg3N2IzN2NiNTY3ZTgwNmEyZTkxN2EzZWQ3YTdjZmY2MzMyNSJ9"
+        },
+        {
+          "resource": "repo://crates/gcwii/tests/common/mod.rs#L283-L291",
+          "version": "repo-lines-v1:sha256:004d71a0284becc5ca63cbb3fc44ac90b4abbac8fe8da81db490fa7758461c42:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODQxMzQxMmRhNjEyODYxY2QzMGMzMDgzNjRhZDUwZDg5ZWY1NTRiZThhNDYwMTIxNmIzMDM2YTc5YzU3Mjk3ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQ4ZmQxODAzMDhlYmUxYjZjOGVjNWZhODEwZDFmYjdmODY2NjU1ZDVlZTMxZDE2ZmU1MjAzYzFkNzMwZmE0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://crates/rvz-rs/tests/interop.rs#L21-L27",
+          "version": "repo-lines-v1:sha256:5cf924bcd3af84743da40b2bf9a28ff8301d98ad74877fcad267efb6711aa565:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjI3ZmMwYzc3YTU4N2NiZWZjYWVjNDI2MjFjMGViNzI2ZDJmZDZiN2NjMDY0NmZkNzg0ZWYxY2NlOWE5YzIwOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWNlYzdhY2EwMWQxMWFhOThjYzIyZDhjMGVhMDdhZTI1ODYzYjU1ZjE4MThmZGQwZmYxNzkxMDY5OTZiYjJmYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGRjZmMzZDJjNTliMTNjY2I0MzYyM2JjOTg4MDAwNGNmZWU4MWNlZDUwMmNjMDFhMmZhNjlkOTgxYzk1ZTQxNSJ9"
+        },
+        {
+          "resource": "repo://crates/wbfs-rs/tests/interop.rs#L19-L31",
+          "version": "repo-lines-v1:sha256:85f34c91961ef5a6963d280b97ec6dac4b4a9ffba5610762ecdab7dfaf587fd2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlOTQ3ZjQwYjE0ZmNkZjRkNjE5ZDg4NDIyMjgxYTg1OTk1NmNjYTVkMTMzMTZmY2EzMDM0ZWI1YzA0ZmUwMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMTY5MjljOTgxMmQwNjQ0ZjJlNGQ4MzA3NTVkNzU3MTgxN2EwM2Y5Njg1N2ExMTEwZTIwOGI1Y2QxODVhZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZWE1NDVjN2Q3MDAwYzZiMzJlYzgwOTVkNmI0YWNjYzEyNzY0NmZjYTBiNzhmNjM2MWJjNjIxMTQ0ZjNhMTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_64a3819a6ade4a0495958e00eef4ef0d",
+      "statement": "tests/crates.rs also checks the embedded gcwii crate: every symlink in EMBEDDED (src/gcwii and tests/common in rvz-rs and wbfs-rs) must resolve to gcwii's src or tests/common, and no gcwii source line may use crate::.",
+      "evidence": [
+        {
+          "resource": "repo://tests/crates.rs#L23-L76",
+          "version": "repo-lines-v1:sha256:18671c0b7ec8e1e03ebf0d6f3c2bd4cc6ceecc2d889ac6ab2cb22862d6bd4f83:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkOTQxZmQ1YWExOGQ3ODZjNGQzZDc2ODZjOTg3MDIwNmQzMzAxY2Y4OGE1Y2U0Y2E3NDFhOTJkZTkxY2EyMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-01T22:28:11.879Z"
+    "at": "2026-11-09T21:55:13.223Z"
   }
 }

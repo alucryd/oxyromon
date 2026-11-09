@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Test Fixtures and End-to-End Suites"
-description: "What lives in tests/ — the Logiqx DAT fixtures and the ROM, disc-image (including the in-process CHD fixtures), archive, patch and header files they declare — how src/<module>/test_*.rs consumes them without mutating the corpus, and what the two real integration targets (tests/crates.rs, tests/mcp_stdio.rs) prove."
+description: "What lives in tests/ — the Logiqx DAT fixtures and the ROM, disc-image (including the in-process CHD fixtures), archive, patch and header files they declare — how src/<module>/test_*.rs consumes them without mutating the corpus, and what the four real integration targets (tests/crates.rs, tests/mcp_stdio.rs, tests/plain_output.rs, tests/cli_output.rs) prove."
 tags: [testing, fixtures, dat, chd, roms, mcp, integration-tests, compute-sums]
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
@@ -16,6 +16,8 @@ sources:
     resource: repo://crates/cia-rs/tests/common/mod.rs
   - id: openwiki-source-39b287310cfd4e9fe820875a
     resource: repo://crates/cia-rs/tests/kat.rs
+  - id: openwiki-source-2317ee3d71643178aaa4c218
+    resource: repo://crates/gcwii/tests/common/mod.rs
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
   - id: openwiki-source-a380817ef07d05704067a359
@@ -88,6 +90,8 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-1cf069de5c999c3ff1245ed6
     resource: repo://src/xps/test_patch.rs
+  - id: openwiki-source-d3ba64341f3a424837662eeb
+    resource: repo://tests/cli_output.rs
   - id: openwiki-source-790aa1ecc03c536bf0e060a6
     resource: repo://tests/compute_sums.sh
   - id: openwiki-source-13df766a80853b510f45e6c3
@@ -98,6 +102,8 @@ sources:
     resource: repo://tests/header.xml
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
+  - id: openwiki-source-4090e615029907c2fb175f07
+    resource: repo://tests/plain_output.rs
   - id: openwiki-source-0cc1fa6981e9c7b322a64061
     resource: repo://tests/profile.xml
   - id: openwiki-source-fe6c4f3a2a4bbacd8c8e105a
@@ -124,23 +130,25 @@ sources:
     resource: repo://tests/Test%20System%20(20261025)%20(CDN).dat
   - id: openwiki-source-706217a392bda126ca145591
     resource: repo://tests/Test%20System%20(20261025)%20(WUD).dat
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 
 # Test Fixtures and End-to-End Suites
 
 `tests/` is not an integration-test directory in the ordinary Rust sense. It is
-**a fixture corpus** — 30 Logiqx DAT files and the ROM, disc-image, archive,
+**a fixture corpus** — 33 Logiqx DAT files and the ROM, disc-image, archive,
 patch and header files they describe — consumed by the ~300 `src/<module>/test_*.rs`
 modules that live beside the code under test (see
-[Testing Conventions](testing-conventions.md)). Only two files in it are test
-targets of the root package: `tests/crates.rs` and `tests/mcp_stdio.rs`, and
-both are the special cases — one cross-crate parity guard, one end-to-end suite
-that spawns the real binary. A third audience exists: `crates/chd-rs/tests/`
+[Testing Conventions](testing-conventions.md)). Only four files in it are test
+targets of the root package, and all are special cases: `tests/crates.rs`, a
+cross-crate parity guard; `tests/mcp_stdio.rs`, an end-to-end suite that spawns
+the real binary; and `tests/plain_output.rs` and `tests/cli_output.rs`, which
+also spawn it, with stderr piped, to check that messages still reach a stderr
+that is not a terminal, uncoloured, and that stdout stays empty. A third audience exists: `crates/chd-rs/tests/`
 reads the repository's CHD fixtures through `../../tests` as the
 byte-comparison corpus for its `chdman` interop suites.
 
@@ -467,19 +475,27 @@ the `cetk` and checks that the update is left out of the WUA.
 
 ## `tests/crates.rs`: the shared CLI shell must not drift
 
-`tests/crates.rs` is a workspace-level guard, not a behaviour test. The eight
+`tests/crates.rs` is a workspace-level guard, not a behaviour test. The ten
 format crates each ship a CLI whose `ui.rs` — progress bar, `-o DIR`, the
 `✔`/`✖` per-input lines — is a **verbatim copy**. `every_cli_shares_one_ui`
 reads `crates/xso-rs/src/bin/xsors/ui.rs` as the reference and asserts the copies
-in **`chdrs`**, `ciars`, `gdirs`, `nszrs`, `wuxrs`, `xdeltars` and `xpsrs` are
-byte-identical ([tests/crates.rs](../../tests/crates.rs#L1-L19)).
+in **`chdrs`**, `ciars`, `gdirs`, `nszrs`, `rvzrs`, `wbfsrs`, `xdeltars`, `wuxrs`
+and `xpsrs` are byte-identical ([tests/crates.rs](../../tests/crates.rs#L1-L21)).
 
 It has no feature gate and no fixtures, so it runs on every
 `cargo test --workspace`, including the CI coverage pass. Editing one `ui.rs`
-without the other seven turns CI red with `"<path> differs from xsors's ui.rs"`;
-the fix is always to change all eight together, which is the convention `AGENTS.md`
+without the other nine turns CI red with `"<path> differs from xsors's ui.rs"`;
+the fix is always to change all ten together, which is the convention `AGENTS.md`
 records for the crates
 ([Format Crates](../integrations/format-crates.md)).
+
+The same file guards fixtures shared by symlink. The GameCube and Wii test
+discs live once, in `crates/gcwii/tests/common/mod.rs`, which builds synthetic
+discs (encrypted with a made-up Wii common key) and finds `dolphin-tool`;
+`crates/rvz-rs/tests/common` and `crates/wbfs-rs/tests/common` are symlinks to
+it, as their `src/gcwii` are to gcwii's source. `embedded_crates_are_symlinked_in`
+checks every one of those links, so a broken or text-file symlink — what a
+Windows checkout without `core.symlinks` produces — fails here first.
 
 One fixture is deliberately duplicated: `crates/cia-rs/tests/data/Test Game (USA,
 Europe).cia` is a byte-identical copy of `tests/Test Game (USA, Europe).cia`, so the

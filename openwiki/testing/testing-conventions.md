@@ -32,8 +32,6 @@ sources:
     resource: repo://src/chd.rs
   - id: openwiki-source-f026be5ceac01513e05fa46c
     resource: repo://src/check_roms/test_check_by_name.rs
-  - id: openwiki-source-db15f8427180aeec55b3a076
-    resource: repo://src/cia.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
   - id: openwiki-source-e507d9e57674a40c667bf90d
@@ -98,16 +96,18 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
+  - id: openwiki-source-d3ba64341f3a424837662eeb
+    resource: repo://tests/cli_output.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
   - id: openwiki-source-4090e615029907c2fb175f07
     resource: repo://tests/plain_output.rs
-generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # Test Harness and Conventions
@@ -126,14 +126,16 @@ directly with a synthesized clap `ArgMatches` — no process is spawned
 Roughly 300 such modules exist; `src/sort_roms/` alone holds 42, one per sorting
 scenario. `tests/` is **not** the ordinary Rust integration directory — it is the
 fixture corpus the in-module tests read
-([Test Fixtures and End-to-End Suites](test-fixtures.md)). Only three files there
-are test targets: the CLI-parity guard `tests/crates.rs`, and two that spawn the
+([Test Fixtures and End-to-End Suites](test-fixtures.md)). Only four files there
+are test targets: the workspace guard `tests/crates.rs`, and three that spawn the
 real binary via `env!("CARGO_BIN_EXE_oxyromon")`. The end-to-end
 `tests/mcp_stdio.rs` drives the MCP server over JSON-RPC
 ([tests/mcp_stdio.rs](../../tests/mcp_stdio.rs#L1-L43)).
 `tests/plain_output.rs` runs `import-dats` with stderr piped and colours forced
 on, and checks the lines reach stderr uncoloured with stdout empty
-([tests/plain_output.rs](../../tests/plain_output.rs#L1-L32)).
+([tests/plain_output.rs](../../tests/plain_output.rs#L1-L32)); `tests/cli_output.rs`
+runs `info` with its output captured and checks the banner reaches stderr and
+stdout stays empty ([tests/cli_output.rs](../../tests/cli_output.rs#L1-L19)).
 A third style exists once, inline: `#[cfg(test)] mod tests { … }` inside
 [src/iso.rs](../../src/iso.rs#L186-L192) for the CUE-parsing helpers.
 
@@ -325,8 +327,9 @@ oracle skips, and the `env` override exists so a developer can point the suite a
 a build outside `PATH`.
 
 **The application has no tool probe left**, because `sevenz-rust2`, `chd-rs`,
-`cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `wux-rs` and `nod` are all linked
-libraries whose `get_version()` returns a constant such as `"built-in"`
+`cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `wux-rs`, `rvz-rs` and
+`wbfs-rs` are all linked libraries whose `get_version()` returns a constant such
+as `"built-in"`, reported through `info::dependencies()`
 ([src/archive.rs](../../src/archive.rs#L477-L480),
 [src/chd.rs](../../src/chd.rs#L896-L898),
 [src/cia.rs](../../src/cia.rs#L20-L22)). `ctrtool`, the last program the
@@ -374,7 +377,8 @@ the two together:
   romfile, purges, then asserts `find_romfiles()` is empty **and** the system
   directory has zero entries ([src/purge_roms/test_orphans.rs](../../src/purge_roms/test_orphans.rs#L54-L72)).
 - `check_roms/test_check_by_name.rs` overwrites the imported file *after* import
-  (so the fixture stays intact), runs `check-roms --system …`, and asserts the
+  (so the fixture stays intact), runs `check-roms -s <system>` (`-s` is
+  `--system` there, `--size` having no short form), and asserts the
   surviving row's path contains `/Trash/` and that the file really exists there
   ([src/check_roms/test_check_by_name.rs](../../src/check_roms/test_check_by_name.rs#L50-L73)).
 
@@ -509,12 +513,14 @@ serialized by the `MUTEX`, so wall-clock time scales with the number of
 
 `tests/crates.rs` is a parity guard, not a behaviour test: `every_cli_shares_one_ui`
 reads `crates/xso-rs/src/bin/xsors/ui.rs` as the canonical copy and asserts that
-the `ui.rs` of `chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `wux-rs`, `xdelta-rs` and
-`xps-rs` is byte-identical to it
-([tests/crates.rs](../../tests/crates.rs#L1-L19)). The format CLIs deliberately
-share one shell, so a change to that shell must be made in all eight places at once;
-editing one turns any `cargo test --workspace` red, on any crate
-([AGENTS.md](../../AGENTS.md#L146-L155)).
+the `ui.rs` of `chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `rvz-rs`, `wbfs-rs`,
+`xdelta-rs`, `wux-rs` and `xps-rs` is byte-identical to it
+([tests/crates.rs](../../tests/crates.rs#L1-L21)). The format CLIs deliberately
+share one shell, so a change to that shell must be made in all ten places at once;
+editing one turns any `cargo test --workspace` red, on any crate. Two more tests
+there guard the embedded `gcwii` crate: every symlink listed in `EMBEDDED` must
+resolve to its `src` or `tests/common`, and its source must never say `crate::`
+([tests/crates.rs](../../tests/crates.rs#L23-L76)).
 
 ## Invariants agents break most often
 
@@ -539,7 +545,7 @@ editing one turns any `cargo test --workspace` red, on any crate
 8. **Testing `server`/`mcp` code without `--features oxyromon/server`** — the
    modules are not compiled, so the run is vacuously green.
 9. **Editing one crate's `ui.rs`** — `tests/crates.rs` requires all copies to be
-   byte-identical to `xsors`'s ([tests/crates.rs](../../tests/crates.rs#L1-L18)).
+   byte-identical to `xsors`'s ([tests/crates.rs](../../tests/crates.rs#L1-L21)).
 
 ## Adding tests for a new subcommand
 
