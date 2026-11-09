@@ -61,6 +61,11 @@
       "rule": "OxyRomon README reviewed as prose against the code it documents. Check: every flag, default, path, command example and supported-format claim still matches the clap definition and the module that implements it, including code added in this diff; counts and lists it states (supported systems, formats, flags) match what the code accepts; two sections of the document do not contradict each other; the diff does not leave a section describing behaviour the diff removed."
     },
     {
+      "path": "**/CHANGELOG.md",
+      "merge_system_rule": true,
+      "rule": "Changelog entry reviewed as prose against the code. Check: a global quantifier ('wherever a command', 'every', 'always', 'no longer') holds for every module defining the feature, not only the ones the diff touches; the entry sits under the version heading matching the nearest Cargo.toml."
+    },
+    {
       "path": "*.sh",
       "merge_system_rule": true,
       "rule": "Shell scripts reviewed against Cargo.toml. Check: every cargo feature, package name and binary the script names still exists after the diff; a diff that removes a feature updates every script, workflow and Dockerfile that names it."
