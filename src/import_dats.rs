@@ -267,7 +267,7 @@ pub async fn parse_dat<P: AsRef<Path>>(
     }
 
     // print information
-    let label_style = Style::new().dim();
+    let label_style = Style::new().for_stderr().dim();
     print_info(
         progress_bar,
         &format!(

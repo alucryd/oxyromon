@@ -22,6 +22,7 @@ pub fn subcommand() -> Command {
         )
         .arg(
             Arg::new("SYSTEM")
+                .short('s')
                 .long("system")
                 .help("Select the system to purge from, skipping the prompt and purging every IRD game when no names are given")
                 .required(false)
