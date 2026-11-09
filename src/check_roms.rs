@@ -38,7 +38,6 @@ pub fn subcommand() -> Command {
         )
         .arg(
             Arg::new("SIZE")
-                .short('s')
                 .long("size")
                 .help("Recalculate ROM file sizes")
                 .required(false)
@@ -46,6 +45,7 @@ pub fn subcommand() -> Command {
         )
         .arg(
             Arg::new("SYSTEM")
+                .short('s')
                 .long("system")
                 .help("Select systems by name")
                 .required(false)
