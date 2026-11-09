@@ -6,6 +6,8 @@ tags: [formats, crates, archive, 7z, zip, chd, chd-rs, rvz, wbfs, nsz, xso, gdi,
 sources:
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
+  - id: openwiki-source-507e22a3e1801299fc6560b5
+    resource: repo://crates/rvz-rs/src/compression.rs
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
   - id: openwiki-source-02628a361dd4faa0f62f87a2
@@ -62,10 +64,10 @@ sources:
     resource: repo://src/xps/test_patch.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # Format Modules and Their Crate Backends
@@ -82,8 +84,8 @@ the MCP `status` tool.
 | Module | Backend | Formats | `get_version()` |
 | --- | --- | --- | --- |
 | `archive` | `sevenz-rust2` + `zip` (in-process) | 7z, ZIP | `"built-in"` |
-| `rvz` | `nod` (in-process) | RVZ | `"built-in"` |
-| `wbfs` | `nod`, via `rvz::write_disc` | WBFS | none — reported under `nod` |
+| `rvz` | `rvz-rs` (`crates/rvz-rs`) | RVZ | `"built-in"` |
+| `wbfs` | `wbfs-rs` (`crates/wbfs-rs`), reading an RVZ through `rvz-rs` | WBFS (export only) | `"built-in"` |
 | `chd` | `chd-rs` (`crates/chd-rs`) | CHD (CD/DVD/HDD/LD) | `"built-in"` |
 | `xso` | `xso-rs` (`crates/xso-rs`) | CSO, ZSO | `"built-in"` |
 | `nsz` | `nsz-rs` (`crates/nsz-rs`) | NSP, NSZ | `"built-in"`, or `"built-in, prod.keys not found"` |
@@ -102,9 +104,10 @@ exception with content: it appends `prod.keys not found`, since keys are needed
 only when compressing an NSP whose members include NCAs, and the warning exists
 so a user does not discover the missing file mid-compression. `wux` does the same
 for Wii U keys: only WUA and NUS conversions need them, so it reports
-`no Wii U keys imported` when `import-keys` has not stored a `keys.txt` yet. `gdi`, `iso`,
-`wbfs` and `crc32` export no `get_version()` at all, so they appear in no
-dependency table.
+`no Wii U keys imported` when `import-keys` has not stored a `keys.txt` yet. `gdi`, `iso`
+and `crc32` export no `get_version()` at all, so they appear in no dependency
+table. `rvz` says nothing about the Wii common key, which only compressing a Wii
+ISO (to RVZ, or to WBFS from an ISO) needs.
 
 None of these can fail, so no dependency can be reported missing. CHD and CIA
 used to be the two exceptions, each spawning an external tool (`chdman`,
@@ -204,10 +207,9 @@ sequenceDiagram
 
 No module is subprocess-backed any more; `cia.rs`, the last one, runs
 `cia_rs::Cia::parse` and `cia_rs::unpack` through `run_blocking` like the others.
-`nod` sits in between: `rvz.rs` drives it
-directly on `spawn_blocking` rather than through `run_blocking`, because the
-crate exposes a `Read`er and a writer callback with its own progress semantics
-rather than a bytes-consumed closure. `chd.rs` uses `run_blocking` for both
+`rvz.rs` and `wbfs.rs` use `run_blocking` for every conversion too; only hashing
+an RVZ calls `spawn_blocking` itself, as it reads the disc through an
+`rvz_rs::Reader` rather than converting a file. `chd.rs` uses `run_blocking` for both
 directions, but not for metadata: `parse_chd` opens the container on
 `spawn_blocking` directly, since a header read has no progress to draw.
 
@@ -304,42 +306,46 @@ its parent already uses. When several remain, the ones matching the ROM's CRC
 win, and an exact name sorts first. Because every lookup goes through it, the
 `<folder>/<name>` arm applies to any archive, not only merged arcade sets.
 
-## `rvz.rs` and `wbfs.rs`: one disc pipeline, two containers
+## `rvz.rs` and `wbfs.rs`: two crates, one disc reader
 
-WBFS is only about forty lines because it borrows everything from `rvz.rs`. The
-shared pieces are `open`, which pins `PartitionEncryption::Original` with four
-preloader threads so a decoded disc reproduces the source exactly — partition
-hashes and encryption left as they are, making an extracted ISO byte-for-byte
-what went in — and `write_disc`, which builds a `DiscWriter` for a caller-supplied
-`FormatOptions`, streams output to a file, and applies `finalization.header` by
-rewinding and rewriting the file start, because RVZ and WBFS only know their
-header once every block has been written. WBFS calls
-`write_disc(.., FormatOptions::new(Format::Wbfs))` and adds nothing: no
-compression, no block size, no settings keys.
+Both modules are thin: the disc work lives in `rvz-rs` and `wbfs-rs`, which
+share their GameCube and Wii code through the embedded `gcwii` crate (see
+[GameCube and Wii formats](gamecube-wii-formats-rvz-wbfs-gcwii.md)).
 
-`write_disc` also sizes the machine to the job: `processor_threads` maps the
-writer's own `DiscWriterWeight` to 0, `min(available, 4)`, or all cores, and
-progress is bounded by `writer.progress_bound()` — progress through the
-*source*, which for a compressing format bears no relation to bytes written out.
-All five `digest_*` options are off; oxyromon hashes discs itself.
+`rvz.rs` maps the settings onto `rvz_rs::Options` in `options()` and calls
+`rvz_rs::compress` and `rvz_rs::decompress` through `run_blocking`. Compressing
+loads the Wii common key with `load_wii_keys()`, from the `wiiu_keys.txt`
+`import-keys` writes; with no file it passes no keys, and only a Wii disc then
+fails, its `MissingKey` error given the hint `run import-keys`. A GameCube disc,
+and reading or rewriting an RVZ, need no key.
 
 `RvzRomfile` is the only wrapper in the module set that avoids the
-decode-to-temp-directory cost: `hash_disc` treats the `DiscReader` as a plain
-`Read`er and feeds `common::hash_reader` directly, so a dual-layer Wii disc is
-verified without writing several gigabytes to the temp directory and reading them
-back. `Check` follows the same path unless a DAT declares a header — no GameCube
-or Wii DAT does — in which case it falls back to extracting an ISO so header
-stripping can happen.
+decode-to-temp-directory cost: `hash_disc` opens an `rvz_rs::Reader`, sizes the
+bar to the disc, and feeds the reader to `common::hash_reader`, so a dual-layer
+Wii disc is verified without writing several gigabytes to the temp directory and
+reading them back. `Check` follows the same path unless a DAT declares a header
+— no GameCube or Wii DAT does — in which case it falls back to extracting an
+ISO so header stripping can happen.
 
-**RVZ cannot be scrubbed.** `write_disc` hardcodes `ScrubLevel::None`, because
-nod scrubs only CISO and WBFS output, so there is no scrub setting, and
-`export_roms::to_rvz` copies an already-RVZ source verbatim.
+`wbfs.rs` implements `ToWbfs` for an `IsoRomfile` and an `RvzRomfile`. From an
+ISO it calls `wbfs_rs::create` with the Wii keys, as finding what a Wii disc
+uses means decrypting its partitions. From an RVZ it wraps an `rvz_rs::Reader`
+in `RvzSource`, an implementation of wbfs-rs's `Source` trait whose
+`title_key` hands over the title keys the RVZ keeps, and calls
+`wbfs_rs::create_from` with no keys: no common key is needed and no ISO is
+decoded on the way. Because wbfs-rs counts the disc's bytes and the bar the
+RVZ's, it rescales each progress call.
+
+**RVZ is never scrubbed.** `options()` always passes `scrub: false`, so there is
+no scrub setting, and `export_roms::to_rvz` copies an already-RVZ source
+verbatim. WBFS, scrubbed by nature, is an export format only.
 
 Compression mapping is the other defensive spot: `RVZ_COMPRESSION_LEVEL` ranges
-1–22, but only Zstandard accepts that range, so `compression()` **clamps**
-rather than rejects for `bzip2`, `lzma` and `lzma2` (1–9), keeping an existing
-configuration working instead of failing the conversion. `RVZ_BLOCK_SIZE` is
-stored in KiB and multiplied by 1024 for nod.
+1–22, but only Zstandard accepts that range, so `options()` **clamps** rather
+than rejects to the codec's `Compression::levels()` — 1–9 for `bzip2`, `lzma`
+and `lzma2` — keeping an existing configuration working instead of failing the
+conversion. `RVZ_BLOCK_SIZE` is stored in KiB and multiplied by 1024 for
+rvz-rs.
 
 ## `chd.rs`: one module, four CHD personalities
 

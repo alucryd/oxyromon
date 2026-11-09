@@ -14,6 +14,8 @@ sources:
     resource: repo://Cargo.toml
   - id: openwiki-source-1519e62b0bf12b3d41c2e1b8
     resource: repo://crates/chd-rs/Cargo.toml
+  - id: openwiki-source-8bd2a10a08a7d902fe9f5c52
+    resource: repo://crates/gcwii/Cargo.toml
   - id: openwiki-source-92ee3a60a9826201e8ce6fa7
     resource: repo://desktop/Cargo.toml
   - id: openwiki-source-19a65c75a2d97f6840dee349
@@ -26,6 +28,8 @@ sources:
     resource: repo://src/archive.rs
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
+  - id: openwiki-source-f1234afbb261ce7190a87845
+    resource: repo://src/check_roms.rs
   - id: openwiki-source-db15f8427180aeec55b3a076
     resource: repo://src/cia.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
@@ -52,10 +56,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # Quickstart & Task Routing
@@ -68,17 +72,20 @@ export. The same binary can also run as a web server (GraphQL API plus an embedd
 and as a Model Context Protocol server — both optional Cargo features, and both thin wrappers
 over the very same subcommand implementations the CLI runs.
 
-Format handling is in-tree: seven of the eight crates under `crates/` (`chd-rs`, `cia-rs`,
-`gdi-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs`, `xso-rs`) are ports of the external tools oxyromon
-used to shell out to, and the eighth, `wux-rs`, adds Wii U support following wudd and Cemu. So
+Format handling is in-tree: nine of the ten format crates under `crates/` (`chd-rs`, `cia-rs`,
+`gdi-rs`, `nsz-rs`, `rvz-rs`, `wbfs-rs`, `xdelta-rs`, `xps-rs`, `xso-rs`) are ports of the external
+tools oxyromon used to run, and the tenth, `wux-rs`, adds Wii U support following wudd and Cemu.
+A third directory kind, `crates/gcwii`, holds the GameCube and Wii disc code `rvz-rs` and
+`wbfs-rs` share, embedded into both by symlink rather than published. So
 **oxyromon needs no external program at runtime** and a plain build needs no format
 toolchain installed. `mame-tools`/`chdman`, `xdelta3` and `ffmpeg` appear only in CI as reference
-binaries for the crates' own tests.
+binaries for the crates' own tests; `dolphin-tool` and `wit`, the references for `rvz-rs` and
+`wbfs-rs`, are picked up locally when present.
 
 ## Shortest working path
 
 ```sh
-cargo build --release                       # CLI only: needs a C toolchain
+cargo build --release                       # CLI only: needs a C toolchain, for Zstandard
 cargo build --release --features server     # plus GraphQL + web UI (needs trunk + wasm32 target)
 ```
 
@@ -129,10 +136,10 @@ flowchart LR
 | Path        | What it is                                                                                                                                  |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | root        | The `oxyromon` package: the binary, `build.rs`, `migrations/`, `.sqlx/` offline query data.                                                  |
-| `crates/`   | Eight format crates (`chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `wux-rs`, `xdelta-rs`, `xps-rs`, `xso-rs`), workspace members, standalone library + CLI, published independently. |
+| `crates/`   | Ten format crates (`chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `rvz-rs`, `wbfs-rs`, `wux-rs`, `xdelta-rs`, `xps-rs`, `xso-rs`), workspace members, standalone library + CLI, published independently; plus `gcwii`, embedded into `rvz-rs` and `wbfs-rs`, never published. |
 | `frontend/` | The Leptos SPA. **Not** a workspace member — it declares its own `[workspace]`.                                                              |
 | `desktop/`  | The Tauri shell that spawns `oxyromon server` as a sidecar. Also standalone.                                                                  |
-| `tests/`    | DAT and ROM fixtures plus the two integration targets: `tests/mcp_stdio.rs` and `tests/crates.rs`.                                            |
+| `tests/`    | DAT and ROM fixtures plus the four integration targets: `tests/mcp_stdio.rs`, `tests/crates.rs`, `tests/plain_output.rs` and `tests/cli_output.rs`. |
 
 `frontend/` and `desktop/` keep their own workspace roots so WebAssembly and webview
 dependencies never enter the native build; `build.rs` runs `trunk build --release` in `frontend/`
@@ -155,14 +162,16 @@ standalone CLI with the same capabilities:
 | `xdelta-rs` | xdelta3            | `xdeltars` | XDELTA patches        |
 | `xps-rs`    | Flips              | `xpsrs`    | IPS and BPS patches   |
 | `xso-rs`    | maxcso             | `xsors`    | CSO/ZSO               |
+| `rvz-rs`    | Dolphin's RVZ code | `rvzrs`    | RVZ                   |
+| `wbfs-rs`   | wit                | `wbfsrs`   | WBFS export           |
 | `wux-rs`    | none (wudd, Cemu)  | `wuxrs`    | Wii U WUD/WUX, WUA and NUS export |
 
-Archives go through `sevenz-rust2` and `zip`, RVZ and WBFS through `nod` (which builds its
-compression libraries from source, so a C toolchain is required).
+Archives go through `sevenz-rust2` and `zip`. Zstandard, which several crates use, builds its C
+library from source, so a C toolchain is required.
 `chd-rs` takes its FLAC codec from the pure-Rust `rusty_flac`, so no CMake is needed.
 
 ```sh
-cargo build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p wux-rs -p xps-rs -p xso-rs   # the CLIs
+cargo build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p rvz-rs -p wbfs-rs -p xdelta-rs -p wux-rs -p xps-rs -p xso-rs   # the CLIs
 cargo test -p xso-rs                              # one crate
 cargo test --release -p xso-rs -- --ignored       # its slow tests
 ```
@@ -170,11 +179,14 @@ cargo test --release -p xso-rs -- --ignored       # its slow tests
 `dist.sh` cross-builds those CLIs next to `oxyromon` for every target and ships them in the
 release archives.
 
-`oxyromon info` is the dependency check: it probes every backend's `get_version()`, prints
+`oxyromon info` is the dependency check: it prints `info::dependencies()`, the list GraphQL and
+MCP report too, from every backend's `get_version()`, and prints
 `<name>: built-in` for every backend, all of which are linked crates, and special-cases two that need keys. A
 missing `prod.keys` shows up as `built-in, prod.keys not found`, since only compressing NCAs needs it. Missing
 Wii U keys show up as `built-in, no Wii U keys imported`; `oxyromon import-keys` stores them in the data
-directory, and only WUA and NUS exports need them.
+directory, and only WUA and NUS exports need them. The same command stores the Wii common key,
+from a Wii's or a Wii U's `otp.bin` or BootMii's `keys.bin`, which only compressing a Wii ISO to
+RVZ, or exporting one to WBFS, needs.
 
 ## Task routing
 
@@ -190,6 +202,7 @@ directory, and only WUA and NUS exports need them.
 | adding or changing a format module (`archive`, `chd`, `rvz`, `xso`, …)                                    | [Format Modules and Their Crate Backends](concepts/format-modules-and-format-crates.md) |
 | CHD read/write, hunk and codec behavior, parent CHDs, `src/chd.rs` ↔ `crates/chd-rs`                      | [CHD Format and the chd-rs Crate](concepts/chd-format-and-chd-rs.md)           |
 | Wii U WUD/WUX/WUA/NUS, `import-keys`, updates and DLC, `src/wux.rs` ↔ `crates/wux-rs`                     | [Wii U Formats and the wux-rs Crate](concepts/wii-u-formats-and-wux-rs.md)     |
+| GameCube and Wii RVZ/WBFS, the Wii common key, `crates/rvz-rs`, `crates/wbfs-rs`, the embedded `gcwii`    | [GameCube and Wii formats](concepts/gamecube-wii-formats-rvz-wbfs-gcwii.md)    |
 | `CommonRomfile` and its trait system                                                                      | [Romfile Trait System](concepts/romfile-trait-system.md)                       |
 | DAT parsing, header definitions, Redump/No-Intro downloads                                                | [Catalog Ingestion: DATs, Headers and Downloads](workflows/dat-ingestion.md)   |
 | hashing, matching, placement, `PREFER_FORMAT` on import                                                   | [ROM Import Pipeline](workflows/rom-import-pipeline.md)                        |
@@ -204,7 +217,7 @@ directory, and only WUA and NUS exports need them.
 | MCP tools, resources, prompts, `run_action`, read-only mode                                               | [MCP Server: Tools, Resources and Prompts](server/mcp-server.md)               |
 | the Tauri sidecar, port reservation, child cleanup                                                        | [Desktop App (Tauri Sidecar)](server/desktop-tauri-shell.md)                   |
 | DAT provider URLs and No-Intro/TOSEC name tokens                                                          | [DAT Providers and Naming Conventions](integrations/dat-providers-no-intro-redump.md) |
-| the `crates/` format crates, their shared CLI shape and release cadence                                   | [Format Crates in crates/](integrations/format-crates.md)                      |
+| the `crates/` format crates, their shared CLI shape, embedded crates and release cadence                   | [Format Crates in crates/](integrations/format-crates.md)                      |
 | which tool each crate replaced, and the reference tools the crate tests use                              | [External Tools](integrations/external-tools.md)                               |
 | helper scripts, cross-compilation, containers, per-crate publishing                                       | [Builds, Distribution and Releases](operations/build-and-release.md)           |
 | CI jobs, `OXYROMON_*` variables, `DATABASE_URL`, TLS/Windows build notes                                  | [CI Pipelines and Runtime Environment](operations/ci-and-environment.md)       |
@@ -254,6 +267,10 @@ rather than fail when the tool is absent.
   `MultiProgress`. Never `println!` from a code path the MCP server can reach: with `oxyromon mcp`
   (or `/mcp`) stdout carries JSON-RPC. When stderr is not a terminal, the CLI subcommands print
   those lines plain and uncoloured to stderr instead of above the hidden bars.
+- **`-s` means `--system`** in every command with that option (`check-roms`, `import-irds`,
+  `purge-irds`, …) but `config`, where it stays `--set` and `--system` is `-n`.
+- **A format crate depends on no other crate here.** Shared system code goes in an embedded
+  crate (today `gcwii`), symlinked in, `super::` only; `tests/crates.rs` checks both.
 - **Every notable change updates `README.md` and `CHANGELOG.md`** — new flags, behavior changes and
   fixes alike, under the current version's section.
 - **One module per action, one interface.** `subcommand()` declares argv and does no I/O;
@@ -261,7 +278,7 @@ rather than fail when the tool is absent.
   argv to reach it, so a new capability added anywhere else is invisible to two of the three
   surfaces.
 - **Format modules do not spawn processes.** `src/chd.rs`, `cia.rs`, `archive.rs`, `nsz.rs`,
-  `xso.rs`, `xdelta.rs`, `xps.rs`, `rvz.rs` call their crate and return `"built-in"` from
+  `xso.rs`, `xdelta.rs`, `xps.rs`, `rvz.rs`, `wbfs.rs` call their crate and return `"built-in"` from
   `get_version()`; no module keeps a shell-out pattern.
 - **Query changes require regenerating offline sqlx data** (`cargo sqlx prepare -- --all-targets --features server`).
 - **Validate the way CI does**: `cargo test --workspace --features oxyromon/server`, with the shared

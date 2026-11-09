@@ -92,10 +92,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # Format Conversion and Export
@@ -140,8 +140,9 @@ private list that adds `GDI`, `ISO`, `NUS` and `WBFS`
 [src/export_roms.rs](../../src/export_roms.rs#L31-L34)). Those four are
 **export-only** because they are one-way: `ISO` throws away every track but the
 first (a bchunk port for Open PS2 Loader, [src/iso.rs](../../src/iso.rs#L1-L12)),
-`GDI` is a Dreamcast-only encoding, `WBFS` has no decoder path in this code
-base, and a `NUS` folder carries the
+`GDI` is a Dreamcast-only encoding, `WBFS` is scrubbed — only the blocks
+holding a cluster the disc uses are kept — so it is no longer the original disc,
+and a `NUS` folder carries the
 disc's TMD rather than the CDN's. `WUA` left that list once a WUA oxyromon writes
 became lossless: it keeps what rebuilds its disc byte for byte. Since `config`'s choice list for `PREFER_FORMAT` is literally
 `convert_roms::ALL_FORMATS` ([src/config.rs](../../src/config.rs#L72-L84)),
@@ -385,7 +386,7 @@ The durable invariants that came with the crate:
   which is what `info`, the GraphQL `query` status and the MCP `status` tool
   print under the `chd-rs` name
   ([src/chd.rs](../../src/chd.rs#L896-L898),
-  [src/info.rs](../../src/info.rs#L26-L37)). `util::tool_version` is gone: its
+  [src/info.rs](../../src/info.rs#L24-L39)). `util::tool_version` is gone: its
   last caller was `ctrtool::get_version`, and CIA import now runs on the
   in-process `cia-rs` crate, so no format shells out and nothing can print a
   missing-tool error
@@ -579,10 +580,15 @@ The export-only targets:
   DVD CHDs go straight to ISO, and `ChdType::Hd`/`Ld` are skipped
   ([src/export_roms.rs](../../src/export_roms.rs#L1450-L1635),
   [src/iso.rs](../../src/iso.rs#L1-L12)).
-- **`to_wbfs`** writes a Wii WBFS from an ISO via `nod`, decoding an RVZ through
-  the tmp directory first when that is the source
-  ([src/export_roms.rs](../../src/export_roms.rs#L1383-L1448),
-  [src/wbfs.rs](../../src/wbfs.rs#L12-L40)).
+- **`to_wbfs`** writes a WBFS through `wbfs-rs`, as `wit copy --wbfs` would,
+  from an ISO, from an archive holding a single ISO (extracted to the tmp
+  directory first), or straight from an RVZ: rvz-rs's reader stands in for the
+  disc and the RVZ's stored title keys for the Wii common key, so no ISO is
+  decoded and no key is needed. From an ISO, a Wii disc needs the common key
+  `import-keys` stores
+  ([src/export_roms.rs](../../src/export_roms.rs#L1437-L1500),
+  [src/wbfs.rs](../../src/wbfs.rs#L24-L132)); see
+  [GameCube and Wii formats](../concepts/gamecube-wii-formats-rvz-wbfs-gcwii.md).
 - **`to_gdi`** converts Redump-style CUE/BIN (loose, archived, or extracted from
   a CD CHD) into a GDI plus its track files through `gdi_rs` on the blocking
   pool, and copies an existing GDI set verbatim; a CD CHD with no CUE alongside

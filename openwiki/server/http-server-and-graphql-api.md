@@ -14,10 +14,6 @@ sources:
     resource: repo://frontend/Trunk.toml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
-    resource: repo://src/chd.rs
-  - id: openwiki-source-db15f8427180aeec55b3a076
-    resource: repo://src/cia.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
     resource: repo://src/config.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
@@ -58,10 +54,10 @@ sources:
     resource: repo://src/validator.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # HTTP Server, GraphQL API and Uploads
@@ -158,16 +154,16 @@ the game's rows ordered by name with no completion or region filter.
 Two of those fields are worth understanding rather than treating as lookups:
 
 - **`dependencies` reports the format engines, and none of them can be
-  missing.** The nine entries are `sevenz-rust2`, `chd-rs`, `cia-rs`,
-  `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `wux-rs` and `nod` (which backs RVZ
-  and WBFS), sorted by name. All are linked-in crates whose `get_version()`
+  missing.** The resolver maps `info::dependencies()` onto `Dependency` rows:
+  ten entries, `sevenz-rust2`, `chd-rs`, `cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`,
+  `xdelta-rs`, `wux-rs`, `rvz-rs` and `wbfs-rs`, sorted by name. All are linked-in crates whose `get_version()`
   returns `built-in` and cannot fail. Two add detail about keys: `nsz-rs` returns
   `built-in, prod.keys not found` when `~/.switch/prod.keys` is absent, and
   `wux-rs` returns `built-in, no Wii U keys imported` until `import-keys` has run.
   `version` is still nullable in the schema, but no entry produces `null` any
   more: `cia-rs` replaced `ctrtool`, the last external binary on the list. The
-  same nine-entry list backs `oxyromon info` and the MCP read tool, so the three
-  surfaces agree.
+  same function backs `oxyromon info` and the MCP `status` tool, so the three
+  surfaces cannot disagree.
 - **`systemSettings(systemId)` is the effective configuration, not a row
   lookup.** It loads the global settings and the system's overrides and merges
   them by key (override wins), sorted by key. A client that read `settings`

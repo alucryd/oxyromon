@@ -13,6 +13,10 @@ sources:
     resource: repo://crates/chd-rs/tests/write.rs
   - id: openwiki-source-039ef28c41d4fc7a1b163edc
     resource: repo://crates/cia-rs/tests/common/mod.rs
+  - id: openwiki-source-80837bf9108ff0f16ae4a8c2
+    resource: repo://crates/rvz-rs/tests/interop.rs
+  - id: openwiki-source-f8730c4d30529b436a36dd83
+    resource: repo://crates/wbfs-rs/tests/interop.rs
   - id: openwiki-source-1877f90a07c967103e553a55
     resource: repo://crates/wux-rs/README.md
   - id: openwiki-source-7c41df92324ca8ddc11ad14b
@@ -41,10 +45,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T12:28:25.132Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 
@@ -70,7 +74,8 @@ crate in-process.
 | `flips` | `xps-rs` | IPS, BPS |
 | `xdelta3` | `xdelta-rs` | XDELTA |
 | 7-Zip | `sevenz-rust2` + `zip` | 7Z, ZIP |
-| `dolphin-tool`, `wit` | `nod` | RVZ, WBFS |
+| `dolphin-tool` (later the `nod` crate) | `rvz-rs` | RVZ |
+| `wit` (later the `nod` crate) | `wbfs-rs` | WBFS |
 
 `wux-rs` has no row: oxyromon never ran a tool for the Wii U, so the crate follows
 wudd and Cemu rather than replacing a subprocess. Its tests use a synthetic disc and
@@ -78,7 +83,9 @@ the independent `zarust` ZArchive reader, not an upstream binary.
 
 The crates under `crates/` are oxyromon's own ports, each published on its own
 and shipping a standalone CLI; see [Format Crates in crates/](format-crates.md).
-`sevenz-rust2`, `zip` and `nod` are ordinary crates.io dependencies.
+`sevenz-rust2` and `zip` are ordinary crates.io dependencies. RVZ and WBFS went
+through `nod` for a while after leaving `dolphin-tool` and `wit`; rvz-rs and
+wbfs-rs replaced it in turn, and it is no longer a dependency.
 
 ## What this means at runtime
 
@@ -90,8 +97,9 @@ and shipping a standalone CLI; see [Format Crates in crates/](format-crates.md).
   progress from `run_blocking`. A malformed CIA is reported as an error naming
   the file instead of a panic.
 - **Nothing can be missing.** `info`, the GraphQL `dependencies` query and the MCP
-  `status` payload list `sevenz-rust2`, `chd-rs`, `cia-rs`, `nod`, `nsz-rs`,
-  `wux-rs`, `xdelta-rs`, `xps-rs` and `xso-rs`, and every one reports `built-in`.
+  `status` payload all report `info::dependencies()`: `sevenz-rust2`, `chd-rs`,
+  `cia-rs`, `nsz-rs`, `rvz-rs`, `wbfs-rs`, `wux-rs`, `xdelta-rs`, `xps-rs` and
+  `xso-rs`, and every one reports `built-in`.
   Two add a note about keys: `nsz-rs` appends `prod.keys not found` when the Switch
   key file is absent, and `wux-rs` appends `no Wii U keys imported` until
   `import-keys` has run.
@@ -113,11 +121,13 @@ tool is absent, so a contributor without them still gets a green run.
 | `xso-rs` | `maxcso` | `$MAXCSO`, then `$PATH` |
 | `xps-rs` | `flips` | `flips --version` on `$PATH` |
 | `xdelta-rs` | `xdelta3` | `xdelta3 -V` on `$PATH` |
+| `rvz-rs` | `dolphin-tool` | `$DOLPHIN_TOOL`, then `$PATH` |
+| `wbfs-rs` | `wit` | `$WIT`, then `$PATH` |
 
 CI installs `mame-tools`, `xdelta3` and `ffmpeg` in the lint and test job, after an
 `apt-get update` with retries, and the workflow comments that all three are only
-for the crates' tests. `ctrtool`, `maxcso` and `flips` are not installed, so those
-interop suites skip on the runner. The CIA import test in oxyromon itself no
+for the crates' tests. `ctrtool`, `maxcso`, `flips`, `dolphin-tool` and `wit` are not
+installed, so those interop suites skip on the runner. The CIA import test in oxyromon itself no
 longer depends on any of this: `src/import_roms/test_cia.rs` runs the real
 pipeline in-process and has no skip guard.
 

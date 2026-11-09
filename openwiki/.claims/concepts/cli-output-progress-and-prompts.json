@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bf1cd729dc3589c28de87cd6306f5aee4973b78dec997804308b81aaa9b76abd",
+  "pageVersion": "sha256:a90f25b038823d654344bd13b8b711af6b29dbebbe048b3c20f16514698f911b",
   "claims": [
     {
       "id": "claim_77b116c7739346779859b7ffe4c75f3b",
       "statement": "src/progress.rs owns a single process-wide `static MULTI_PROGRESS: LazyLock<MultiProgress>`, and `get_progress_bar(length, style)` is the only helper that adds a bar to it, so bars created by the CLI, by GraphQL mutations and by MCP actions all stack in one render. The module also re-exports indicatif's `MultiProgress`, `ProgressBar` and `ProgressStyle` so `use super::progress::*;` is sufficient for consumers; no code calls `MultiProgress::remove`, and only `mcp::run_action` and `info::main` call `finish_and_clear()`.",
       "evidence": [
         {
-          "resource": "repo://src/info.rs#L63-L72",
+          "resource": "repo://src/info.rs#L69-L78",
           "version": "repo-lines-v1:sha256:fece1eae236060c02dfd3ebc1bbfea363875a0015e12d716e63be4a6b91b849e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2Y2FiN2ZlYTA1ZmZkYjc0NjY5MjA3OGI2Mjg4ZDk4NmMzNjU2ODNlYzM2NWRhMDdlY2NjMmYxZjNjMTMyMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0OWNmY2JiYTNjM2M5N2E5NjA3YjI5ZTUzZjVlZTUxNGI5ZTk5NzU0N2IyNjA1N2FlNTkxZjZmMjllYWU1NjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4ODUwMWQzNzQ2NzFhMjM3MTg1MTNjZDRjMDFhNDMxYmQ3M2RhYmI1N2JmMmQ4Y2FlYzU4NjM3N2EyYWExZjcifQ"
         },
         {
@@ -16,7 +16,7 @@
         },
         {
           "resource": "repo://src/progress.rs#L8-L37",
-          "version": "repo-lines-v1:sha256:b219b69a0b1b76cae1a4880e2b78587a7f3f5dc08fd18a05c929eccbc75bf6cf:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyOTY1NjcxZWNiNjIxNGE5ZGJiNzcxNzhlMTY2NDJmZWRiZTQxNWMyY2Y2NGRjNjZhZDU3NmViODFlY2RkODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1ZDE0YTBjOTA4ZjY2OWM3ZDBmNTBmOTdiOWY4YmYyNzVjZDA0OTU2YmM3NjM2ZjRlYTcwMmRmN2JiZGVmZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkYTVlMWEzZTI2YmJkMWUyMWRkNTA5YTIzOWJmYjA2NjE0MTM0NDgwMjlhMWQxMTNiMjc3ZWMyYTI5MTg0MTAifQ"
+          "version": "repo-lines-v1:sha256:aac6db8fb5b608c93ab1b334eee1d4f697c339aa27ee6c5f800371980cf4c301:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyOTY1NjcxZWNiNjIxNGE5ZGJiNzcxNzhlMTY2NDJmZWRiZTQxNWMyY2Y2NGRjNjZhZDU3NmViODFlY2RkODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1ZDE0YTBjOTA4ZjY2OWM3ZDBmNTBmOTdiOWY4YmYyNzVjZDA0OTU2YmM3NjM2ZjRlYTcwMmRmN2JiZGVmZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkYTVlMWEzZTI2YmJkMWUyMWRkNTA5YTIzOWJmYjA2NjE0MTM0NDgwMjlhMWQxMTNiMjc3ZWMyYTI5MTg0MTAifQ"
         }
       ]
     },
@@ -44,7 +44,7 @@
     },
     {
       "id": "claim_ce47b35412bf4e83acf4b6548de9f576",
-      "statement": "Three progress styles share the `⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏` spinner and `━╸━` progress chars: none (spinner + `wide_msg`), count (`pos/len [bar] speed elapsed (ETA)`, used by import-dats) and bytes (`bytes/total_bytes`) — the bytes style is also set by the paths that drive `spawn_blocking` themselves rather than `run_blocking`: hashing in common.rs, CUE/BIN extraction in iso.rs, and nod reads/writes in rvz.rs. `start_action(bar, msg)` sets the message, forces the none style and enables a 100 ms steady tick; `stop_action(bar)` clears the message and disables the tick. Because the tick is state on a shared bar, callers that start one must stop it — archive, chd, ctrtool, gdi, iso, nsz, xso and util::compute_system_completion pair the two, while sort-roms and purge-systems take the tick directly through `enable_steady_tick`/`disable_steady_tick` around their long loops.",
+      "statement": "Three progress styles share the `⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏` spinner and `━╸━` progress chars: none (spinner + `wide_msg`), count (`pos/len [bar] speed elapsed (ETA)`, used by import-dats) and bytes (`bytes/total_bytes`) — the bytes style is also set by the paths that drive `spawn_blocking` themselves rather than `run_blocking`: hashing in common.rs, CUE/BIN extraction in iso.rs, and hashing an RVZ through rvz-rs's Reader in rvz.rs. `start_action(bar, msg)` sets the message, forces the none style and enables a 100 ms steady tick; `stop_action(bar)` clears the message and disables the tick.",
       "evidence": [
         {
           "resource": "repo://src/common.rs#L686-L693",
@@ -60,65 +60,41 @@
         },
         {
           "resource": "repo://src/progress.rs#L11-L16",
-          "version": "repo-lines-v1:sha256:eed3f3d3ac79d9225050100808ef74b5234344abe57151798b9954575e64d7ef:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTVkZGI5YmU1YTRmMzRhNWQxN2Y1MzI2NmE1MTIxOWRkYjEyZTYwMTZhYjc3ZGM5ZWI3ZmJjMzUxYTAwOTI4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQ1ZjM1M2Q4NzRhYThjNzAwMmY2NjRmY2Q3NzJiODFjYjUyZWU1MDJhNzAwMjdjNmJiYmRlM2U3OTE2NDBiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDI3MzcwNTkwYjZhOGY3NGYzYjIyOWU1MmI2NGJjMzI0Zjg4YjI3ZTEzZjA0ZDcyZTgyNTU1YjM4MTAwOTFiZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWQyM2E0NTY0NmRmZWZjN2Q5MDY4YmU0NmZlZmE5YTY4NzEyNjJiMmJkNTg4MjlkZDQzODNiZGFkNzVlYTBiZCJ9"
+          "version": "repo-lines-v1:sha256:eed3f3d3ac79d9225050100808ef74b5234344abe57151798b9954575e64d7ef:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTVkZGI5YmU1YTRmMzRhNWQxN2Y1MzI2NmE1MTIxOWRkYjEyZTYwMTZhYjc3ZGM5ZWI3ZmJjMzUxYTAwOTI4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQ1ZjM1M2Q4NzRhYThjNzAwMmY2NjRmY2Q3NzJiODFjYjUyZWU1MDJhNzAwMjdjNmJiYmRlM2U3OTE2NDBiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDI3MzcwNTkwYjZhOGY3NGYzYjIyOWU1MmI2NGJjMzI0Zjg4YjI3ZTEzZjA0ZDcyZTgyNTU1YjM4MTAwOTFiZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDc5MjAxNjkwZjU1MTEyMGYyMTY3ZWJlYjA5ZjY5YjIzZTQwZGRmZWI1MTI1YWRhODYzZWY0Mzk4OWFiZGMwZiJ9"
         },
         {
           "resource": "repo://src/progress.rs#L46-L73",
           "version": "repo-lines-v1:sha256:f0ccba37940239038c844fcfd95d7c7a73bca20fc70ba3070954e6facb0031b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxOGJkOWM5YTczN2UwMDZkNmE4YWEwODM1NzFkNjJlMjNhNDhmMTMzMzg3MjIxNzlkYmM2ZmY2MjBkNzE3MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyYWQ2NWY5OWY4NDAzYmUzMDI0YTkzY2Q2NmVhZTEwMDQwODA4ZmNkNjBkYjBhNmE5OWU3NWZjZTgyZTVlN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjYWYyZGJlMGJiN2U5NmI4NDQ1YTBiN2ZjMTY3NGMxMGE3YTJjNjQ1MTViNWUwMzU2NzM4MDk2NzdmYWRhOWIifQ"
         },
         {
-          "resource": "repo://src/purge_systems.rs#L47-L47",
-          "version": "repo-lines-v1:sha256:b074cb8aafc1d09a8adf7f02828b7c210d4249d9652134dc6b32e7652fad2214:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjA3NGNiOGFhZmMxZDA5YThhZGY3ZjAyODI4YjdjMjEwZDQyNDlkOTY1MjEzNGRjNmIzMmU3NjUyZmFkMjIxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjA3NGNiOGFhZmMxZDA5YThhZGY3ZjAyODI4YjdjMjEwZDQyNDlkOTY1MjEzNGRjNmIzMmU3NjUyZmFkMjIxNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2Y5ZThhMWQ3ZjI4NDk5MzlmMjU2OTFhYjk3ZjM2MWZjNWJmNWUzYjJmMWZhMmEwZWU4MTc1OGI0NWVhOTVjNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2NlZjYxNWU1MGRlMzdjYjM1NmY1ZDljNjIxNTQyNmNjZjFjNDQyNjdkMjllYTgzZjE3MWYwNzZlMDk5MzdhYiJ9"
-        },
-        {
-          "resource": "repo://src/rvz.rs#L255-L263",
-          "version": "repo-lines-v1:sha256:bd15f26e7b9846bbb5809e0eab8d3d51041fbcdbf1589d1d1860ff20af18103a:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjhjYjZmYzdjZjI5YjdhYTRiNjhkNTE5MDRmYzdlNjcwM2I5NTlmMGIwOTE2ZDY4MGQ3MjA2NjFjZDViMWVkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjE0ZjdkYmM1NjI0ZTNhYzIxNjg4ODY4ZmUzNDliYzc1ZWU4ZDNjZDBkZDY0ZDZlMWNiZjQ5OWJlYTQyOTE1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2MyNWZlYWQ2MTlmMTllMmI3NzZkY2Y5NTRkMGUxYjg0YjkxMjY3NTIwMmE0ZDgzNGE2MmY0NTNiZDI1ZWU5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWNiNTM0NTNhZDZiZTYwYWNmMzBkYmFhNWM2YzYzZWUxYzk3N2MyMzYxMzhhMWY0NDY5MWFkYmRhNDE5MTI0MyJ9"
-        },
-        {
-          "resource": "repo://src/sort_roms.rs#L226-L226",
-          "version": "repo-lines-v1:sha256:8b8d7b0945538f4c16487eb6ac46d2ec785fd192e38a83ed51f34dc32d5568d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI4ZDdiMDk0NTUzOGY0YzE2NDg3ZWI2YWM0NmQyZWM3ODVmZDE5MmUzOGE4M2VkNTFmMzRkYzMyZDU1NjhkMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI4ZDdiMDk0NTUzOGY0YzE2NDg3ZWI2YWM0NmQyZWM3ODVmZDE5MmUzOGE4M2VkNTFmMzRkYzMyZDU1NjhkMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTI4MzIzZDhkNzNhNDY1MjBmYWFmYjU1ZGQ4NWI1OWRjYzZhYjdhZDYxNTE1NjAyZDdhMjMwNDNlOTVmNDQ0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmM5NDUwNzdiYTFiNjgyMWIzODVkM2QxMjE4NDZjYjIzYTJmOGE5YTA5YTc2OWQ5YmMzMTgxYjgyOWQzNTVhNSJ9"
-        },
-        {
-          "resource": "repo://src/util.rs#L444-L478",
-          "version": "repo-lines-v1:sha256:4cdd8d4aeee142609fc7843d1137730e0c1a37edee51328dccd34fc01647a61c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMjZmNDcyYjk5MTI1MzY2YTU3NWFiMmEwMzQ4NDgwN2M3ZDM3ODdmY2JmZTA4ZTRhNGFmMmQ2ZDZjNDkxNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0MmIxNDMxMDVhNGE3NWZjZjUwMDNkNDIwZWZmZDAxZDg0Mzk4ZGFkMzE4NGMyOWI3YmVhYTdhNjczYjg2YmQifQ"
+          "resource": "repo://src/rvz.rs#L252-L269",
+          "version": "repo-lines-v1:sha256:b3be2e6508b5f4949a7696b50d762bbacc4c54993728d0a74412bfc62317b086:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ODk1YmEzMzUwYmE2MjIxN2I4OWFkYjE5NzkxZjhjMGEzMWIyZmIzNzE4OGIyNmU4MmUxMjViYzRlOGZmOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4MTY2MjA3MGQ2MTk3NDZiNDllN2QzZDQ4MGFlMzMwZTg4YTA5ZDc2YTcyYTAxMDI3OTEyZjdkM2RkYTlkNDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4ZjBiMjdhNmFhNjFhNDYxZDY2NmIxNDg0OTE2Zjg2ZjEwZTY4YWQ0ZWMyYzk1NWI1ZDUyYmU0MmRkZTRiNzIifQ"
         }
       ]
     },
     {
       "id": "claim_e3534c430a0a410ea06b5b75cc29b6c5",
-      "statement": "`run_blocking(progress_bar, length, work)` is the single bridge from a synchronous, CPU-bound format crate to the async bar: it clones the bar, moves the closure to `spawn_blocking`, resets the bar to the bytes style with `length` (the input bytes the crate will consume) and turns each crate progress call into `bar.inc(n)`. A panic in the blocking task surfaces as the distinct message \"Conversion task failed\" (JoinError), separate from the crate's own error mapped via `anyhow::Error::from`. Its callers are chd (`create_chd` and `extract_chd`), gdi, nsz, xdelta, xps and xso. CHD is the main workload that migrated onto it: sizing now comes from `chd_rs::cd_input_size` for a CUE's BINs, `input.metadata()?.len()` when creating, and `chd.info().logical_size` when extracting, replacing the spinner-only display the external chdman subprocess allowed. rvz/wbfs instead drive nod on `spawn_blocking` directly, because that crate exposes a reader and a writer callback rather than a bytes-consumed closure.",
+      "statement": "`run_blocking(progress_bar, length, work)` is the single bridge from a synchronous, CPU-bound format crate to the async bar: it clones the bar, moves the closure to `spawn_blocking`, resets the bar to the bytes style with `length` (the input bytes the crate will consume) and turns each crate progress call into `bar.inc(n)`. A panic in the blocking task surfaces as \"Conversion task failed\" (JoinError), separate from the crate's own error mapped via `anyhow::Error::from`. Its callers are chd, cia, gdi, nsz, rvz, wbfs, wux, xdelta, xps and xso; wbfs.rs scales wbfs-rs's disc-byte progress to the RVZ file's size when exporting from an RVZ.",
       "evidence": [
         {
           "resource": "repo://src/chd.rs#L738-L792",
           "version": "repo-lines-v1:sha256:c154e7257a15fd504ff9dff0c6b5c01ebecee79f6af002b0530c402386c718b2:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzNzRlYTRhNTMzZTZlMjE0ZjRkYWRmMDFkMzYyYzM4NjJhODhkOTU5YWE1ZTYyYWVjZGM3MDRmMzJmMTdjOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiZjg0NjZlMzQ0YTAxZjAwNTk1YmQ5ZGI0NDNiYThiODZlODk1MzAyZmY1YTk4MDZhNWYxNGM0ZTllMzhlMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmZmFlYWU1NTU5MjE0NzAxNjc5ZTFjNGM5M2JjN2Q0NjYwOGYzOThhZDkyNDhjY2MwZmRjYTQ1ZTJiZTcwN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyMjI1ZDY3MDgzYzcyMTMxOTBkNjcxYzIxNTRmYmQ5MDZkMWNiZDcyMmYwNzdhN2U2OGMwZDY3MDJhYzAzNTcifQ"
         },
         {
-          "resource": "repo://src/chd.rs#L848-L873",
-          "version": "repo-lines-v1:sha256:47ef65a8b9371075b1d2d4adfb185b0b63be3e854693fb4c510237d7267c3795:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2YmJiMDMyNzYwMzVkOGZlN2JmN2Y0OTYzYjQxNzZhMGU5NDU5NTg3MWEyZTI3YjliMjJkZmQ1YWZhMGRkMmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmYmMwOTlhMDFjYjdiYTg4ODMwZjY0Mzk2YTliNzhhMTc0NjdiYTQwMDc1ZDhkYWY2ODYzOTdjMGEwMmQ4NmIifQ"
+          "resource": "repo://src/progress.rs#L80-L100",
+          "version": "repo-lines-v1:sha256:6b80e296a8f7177b8c5b31e73fe10ad024af2a099ac1d73d56fe23d4e52aff86:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5NjBiYTk0YjQ3Yzg3Nzc0OGZjNmI4ODZkMjQ5MWUwMTAyOWRkZDRhM2QwMmRiNWIwZGRkZTIxMmZhYTFiYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzOTZiMWExMTA5NmViM2E2NDljYzFiZDgxZjQxZDRkMjM2N2ZiNDRhMzkzODQ5ZWQyNTYwMDZkMjViZTIzMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMTNlOTkwN2ZjMjQ5YjYxYjdlZGFlZWRmN2UyNDZiMzA4NDQ2MjYzZTNkOTM5MDg3NTE1OGM3NTZmNGNlMDQifQ"
         },
         {
-          "resource": "repo://src/gdi.rs#L70-L87",
-          "version": "repo-lines-v1:sha256:4f04fb4fa6fe2779ee612df129afd490db6288bc5ec222e3e5789285f5f2b958:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjNjQ3MzUyYzY2NGQ4ZWNhNmFjNTJmZjQ1YzIyNzY2ODhiYTVjMzY1NTY1YTQxNjVlNWRhZGM5ZGI3Y2FjNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2NTg4OTlkNTcxNmY2Y2M3ZjlkNjU5OWU2NzU2NTg3OWIwZjg1MzA2MmJkYmJmZGJiMTU2YWU0N2Q1YTk1MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0MDFiYzA5ZGU2MjJkY2UzOWZlZWM4MmI5NzdjNmU0YWJiZDFmOGNmZmI4YTUzZWNlMGY5ZGJhNDExNDZhMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1YzgzYzU1ZWI2YzQ4YTkxOWEwYzFjOTMyZDNlMzJkNjk0YmZlZjY2ZTYxMzQ4YzMzZjMxZTE4MGQ3YjMwOTYifQ"
+          "resource": "repo://src/rvz.rs#L122-L127",
+          "version": "repo-lines-v1:sha256:33d9ddb793b5b039cba5617f4e806f9a5fc00630c5f2007e3184c5f754064db7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzM3YzM5MWE3M2ZkYzIyNTMzNjU1YWI0ZTc3MjBhYzFiZGY0ZThlOGU2YmQ3Mjc2MjdlYWI4MmExZmNhMzFlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWYyMDNiMmZjZDVkZGNjMjE5MTJjNGM5ZTkzOWU1NTQzNmFhZWFiYTJmODE0M2UyMjA4OTk0NWZlNDgxMTZiMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWE1YWE2MGRlYmI2YmUxNjdjZTQzN2U4ZDgwOGYwYjMyYzVhYzczNzA0ZDljYjZmNThmNjFlMmRjMTkxYTU1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjRjMzE2NGM2ZDVlOWMxZThkYjA0N2VlZmM2OWJmOWJhYjgxMDIwYzk0MWQ0NDU1Y2IxOTViNmQ2N2JiYzJiMyJ9"
         },
         {
-          "resource": "repo://src/nsz.rs#L143-L150",
-          "version": "repo-lines-v1:sha256:f8de9fb3deb3c593955a326b5aa78e47d357dbf2c9b16e9eeaa092635ff47f88:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzM3YzM5MWE3M2ZkYzIyNTMzNjU1YWI0ZTc3MjBhYzFiZGY0ZThlOGU2YmQ3Mjc2MjdlYWI4MmExZmNhMzFlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTY1ODg5OWQ1NzE2ZjZjYzdmOWQ2NTk5ZTY3NTY1ODc5YjBmODUzMDYyYmRiYmZkYmIxNTZhZTQ3ZDVhOTUyNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzRlZDc5YjZjOWNjNTM5MWZjNmI5MDIxYWY2OTIzNDBhZWQzZjNiNTM4ZjFhNWU2ZTNlNDM4Y2JmM2EyMDdmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWJjMzc3MjkyNzQ5YjZkZWU2YTBlZjZmN2M1ZTU1NWJhZjgxMTU1NTJkZmMzYjhkMzM1NzA4NGM0MjhiZDRiYSJ9"
+          "resource": "repo://src/rvz.rs#L172-L183",
+          "version": "repo-lines-v1:sha256:06c3bb4be97c1488874374fb7cf9c0a02caf259781d3272f38eb572960140f4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczN2MzOTFhNzNmZGMyMjUzMzY1NWFiNGU3NzIwYWMxYmRmNGU4ZThlNmJkNzI3NjI3ZWFiODJhMWZjYTMxZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjNDA1ZDIxODJjMDVmYjcyYmM4M2FmMjViMTk5YjMzNDAyZjgxOWEwNzA5ZmI4ZmU2ZTI4MDU4M2Q0NzE5N2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjZGM2NmFlNDZlN2ViOTBmODc2NmJlODZmYmU0MjZjMzAwODZlM2FlOGQyODhmNjg4MGU3M2U5ZjRkMzAyYjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0YzMxNjRjNmQ1ZTljMWU4ZGIwNDdlZWZjNjliZjliYWI4MTAyMGM5NDFkNDQ1NWNiMTk1YjZkNjdiYmMyYjMifQ"
         },
         {
-          "resource": "repo://src/progress.rs#L75-L100",
-          "version": "repo-lines-v1:sha256:d698d204244294e8368a1beec4d3d4839f368640bf56b511f7286bbb8b6d76b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NGIxNTA2YzQ4YjcwNmZjYTE5Njk1YzE5M2FkNmFjOWU4NjM4YzE0OGI2MDU2NDU0Mjg3OTM4NjBlMjI4NzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3NTcyMjA5ZmZjNDIxMjVhMjRlYjdiODNkZDQ4ZjA2NDNiYmVhNWUxNTNlNjhjNzBjNjk4NmUyZjM3ZGNmYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMTNlOTkwN2ZjMjQ5YjYxYjdlZGFlZWRmN2UyNDZiMzA4NDQ2MjYzZTNkOTM5MDg3NTE1OGM3NTZmNGNlMDQifQ"
-        },
-        {
-          "resource": "repo://src/rvz.rs#L255-L270",
-          "version": "repo-lines-v1:sha256:e480ba941d621bf577211fc6c38d39cbbba7455e9d0518c2bc93575b258d9ff0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4Y2I2ZmM3Y2YyOWI3YWE0YjY4ZDUxOTA0ZmM3ZTY3MDNiOTU5ZjBiMDkxNmQ2ODBkNzIwNjYxY2Q1YjFlZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjMjVmZWFkNjE5ZjE5ZTJiNzc2ZGNmOTU0ZDBlMWI4NGI5MTI2NzUyMDJhNGQ4MzRhNjJmNDUzYmQyNWVlOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1NmJkM2E1NTU3OWMxN2Q2MjU5ZDEwNDRmOTA2Mzg5YzhjMjZmM2Y0ZDg4ZDhkYmFlNTc4NjNmNmM5NDFkMjMifQ"
-        },
-        {
-          "resource": "repo://src/xdelta.rs#L38-L41",
-          "version": "repo-lines-v1:sha256:df732e3d1d9f30b0a8db3bbfbd5ed2ee9049fa707dc42a74a1451c0976066ed1:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ1MDY2NmQ0ZjdjZjU5MDAwYjQzZTQwMTJkMjI4YTA4OTQ3NWE2MGE5NDM4MTFmYzQxNWQxZjdjMWVhNzg5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZiOWM3NDgyMDcwYjRiZDMxNjFmMzA5NTk0MWQ0ODIxZWU4YmMxNjM2YTAzNmJiZTdhMjAzZTM4NjUxZjk3YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmMxYTkzZGRlOWJhZTI1NzExNGM4OGJjYTNkMzlhOGZkYzZiMTMxMjk5Y2ZlNWUzMjNmYjAzNWEyZjNjZDJjNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQwNWFkZThiMDRiMzU1MmU5MDA5NTYyYzJiMjRjZWJlOWEwOGU5MDY5ZjI4OTRmZjc5YmFlNmVhNTc4OTEzNSJ9"
-        },
-        {
-          "resource": "repo://src/xps.rs#L37-L43",
-          "version": "repo-lines-v1:sha256:f04dac36dbee4411373f518e6fd0ad5a1c37a0d531c01b0914a38b4653b7650f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4MmViNTcxYzk4NDkxZWNlZjE2MjM3ZDEwMWJmZWRlZTdlY2I4ZjVlNjZmN2U5MDVmZmFlMjc1NDIyMTAzOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmMxYTkzZGRlOWJhZTI1NzExNGM4OGJjYTNkMzlhOGZkYzZiMTMxMjk5Y2ZlNWUzMjNmYjAzNWEyZjNjZDJjNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQwNWFkZThiMDRiMzU1MmU5MDA5NTYyYzJiMjRjZWJlOWEwOGU5MDY5ZjI4OTRmZjc5YmFlNmVhNTc4OTEzNSJ9"
+          "resource": "repo://src/wbfs.rs#L101-L119",
+          "version": "repo-lines-v1:sha256:a808281e0864b5d4e7d01d2643d57dcd110a61eb66ddeb603e0588593d619a30:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiMThlOWYxYWEwN2U4ODRiMzQ1MDZiNjdmMzVjNmE1YWMyZWFiYjBmMDQ0NDUzMjQ1MDJmYzI0MTE2OGUyZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0NzVlOTRhOTA0YWM0OWIzMTU0ZDQ2NzJhNjZlODYyOWI4NmRhYzc0ZTNlMjkzN2JlNjkyN2FlM2RhMTFjNTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzMzk4MzQ3ZmYxZTRhNjBhMWVlMmJiZDEyZTJlMjE5MzE0YWI2MWFjNGI0ZGVjNmEwMmVhZjgzOWE1MTkyMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhZjk4NjQyNzMwZjFhNWU1NTM0N2U1ZjRjOTEwNDM1ZTgyZDM3ODc2ZGEwYTY0Zjc2Yzg0NzhiZjJiMWNhZGUifQ"
         },
         {
           "resource": "repo://src/xso.rs#L112-L119",
@@ -135,7 +111,7 @@
           "version": "repo-lines-v1:sha256:76b3da0c81714f892058410a7eefccff3462acf68e0b112c87da8a7b5246b2ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlMjlmYzFmYzZlMjRhMTcwNzVmMTg3OWY2MDk0Nzg2NDYzYWZjNmIwZDkzMGIxYjEwZGEwOTdmNWZkYmI1NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3YWUyNzRmOGE0NGNkYzJkYzAyNGNjMDA0NmQ0MGYxMzRlM2IyNzBhMDBlZDIxNjU3YjQ1M2UxYjA5MGI5M2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhYjM2ZDQzYTdjZDQ0ZjJlNzM1YTJjYWFkMTdiNjliZjA1MTk3ZmQzZTdiMDlhNDZhMmFhNTQ1OGM3OWVkNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxNmUzMjkxN2ZhYTI0NWQ4MzA5ZjNmZTc1ZWQzYjliNDM2MjZiMzViNmNmNmZmYjZmY2ViNDhlNGI4NTM5ZTYifQ"
         },
         {
-          "resource": "repo://src/info.rs#L63-L72",
+          "resource": "repo://src/info.rs#L69-L78",
           "version": "repo-lines-v1:sha256:fece1eae236060c02dfd3ebc1bbfea363875a0015e12d716e63be4a6b91b849e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2Y2FiN2ZlYTA1ZmZkYjc0NjY5MjA3OGI2Mjg4ZDk4NmMzNjU2ODNlYzM2NWRhMDdlY2NjMmYxZjNjMTMyMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0OWNmY2JiYTNjM2M5N2E5NjA3YjI5ZTUzZjVlZTUxNGI5ZTk5NzU0N2IyNjA1N2FlNTkxZjZmMjllYWU1NjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4ODUwMWQzNzQ2NzFhMjM3MTg1MTNjZDRjMDFhNDMxYmQ3M2RhYmI1N2JmMmQ4Y2FlYzU4NjM3N2EyYWExZjcifQ"
         },
         {
@@ -297,7 +273,7 @@
       "statement": "`import-roms --unattended <none|skip|first>` (default `none`) decides the fate of files needing a human: with `first` ambiguous ROMs are ranked by `jaro_winkler` against the file name and the best taken, with `skip` (or `first` with no name to rank against) the file is reported `Multiple matches, skipping` and returned as `MatchState::Skipped`, with `none` the user is prompted via `prompt_for_roms`. A PS3 jukebox folder with no `--system` warns and skips when unattended, otherwise prompts. `import-irds`/`purge-irds` derive a `headless` boolean from `--system`: headless picks the first parent ROM, purges every IRD game, and requires an exact tag-stripped title match (`unattended_game`) rather than a fuzzy best match, which would silently attach an IRD to the wrong game.",
       "evidence": [
         {
-          "resource": "repo://src/import_irds.rs#L61-L147",
+          "resource": "repo://src/import_irds.rs#L62-L148",
           "version": "repo-lines-v1:sha256:c96deb9e4946afd5b230ab9673c6b187f6ace7538cc4b80b1d27d40f52852338:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMGY4MGY2MTJjODc0NGMwMjdhNjkyOWU5NTMxZjJmMTMxNWFiMjhjMzcyMTIyOTAzNTM3N2Y4YmU3YzU1NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhYzc4ZjgzNDQ1NGU5YTZkOWI4MDM1ZGFlMjE1NzczMzEwZTdlNDM5NjJmMmFlNmVlNDRlY2E2OGNlYmU1MGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiOGViZmJlYWJmMzM0YWZiMzA1YjVjZWFjMDljNzg5MGEzMzZjYWQ3YThhNDEzNDIxYTMxNTUxMjBkMDY0YjgifQ"
         },
         {
@@ -317,7 +293,7 @@
           "version": "repo-lines-v1:sha256:d106940f98ac9d45a2b90ba80afd2bea898d0d61d55f9e587fcc595ccc21613f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhNWI3MTU0ZGVlNGM4MTU4YWJmZWEwMDMzYjM1ZmZjMmFhYmZmYWY5MzQ0MTE5ODFhNWE0NjFkNWY0Nzg3MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYjMzOWMxN2Q0Y2M1NGU3MGM0ZmNmZWNiNjExYmI5ZTdkMzYzZjI1YjE4ZTA5MjNhMWQzMDZjYzk1OTI0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhMzE3YjIxZTU2OTFiODA0ZjI2ZTM3MWZmNzc3NjRmOTU3MTIzMjRlYTg1MmY0M2JmNDdlZWRmMTJmMWYzOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlM2NhMGY0MGI3YWE2YmU0YzYzYjZjOGY5MTliNGZlMTY4MTQ1OGJiNzc1M2MwNGMxOThmYzk5ZDViODM3M2UifQ"
         },
         {
-          "resource": "repo://src/purge_irds.rs#L38-L90",
+          "resource": "repo://src/purge_irds.rs#L39-L91",
           "version": "repo-lines-v1:sha256:e29697228d1a1256472c059c31faba63703ffa9745a6850215036d2772194eaa:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlZmQ5NTNkNDA1MjNjM2QwNDU3MGQ1MmZkM2VlZTZhOTZiZjIxNGMzNjA2ZWJhNTM1MzczZjIxYThlYWU4YTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzOTAzOTBhNGQ2ZWYxZTAyMDQ5N2ExMTk0ZTJhNjQxNDU0Mzg2ZDVhOWRhYjZjZDRmZWQ2MDIyMzM3N2RiOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1NzA0ZGNiMDRlZjRjMjhiMDdmYWZjZjg2OTlkNzE4ZmZlY2EzZGRhZmQ0MWI5OGE4MDc4NzhmOWRmZDg1MTMifQ"
         }
       ]
@@ -453,10 +429,34 @@
           "version": "repo-lines-v1:sha256:6053ccc3cf26b58cd3d823e1cabdfbe0aad2151f6fccbee3d60460fd40f9e489:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1ZjhiZDY4MDY2OTBlMjQ4ZTVlMWZkNGI5MGE1ZGVlNzNjZWFjMDQ0ZTZjN2U5MTI0YTY0N2UwNTBjNTFkZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_c81868b54239479882e882082b2aede7",
+      "statement": "Every output style in progress.rs, and import-dats's label style, is built with Style::new().for_stderr(), because console decides whether to colour from the stream a style targets and the messages go to stderr.",
+      "evidence": [
+        {
+          "resource": "repo://src/import_dats.rs#L270-L270",
+          "version": "repo-lines-v1:sha256:82d8e8bbfb3f559d44147fa145e052c1a581ccedb7e0c30724e8d66b93dc771a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODJkOGU4YmJmYjNmNTU5ZDQ0MTQ3ZmExNDVlMDUyYzFhNTgxY2NlZGI3ZTBjMzA3MjRlOGQ2NmI5M2RjNzcxYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJkOGU4YmJmYjNmNTU5ZDQ0MTQ3ZmExNDVlMDUyYzFhNTgxY2NlZGI3ZTBjMzA3MjRlOGQ2NmI5M2RjNzcxYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGE1YjQwOWMyODQzNDFmZjIyYzFmMDVlMTQ3NDA0NTg0Y2UxOTEyMmM4ODJjNzEyMzUxYmQyYzViMDExNTkzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWNmY2U3MjMzNThhYmU5NmZlZTY3ODNiM2VhODI5OTg2YWI0ZWVhNmY4MWU5ZGU2YTliZTYxMjcwZDgxM2Q3NyJ9"
+        },
+        {
+          "resource": "repo://src/progress.rs#L19-L25",
+          "version": "repo-lines-v1:sha256:7f16cf4aebabef99085590ee8bf0ad1a0efddfbdc278578d5a727a0faa171c31:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjc2NDFjYWFkMDdjN2U5ZmNlNGE1ZmVlODdjNTE3ZDMzOTg5YzIzZjEyMDdiZTdkYmU2MTA3MjRjNWZlMmM1MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTM2NjExYWJmYTkxOTlkYmY1OWYzZDY5ZmFkZDU4YWM4OGUzODBjMGUxYTdjNzk2MDMwYWRlOWQ1NTZhMTI4MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDIzYWEyMGJlNTUyMDI3YTE2OGRkMjM2ZjJjZWI0N2QwMTdmY2FkMzUxOGVlMGVmN2MzNTMzZmZjOGE2YjQ1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmNhMmE0ODk2N2RkYTJlZTI0MThiZDNmNWFiNTBlYjM4NmFhMDZkN2ZjNGFhNDJkMWQyNDc2ODUxY2Y5MzkyMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f7f488e744634f97baa58c6a2ac48ec8",
+      "statement": "tests/cli_output.rs runs `oxyromon info` with captured output and asserts it succeeds, prints the oxyROMon banner on stderr and leaves stdout empty.",
+      "evidence": [
+        {
+          "resource": "repo://tests/cli_output.rs#L1-L19",
+          "version": "repo-lines-v1:sha256:001545a08afb0a11a1ebe3bc345ee5d5d7f9c081d19ffbb00cd14b5b97ff6c92:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3NmNkNDUxNDg3ZWQxYWNiZTg4YWExM2Q0MTU1MTVkODhkMjE4MGQ2NDgxNzAzYzY1MjU4NTI3YjgwYzMwNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-11-05T21:35:44.503Z"
+    "at": "2026-11-09T21:55:13.223Z"
   }
 }

@@ -24,6 +24,8 @@ sources:
     resource: repo://src/gdi.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
     resource: repo://src/import_dats.rs
+  - id: openwiki-source-b55a21a31ede1b56cd31a6a6
+    resource: repo://src/main.rs
   - id: openwiki-source-b95ec25c5cfc0be350df258c
     resource: repo://src/mcp.rs
   - id: openwiki-source-8d46195d3bf969b1c0c3d484
@@ -44,10 +46,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # SSE Events and Progress Bridging
@@ -281,6 +283,12 @@ Whether that movement reaches a client depends on the host:
   rather than a hidden one, so both the poller below and the log bridge have
   something to read, and that same bar is the one threaded down through the
   subcommand into `run_blocking`.
+
+Plain output does not apply here. `main` turns it on only when the bars are
+hidden and the subcommand is neither `mcp` nor `server`, so a server started in
+a service or a pipe keeps calling `progress_bar.println` on hidden bars rather
+than writing every action's messages to stderr; its clients get SSE events and
+MCP notifications instead.
 
 ```mermaid
 sequenceDiagram

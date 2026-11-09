@@ -94,10 +94,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-83177d2c1f345aa579fa2a29
     resource: repo://tests/hbmame.xml
-generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
+generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+    at: 2026-11-09T21:55:13.223Z
 ---
 
 # Catalog Ingestion: DATs, Headers and Downloads
@@ -309,7 +309,12 @@ BIOS (`games.bios_id`), because arcade DATs use it for both
 clone's own BIOS, its parent and its parent's BIOS for a rom with the same size and
 CRC, records the hit as `roms.parent_id`, and inherits `roms.bios` from the source
 rom; a miss prints `please fix your DAT file` and imports the rom as exclusive
-([src/import_dats.rs](../../src/import_dats.rs#L746-L831)). Two adjacent details
+([src/import_dats.rs](../../src/import_dats.rs#L802-L835)). That lookup,
+`find_rom_by_size_and_crc_and_game_ids`, runs once per merged rom, and pins its
+index with `INDEXED BY roms_game_parent_romfile`: in a DAT like HBMAME's, where
+thousands of clones share a parent's files, a size-and-CRC index matches
+thousands of rows, and a first import gives the planner no statistics to prefer
+narrowing by the two or three game ids instead. Two adjacent details
 shape later behaviour: roms with `status="nodump"` are skipped entirely, and
 `roms.original` is false for a `<disk>` and for a DAT file name carrying an extension
 in `NON_ORIGINAL_EXTENSIONS` (chd, cso, nsz, rvz, wua, wux, zso, 7z, zip), while a name
