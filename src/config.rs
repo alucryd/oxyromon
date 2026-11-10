@@ -119,6 +119,7 @@ pub(crate) fn integer_range(key: &str) -> Option<&[usize; 2]> {
     }
 }
 pub(crate) const LISTS: &[&str] = &[
+    "DISCARD_CATEGORIES",
     "DISCARD_FLAGS",
     "DISCARD_RELEASES",
     "LANGUAGES",
@@ -137,6 +138,7 @@ pub(crate) const NULLABLES: &[&str] = &[
     "CHD_HD_COMPRESSION_ALGORITHMS",
     "CHD_LD_HUNK_SIZE",
     "CHD_LD_COMPRESSION_ALGORITHMS",
+    "DISCARD_CATEGORIES",
     "DISCARD_FLAGS",
     "DISCARD_RELEASES",
     "LANGUAGES",

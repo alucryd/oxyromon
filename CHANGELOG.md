@@ -17,6 +17,7 @@
 - Importing a Wii U title keeps a ticket no DAT lists in a `wiiu_tickets` folder, and exports use it
 - `create-dats` lists a WUX as the WUD it holds and a Wii U title's folder as one game
 - Added the `GAME_SUBFOLDERS` setting (`never`, `multiple` or `always`), storing games in folders of their own, with multi-disc games sharing one folder with their playlist
+- Added the `DISCARD_CATEGORIES` setting, discarding games by the categories their DAT gives them, such as Redump's Demos and Coverdiscs, with a Discard Categories field in the web UI
 
 ## Changes
 
