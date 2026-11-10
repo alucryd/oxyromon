@@ -227,7 +227,7 @@ The crates without a link are oxyROMon's own, in `crates/`.
 Each began as a port of the tool oxyROMon used to run: chdman, ctrtool, maxcso, nsz, gdidrop, Flips, xdelta3, Dolphin's and wit.
 wux-rs instead follows wudd and Cemu, as oxyROMon never ran a tool for the Wii U.
 
-Your Switch keys are only needed to compress NSPs that contain NCAs: `import-keys` stores them, and `~/.switch/prod.keys`, where nsz keeps them, is read when none were imported.
+Your Switch keys are only needed to compress NSPs that contain NCAs: `import-keys` stores them, and `~/.switch/prod.keys`, where nsz keeps them, is read when only `title.keys` were imported, or nothing.
 Importing, checking and decompressing NSZs never need them.
 
 RVZ files are interchangeable with Dolphin's in both directions, and with Zstandard, bzip2 or no compression, the same byte for byte.
@@ -539,7 +539,7 @@ A `prod.keys` is checked first, as compressing will read it: one whose keys are 
 Usage: oxyromon import-keys <KEYS>...
 
 Arguments:
-  <KEYS>...  Set the key files to import, as Cemu's keys.txt, a Wii U's or a Wii's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys
+  <KEYS>...  Set the key files to import, as Cemu's keys.txt, a Wii's or a Wii U's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys
 
 Options:
   -h, --help  Print help

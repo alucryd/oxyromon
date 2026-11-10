@@ -53,7 +53,8 @@ fn keys_path() -> Option<(PathBuf, bool)> {
 ///
 /// Keys are CRC-verified, matching the external tool's own sanity check: a
 /// tampered `prod.keys` is rejected rather than producing garbage output. The
-/// imported file holds `title.keys` too.
+/// imported file holds `title.keys` too, and when it holds nothing else, the
+/// keys derive from `~/.switch/prod.keys`.
 fn load_keys() -> nsz_rs::Result<Keys> {
     let (path, imported) = keys_path().ok_or_else(|| {
         io::Error::new(
@@ -61,7 +62,13 @@ fn load_keys() -> nsz_rs::Result<Keys> {
             "no Switch keys imported, run import-keys",
         )
     })?;
-    let mut keys = Keys::load(&path, true)?;
+    let fallback = dirs::home_dir()
+        .map(|home| home.join(".switch").join("prod.keys"))
+        .filter(|fallback| imported && fallback.is_file());
+    let mut keys = match (Keys::load(&path, true), fallback) {
+        (Err(nsz_rs::Error::MissingKey(_)), Some(fallback)) => Keys::load(fallback, true)?,
+        (result, _) => result?,
+    };
     if imported {
         keys.load_title_keys(&path)?;
     }

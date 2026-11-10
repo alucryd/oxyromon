@@ -11,7 +11,7 @@
 - The web server also serves MCP over Streamable HTTP at `/mcp`, sharing its event stream with the web UI
 - Added Wii U support from the new wux-rs crate: import, check, convert and export WUX, and export WUDs and WUXs to WUA and NUS folders; its CLI (`wuxrs`) ships in the release archives too
 - Added the `import-keys` subcommand, storing Wii U keys from Cemu's `keys.txt` or a console's `otp.bin` in the data directory
-- `import-keys` also imports Switch keys from `prod.keys` and `title.keys`, checking them first; `~/.switch/prod.keys` is still read when none were imported
+- `import-keys` also imports Switch keys from `prod.keys` and `title.keys`, checking them first; `~/.switch/prod.keys` is still read when only `title.keys` were imported, or nothing
 - WUA is lossless: a WUA oxyROMon writes rebuilds its disc byte for byte, so it can be imported, checked, converted back to WUX or ISO, and set as `PREFER_FORMAT`; update partitions are shared in a hidden `.update-partitions` folder
 - Wii U updates and DLC import as games from No-Intro's CDN DAT, count as complete with their newest TMD, and are bundled into WUA exports
 - Exporting a Wii U update or DLC rebuilds the H3 files No-Intro's DAT sometimes leaves out
