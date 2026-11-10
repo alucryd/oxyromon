@@ -34,11 +34,10 @@ mod format;
 #[allow(dead_code, unused_imports)]
 #[path = "gcwii/lib.rs"]
 mod gcwii;
-mod lfg;
 mod reader;
 mod writer;
 
-use gcwii::{crypto, disc, error, fst, io, keys, scrub, wii};
+use gcwii::{crypto, disc, error, fst, io, keys, lfg, scrub, wii};
 
 use std::fs::File;
 use std::io::Write;
