@@ -134,6 +134,7 @@ pub async fn main(
         let languages = get_list(connection, "LANGUAGES", system_id).await;
         let ignored_releases = get_list(connection, "DISCARD_RELEASES", system_id).await;
         let ignored_flags = get_list(connection, "DISCARD_FLAGS", system_id).await;
+        let ignored_categories = get_list(connection, "DISCARD_CATEGORIES", system_id).await;
         let prefer_parents = get_bool(connection, "PREFER_PARENTS", system_id).await;
         let preferred_regions = PreferredRegion::from_str(
             &get_string(connection, "PREFER_REGIONS", system_id)
@@ -163,6 +164,7 @@ pub async fn main(
             &languages.iter().map(String::as_str).collect_vec(),
             &ignored_releases.iter().map(String::as_str).collect_vec(),
             &ignored_flags.iter().map(String::as_str).collect_vec(),
+            &ignored_categories.iter().map(String::as_str).collect_vec(),
             prefer_parents,
             &preferred_regions,
             &preferred_versions,
@@ -216,6 +218,7 @@ async fn sort_system(
     languages: &[&str],
     ignored_releases: &[&str],
     ignored_flags: &[&str],
+    ignored_categories: &[&str],
     prefer_parents: bool,
     preferred_regions: &PreferredRegion,
     preferred_versions: &PreferredVersion,
@@ -289,6 +292,7 @@ async fn sort_system(
                 languages,
                 ignored_releases,
                 ignored_flags,
+                ignored_categories,
                 system.arcade,
             );
             ignored_games.append(&mut left_games);
@@ -347,6 +351,7 @@ async fn sort_system(
             languages,
             ignored_releases,
             ignored_flags,
+            ignored_categories,
             system.arcade,
         );
         ignored_games.append(&mut left_games);
@@ -379,6 +384,7 @@ async fn sort_system(
             languages,
             ignored_releases,
             ignored_flags,
+            ignored_categories,
             system.arcade,
         );
         ignored_games.append(&mut left_games);
@@ -388,6 +394,7 @@ async fn sort_system(
             languages,
             ignored_releases,
             ignored_flags,
+            ignored_categories,
             system.arcade,
         );
         ignored_games.append(&mut left_games);
@@ -426,6 +433,7 @@ async fn sort_system(
             languages,
             ignored_releases,
             ignored_flags,
+            ignored_categories,
             system.arcade,
         );
         ignored_games.append(&mut left_games);
@@ -723,6 +731,32 @@ fn trim_ignored_games(
     languages: &[&str],
     ignored_releases: &[&str],
     ignored_flags: &[&str],
+    ignored_categories: &[&str],
+    arcade: bool,
+) -> (Vec<Game>, Vec<Game>) {
+    let (mut ignored_games, games): (Vec<Game>, Vec<Game>) = games
+        .into_iter()
+        .partition(|game| has_ignored_category(game, ignored_categories));
+    let (mut left_games, right_games) =
+        trim_ignored_names(games, languages, ignored_releases, ignored_flags, arcade);
+    ignored_games.append(&mut left_games);
+    (ignored_games, right_games)
+}
+
+/// Whether one of the game's DAT categories is in `DISCARD_CATEGORIES`.
+fn has_ignored_category(game: &Game, ignored_categories: &[&str]) -> bool {
+    game.categories.as_deref().is_some_and(|categories| {
+        categories
+            .split('|')
+            .any(|category| ignored_categories.contains(&category))
+    })
+}
+
+fn trim_ignored_names(
+    games: Vec<Game>,
+    languages: &[&str],
+    ignored_releases: &[&str],
+    ignored_flags: &[&str],
     arcade: bool,
 ) -> (Vec<Game>, Vec<Game>) {
     if languages.is_empty() && ignored_releases.is_empty() && ignored_flags.is_empty() {
@@ -999,6 +1033,8 @@ mod test_sort_1g1r_catch_all;
 #[cfg(test)]
 mod test_sort_1g1r_discard_asia_and_beta;
 #[cfg(test)]
+mod test_sort_1g1r_discard_categories;
+#[cfg(test)]
 mod test_sort_1g1r_lenient;
 #[cfg(test)]
 mod test_sort_1g1r_playlist;
@@ -1024,6 +1060,10 @@ mod test_sort_discard_asia;
 mod test_sort_discard_asia_and_beta;
 #[cfg(test)]
 mod test_sort_discard_beta;
+#[cfg(test)]
+mod test_sort_discard_categories;
+#[cfg(test)]
+mod test_trim_categories;
 #[cfg(test)]
 mod test_trim_ignored;
 #[cfg(test)]

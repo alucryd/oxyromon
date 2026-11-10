@@ -167,6 +167,17 @@
             "name": "completion"
           }
         }
+      },
+      {
+        "name": "categories",
+        "ordinal": 15,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "categories"
+          }
+        }
       }
     ],
     "parameters": {
@@ -187,7 +198,8 @@
       false,
       true,
       false,
-      false
+      false,
+      true
     ]
   },
   "hash": "1cf9be408be624c9e2dcc8eef408e9f38a67be6e9a4a78d072765e15a805553e"

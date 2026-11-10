@@ -20,6 +20,7 @@ async fn test() {
             parent_id: None,
             bios_id: None,
             playlist_id: None,
+            categories: None,
         },
         Game {
             id: 2,
@@ -37,6 +38,7 @@ async fn test() {
             parent_id: None,
             bios_id: None,
             playlist_id: None,
+            categories: None,
         },
         Game {
             id: 3,
@@ -54,6 +56,7 @@ async fn test() {
             parent_id: None,
             bios_id: None,
             playlist_id: None,
+            categories: None,
         },
         Game {
             id: 4,
@@ -71,6 +74,7 @@ async fn test() {
             parent_id: None,
             bios_id: None,
             playlist_id: None,
+            categories: None,
         },
         Game {
             id: 5,
@@ -88,6 +92,7 @@ async fn test() {
             parent_id: None,
             bios_id: None,
             playlist_id: None,
+            categories: None,
         },
         Game {
             id: 6,
@@ -105,6 +110,7 @@ async fn test() {
             parent_id: None,
             bios_id: None,
             playlist_id: None,
+            categories: None,
         },
     ];
 
@@ -112,8 +118,14 @@ async fn test() {
     let ignored_flags = vec!["Virtual Console"];
 
     // when
-    let (ignored_games, regular_games) =
-        trim_ignored_games(games, &["En"], &ignored_releases, &ignored_flags, false);
+    let (ignored_games, regular_games) = trim_ignored_games(
+        games,
+        &["En"],
+        &ignored_releases,
+        &ignored_flags,
+        &[],
+        false,
+    );
 
     // then
     assert_eq!(ignored_games.len(), 4);

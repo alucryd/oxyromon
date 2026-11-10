@@ -398,6 +398,16 @@ pub async fn delete_system_by_id(connection: &mut SqliteConnection, id: i64) {
     .unwrap_or_else(|_| panic!("Error while deleting system with id {}", id));
 }
 
+/// A DAT game's categories as stored in `games.categories`: joined with `|`,
+/// or none when the DAT gives none.
+fn join_categories(categories: &[String]) -> Option<String> {
+    if categories.is_empty() {
+        None
+    } else {
+        Some(categories.join("|"))
+    }
+}
+
 pub async fn create_game_from_xml(
     connection: &mut SqliteConnection,
     game_xml: &GameXml,
@@ -406,10 +416,11 @@ pub async fn create_game_from_xml(
     parent_id: Option<i64>,
     bios_id: Option<i64>,
 ) -> i64 {
+    let categories = join_categories(&game_xml.categories);
     sqlx::query!(
         "
-        INSERT INTO games (name, description, comment, device, bios, regions, system_id, parent_id, bios_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO games (name, description, comment, device, bios, regions, system_id, parent_id, bios_id, categories)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ",
         game_xml.name,
         game_xml.description,
@@ -420,6 +431,7 @@ pub async fn create_game_from_xml(
         system_id,
         parent_id,
         bios_id,
+        categories,
     )
     .execute(connection)
     .await
@@ -436,10 +448,11 @@ pub async fn update_game_from_xml(
     parent_id: Option<i64>,
     bios_id: Option<i64>,
 ) {
+    let categories = join_categories(&game_xml.categories);
     sqlx::query!(
         "
         UPDATE games
-        SET name = ?, description = ?, comment = ?, device = ?, bios = ?, regions = ?, system_id = ?, parent_id = ?, bios_id = ?
+        SET name = ?, description = ?, comment = ?, device = ?, bios = ?, regions = ?, system_id = ?, parent_id = ?, bios_id = ?, categories = ?
         WHERE id = ?
         ",
         game_xml.name,
@@ -451,6 +464,7 @@ pub async fn update_game_from_xml(
         system_id,
         parent_id,
         bios_id,
+        categories,
         id,
     )
     .execute(connection)
