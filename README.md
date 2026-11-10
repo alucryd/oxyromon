@@ -228,7 +228,7 @@ The crates without a link are oxyROMon's own, in `crates/`.
 Each began as a port of the tool oxyROMon used to run: chdman, ctrtool, maxcso, nsz, gdidrop, Flips, xdelta3, Dolphin's and wit.
 wux-rs instead follows wudd and Cemu, as oxyROMon never ran a tool for the Wii U.
 
-Your Switch keys, at `~/.switch/prod.keys`, are only needed to compress NSPs that contain NCAs.
+Your Switch keys are only needed to compress NSPs that contain NCAs: `import-keys` stores them, and `~/.switch/prod.keys`, where nsz keeps them, is read when only `title.keys` were imported, or nothing.
 Importing, checking and decompressing NSZs never need them.
 
 RVZ files are interchangeable with Dolphin's in both directions, and with Zstandard, bzip2 or no compression, the same byte for byte.
@@ -327,7 +327,7 @@ Commands:
   download-dats       Download No-Intro and Redump DAT files and import them into oxyromon
   import-irds         Parse and import PlayStation 3 IRD files into oxyromon
   import-patches      Import patch files into oxyromon
-  import-keys         Import Wii U and Wii keys into oxyromon
+  import-keys         Import Wii, Wii U and Switch keys into oxyromon
   import-roms         Validate and import ROM files or directories into oxyromon
   purge-games         Move the files of games to the trash
   purge-irds          Unassociate games from IRD files
@@ -525,17 +525,22 @@ Options:
 
 ### import-keys
 
-Imports Wii U and Wii keys, which exporting to WUA and compressing Wii discs to RVZ need, from files in the format of Cemu's `keys.txt`: one 32-digit hex key per line, with anything after `#` or `;` ignored.
+Imports the Wii, Wii U and Switch keys oxyROMon does not ship.
+Wii and Wii U keys, which exporting to WUA and compressing Wii discs to RVZ need, come from files in the format of Cemu's `keys.txt`: one 32-digit hex key per line, with anything after `#` or `;` ignored.
 Disc keys and the Wii U common key can share a file.
 A console's OTP dump, `otp.bin`, can be imported too: its Wii U and vWii common keys are taken from it, the vWii key serving the vWii titles a disc's update partition can carry.
 The Wii common key, which compressing a Wii ISO to RVZ needs, comes from a Wii U's or a Wii's `otp.bin`, from BootMii's `keys.bin`, or from a line of its own in a keys file.
 The keys are all merged into `wiiu_keys.txt` in oxyROMon's data directory, as every key is tried, readable by its owner only, each key kept once, so importing again after new dumps only adds the new ones.
 
+It also imports Switch keys, which compressing NSPs holding NCAs needs, from `prod.keys` and `title.keys`, as Lockpick_RCM dumps them.
+They are merged by name into `switch_keys.txt` in the data directory, a newer value replacing an older one, readable by its owner only.
+A `prod.keys` is checked first, as compressing will read it: one whose keys are not the real ones is refused, and nothing is written.
+
 ```text
 Usage: oxyromon import-keys <KEYS>...
 
 Arguments:
-  <KEYS>...  Set the key files to import, as Cemu's keys.txt, a Wii U's or a Wii's otp.bin, or BootMii's keys.bin
+  <KEYS>...  Set the key files to import, as Cemu's keys.txt, a Wii's or a Wii U's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys
 
 Options:
   -h, --help  Print help
