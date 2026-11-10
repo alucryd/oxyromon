@@ -152,6 +152,7 @@ These environment variables change where things go:
 | `PREFER_REGIONS`         | Favor games released in more (`broad`) or fewer (`narrow`) regions, or neither (`none`)       | `none`  |
 | `PREFER_VERSIONS`        | Favor `new` or `old` revisions, or neither (`none`)                                          | `new`   |
 | `PREFER_FLAGS`           | Flags to favor in the 1G1R election (eg: `Rumble Version`)                                   |         |
+| `DISCARD_CATEGORIES`     | DAT categories to discard (eg: `Demos,Coverdiscs`)                                           |         |
 | `DISCARD_FLAGS`          | Flags to discard (eg: `Virtual Console`)                                                     |         |
 | `DISCARD_RELEASES`       | Releases to discard (eg: `Beta,Proto`)                                                       |         |
 | `LANGUAGES`              | Languages to keep, for games that list theirs (eg: `En,Ja`)                                  |         |

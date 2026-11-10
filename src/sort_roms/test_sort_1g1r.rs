@@ -70,6 +70,7 @@ async fn test() {
         &[],
         &[],
         &[],
+        &[],
         true,
         &PreferredRegion::None,
         &PreferredVersion::None,

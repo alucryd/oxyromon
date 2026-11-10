@@ -68,6 +68,7 @@ async fn test() {
         &[],
         &["Beta"],
         &[],
+        &[],
         true,
         &PreferredRegion::None,
         &PreferredVersion::None,

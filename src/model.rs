@@ -100,6 +100,9 @@ pub struct Game {
     pub parent_id: Option<i64>,
     pub bios_id: Option<i64>,
     pub playlist_id: Option<i64>,
+    // The DAT's categories, joined with `|`, for `DISCARD_CATEGORIES`.
+    #[cfg_attr(feature = "server", graphql(skip))]
+    pub categories: Option<String>,
 }
 
 #[cfg(feature = "server")]
@@ -236,6 +239,9 @@ pub struct GameXml {
     pub description: String,
     #[serde(skip_serializing)]
     pub comment: Option<String>,
+    // No-Intro's schema allows any number, Redump DATs give one
+    #[serde(rename = "category", default, skip_serializing)]
+    pub categories: Vec<String>,
     #[serde(rename = "@cloneof", skip_serializing)]
     pub cloneof: Option<String>,
     #[serde(rename = "@romof", skip_serializing)]

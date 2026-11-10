@@ -17,6 +17,7 @@ fn game(id: i64, name: &str) -> Game {
         parent_id: None,
         bios_id: None,
         playlist_id: None,
+        categories: None,
     }
 }
 
@@ -31,7 +32,7 @@ async fn test() {
     ];
 
     // when
-    let (ignored_games, regular_games) = trim_ignored_games(games, &["En"], &[], &[], false);
+    let (ignored_games, regular_games) = trim_ignored_games(games, &["En"], &[], &[], &[], false);
 
     // then
     assert_eq!(ignored_games.len(), 1);

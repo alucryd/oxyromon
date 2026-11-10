@@ -14,12 +14,13 @@ use crate::api::{
 };
 use crate::model::Setting;
 use crate::state::{
-    ALL_REGIONS_KEY, ALL_REGIONS_SUBFOLDERS_KEY, AppState, DISCARD_FLAGS_KEY, DISCARD_RELEASES_KEY,
-    GAME_SUBFOLDERS_CHOICES, GAME_SUBFOLDERS_KEY, GROUP_SUBSYSTEMS_KEY, LANGUAGES_KEY,
-    ONE_REGIONS_KEY, ONE_REGIONS_SUBFOLDERS_KEY, PREFER_FLAGS_KEY, PREFER_FORMAT_CHOICES,
-    PREFER_FORMAT_KEY, PREFER_PARENTS_KEY, PREFER_REGIONS_CHOICES, PREFER_REGIONS_KEY,
-    PREFER_VERSIONS_CHOICES, PREFER_VERSIONS_KEY, ROM_DIRECTORY_KEY, STRICT_ONE_REGIONS_KEY,
-    SUBFOLDER_SCHEMES_CHOICES, TMP_DIRECTORY_KEY, split_list,
+    ALL_REGIONS_KEY, ALL_REGIONS_SUBFOLDERS_KEY, AppState, DISCARD_CATEGORIES_KEY,
+    DISCARD_FLAGS_KEY, DISCARD_RELEASES_KEY, GAME_SUBFOLDERS_CHOICES, GAME_SUBFOLDERS_KEY,
+    GROUP_SUBSYSTEMS_KEY, LANGUAGES_KEY, ONE_REGIONS_KEY, ONE_REGIONS_SUBFOLDERS_KEY,
+    PREFER_FLAGS_KEY, PREFER_FORMAT_CHOICES, PREFER_FORMAT_KEY, PREFER_PARENTS_KEY,
+    PREFER_REGIONS_CHOICES, PREFER_REGIONS_KEY, PREFER_VERSIONS_CHOICES, PREFER_VERSIONS_KEY,
+    ROM_DIRECTORY_KEY, STRICT_ONE_REGIONS_KEY, SUBFOLDER_SCHEMES_CHOICES, TMP_DIRECTORY_KEY,
+    split_list,
 };
 use crate::ui::{Modal, control_checked, control_value};
 
@@ -31,6 +32,7 @@ struct Local {
     languages: RwSignal<Vec<String>>,
     discard_releases: RwSignal<Vec<String>>,
     discard_flags: RwSignal<Vec<String>>,
+    discard_categories: RwSignal<Vec<String>>,
     prefer_flags: RwSignal<Vec<String>>,
     strict_one_regions: RwSignal<bool>,
     prefer_parents: RwSignal<bool>,
@@ -53,6 +55,7 @@ impl Local {
             languages: RwSignal::new(Vec::new()),
             discard_releases: RwSignal::new(Vec::new()),
             discard_flags: RwSignal::new(Vec::new()),
+            discard_categories: RwSignal::new(Vec::new()),
             prefer_flags: RwSignal::new(Vec::new()),
             strict_one_regions: RwSignal::new(false),
             prefer_parents: RwSignal::new(true),
@@ -84,6 +87,8 @@ impl Local {
         self.discard_releases
             .set(split_list(&find(DISCARD_RELEASES_KEY)));
         self.discard_flags.set(split_list(&find(DISCARD_FLAGS_KEY)));
+        self.discard_categories
+            .set(split_list(&find(DISCARD_CATEGORIES_KEY)));
         self.prefer_flags.set(split_list(&find(PREFER_FLAGS_KEY)));
         self.strict_one_regions.set(is_true(STRICT_ONE_REGIONS_KEY));
         self.prefer_parents.set(not_false(PREFER_PARENTS_KEY));
@@ -347,6 +352,14 @@ pub fn SettingsModal(
                             hint="Discard specific flags"
                             setting_key=DISCARD_FLAGS_KEY
                             items=local.discard_flags
+                            system_id=system_id
+                            reload=reload
+                        />
+                        <ListField
+                            label="Discard Categories"
+                            hint="Discard games in specific DAT categories"
+                            setting_key=DISCARD_CATEGORIES_KEY
+                            items=local.discard_categories
                             system_id=system_id
                             reload=reload
                         />
