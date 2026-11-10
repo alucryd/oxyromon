@@ -21,8 +21,8 @@ fn test() {
     .unwrap();
 
     // when
-    import_keys(&progress_bar, &[&a], &destination).unwrap();
-    import_keys(&progress_bar, &[&b, &a], &destination).unwrap();
+    import_keys(&progress_bar, &[&a], directory.path()).unwrap();
+    import_keys(&progress_bar, &[&b, &a], directory.path()).unwrap();
 
     // then each key is kept once, in the order first seen
     assert_eq!(
