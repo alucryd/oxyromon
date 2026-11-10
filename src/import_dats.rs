@@ -1088,6 +1088,10 @@ mod test_dat_arcade;
 #[cfg(test)]
 mod test_dat_as_is;
 #[cfg(test)]
+mod test_dat_categories;
+#[cfg(test)]
+mod test_dat_categories_updated;
+#[cfg(test)]
 mod test_dat_custom_name;
 #[cfg(test)]
 mod test_dat_custom_name_forced;

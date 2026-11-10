@@ -264,6 +264,7 @@ fn game_xml(name: String, roms: Vec<RomXml>) -> GameXml {
         cloneof: None,
         romof: None,
         comment: None,
+        categories: vec![],
     }
 }
 

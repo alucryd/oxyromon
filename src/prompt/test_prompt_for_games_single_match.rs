@@ -19,6 +19,7 @@ fn test() {
         parent_id: None,
         bios_id: None,
         playlist_id: None,
+        categories: None,
     };
 
     // when
