@@ -1,0 +1,22 @@
+[package]
+name = "ore-bench"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "Benchmarks for the ORE format study in formats/, run by hand"
+license = "GPL-3.0-or-later"
+repository.workspace = true
+publish = false
+
+[dependencies]
+anyhow = "1.0"
+gcwii = { path = "../../crates/gcwii" }
+lzma-rust2 = { workspace = true, features = ["encoder"] }
+rayon.workspace = true
+rvz-rs = { path = "../../crates/rvz-rs", default-features = false }
+sha1.workspace = true
+zstd.workspace = true
+
+[dev-dependencies]
+aes = "0.9"
+tempfile.workspace = true

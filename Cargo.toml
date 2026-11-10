@@ -17,7 +17,7 @@ rust-version = "1.94.0"
 # tools oxyromon used to shell out to. They share one lockfile, CI and set of
 # conventions, documented in CLAUDE.md, but are published independently.
 [workspace]
-members = ["crates/*"]
+members = ["crates/*", "dev/*"]
 
 [workspace.package]
 edition = "2024"
