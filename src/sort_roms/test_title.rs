@@ -40,6 +40,7 @@ fn test() {
         get_title("Test Game (Japan) (Joukan)"),
         "test game (joukan)"
     );
+    assert_eq!(get_title("Test Game (USA) [b]"), "test game [b]");
     assert_eq!(
         get_title("Test Game (USA) (Bonus Disc)"),
         "test game (bonus disc)"
