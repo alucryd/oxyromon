@@ -18,6 +18,14 @@ list=$1
 results=$2
 shift 2
 
+# Every command runs under a memory limit where systemd can set one, and
+# without swap, so that a run that outgrows it is killed rather than taking
+# the machine down: MEMORY_MAX (default 12G).
+cap=""
+if command -v systemd-run >/dev/null 2>&1; then
+    cap="systemd-run --user --scope --quiet -p MemoryMax=${MEMORY_MAX:-12G} -p MemorySwapMax=0"
+fi
+
 mkdir -p "$WORK"
 header=true
 while read -r sha1 size path; do
@@ -33,10 +41,10 @@ while read -r sha1 size path; do
         continue
     fi
     if $header; then
-        "$@" "$disc" >"$results"
+        $cap "$@" "$disc" >"$results"
         header=false
     else
-        "$@" "$disc" | tail -n +2 >>"$results"
+        $cap "$@" "$disc" | tail -n +2 >>"$results"
     fi
     rm -f -- "$disc"
 done <"$list"

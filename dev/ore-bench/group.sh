@@ -15,6 +15,14 @@ list=$1
 results=$2
 shift 2
 
+# Every command runs under a memory limit where systemd can set one, and
+# without swap, so that a run that outgrows it is killed rather than taking
+# the machine down: MEMORY_MAX (default 12G).
+cap=""
+if command -v systemd-run >/dev/null 2>&1; then
+    cap="systemd-run --user --scope --quiet -p MemoryMax=${MEMORY_MAX:-12G} -p MemorySwapMax=0"
+fi
+
 mkdir -p "$WORK"
 set -- "$@" --
 while read -r sha1 size disc_path; do
@@ -41,7 +49,7 @@ for arg in "$@"; do
     command="$command $(printf '%s' "$arg" | sed "s/'/'\\\\''/g; s/^/'/; s/\$/'/")"
 done
 status=0
-eval "$command \"\$@\"" >"$results" || status=$?
+eval "$cap $command \"\$@\"" >"$results" || status=$?
 for disc in "$@"; do
     rm -f -- "$disc"
 done

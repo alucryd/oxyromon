@@ -2,9 +2,12 @@
 //! alone and after dedup, against each disc as a solid stream of its own.
 //!
 //! Every stream is Zstandard level 19 with a 2 GiB window, the most it
-//! takes, and long-distance matching, made in 128 MiB jobs on every core:
-//! a match can only reach back 2 GiB, so a disc further away than that is out
-//! of reach. Discs are read as [`for_each_area`] reads them.
+//! takes, and long-distance matching: a match can only reach back 2 GiB, so a
+//! disc further away than that is out of reach. It is made in 256 MiB jobs
+//! on four threads, each seeing 256 MiB before its own job: at Zstandard's
+//! default, a whole window a job on every core, the buffers alone outgrow
+//! this machine's memory on a Wii disc. Long-distance matches are found over
+//! the whole window all the same. Discs are read as [`for_each_area`] reads them.
 
 use std::collections::HashSet;
 use std::io::Write;
@@ -37,8 +40,10 @@ fn encoder() -> Result<Encoder<'static, Count>> {
     let mut encoder = Encoder::new(Count::default(), 19)?;
     encoder.window_log(31)?;
     encoder.long_distance_matching(true)?;
-    encoder.multithread(rayon::current_num_threads() as u32)?;
-    encoder.set_parameter(CParameter::JobSize(128 << 20))?;
+    encoder.multithread(4)?;
+    encoder.set_parameter(CParameter::JobSize(256 << 20))?;
+    // A window is 2^9 overlaps: 6 leaves each job an eighth of it
+    encoder.set_parameter(CParameter::OverlapSizeLog(6))?;
     Ok(encoder)
 }
 
