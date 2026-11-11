@@ -148,6 +148,7 @@ These environment variables change where things go:
 | `REGIONS_ONE_STRICT`     | Elect 1G1R games whether you own them or not                                                 | `false` |
 | `REGIONS_ALL_ARCADE`     | Arcade set types for the main directory: `bios`, `parent`, `clone`                           |         |
 | `REGIONS_ONE_ARCADE`     | Arcade set types for the 1G1R directory: `bios`, `parent`, `clone`                           |         |
+| `INFER_CLONES`           | Group games by title for 1G1R when their DAT has no Parent-Clone data                        | `false` |
 | `PREFER_PARENTS`         | Favor parents in the 1G1R election                                                           | `true`  |
 | `PREFER_REGIONS`         | Favor games released in more (`broad`) or fewer (`narrow`) regions, or neither (`none`)       | `none`  |
 | `PREFER_VERSIONS`        | Favor `new` or `old` revisions, or neither (`none`)                                          | `new`   |
@@ -588,6 +589,10 @@ Moves games between the system directory, `1G1R` and `Trash`, according to your 
 By default, the election only considers games you own.
 `REGIONS_ONE_STRICT` makes it follow your preferences regardless, so a missing game shows as wanted instead of being replaced.
 1G1R is useful even without a Parent-Clone DAT: it separates the games you play from, say, Japanese originals kept for translation patches.
+Without Parent-Clone data, as in Redump's DATs, every game is a group of its own.
+`INFER_CLONES` groups such a system's games by title instead, leaving out of a name its regions, languages, versions, release status, and the flags that only tell editions apart: budget lines and reissues, limited editions and bundles, serials, ring codes, and demos.
+A game's disc number and any other flag stay, so `Game (Europe) (Disc 2)` is grouped with `Game (USA) (Disc 2)`, and `Game (USA) (Bonus Disc)` has a group of its own.
+These groups have no parent, so `PREFER_PARENTS` doesn't apply to them.
 
 Arcade systems sort by set type instead.
 `REGIONS_ALL_ARCADE` and `REGIONS_ONE_ARCADE` say which of `bios`, `parent` and `clone` go to each directory.
