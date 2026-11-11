@@ -14,6 +14,8 @@ fn test() {
         get_title("Test Game (Japan) (PlayStation the Best)"),
         "test game"
     );
+    assert_eq!(get_title("Test Game (Japan) (BPS the Choice)"), "test game");
+    assert_eq!(get_title("Test Game (Japan) (Spike Library)"), "test game");
     assert_eq!(get_title("Test Game (Japan) (Premium Box)"), "test game");
     assert_eq!(
         get_title("Test Game (Japan) (Shokai Genteiban)"),

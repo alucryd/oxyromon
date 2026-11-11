@@ -35,6 +35,7 @@ pub static VARIANT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[A-Z]{
 const EDITION_FLAGS: &[&str] = &[
     // budget lines and reissues
     r".*\bbest\b.*",
+    "bps the choice",
     "budget",
     ".*classics",
     ".*essentials",
@@ -54,6 +55,7 @@ const EDITION_FLAGS: &[&str] = &[
     "reprint",
     ".*rerelease",
     "sold out.*",
+    "spike library",
     "ultimate hits",
     r".*\bvalue\b.*",
     "xplosiv",
