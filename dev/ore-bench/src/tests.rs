@@ -125,3 +125,25 @@ fn a_second_copy_costs_little_in_one_solid_stream() {
     assert_eq!(references, 2 * stored);
     assert!(deduped < together + references * dedup::REFERENCE + stored * dedup::STORED + 64);
 }
+
+#[test]
+fn samples_read_back_as_taken() {
+    // given a synthetic disc on disk
+    let directory = tempfile::TempDir::new().unwrap();
+    let disc = directory.path().join("disc.iso");
+    common::write(&disc, &common::gamecube_disc(0x200000));
+
+    // when its chunks are sampled
+    let samples = directory.path().join("disc.samples");
+    let (count, bytes) = dict::sample(&disc, &samples).unwrap();
+
+    // then every chunk is taken, as the disc is under the budget, and reads
+    // back whole
+    let read = dict::read_samples(&samples).unwrap();
+    assert_eq!(read.len() as u64, count);
+    assert_eq!(
+        read.iter().map(|sample| sample.len() as u64).sum::<u64>(),
+        bytes
+    );
+    assert!(count > 1);
+}

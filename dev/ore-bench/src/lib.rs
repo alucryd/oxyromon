@@ -33,6 +33,7 @@ use rayon::prelude::*;
 use sha1::{Digest, Sha1};
 
 pub mod dedup;
+pub mod dict;
 pub mod inventory;
 pub mod solid;
 
