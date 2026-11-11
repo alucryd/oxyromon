@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Test System</name>
+		<description>Test System</description>
+		<version>20261110</version>
+		<date>20261110</date>
+		<author>Maxime Gauduin</author>
+		<url>www.no-intro.org</url>
+	</header>
+	<game name="Another Game (USA)">
+		<description>Another Game (USA)</description>
+		<rom name="Another Game (USA).rom" size="256" crc="b3c12c7c"
+			md5="9d5d8b0afdbdc920e71fd6492a71fca9" sha1="8819703ded835d0ad9f8bc3a688c25ae9327940f" />
+	</game>
+	<game name="Another Game (USA) (Premium Box)">
+		<description>Another Game (USA) (Premium Box)</description>
+		<rom name="Another Game (USA) (Premium Box).rom" size="256" crc="c2dedd40"
+			md5="38792ad0d64effccfba6af528657b63d" sha1="c9b86ab7beaa388c95cce350d0ce6323b0a8380b" />
+	</game>
+	<game name="Another Game (USA) (Premium Pack Bonus Disc)">
+		<description>Another Game (USA) (Premium Pack Bonus Disc)</description>
+		<rom name="Another Game (USA) (Premium Pack Bonus Disc).rom" size="256" crc="8d777e96"
+			md5="a5266c225f23747f323ec7fd5a642442" sha1="1e6dd4d5ea28a393abadd491a1067ee7d3393356" />
+	</game>
+	<game name="Test Game (Europe) (Disc 1)" cloneof="Test Game (USA) (Disc 1)">
+		<description>Test Game (Europe) (Disc 1)</description>
+		<rom name="Test Game (Europe) (Disc 1).rom" size="256" crc="48b2eaba"
+			md5="6063969dda7d4277c3c2aea9d577e19c" sha1="6115a16e7d58a799b4bf040526c7ad4d853dfa0a" />
+	</game>
+	<game name="Test Game (Europe) (Disc 2)">
+		<description>Test Game (Europe) (Disc 2)</description>
+		<rom name="Test Game (Europe) (Disc 2).rom" size="256" crc="639fb979"
+			md5="d713135ed4fba8fc941206657313d1ff" sha1="24befb98089173a3c45f5c599f65b88f6f2ea511" />
+	</game>
+	<game name="Test Game (USA) (Disc 1)">
+		<description>Test Game (USA) (Disc 1)</description>
+		<rom name="Test Game (USA) (Disc 1).rom" size="256" crc="41a21f98"
+			md5="9239c1488c3128b9d6b471408257146f" sha1="3fe7f0629be205e0e923875864a6aa288ca5ff32" />
+	</game>
+	<game name="Test Game (USA) (Disc 2)">
+		<description>Test Game (USA) (Disc 2)</description>
+		<rom name="Test Game (USA) (Disc 2).rom" size="256" crc="6a8f4c5b"
+			md5="9bbe068d76211e392dce774b4cdf62ca" sha1="718f2d307101c2669fc5f0f2dd05ae7c4d4734f2" />
+	</game>
+</datafile>

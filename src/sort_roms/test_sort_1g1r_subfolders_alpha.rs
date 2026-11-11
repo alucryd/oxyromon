@@ -77,6 +77,7 @@ async fn test() {
         &None,
         &Some(SubfolderScheme::Alpha),
         false,
+        false,
     )
     .await
     .unwrap();

@@ -16,11 +16,11 @@ use crate::model::Setting;
 use crate::state::{
     ALL_REGIONS_KEY, ALL_REGIONS_SUBFOLDERS_KEY, AppState, DISCARD_CATEGORIES_KEY,
     DISCARD_FLAGS_KEY, DISCARD_RELEASES_KEY, GAME_SUBFOLDERS_CHOICES, GAME_SUBFOLDERS_KEY,
-    GROUP_SUBSYSTEMS_KEY, LANGUAGES_KEY, ONE_REGIONS_KEY, ONE_REGIONS_SUBFOLDERS_KEY,
-    PREFER_FLAGS_KEY, PREFER_FORMAT_CHOICES, PREFER_FORMAT_KEY, PREFER_PARENTS_KEY,
-    PREFER_REGIONS_CHOICES, PREFER_REGIONS_KEY, PREFER_VERSIONS_CHOICES, PREFER_VERSIONS_KEY,
-    ROM_DIRECTORY_KEY, STRICT_ONE_REGIONS_KEY, SUBFOLDER_SCHEMES_CHOICES, TMP_DIRECTORY_KEY,
-    split_list,
+    GROUP_SUBSYSTEMS_KEY, INFER_CLONES_KEY, LANGUAGES_KEY, ONE_REGIONS_KEY,
+    ONE_REGIONS_SUBFOLDERS_KEY, PREFER_FLAGS_KEY, PREFER_FORMAT_CHOICES, PREFER_FORMAT_KEY,
+    PREFER_PARENTS_KEY, PREFER_REGIONS_CHOICES, PREFER_REGIONS_KEY, PREFER_VERSIONS_CHOICES,
+    PREFER_VERSIONS_KEY, ROM_DIRECTORY_KEY, STRICT_ONE_REGIONS_KEY, SUBFOLDER_SCHEMES_CHOICES,
+    TMP_DIRECTORY_KEY, split_list,
 };
 use crate::ui::{Modal, control_checked, control_value};
 
@@ -35,6 +35,7 @@ struct Local {
     discard_categories: RwSignal<Vec<String>>,
     prefer_flags: RwSignal<Vec<String>>,
     strict_one_regions: RwSignal<bool>,
+    infer_clones: RwSignal<bool>,
     prefer_parents: RwSignal<bool>,
     prefer_format: RwSignal<String>,
     group_subsystems: RwSignal<bool>,
@@ -58,6 +59,7 @@ impl Local {
             discard_categories: RwSignal::new(Vec::new()),
             prefer_flags: RwSignal::new(Vec::new()),
             strict_one_regions: RwSignal::new(false),
+            infer_clones: RwSignal::new(false),
             prefer_parents: RwSignal::new(true),
             prefer_format: RwSignal::new(String::new()),
             group_subsystems: RwSignal::new(true),
@@ -91,6 +93,7 @@ impl Local {
             .set(split_list(&find(DISCARD_CATEGORIES_KEY)));
         self.prefer_flags.set(split_list(&find(PREFER_FLAGS_KEY)));
         self.strict_one_regions.set(is_true(STRICT_ONE_REGIONS_KEY));
+        self.infer_clones.set(is_true(INFER_CLONES_KEY));
         self.prefer_parents.set(not_false(PREFER_PARENTS_KEY));
         self.prefer_format
             .set(find(PREFER_FORMAT_KEY).unwrap_or_default());
@@ -299,6 +302,12 @@ pub fn SettingsModal(
                             hint="Strict mode elects games regardless of their completion"
                             value=local.strict_one_regions
                             on_toggle=Callback::new(move |v| toggle(STRICT_ONE_REGIONS_KEY, v))
+                        />
+                        <ToggleField
+                            label="Infer Clones"
+                            hint="Group games by title when their DAT has no Parent-Clone data"
+                            value=local.infer_clones
+                            on_toggle=Callback::new(move |v| toggle(INFER_CLONES_KEY, v))
                         />
                         <ToggleField
                             label="Prefer Parents"
