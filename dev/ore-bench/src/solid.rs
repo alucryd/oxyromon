@@ -15,6 +15,7 @@ use std::path::Path;
 
 use anyhow::Result;
 use fastcdc::v2020::FastCDC;
+use rayon::prelude::*;
 use sha1::{Digest, Sha1};
 use zstd::stream::Encoder;
 use zstd::zstd_safe::CParameter;
@@ -94,4 +95,92 @@ pub fn deduped(discs: &[&Path], average: usize) -> Result<(u64, u64, u64)> {
         references,
         stored,
     ))
+}
+
+/// One way of storing deduped chunks: groups of about `group` bytes of
+/// stored chunks, in the order first met, each compressed as one unit by
+/// `codec`.
+pub struct Grouping {
+    pub group: usize,
+    pub codec: &'static str,
+}
+
+/// What each grouping stores, with each disc deduped alone (`per disc`) and
+/// with all deduped together (`library`), in bytes, index included: 8 bytes
+/// a chunk referenced, 28 a chunk stored, 16 a group. Chunks are `average`
+/// bytes FastCDC chunks; groups do not cross areas.
+pub fn grouped(discs: &[&Path], average: usize, groupings: &[Grouping]) -> Result<Vec<(u64, u64)>> {
+    let mut per_disc = vec![0u64; groupings.len()];
+    let mut library = vec![0u64; groupings.len()];
+    let mut seen_library: HashSet<[u8; 20]> = HashSet::new();
+    for disc in discs {
+        let mut seen_disc: HashSet<[u8; 20]> = HashSet::new();
+        for_each_area(disc, &mut |area| {
+            let mut references = 0u64;
+            let mut stored_disc: Vec<&[u8]> = Vec::new();
+            let mut stored_library: Vec<&[u8]> = Vec::new();
+            for chunk in FastCDC::new(&area, average / 4, average, average * 4) {
+                let bytes = &area[chunk.offset..chunk.offset + chunk.length];
+                references += 1;
+                let digest: [u8; 20] = Sha1::digest(bytes).into();
+                if seen_disc.insert(digest) {
+                    stored_disc.push(bytes);
+                }
+                if seen_library.insert(digest) {
+                    stored_library.push(bytes);
+                }
+            }
+            for (totals, stored) in [
+                (&mut per_disc, &stored_disc),
+                (&mut library, &stored_library),
+            ] {
+                for (total, grouping) in totals.iter_mut().zip(groupings) {
+                    let groups = groups(stored, grouping.group);
+                    let size: u64 = groups
+                        .par_iter()
+                        .map(|group| compress_group(group, grouping.codec))
+                        .sum::<Result<u64>>()?;
+                    *total += size
+                        + references * REFERENCE
+                        + stored.len() as u64 * STORED
+                        + groups.len() as u64 * 16;
+                }
+            }
+            Ok(())
+        })?;
+    }
+    Ok(per_disc.into_iter().zip(library).collect())
+}
+
+/// Stored chunks gathered into groups of at least `group` bytes, but the
+/// last.
+fn groups(stored: &[&[u8]], group: usize) -> Vec<Vec<u8>> {
+    let mut groups = vec![Vec::new()];
+    for chunk in stored {
+        if groups
+            .last()
+            .is_some_and(|last: &Vec<u8>| last.len() >= group)
+        {
+            groups.push(Vec::new());
+        }
+        groups.last_mut().unwrap().extend_from_slice(chunk);
+    }
+    groups.retain(|group| !group.is_empty());
+    groups
+}
+
+fn compress_group(group: &[u8], codec: &str) -> Result<u64> {
+    let size = match codec {
+        "zstd19" => zstd::bulk::compress(group, 19)?.len(),
+        "lzma2" => {
+            let mut options = lzma_rust2::Lzma2Options::with_preset(9);
+            options.lzma_options.dict_size =
+                (group.len().next_power_of_two() as u32).clamp(4096, 64 << 20);
+            let mut writer = lzma_rust2::Lzma2Writer::new(Vec::new(), options);
+            writer.write_all(group)?;
+            writer.finish()?.len()
+        }
+        _ => anyhow::bail!("unknown codec: {codec}"),
+    };
+    Ok(size.min(group.len()) as u64)
 }

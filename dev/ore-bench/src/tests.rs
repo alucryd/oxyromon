@@ -147,3 +147,37 @@ fn samples_read_back_as_taken() {
     );
     assert!(count > 1);
 }
+
+#[test]
+fn groups_store_a_second_copy_as_references() {
+    // given the same synthetic disc twice
+    let directory = tempfile::TempDir::new().unwrap();
+    let data = common::gamecube_disc(0x200000);
+    let (one, two) = (
+        directory.path().join("one.iso"),
+        directory.path().join("two.iso"),
+    );
+    common::write(&one, &data);
+    common::write(&two, &data);
+    let groupings = [
+        solid::Grouping {
+            group: 64 << 10,
+            codec: "zstd19",
+        },
+        solid::Grouping {
+            group: 64 << 10,
+            codec: "lzma2",
+        },
+    ];
+
+    // when
+    let totals = solid::grouped(&[one.as_path(), two.as_path()], 16 << 10, &groupings).unwrap();
+
+    // then the library stores the chunks once, the per-disc total twice
+    for (per_disc, library) in totals {
+        assert!(
+            library < per_disc / 2 + per_disc / 10,
+            "{library} against {per_disc}"
+        );
+    }
+}
