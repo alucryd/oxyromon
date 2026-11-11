@@ -62,3 +62,33 @@ fn kinds_come_from_magic_bytes() {
     assert_eq!(inventory::kind(&[0; 16]), "zero");
     assert_eq!(inventory::kind(b"other"), "?");
 }
+
+#[test]
+fn dedup_finds_a_disc_again_whatever_the_scheme() {
+    // given the rows of one synthetic disc, listed twice as two discs
+    let mut disc = Disc(common::gamecube_disc(0x200000));
+    let mut rows = String::from("disc\tscheme\tdigest\tlength\tcompressed\n");
+    for name in ["one", "two"] {
+        for (scheme, units) in dedup::units(&mut disc).unwrap() {
+            for unit in units {
+                rows += &format!(
+                    "{name}\t{scheme}\t{:016x}\t{}\t{}\n",
+                    unit.digest, unit.length, unit.compressed
+                );
+            }
+        }
+    }
+
+    // when
+    let totals = dedup::sum(rows.as_bytes()).unwrap();
+
+    // then every scheme stores the second disc as references only: deduped,
+    // the pair weighs one disc's units and both discs' references
+    assert_eq!(totals.len(), dedup::SCHEMES.len());
+    for (scheme, total) in totals {
+        let references = total.references * dedup::REFERENCE;
+        assert_eq!(2 * total.library - total.per_disc, references, "{scheme}");
+        // and the padding, most of the disc, is cut out of what is counted
+        assert!(total.length < 0x200000, "{scheme}");
+    }
+}

@@ -32,6 +32,7 @@ use lzma_rust2::filter::bcj::BcjWriter;
 use rayon::prelude::*;
 use sha1::{Digest, Sha1};
 
+pub mod dedup;
 pub mod inventory;
 
 /// The span the generator restarts at, and RVZ looks for padding in.
@@ -112,7 +113,7 @@ impl Layout {
 /// The padding of a disc, found as rvz-rs's `rvz_pack` finds it: past the
 /// zeros that follow a file, the generator's output to the end of the block,
 /// or to the end of the file that follows it.
-fn find_filler(data: &[u8], file_system: Option<&FileSystem>) -> Vec<(u64, u64)> {
+pub(crate) fn find_filler(data: &[u8], file_system: Option<&FileSystem>) -> Vec<(u64, u64)> {
     let total = data.len() as u64;
     let mut runs = Vec::new();
     let mut position = 0u64;
