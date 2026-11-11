@@ -72,6 +72,7 @@ pub enum ArcadeRomType {
 pub(crate) const BOOLEANS: &[&str] = &[
     "CHD_PARENTS",
     "GROUP_SUBSYSTEMS",
+    "INFER_CLONES",
     "PREFER_PARENTS",
     "REGIONS_ONE_STRICT",
     "SEVENZIP_SOLID_COMPRESSION",

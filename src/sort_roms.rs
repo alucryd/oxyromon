@@ -12,9 +12,9 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use itertools::Itertools;
 use rayon::prelude::*;
-use regex::Regex;
-use shiratsu_naming::naming::TokenizedName;
+use regex::{Regex, RegexSet};
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken, NoIntroVersion};
+use shiratsu_naming::naming::{FlagType, TokenizedName};
 use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
@@ -27,6 +27,101 @@ use strum::VariantNames;
 
 pub static LANGUAGE_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[A-Z][a-z]").unwrap());
 pub static VARIANT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[A-Z]{2}").unwrap());
+
+/// Flags that only tell editions of a game apart, which `INFER_CLONES` leaves
+/// out of a game's title: budget lines and reissues, limited editions and
+/// bundles, dump and distribution details, and demos. Igir and Retool leave out
+/// much the same when they group games by name.
+const EDITION_FLAGS: &[&str] = &[
+    // budget lines and reissues
+    r".*\bbest\b.*",
+    "bps the choice",
+    "budget",
+    ".*classics",
+    ".*essentials",
+    "fukkokuban",
+    "fukyuuban.*",
+    "greatest hits",
+    "hit squad.*",
+    r"honkakuha de \d+",
+    "kixx.*",
+    "major wave",
+    "mega hits!",
+    "platinum",
+    r".*\bprice\b.*",
+    "psone books",
+    "recalled",
+    "renkaban",
+    "reprint",
+    ".*rerelease",
+    "sold out.*",
+    "spike library",
+    "ultimate hits",
+    r".*\bvalue\b.*",
+    "xplosiv",
+    // limited editions and bundles
+    ".* box",
+    ".* pack",
+    ".* set",
+    ".*collector's.*",
+    ".*deluxe.*",
+    ".*doukon.*",
+    ".*gentei.*",
+    ".*limited.*",
+    ".*premium.*",
+    ".*seisanban.*",
+    ".*shokai.*",
+    ".*shoten.*",
+    ".*taiouban.*",
+    ".*tokubetsu.*",
+    "special edition",
+    // dumps and distribution
+    "aftermarket",
+    "alt( .*)?",
+    "covermount",
+    "culture publishers",
+    "digital release",
+    "disney classic games",
+    "edc",
+    "evercade",
+    "hibaihin",
+    "lodgenet",
+    "magazine",
+    "made in .*",
+    "no edc",
+    "not for resale",
+    r".*\boem",
+    "pirate",
+    r"review (code|kit \d+)",
+    "steam",
+    "switch online",
+    "unl",
+    ".*virtual console",
+    // serials, Sega ring codes and dates
+    r"[a-z]{4}-\d{5}",
+    r"(\d{1,2}[abcmrs]+\d?,? ?)+",
+    r"re?-?\d*",
+    r"\d{4}-\d{2}-\d{2}",
+    r"\d{8}",
+    // demos
+    r".*\bdemo\b.*",
+    ".*kiosk.*",
+    "otameshi.*",
+    "preview",
+    "sample",
+    ".*taikenban.*",
+    "trial.*",
+];
+
+static EDITION_FLAGS_REGEX: LazyLock<RegexSet> = LazyLock::new(|| {
+    RegexSet::new(EDITION_FLAGS.iter().map(|flag| format!("(?i)^(?:{flag})$"))).unwrap()
+});
+
+/// A flag naming a disc or an add-on of its own stays in a game's title, even
+/// one that reads like an edition, such as "Premium Pack Bonus Disc"
+static DISTINCT_FLAG_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(?i)\b(?:add-?on|bonus|disc|disk|dlc|expansion|map|mission)\b").unwrap()
+});
 
 pub fn subcommand() -> Command {
     Command::new("sort-roms")
@@ -150,6 +245,7 @@ pub async fn main(
         .unwrap();
         let preferred_flags = get_list(connection, "PREFER_FLAGS", system_id).await;
         let one_regions_strict = get_bool(connection, "REGIONS_ONE_STRICT", system_id).await;
+        let infer_clones = get_bool(connection, "INFER_CLONES", system_id).await;
 
         sort_system(
             connection,
@@ -172,6 +268,7 @@ pub async fn main(
             &all_regions_subfolders,
             &one_regions_subfolders,
             one_regions_strict,
+            infer_clones,
         )
         .await?;
 
@@ -226,6 +323,7 @@ async fn sort_system(
     all_regions_subfolders: &Option<SubfolderScheme>,
     one_regions_subfolders: &Option<SubfolderScheme>,
     one_regions_strict: bool,
+    infer_clones: bool,
 ) -> Result<()> {
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     print_header(progress_bar, &format!("Sorting \"{}\"", system.name));
@@ -259,27 +357,39 @@ async fn sort_system(
         let parent_games = find_parent_games_by_system_id(connection, system.id).await;
         let clone_games = find_clone_games_by_system_id(connection, system.id).await;
 
-        let mut clone_games_by_parent_id: HashMap<i64, Vec<Game>> = HashMap::new();
-        clone_games.into_iter().for_each(|game| {
-            let group = clone_games_by_parent_id
-                .entry(game.parent_id.unwrap())
-                .or_default();
-            group.push(game);
-        });
+        // without Parent-Clone data, every game is a parent of its own
+        let inferred = infer_clones && clone_games.is_empty();
+        let groups = if inferred {
+            group_games_by_title(parent_games)
+        } else {
+            let mut clone_games_by_parent_id: HashMap<i64, Vec<Game>> = HashMap::new();
+            clone_games.into_iter().for_each(|game| {
+                let group = clone_games_by_parent_id
+                    .entry(game.parent_id.unwrap())
+                    .or_default();
+                group.push(game);
+            });
+            parent_games
+                .into_iter()
+                .map(|parent_game| {
+                    let mut games = clone_games_by_parent_id
+                        .remove(&parent_game.id)
+                        .unwrap_or_default();
+                    games.push(parent_game);
+                    games
+                })
+                .collect_vec()
+        };
 
-        for parent_game in parent_games {
-            if clone_games_by_parent_id.contains_key(&parent_game.id) {
-                games = clone_games_by_parent_id.remove(&parent_game.id).unwrap();
-            } else {
-                games = vec![];
-            }
-            games.push(parent_game);
+        for group in groups {
+            games = group;
             // put newer releases first
             games.sort_by(|a, b| {
                 sort_games_by_weight(
                     a,
                     b,
-                    prefer_parents,
+                    // an inferred group has no parent to favor
+                    prefer_parents && !inferred,
                     preferred_regions,
                     preferred_versions,
                     preferred_flags,
@@ -726,6 +836,55 @@ async fn sort_game<'a>(
     Ok(romfile_moves)
 }
 
+/// The title a game is grouped by under `INFER_CLONES`: its name without its
+/// regions, languages, versions, release status and edition flags, so that
+/// `Game (USA)`, `Game (Europe) (Rev 1)` and `Game (Japan) (Premium Box)` share
+/// one, while `Game (USA) (Disc 2)` and `Game (USA) (Bonus Disc)` have their own.
+/// A name that doesn't follow No-Intro's convention is its own title.
+fn get_title(name: &str) -> String {
+    let Ok(parsed_name) = NoIntroName::try_parse(name) else {
+        return name.to_owned();
+    };
+    parsed_name
+        .iter()
+        .filter_map(|token| match token {
+            NoIntroToken::Title(title) => Some(title.to_lowercase()),
+            NoIntroToken::Media { media_type, number } => {
+                Some(format!("({media_type} {number})").to_lowercase())
+            }
+            NoIntroToken::Flag { flag_type, flag }
+                if DISTINCT_FLAG_REGEX.is_match(flag) || !EDITION_FLAGS_REGEX.is_match(flag) =>
+            {
+                Some(
+                    match flag_type {
+                        FlagType::Parenthesized => format!("({flag})"),
+                        FlagType::Bracketed => format!("[{flag}]"),
+                    }
+                    .to_lowercase(),
+                )
+            }
+            _ => None,
+        })
+        .join(" ")
+}
+
+/// Groups games sharing a title, keeping their order
+fn group_games_by_title(games: Vec<Game>) -> Vec<Vec<Game>> {
+    let mut groups: Vec<Vec<Game>> = vec![];
+    let mut group_indices: HashMap<String, usize> = HashMap::new();
+    for game in games {
+        let title = get_title(&game.name);
+        match group_indices.get(&title) {
+            Some(&index) => groups[index].push(game),
+            None => {
+                group_indices.insert(title, groups.len());
+                groups.push(vec![game]);
+            }
+        }
+    }
+    groups
+}
+
 fn trim_ignored_games(
     games: Vec<Game>,
     languages: &[&str],
@@ -1035,6 +1194,12 @@ mod test_sort_1g1r_discard_asia_and_beta;
 #[cfg(test)]
 mod test_sort_1g1r_discard_categories;
 #[cfg(test)]
+mod test_sort_1g1r_infer_clones;
+#[cfg(test)]
+mod test_sort_1g1r_infer_clones_parent_clone;
+#[cfg(test)]
+mod test_sort_1g1r_infer_clones_titles;
+#[cfg(test)]
 mod test_sort_1g1r_lenient;
 #[cfg(test)]
 mod test_sort_1g1r_playlist;
@@ -1062,6 +1227,8 @@ mod test_sort_discard_asia_and_beta;
 mod test_sort_discard_beta;
 #[cfg(test)]
 mod test_sort_discard_categories;
+#[cfg(test)]
+mod test_title;
 #[cfg(test)]
 mod test_trim_categories;
 #[cfg(test)]
