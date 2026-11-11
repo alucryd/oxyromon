@@ -20,6 +20,7 @@
 - Added the `GAME_SUBFOLDERS` setting (`never`, `multiple` or `always`), storing games in folders of their own, with multi-disc games sharing one folder with their playlist
 - Added the `DISCARD_CATEGORIES` setting, discarding games by the categories their DAT gives them, such as Redump's Demos and Coverdiscs, with a Discard Categories field in the web UI
 - Added the `INFER_CLONES` setting, grouping games by title for 1G1R when their DAT has no Parent-Clone data, as Redump's don't, with an Infer Clones switch in the web UI
+- Added the `import-clone-lists` subcommand, importing Retool's clone lists, which `INFER_CLONES` reads to group titles named differently across regions and to elect one of a region's releases by its priority
 
 ## Changes
 

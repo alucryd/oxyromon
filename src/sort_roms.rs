@@ -11,13 +11,14 @@ use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use itertools::Itertools;
+use num_traits::FromPrimitive;
 use rayon::prelude::*;
 use regex::{Regex, RegexSet};
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken, NoIntroVersion};
 use shiratsu_naming::naming::{FlagType, TokenizedName};
 use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqliteConnection;
-use std::cmp::Ordering;
+use std::cmp::{Ordering, Reverse};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -122,6 +123,10 @@ static EDITION_FLAGS_REGEX: LazyLock<RegexSet> = LazyLock::new(|| {
 static DISTINCT_FLAG_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?i)\b(?:add-?on|bonus|disc|disk|dlc|expansion|map|mission)\b").unwrap()
 });
+
+/// The flags ending a clone list search term, such as ` (Disc 1) (Premium Box)`
+static TRAILING_FLAGS_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?: \([^()]*\))+$").unwrap());
 
 pub fn subcommand() -> Command {
     Command::new("sort-roms")
@@ -359,8 +364,14 @@ async fn sort_system(
 
         // without Parent-Clone data, every game is a parent of its own
         let inferred = infer_clones && clone_games.is_empty();
+        let mut priorities: HashMap<i64, i64> = HashMap::new();
         let groups = if inferred {
-            group_games_by_title(parent_games)
+            let clone_list_titles =
+                find_clone_list_titles_by_system_id(connection, system.id).await;
+            let (groups, clone_list_priorities) =
+                group_games_by_title(parent_games, &clone_list_titles);
+            priorities = clone_list_priorities;
+            groups
         } else {
             let mut clone_games_by_parent_id: HashMap<i64, Vec<Game>> = HashMap::new();
             clone_games.into_iter().for_each(|game| {
@@ -381,19 +392,23 @@ async fn sort_system(
                 .collect_vec()
         };
 
+        let priority = |game: &Game| priorities.get(&game.id).copied().unwrap_or(1);
         for group in groups {
             games = group;
-            // put newer releases first
+            // put a lower clone list priority first, as within a region the
+            // first game wins, then newer releases
             games.sort_by(|a, b| {
-                sort_games_by_weight(
-                    a,
-                    b,
-                    // an inferred group has no parent to favor
-                    prefer_parents && !inferred,
-                    preferred_regions,
-                    preferred_versions,
-                    preferred_flags,
-                )
+                priority(a).cmp(&priority(b)).then_with(|| {
+                    sort_games_by_weight(
+                        a,
+                        b,
+                        // an inferred group has no parent to favor
+                        prefer_parents && !inferred,
+                        preferred_regions,
+                        preferred_versions,
+                        preferred_flags,
+                    )
+                })
             });
 
             // trim ignored games
@@ -840,49 +855,209 @@ async fn sort_game<'a>(
 /// regions, languages, versions, release status and edition flags, so that
 /// `Game (USA)`, `Game (Europe) (Rev 1)` and `Game (Japan) (Premium Box)` share
 /// one, while `Game (USA) (Disc 2)` and `Game (USA) (Bonus Disc)` have their own.
-/// A name that doesn't follow No-Intro's convention is its own title.
-fn get_title(name: &str) -> String {
-    let Ok(parsed_name) = NoIntroName::try_parse(name) else {
-        return name.to_owned();
-    };
-    parsed_name
-        .iter()
-        .filter_map(|token| match token {
-            NoIntroToken::Title(title) => Some(title.to_lowercase()),
-            NoIntroToken::Media { media_type, number } => {
-                Some(format!("({media_type} {number})").to_lowercase())
-            }
-            NoIntroToken::Flag { flag_type, flag }
-                if DISTINCT_FLAG_REGEX.is_match(flag) || !EDITION_FLAGS_REGEX.is_match(flag) =>
-            {
-                Some(
-                    match flag_type {
-                        FlagType::Parenthesized => format!("({flag})"),
-                        FlagType::Bracketed => format!("[{flag}]"),
-                    }
-                    .to_lowercase(),
-                )
-            }
-            _ => None,
-        })
-        .join(" ")
+/// A name that doesn't follow No-Intro's convention is its own title. The
+/// edition flags left out of the title come with it, lowercased.
+fn get_title_and_editions(name: &str) -> (String, Vec<String>) {
+    parse_title_and_editions(name).unwrap_or_else(|| (name.to_owned(), vec![]))
 }
 
-/// Groups games sharing a title, keeping their order
-fn group_games_by_title(games: Vec<Game>) -> Vec<Vec<Game>> {
+/// The title and edition flags of a clone list search term, which names a game
+/// without its regions: `Game (Premium Box)` reads as `Game (World) (Premium
+/// Box)` would
+fn get_search_term_title_and_editions(search_term: &str) -> (String, Vec<String>) {
+    let flags_start = TRAILING_FLAGS_REGEX
+        .find(search_term)
+        .map_or(search_term.len(), |flags| flags.start());
+    let name = format!(
+        "{} (World){}",
+        &search_term[..flags_start],
+        &search_term[flags_start..]
+    );
+    parse_title_and_editions(&name).unwrap_or_else(|| (search_term.to_owned(), vec![]))
+}
+
+fn parse_title_and_editions(name: &str) -> Option<(String, Vec<String>)> {
+    let parsed_name = NoIntroName::try_parse(name).ok()?;
+    let mut title: Vec<String> = vec![];
+    let mut editions: Vec<String> = vec![];
+    for token in parsed_name.iter() {
+        match token {
+            NoIntroToken::Title(text) => title.push(text.to_lowercase()),
+            NoIntroToken::Media { media_type, number } => {
+                title.push(format!("({media_type} {number})").to_lowercase())
+            }
+            NoIntroToken::Flag { flag_type, flag } => {
+                if DISTINCT_FLAG_REGEX.is_match(flag) || !EDITION_FLAGS_REGEX.is_match(flag) {
+                    title.push(
+                        match flag_type {
+                            FlagType::Parenthesized => format!("({flag})"),
+                            FlagType::Bracketed => format!("[{flag}]"),
+                        }
+                        .to_lowercase(),
+                    );
+                } else {
+                    editions.push(flag.to_lowercase());
+                }
+            }
+            _ => {}
+        }
+    }
+    Some((title.join(" "), editions))
+}
+
+/// What a game is grouped by under `INFER_CLONES`
+#[derive(Eq, Hash, PartialEq)]
+enum GroupKey {
+    Title(String),
+    CloneList(String),
+}
+
+/// A clone list title, ready to match games against
+struct CloneListMatcher<'a> {
+    title: &'a CloneListTitle,
+    search_term: SearchTerm,
+    match_string: Option<Regex>,
+}
+
+enum SearchTerm {
+    /// A title, and the edition flags a game needs to match it
+    Short(String, Vec<String>),
+    Full,
+    Regex(Regex),
+}
+
+impl<'a> CloneListMatcher<'a> {
+    /// None for a title whose regex doesn't compile
+    fn new(title: &'a CloneListTitle) -> Option<Self> {
+        let search_term = match CloneListNameType::from_i64(title.name_type)? {
+            CloneListNameType::Short => {
+                let (title, editions) = get_search_term_title_and_editions(&title.search_term);
+                SearchTerm::Short(title, editions)
+            }
+            CloneListNameType::Full => SearchTerm::Full,
+            CloneListNameType::Regex => {
+                SearchTerm::Regex(Regex::new(&format!("(?i){}", title.search_term)).ok()?)
+            }
+        };
+        let match_string = match &title.match_string {
+            Some(pattern) => Some(Regex::new(pattern).ok()?),
+            None => None,
+        };
+        Some(Self {
+            title,
+            search_term,
+            match_string,
+        })
+    }
+
+    /// How specifically the search term names the game, if it does: a full
+    /// name or a regex most, then a title by the edition flags it names
+    fn specificity(&self, game: &Game, title: &str, editions: &[String]) -> Option<usize> {
+        match &self.search_term {
+            SearchTerm::Short(search_title, search_editions) => (search_title == title
+                && search_editions
+                    .iter()
+                    .all(|edition| editions.contains(edition)))
+            .then_some(search_editions.len()),
+            SearchTerm::Full => (self.title.search_term == game.name).then_some(usize::MAX),
+            SearchTerm::Regex(regex) => regex.is_match(&game.name).then_some(usize::MAX),
+        }
+    }
+
+    /// Whether the game's regions and languages include all the filter's, and
+    /// its name matches the filter's pattern
+    fn matches_conditions(&self, game: &Game) -> bool {
+        if let Some(match_regions) = &self.title.match_regions {
+            let regions = Region::try_from_tosec_region(&game.regions).unwrap_or_default();
+            if !match_regions.split(',').all(|match_region| {
+                Region::try_from_nointro_region(match_region)
+                    .is_ok_and(|match_region| match_region.iter().all(|r| regions.contains(r)))
+            }) {
+                return false;
+            }
+        }
+        if let Some(match_languages) = &self.title.match_languages {
+            let languages: Vec<String> = NoIntroName::try_parse(&game.name)
+                .map(|name| {
+                    name.iter()
+                        .filter_map(|token| match token {
+                            NoIntroToken::Languages(languages) => Some(languages),
+                            _ => None,
+                        })
+                        .flatten()
+                        .map(|language| language.code.to_string())
+                        .collect()
+                })
+                .unwrap_or_default();
+            if !match_languages
+                .split(',')
+                .all(|match_language| languages.iter().any(|l| l == match_language))
+            {
+                return false;
+            }
+        }
+        self.match_string
+            .as_ref()
+            .is_none_or(|regex| regex.is_match(&game.name))
+    }
+}
+
+/// Groups games sharing a title, keeping their order. A clone list title
+/// naming a game puts it in the title's group instead, with the title's
+/// priority: the most specific one, then the first, whose conditions the game
+/// meets.
+fn group_games_by_title(
+    games: Vec<Game>,
+    clone_list_titles: &[CloneListTitle],
+) -> (Vec<Vec<Game>>, HashMap<i64, i64>) {
+    let matchers: Vec<CloneListMatcher> = clone_list_titles
+        .iter()
+        .filter_map(CloneListMatcher::new)
+        .collect();
+    let mut short_matchers: HashMap<&str, Vec<&CloneListMatcher>> = HashMap::new();
+    let mut other_matchers: Vec<&CloneListMatcher> = vec![];
+    for matcher in &matchers {
+        match &matcher.search_term {
+            SearchTerm::Short(title, _) => short_matchers.entry(title).or_default().push(matcher),
+            _ => other_matchers.push(matcher),
+        }
+    }
+
     let mut groups: Vec<Vec<Game>> = vec![];
-    let mut group_indices: HashMap<String, usize> = HashMap::new();
+    let mut group_indices: HashMap<GroupKey, usize> = HashMap::new();
+    let mut priorities: HashMap<i64, i64> = HashMap::new();
     for game in games {
-        let title = get_title(&game.name);
-        match group_indices.get(&title) {
+        let (title, editions) = get_title_and_editions(&game.name);
+        let clone_list_title = short_matchers
+            .get(title.as_str())
+            .into_iter()
+            .flatten()
+            .chain(other_matchers.iter())
+            .filter_map(|matcher| {
+                matcher
+                    .specificity(&game, &title, &editions)
+                    .map(|specificity| (specificity, matcher))
+            })
+            .filter(|(_, matcher)| matcher.matches_conditions(&game))
+            // the most specific, then the first in the list
+            .min_by_key(|(specificity, matcher)| (Reverse(*specificity), matcher.title.id))
+            .map(|(_, matcher)| matcher.title);
+        let key = match clone_list_title {
+            Some(clone_list_title) => {
+                priorities.insert(game.id, clone_list_title.priority);
+                GroupKey::CloneList(clone_list_title.group_name.clone())
+            }
+            None => GroupKey::Title(title),
+        };
+        match group_indices.get(&key) {
             Some(&index) => groups[index].push(game),
             None => {
-                group_indices.insert(title, groups.len());
+                group_indices.insert(key, groups.len());
                 groups.push(vec![game]);
             }
         }
     }
-    groups
+    (groups, priorities)
 }
 
 fn trim_ignored_games(
@@ -1184,11 +1359,15 @@ mod test_order_prefer_versions_old_revision_vs_vanilla;
 #[cfg(test)]
 mod test_order_prefer_versions_old_vanilla_vs_revision;
 #[cfg(test)]
+mod test_search_term_title;
+#[cfg(test)]
 mod test_sort;
 #[cfg(test)]
 mod test_sort_1g1r;
 #[cfg(test)]
 mod test_sort_1g1r_catch_all;
+#[cfg(test)]
+mod test_sort_1g1r_clone_lists;
 #[cfg(test)]
 mod test_sort_1g1r_discard_asia_and_beta;
 #[cfg(test)]

@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Test System (Clone Lists)</name>
+		<description>Test System (Clone Lists)</description>
+		<version>20261111</version>
+		<date>20261111</date>
+		<author>Maxime Gauduin</author>
+		<url>http://redump.org/</url>
+	</header>
+	<game name="Another Game (Japan)">
+		<category>Games</category>
+		<description>Another Game (Japan)</description>
+		<rom name="Another Game (Japan).rom" size="256" crc="e9902f91"
+			md5="d2f4762ab8ad848732cb01312393a1c9" sha1="fb0b6ded9e80895d0d521945434f2ee8c55ff1cb" />
+	</game>
+	<game name="Another Game (Japan) (Premium Box)">
+		<category>Games</category>
+		<description>Another Game (Japan) (Premium Box)</description>
+		<rom name="Another Game (Japan) (Premium Box).rom" size="256" crc="0b934463"
+			md5="bbe5c8ae525abf303e0cc79b61e0914a" sha1="dc8508a1d13fa20b3d45156e0fce99c486b06449" />
+	</game>
+	<game name="First Game (Japan)">
+		<category>Games</category>
+		<description>First Game (Japan)</description>
+		<rom name="First Game (Japan).rom" size="256" crc="75fe51c3"
+			md5="11f8d11aedce90edcd22fd88694a4886" sha1="281a400be621e1cc8f88d3809e4d165fc6391f49" />
+	</game>
+	<game name="First Game (USA)">
+		<category>Games</category>
+		<description>First Game (USA)</description>
+		<rom name="First Game (USA).rom" size="256" crc="c804e84d"
+			md5="750512299f8619838601f2eb57858c79" sha1="b988b08d77bf451d0ee43137a048c6f6407b2678" />
+	</game>
+	<game name="Fishing Game (Japan)">
+		<category>Games</category>
+		<description>Fishing Game (Japan)</description>
+		<rom name="Fishing Game (Japan).rom" size="256" crc="65962fb2"
+			md5="7104672b5d5c0839e984520f03f1e9d4" sha1="4e3f3965ad08cdd93806043ac64b933de4d14c0b" />
+	</game>
+	<game name="Fishing Game (Japan) (Doukon Pack)">
+		<category>Games</category>
+		<description>Fishing Game (Japan) (Doukon Pack)</description>
+		<rom name="Fishing Game (Japan) (Doukon Pack).rom" size="256" crc="16813dfa"
+			md5="e1bd914e3e38e1d24a02b8be2fdbb231" sha1="f1643b98a6729647db0fd7f6ead3b942aa1e6c38" />
+	</game>
+	<game name="Sequel Game (Japan)">
+		<category>Games</category>
+		<description>Sequel Game (Japan)</description>
+		<rom name="Sequel Game (Japan).rom" size="256" crc="d7126697"
+			md5="6b0bc4891945b5cd453127651930f4e8" sha1="d39e001140f87a36c75f290a85579a60b6425178" />
+	</game>
+	<game name="Sequel Game (USA)">
+		<category>Games</category>
+		<description>Sequel Game (USA)</description>
+		<rom name="Sequel Game (USA).rom" size="256" crc="5fda4477"
+			md5="6a216296850d303fdea7bb3583d45781" sha1="b186d52d28c0ae84c5b7313f7cac44bc80a18088" />
+	</game>
+	<game name="Test Game (USA)">
+		<category>Games</category>
+		<description>Test Game (USA)</description>
+		<rom name="Test Game (USA).rom" size="256" crc="24e14ba8"
+			md5="a937415eac9415fba3d8889192f65528" sha1="130b79f4cba3c8f18b0ed434d4988eab02863334" />
+	</game>
+	<game name="Testjuego (Spain)">
+		<category>Games</category>
+		<description>Testjuego (Spain)</description>
+		<rom name="Testjuego (Spain).rom" size="256" crc="10e27fdb"
+			md5="a9a0e811fd7ade01fa6a822180bc1e33" sha1="895b421dca1dde2b3c4af59034e489341bfd73ec" />
+	</game>
+	<game name="Testspiel (Germany)">
+		<category>Games</category>
+		<description>Testspiel (Germany)</description>
+		<rom name="Testspiel (Germany).rom" size="256" crc="84508afc"
+			md5="889512906c2c9a38c7b9fb231cd953d0" sha1="ecc75605477b486c77655bcd9059ae7df6aa3fcb" />
+	</game>
+</datafile>
