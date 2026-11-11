@@ -69,7 +69,7 @@ fn dedup_finds_a_disc_again_whatever_the_scheme() {
     let mut disc = Disc(common::gamecube_disc(0x200000));
     let mut rows = String::from("disc\tscheme\tdigest\tlength\tcompressed\n");
     for name in ["one", "two"] {
-        for (scheme, units) in dedup::units(&mut disc).unwrap() {
+        for (scheme, units) in dedup::units(&mut disc, dedup::SCHEMES).unwrap() {
             for unit in units {
                 rows += &format!(
                     "{name}\t{scheme}\t{:016x}\t{}\t{}\n",

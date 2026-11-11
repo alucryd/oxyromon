@@ -75,6 +75,58 @@ impl Disc {
     }
 }
 
+/// An RVZ read through a window of 64 MiB, so that reading its disc in
+/// order, a block at a time, decodes each chunk of it once.
+pub struct RvzDisc {
+    reader: rvz_rs::Reader,
+    start: u64,
+    window: Vec<u8>,
+}
+
+impl RvzDisc {
+    const WINDOW: u64 = 64 << 20;
+
+    pub fn open(path: &Path) -> Result<Self> {
+        Ok(Self {
+            reader: rvz_rs::Reader::open(path)?,
+            start: 0,
+            window: Vec::new(),
+        })
+    }
+}
+
+impl Source for RvzDisc {
+    fn size(&self) -> u64 {
+        self.reader.size()
+    }
+
+    fn read_at(&mut self, offset: u64, buf: &mut [u8]) -> gcwii::error::Result<()> {
+        let io = |error: rvz_rs::Error| std::io::Error::other(error.to_string());
+        let end = offset + buf.len() as u64;
+        if offset < self.start || end > self.start + self.window.len() as u64 {
+            if buf.len() as u64 > Self::WINDOW {
+                return Ok(self.reader.read_at(offset, buf).map_err(io)?);
+            }
+            self.start = offset / Self::WINDOW * Self::WINDOW;
+            let length = (2 * Self::WINDOW).min(self.reader.size().saturating_sub(self.start));
+            self.window.resize(length as usize, 0);
+            self.reader
+                .read_at(self.start, &mut self.window)
+                .map_err(io)?;
+        }
+        let at = (offset - self.start) as usize;
+        buf.copy_from_slice(&self.window[at..at + buf.len()]);
+        Ok(())
+    }
+
+    fn title_key(&self, data_offset: u64) -> Option<gcwii::crypto::Key> {
+        self.reader
+            .title_keys()
+            .find(|&(offset, _)| offset == data_offset)
+            .map(|(_, key)| key)
+    }
+}
+
 /// What the levers act on, found once a disc.
 pub struct Layout {
     /// Runs of padding as `[start, end)`, none crossing a block.
