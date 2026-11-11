@@ -8,19 +8,28 @@
 //! - `fixed-N`: chunks of N bytes;
 //! - `cdc-N`: FastCDC (2020) chunks of N bytes on average, from N/4 to 4N;
 //! - `files`: each file of the file system whole, compressed in 2 MiB pieces,
-//!   and what lies outside every file in 2 MiB chunks.
+//!   and what lies outside every file in 2 MiB chunks;
+//! - `solid`: the whole area as one unit, compressed as one stream with a
+//!   long window: archive mode, with no random access, as a ceiling.
+//!
+//! Each unit is compressed by each codec asked for: `zstd19`, Zstandard level
+//! 19, and `lzma2`, LZMA2 at preset 9 with its dictionary cut to the unit. A
+//! `solid` unit is only compressed by `zstd19`, with a 128 MiB window and
+//! long-distance matching. Rows are named `<scheme>/<codec>`, but for
+//! `zstd19`'s, named after the scheme alone as before codecs were compared.
 //!
 //! [`units`] prints a row per unit and [`sum`] adds them up across discs, so
 //! that a disc at a time is enough to hold.
 
 use std::collections::HashSet;
-use std::io::BufRead;
+use std::io::{BufRead, Write};
 
 use anyhow::{Context, Result, bail};
 use fastcdc::v2020::FastCDC;
 use gcwii::disc::{PARTITION_DATA_SIZE, Platform, Source, Volume};
 use gcwii::fst::FileSystem;
 use gcwii::wii::{BLOCK_DATA_SIZE, BLOCK_TOTAL_SIZE};
+use lzma_rust2::{Lzma2Options, Lzma2Writer};
 use rayon::prelude::*;
 use sha1::{Digest, Sha1};
 
@@ -43,27 +52,60 @@ pub const SCHEMES: &[&str] = &[
     "cdc-256K",
     "cdc-1M",
     "files",
+    "solid",
 ];
 
-/// One unit of a disc: its digest, length and compressed size.
+/// The codecs compared, by name.
+pub const CODECS: &[&str] = &["zstd19", "lzma2"];
+
+/// One unit of a disc: its digest, length and compressed size by codec, in
+/// the order the codecs were asked for.
 pub struct Unit {
     pub digest: u64,
     pub length: u64,
-    pub compressed: u64,
+    pub compressed: Vec<u64>,
 }
 
-fn compressed_size(data: &[u8]) -> Result<u64> {
-    data.chunks(PIECE)
-        .map(|piece| Ok((zstd::bulk::compress(piece, LEVEL)?.len()).min(piece.len()) as u64))
-        .sum()
+/// What `piece` compresses to with `codec`, a piece that does not compress
+/// counting as stored.
+fn compress(piece: &[u8], codec: &str) -> Result<u64> {
+    let size = match codec {
+        "zstd19" => zstd::bulk::compress(piece, LEVEL)?.len(),
+        "lzma2" => {
+            let mut options = Lzma2Options::with_preset(9);
+            options.lzma_options.dict_size =
+                (piece.len().next_power_of_two() as u32).clamp(4096, 64 << 20);
+            let mut writer = Lzma2Writer::new(Vec::new(), options);
+            writer.write_all(piece)?;
+            writer.finish()?.len()
+        }
+        _ => bail!("unknown codec: {codec}"),
+    };
+    Ok(size.min(piece.len()) as u64)
 }
 
-fn unit(data: &[u8]) -> Result<Unit> {
-    let digest = Sha1::digest(data);
+/// What a whole area compresses to as one stream, with a long window.
+fn compress_solid(data: &[u8]) -> Result<u64> {
+    let mut encoder = zstd::stream::Encoder::new(Vec::new(), LEVEL)?;
+    encoder.window_log(27)?;
+    encoder.long_distance_matching(true)?;
+    encoder.multithread(rayon::current_num_threads() as u32)?;
+    encoder.write_all(data)?;
+    Ok(encoder.finish()?.len() as u64)
+}
+
+fn digest(data: &[u8]) -> Result<u64> {
+    Ok(u64::from_be_bytes(Sha1::digest(data)[..8].try_into()?))
+}
+
+fn unit(data: &[u8], codecs: &[&str]) -> Result<Unit> {
     Ok(Unit {
-        digest: u64::from_be_bytes(digest[..8].try_into()?),
+        digest: digest(data)?,
         length: data.len() as u64,
-        compressed: compressed_size(data)?,
+        compressed: codecs
+            .iter()
+            .map(|codec| data.chunks(PIECE).map(|piece| compress(piece, codec)).sum())
+            .collect::<Result<_>>()?,
     })
 }
 
@@ -75,8 +117,8 @@ fn size(name: &str) -> usize {
 /// Each scheme's units of an area.
 pub type Schemes = Vec<(&'static str, Vec<Unit>)>;
 
-/// Every scheme's units of a GameCube disc.
-pub fn units(disc: &mut Disc, schemes: &[&'static str]) -> Result<Schemes> {
+/// Every scheme's units of a GameCube disc, which it takes.
+pub fn units(disc: &mut Disc, schemes: &[&'static str], codecs: &[&str]) -> Result<Schemes> {
     let Some(mut volume) = Volume::new(disc, &[])? else {
         bail!("neither a GameCube nor a Wii disc");
     };
@@ -84,7 +126,12 @@ pub fn units(disc: &mut Disc, schemes: &[&'static str]) -> Result<Schemes> {
         bail!("a Wii disc: read it with wii_units");
     }
     let file_system = volume.file_system(disc, None)?;
-    area_units(&disc.0, file_system.as_deref(), schemes)
+    area_units(
+        std::mem::take(&mut disc.0),
+        file_system.as_deref(),
+        schemes,
+        codecs,
+    )
 }
 
 /// Every scheme's units of a Wii disc, by part: each partition's data
@@ -95,6 +142,7 @@ pub fn units(disc: &mut Disc, schemes: &[&'static str]) -> Result<Schemes> {
 pub fn wii_units(
     source: &mut dyn Source,
     schemes: &[&'static str],
+    codecs: &[&str],
 ) -> Result<(Vec<(String, Schemes)>, u64)> {
     let Some(mut volume) = Volume::new(source, &[])? else {
         bail!("neither a GameCube nor a Wii disc");
@@ -123,10 +171,10 @@ pub fn wii_units(
         let file_system = volume.file_system(source, Some(partition))?;
         parts.push((
             format!("{kind}{index}"),
-            area_units(&data, file_system.as_deref(), schemes)?,
+            area_units(data, file_system.as_deref(), schemes, codecs)?,
         ));
     }
-    parts.push(("header".into(), area_units(&header, None, schemes)?));
+    parts.push(("header".into(), area_units(header, None, schemes, codecs)?));
     Ok((parts, source.size().saturating_sub(covered)))
 }
 
@@ -150,22 +198,15 @@ fn partition_type(source: &mut dyn Source, partition: u64) -> Result<u32> {
 }
 
 /// Every scheme's units of an area laid out as a GameCube disc or a Wii
-/// partition's data: its padding cut out first.
+/// partition's data: its padding cut out first. The area is taken, and its
+/// padding cut out in place, so that it is held once.
 fn area_units(
-    data: &[u8],
+    mut data: Vec<u8>,
     file_system: Option<&FileSystem>,
     schemes: &[&'static str],
+    codecs: &[&str],
 ) -> Result<Schemes> {
-    let filler = find_filler(data, file_system);
-
-    // What is not padding, in order, and what of it is in no file
-    let mut kept = Vec::with_capacity(data.len());
-    let mut at = 0;
-    for &(start, end) in &filler {
-        kept.extend_from_slice(&data[at..start as usize]);
-        at = end as usize;
-    }
-    kept.extend_from_slice(&data[at..]);
+    let filler = find_filler(&data, file_system);
     let mut files: Vec<(u64, u64)> = file_system
         .map(|file_system| {
             file_system
@@ -176,33 +217,81 @@ fn area_units(
         .unwrap_or_default();
     files.sort_unstable();
     files.dedup();
-    let mut outside = Vec::new();
-    let mut at = 0u64;
-    let cut = |from: u64, to: u64, out: &mut Vec<u8>| {
-        // Between files, less the padding there
-        let mut position = from;
-        for &(start, end) in &filler {
-            if end <= position || start >= to {
-                continue;
-            }
-            out.extend_from_slice(&data[position as usize..start.max(position) as usize]);
-            position = end.min(to);
-        }
-        if position < to {
-            out.extend_from_slice(&data[position as usize..to as usize]);
-        }
-    };
-    for &(offset, size) in &files {
-        if offset > at {
-            cut(at, offset, &mut outside);
-        }
-        at = at.max(offset + size);
-    }
-    cut(at.min(data.len() as u64), data.len() as u64, &mut outside);
+    let mut results: Vec<(&'static str, Vec<Unit>)> = Vec::new();
 
-    schemes
-        .iter()
-        .map(|&scheme| {
+    // Whole files first, as they need the area as it lies
+    if schemes.contains(&"files") {
+        let mut outside = Vec::new();
+        let mut at = 0u64;
+        let cut = |from: u64, to: u64, out: &mut Vec<u8>| {
+            // Between files, less the padding there
+            let mut position = from;
+            for &(start, end) in &filler {
+                if end <= position || start >= to {
+                    continue;
+                }
+                out.extend_from_slice(&data[position as usize..start.max(position) as usize]);
+                position = end.min(to);
+            }
+            if position < to {
+                out.extend_from_slice(&data[position as usize..to as usize]);
+            }
+        };
+        for &(offset, size) in &files {
+            if offset > at {
+                cut(at, offset, &mut outside);
+            }
+            at = at.max(offset + size);
+        }
+        cut(at.min(data.len() as u64), data.len() as u64, &mut outside);
+        let pieces: Vec<&[u8]> = files
+            .iter()
+            .map(|&(offset, size)| &data[offset as usize..(offset + size) as usize])
+            .chain(outside.chunks(PIECE))
+            .collect();
+        let units = pieces
+            .into_par_iter()
+            .map(|piece| unit(piece, codecs))
+            .collect::<Result<_>>()?;
+        results.push(("files", units));
+    }
+
+    // Then the padding out, in place: what is kept never runs ahead of
+    // where it is read from
+    let mut kept = 0;
+    let mut at = 0;
+    for &(start, end) in &filler {
+        let start = start as usize;
+        data.copy_within(at..start, kept);
+        kept += start - at;
+        at = end as usize;
+    }
+    let length = data.len();
+    data.copy_within(at..length, kept);
+    kept += length - at;
+    data.truncate(kept);
+    let kept = data;
+
+    for &scheme in schemes {
+        if scheme == "files" {
+            continue;
+        }
+        let units = if scheme == "solid" {
+            vec![Unit {
+                digest: digest(&kept)?,
+                length: kept.len() as u64,
+                compressed: codecs
+                    .iter()
+                    .map(|&codec| {
+                        if codec == "zstd19" {
+                            compress_solid(&kept)
+                        } else {
+                            Ok(0)
+                        }
+                    })
+                    .collect::<Result<_>>()?,
+            }]
+        } else {
             let pieces: Vec<&[u8]> = if let Some(n) = scheme.strip_prefix("fixed-") {
                 kept.chunks(size(n)).collect()
             } else if let Some(n) = scheme.strip_prefix("cdc-") {
@@ -211,16 +300,18 @@ fn area_units(
                     .map(|chunk| &kept[chunk.offset..chunk.offset + chunk.length])
                     .collect()
             } else {
-                files
-                    .iter()
-                    .map(|&(offset, size)| &data[offset as usize..(offset + size) as usize])
-                    .chain(outside.chunks(PIECE))
-                    .collect()
+                bail!("unknown scheme: {scheme}")
             };
-            let units = pieces.into_par_iter().map(unit).collect::<Result<_>>()?;
-            Ok((scheme, units))
-        })
-        .collect()
+            pieces
+                .into_par_iter()
+                .map(|piece| unit(piece, codecs))
+                .collect::<Result<_>>()?
+        };
+        results.push((scheme, units));
+    }
+    // In the order asked for
+    results.sort_by_key(|(scheme, _)| schemes.iter().position(|s| s == scheme));
+    Ok(results)
 }
 
 /// A scheme's totals: bytes, then compressed with each disc alone and with
@@ -235,9 +326,10 @@ pub struct Total {
 }
 
 /// Add up rows of `disc\tscheme\tdigest\tlength\tcompressed`, each disc's
-/// rows together.
-pub fn sum(rows: impl BufRead) -> Result<Vec<(&'static str, Total)>> {
-    let mut totals: Vec<Total> = SCHEMES.iter().map(|_| Total::default()).collect();
+/// rows together, by scheme in the order they first come.
+pub fn sum(rows: impl BufRead) -> Result<Vec<(String, Total)>> {
+    let mut names: Vec<String> = Vec::new();
+    let mut totals: Vec<Total> = Vec::new();
     let mut library: HashSet<(usize, u64)> = HashSet::new();
     let mut disc_seen: HashSet<(usize, u64)> = HashSet::new();
     let mut current = String::new();
@@ -251,10 +343,14 @@ pub fn sum(rows: impl BufRead) -> Result<Vec<(&'static str, Total)>> {
             current = disc.to_string();
             disc_seen.clear();
         }
-        let scheme = SCHEMES
-            .iter()
-            .position(|&name| name == scheme)
-            .with_context(|| format!("unknown scheme: {scheme}"))?;
+        let scheme = match names.iter().position(|name| name == scheme) {
+            Some(index) => index,
+            None => {
+                names.push(scheme.to_string());
+                totals.push(Total::default());
+                names.len() - 1
+            }
+        };
         let digest = u64::from_str_radix(digest, 16).context("bad digest")?;
         let (length, compressed): (u64, u64) = (length.parse()?, compressed.parse()?);
         let total = &mut totals[scheme];
@@ -272,5 +368,5 @@ pub fn sum(rows: impl BufRead) -> Result<Vec<(&'static str, Total)>> {
         total.per_disc += total.references * REFERENCE;
         total.library += total.references * REFERENCE;
     }
-    Ok(SCHEMES.iter().copied().zip(totals).collect())
+    Ok(names.into_iter().zip(totals).collect())
 }

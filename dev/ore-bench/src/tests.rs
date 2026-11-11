@@ -66,15 +66,19 @@ fn kinds_come_from_magic_bytes() {
 #[test]
 fn dedup_finds_a_disc_again_whatever_the_scheme() {
     // given the rows of one synthetic disc, listed twice as two discs
-    let mut disc = Disc(common::gamecube_disc(0x200000));
+    let disc = Disc(common::gamecube_disc(0x200000));
     let mut rows = String::from("disc\tscheme\tdigest\tlength\tcompressed\n");
     for name in ["one", "two"] {
-        for (scheme, units) in dedup::units(&mut disc, dedup::SCHEMES).unwrap() {
+        let mut copy = Disc(disc.0.clone());
+        let codecs = ["zstd19", "lzma2"];
+        for (scheme, units) in dedup::units(&mut copy, dedup::SCHEMES, &codecs).unwrap() {
             for unit in units {
-                rows += &format!(
-                    "{name}\t{scheme}\t{:016x}\t{}\t{}\n",
-                    unit.digest, unit.length, unit.compressed
-                );
+                for (codec, compressed) in codecs.iter().zip(&unit.compressed) {
+                    rows += &format!(
+                        "{name}\t{scheme}/{codec}\t{:016x}\t{}\t{compressed}\n",
+                        unit.digest, unit.length
+                    );
+                }
             }
         }
     }
@@ -84,7 +88,7 @@ fn dedup_finds_a_disc_again_whatever_the_scheme() {
 
     // then every scheme stores the second disc as references only: deduped,
     // the pair weighs one disc's units and both discs' references
-    assert_eq!(totals.len(), dedup::SCHEMES.len());
+    assert_eq!(totals.len(), dedup::SCHEMES.len() * 2);
     for (scheme, total) in totals {
         let references = total.references * dedup::REFERENCE;
         assert_eq!(2 * total.library - total.per_disc, references, "{scheme}");

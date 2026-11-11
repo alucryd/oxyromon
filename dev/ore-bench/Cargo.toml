@@ -16,7 +16,7 @@ lzma-rust2 = { workspace = true, features = ["encoder"] }
 rayon.workspace = true
 rvz-rs = { path = "../../crates/rvz-rs", default-features = false }
 sha1.workspace = true
-zstd.workspace = true
+zstd = { workspace = true, features = ["zstdmt"] }
 
 [dev-dependencies]
 aes = "0.9"

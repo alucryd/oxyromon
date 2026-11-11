@@ -1,6 +1,7 @@
-//! `dedup units [-s SCHEMES] <DISC>...` prints a tab-separated row per unit
-//! of each disc under each scheme, every scheme unless SCHEMES, a
-//! comma-separated list, says otherwise. A Wii disc's rows are named after
+//! `dedup units [-s SCHEMES] [-c CODECS] <DISC>...` prints a tab-separated
+//! row per unit of each disc under each scheme and codec: every scheme unless
+//! SCHEMES, a comma-separated list, says otherwise, and `zstd19` unless
+//! CODECS does. A Wii disc's rows are named after
 //! the disc and its part, as `<disc>#game0`. `dedup sum [ROWS]` adds rows up,
 //! from ROWS or stdin, into a table per scheme. See `ore_bench::dedup`.
 
@@ -9,18 +10,42 @@ use std::path::Path;
 
 use anyhow::{Context, Result, bail};
 use gcwii::disc::Source;
-use ore_bench::dedup::{REFERENCE, SCHEMES, STORED, Unit, sum, units, wii_units};
+use ore_bench::dedup::{CODECS, REFERENCE, SCHEMES, STORED, Unit, sum, units, wii_units};
 use ore_bench::{Disc, RvzDisc};
 
-fn print(name: &str, units: Vec<(&str, Vec<Unit>)>) {
+fn print(name: &str, units: Vec<(&str, Vec<Unit>)>, codecs: &[&str]) {
     for (scheme, units) in units {
         for unit in units {
-            println!(
-                "{name}\t{scheme}\t{:016x}\t{}\t{}",
-                unit.digest, unit.length, unit.compressed
-            );
+            for (codec, compressed) in codecs.iter().zip(&unit.compressed) {
+                // A solid unit is only compressed one way
+                if scheme == "solid" && *codec != "zstd19" {
+                    continue;
+                }
+                let scheme = match *codec {
+                    "zstd19" => scheme.to_string(),
+                    codec => format!("{scheme}/{codec}"),
+                };
+                println!(
+                    "{name}\t{scheme}\t{:016x}\t{}\t{compressed}",
+                    unit.digest, unit.length
+                );
+            }
         }
     }
+}
+
+fn list(value: Option<String>, known: &[&'static str], name: &str) -> Result<Vec<&'static str>> {
+    value
+        .with_context(|| format!("{name} needs a value"))?
+        .split(',')
+        .map(|item| {
+            known
+                .iter()
+                .copied()
+                .find(|&known| known == item)
+                .with_context(|| format!("unknown {name}: {item}"))
+        })
+        .collect()
 }
 
 fn main() -> Result<()> {
@@ -28,19 +53,12 @@ fn main() -> Result<()> {
     match args.next().as_deref() {
         Some("units") => {
             let mut schemes: Vec<&'static str> = SCHEMES.to_vec();
-            if args.peek().map(String::as_str) == Some("-s") {
-                args.next();
-                let list = args.next().context("-s needs a value")?;
-                schemes = list
-                    .split(',')
-                    .map(|name| {
-                        SCHEMES
-                            .iter()
-                            .copied()
-                            .find(|&scheme| scheme == name)
-                            .with_context(|| format!("unknown scheme: {name}"))
-                    })
-                    .collect::<Result<_>>()?;
+            let mut codecs: Vec<&'static str> = vec!["zstd19"];
+            while let Some(option) = args.next_if(|arg| arg == "-s" || arg == "-c") {
+                match option.as_str() {
+                    "-s" => schemes = list(args.next(), SCHEMES, "scheme")?,
+                    _ => codecs = list(args.next(), CODECS, "codec")?,
+                }
             }
             println!("disc\tscheme\tdigest\tlength\tcompressed");
             for path in args {
@@ -59,15 +77,15 @@ fn main() -> Result<()> {
                 };
                 if wii {
                     let mut disc = RvzDisc::open(path)?;
-                    let (parts, left_out) = wii_units(&mut disc, &schemes)?;
+                    let (parts, left_out) = wii_units(&mut disc, &schemes, &codecs)?;
                     eprintln!("{name}: {left_out} bytes outside every partition left out");
                     for (part, units) in parts {
-                        print(&format!("{name}#{part}"), units);
+                        print(&format!("{name}#{part}"), units, &codecs);
                     }
                 } else {
                     let mut disc = Disc::load(path)
                         .with_context(|| format!("Failed to read \"{}\"", path.display()))?;
-                    print(&name, units(&mut disc, &schemes)?);
+                    print(&name, units(&mut disc, &schemes, &codecs)?, &codecs);
                 }
             }
         }
