@@ -181,3 +181,33 @@ fn groups_store_a_second_copy_as_references() {
         );
     }
 }
+
+#[test]
+fn the_wii_probe_finds_the_one_wrong_hash() {
+    // given the synthetic Wii disc, one hash of block 5 wrong, as an RVZ
+    let directory = tempfile::TempDir::new().unwrap();
+    let iso = directory.path().join("disc.iso");
+    let rvz = directory.path().join("disc.rvz");
+    common::write(&iso, &common::wii_disc());
+    rvz_rs::compress(
+        &iso,
+        &rvz,
+        &rvz_rs::Options::default(),
+        &[common::COMMON_KEY],
+        &mut |_| {},
+    )
+    .unwrap();
+
+    // when
+    let probe = probe::wii(&rvz).unwrap();
+
+    // then that hash, and only it, is an exception
+    assert_eq!(probe.partitions, 1);
+    assert_eq!(probe.blocks, common::WII_BLOCKS as u64);
+    assert_eq!(probe.exceptions, 1);
+    assert_eq!(probe.blocks_with_exceptions, 1);
+    assert_eq!(
+        probe.outside_zero + probe.outside_padding + probe.outside_other,
+        probe.outside
+    );
+}

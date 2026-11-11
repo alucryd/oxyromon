@@ -35,6 +35,7 @@ use sha1::{Digest, Sha1};
 pub mod dedup;
 pub mod dict;
 pub mod inventory;
+pub mod probe;
 pub mod solid;
 
 /// The span the generator restarts at, and RVZ looks for padding in.
