@@ -10,9 +10,12 @@ publish = false
 
 [dependencies]
 anyhow = "1.0"
+cdc-chunkers = { version = "0.1", default-features = false }
 fastcdc = "5"
 gcwii = { path = "../../crates/gcwii" }
 lzma-rust2 = { workspace = true, features = ["encoder"] }
+mothcdc = { version = "0.7", default-features = false }
+quickcdc = { version = "1", default-features = false }
 rayon.workspace = true
 rvz-rs = { path = "../../crates/rvz-rs", default-features = false }
 sha1.workspace = true

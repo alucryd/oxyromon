@@ -32,6 +32,7 @@ use lzma_rust2::filter::bcj::BcjWriter;
 use rayon::prelude::*;
 use sha1::{Digest, Sha1};
 
+pub mod cdc;
 pub mod dedup;
 pub mod dict;
 pub mod inventory;

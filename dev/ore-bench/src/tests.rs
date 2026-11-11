@@ -211,3 +211,42 @@ fn the_wii_probe_finds_the_one_wrong_hash() {
         probe.outside
     );
 }
+
+#[test]
+fn every_chunker_cuts_its_input_whole() {
+    // given data with a long run of one repeated block in its middle
+    let mut data = common::noise(3 << 20, 7);
+    let block = common::noise(16 << 10, 8);
+    for at in (1 << 20..2 << 20).step_by(block.len()) {
+        data[at..at + block.len()].copy_from_slice(&block);
+    }
+    let chunkers = [
+        cdc::Chunker::FastCdc(16 << 10),
+        cdc::Chunker::MinCdc(16 << 10),
+        cdc::Chunker::MothCdc(16 << 10),
+        cdc::Chunker::SeqCdc(16 << 10),
+        cdc::Chunker::UltraCdc(16 << 10),
+        cdc::Chunker::SuperCdc(16 << 10),
+        cdc::Chunker::LeapCdc(16 << 10),
+        cdc::Chunker::Rabin(16 << 10),
+        cdc::Chunker::QuickCdc(16 << 10),
+    ];
+    for chunker in chunkers {
+        // when
+        let (chunks, records) = chunker.chunks(&data);
+
+        // then the chunks follow each other from the first byte to the last
+        let mut at = 0;
+        for &(offset, length) in &chunks {
+            assert_eq!(offset, at, "{}", chunker.name());
+            assert!(length > 0, "{}", chunker.name());
+            at += length;
+        }
+        assert_eq!(at, data.len(), "{}", chunker.name());
+        // and only MothCDC describes them in fewer records than chunks
+        match chunker {
+            cdc::Chunker::MothCdc(_) => assert!(records < chunks.len() as u64),
+            _ => assert_eq!(records, chunks.len() as u64, "{}", chunker.name()),
+        }
+    }
+}
