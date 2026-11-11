@@ -96,3 +96,32 @@ fn dedup_finds_a_disc_again_whatever_the_scheme() {
         assert!(total.length < 0x200000, "{scheme}");
     }
 }
+
+#[test]
+fn a_second_copy_costs_little_in_one_solid_stream() {
+    // given the same synthetic disc twice
+    let directory = tempfile::TempDir::new().unwrap();
+    let data = common::gamecube_disc(0x200000);
+    let (one, two) = (
+        directory.path().join("one.iso"),
+        directory.path().join("two.iso"),
+    );
+    common::write(&one, &data);
+    common::write(&two, &data);
+    let discs = [one.as_path(), two.as_path()];
+
+    // when
+    let alone = solid::alone(&discs).unwrap();
+    let together = solid::together(&discs).unwrap();
+    let (deduped, references, stored) = solid::deduped(&discs, 16 << 10).unwrap();
+
+    // then one stream holding both weighs about one disc, deduped or not
+    assert_eq!(alone[0], alone[1]);
+    assert!(
+        together < alone[0] + alone[0] / 10,
+        "{together} against {}",
+        alone[0]
+    );
+    assert_eq!(references, 2 * stored);
+    assert!(deduped < together + references * dedup::REFERENCE + stored * dedup::STORED + 64);
+}

@@ -34,6 +34,7 @@ use sha1::{Digest, Sha1};
 
 pub mod dedup;
 pub mod inventory;
+pub mod solid;
 
 /// The span the generator restarts at, and RVZ looks for padding in.
 const BLOCK: u64 = 0x8000;

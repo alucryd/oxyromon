@@ -26,14 +26,16 @@ use std::io::{BufRead, Write};
 
 use anyhow::{Context, Result, bail};
 use fastcdc::v2020::FastCDC;
-use gcwii::disc::{PARTITION_DATA_SIZE, Platform, Source, Volume};
+use std::path::Path;
+
+use gcwii::disc::{PARTITION_DATA_SIZE, Platform, Source, Volume, WII_MAGIC};
 use gcwii::fst::FileSystem;
 use gcwii::wii::{BLOCK_DATA_SIZE, BLOCK_TOTAL_SIZE};
 use lzma_rust2::{Lzma2Options, Lzma2Writer};
 use rayon::prelude::*;
 use sha1::{Digest, Sha1};
 
-use super::{Disc, find_filler};
+use super::{Disc, RvzDisc, find_filler};
 
 const LEVEL: i32 = 19;
 const PIECE: usize = 2 << 20;
@@ -201,7 +203,7 @@ fn partition_type(source: &mut dyn Source, partition: u64) -> Result<u32> {
 /// partition's data: its padding cut out first. The area is taken, and its
 /// padding cut out in place, so that it is held once.
 fn area_units(
-    mut data: Vec<u8>,
+    data: Vec<u8>,
     file_system: Option<&FileSystem>,
     schemes: &[&'static str],
     codecs: &[&str],
@@ -256,21 +258,8 @@ fn area_units(
         results.push(("files", units));
     }
 
-    // Then the padding out, in place: what is kept never runs ahead of
-    // where it is read from
-    let mut kept = 0;
-    let mut at = 0;
-    for &(start, end) in &filler {
-        let start = start as usize;
-        data.copy_within(at..start, kept);
-        kept += start - at;
-        at = end as usize;
-    }
-    let length = data.len();
-    data.copy_within(at..length, kept);
-    kept += length - at;
-    data.truncate(kept);
-    let kept = data;
+    // Then the padding out
+    let kept = strip(data, &filler);
 
     for &scheme in schemes {
         if scheme == "files" {
@@ -312,6 +301,67 @@ fn area_units(
     // In the order asked for
     results.sort_by_key(|(scheme, _)| schemes.iter().position(|s| s == scheme));
     Ok(results)
+}
+
+/// `data` without its padding, cut out in place: what is kept never runs
+/// ahead of where it is read from.
+fn strip(mut data: Vec<u8>, filler: &[(u64, u64)]) -> Vec<u8> {
+    let mut kept = 0;
+    let mut at = 0;
+    for &(start, end) in filler {
+        let start = start as usize;
+        data.copy_within(at..start, kept);
+        kept += start - at;
+        at = end as usize;
+    }
+    let length = data.len();
+    data.copy_within(at..length, kept);
+    kept += length - at;
+    data.truncate(kept);
+    data
+}
+
+/// Each area of a disc as ORE would store it, padding cut out, in disc
+/// order: a GameCube disc whole, a Wii disc's header area then each of its
+/// partitions decrypted and without hashes, as [`wii_units`] reads them.
+pub fn for_each_area(path: &Path, f: &mut dyn FnMut(Vec<u8>) -> Result<()>) -> Result<()> {
+    if rvz_rs::is_rvz(path)? {
+        let mut disc = RvzDisc::open(path)?;
+        let mut magic = [0; 4];
+        disc.read_at(0x18, &mut magic)?;
+        if magic == WII_MAGIC.to_be_bytes() {
+            let Some(mut volume) = Volume::new(&mut disc, &[])? else {
+                bail!("not a Wii disc");
+            };
+            let mut header = vec![0; volume.partitions.first().copied().unwrap_or(0) as usize];
+            disc.read_at(0, &mut header)?;
+            for &partition in &volume.partitions.clone() {
+                let data_offset = volume.data_offset(&mut disc, partition);
+                let mut partition_header = vec![0; data_offset as usize];
+                disc.read_at(partition, &mut partition_header)?;
+                header.extend_from_slice(&partition_header);
+            }
+            let filler = find_filler(&header, None);
+            f(strip(header, &filler))?;
+            for &partition in &volume.partitions.clone() {
+                let raw_size =
+                    volume.read_shifted(&mut disc, partition + PARTITION_DATA_SIZE, None)?;
+                let mut data = vec![0; (raw_size / BLOCK_TOTAL_SIZE * BLOCK_DATA_SIZE) as usize];
+                volume.read(&mut disc, 0, &mut data, Some(partition))?;
+                let file_system = volume.file_system(&mut disc, Some(partition))?;
+                let filler = find_filler(&data, file_system.as_deref());
+                f(strip(data, &filler))?;
+            }
+            return Ok(());
+        }
+    }
+    let mut disc = Disc::load(path)?;
+    let Some(mut volume) = Volume::new(&mut disc, &[])? else {
+        bail!("neither a GameCube nor a Wii disc");
+    };
+    let file_system = volume.file_system(&mut disc, None)?;
+    let filler = find_filler(&disc.0, file_system.as_deref());
+    f(strip(std::mem::take(&mut disc.0), &filler))
 }
 
 /// A scheme's totals: bytes, then compressed with each disc alone and with
