@@ -33,3 +33,32 @@ fn levers_find_what_the_disc_holds() {
     assert!(row.rvz < row.dedup / 2);
     assert!(!directory.path().join("disc.rvz").exists());
 }
+
+#[test]
+fn inventory_lists_the_system_area_and_every_file() {
+    // given a synthetic GameCube disc: a DOL, a file system and three files
+    let mut disc = Disc(common::gamecube_disc(0x200000));
+
+    // when
+    let entries = inventory::inventory(&mut disc).unwrap();
+
+    // then each is listed in disc order, the file of one repeated byte
+    // compressing to almost nothing
+    let names: Vec<&str> = entries.iter().map(|entry| entry.name.as_str()).collect();
+    assert_eq!(names, ["<boot>", "<dol>", "<fst>", "a", "b", "c"]);
+    let b = &entries[4];
+    assert_eq!((b.offset, b.size), (0x50000, 0x8000));
+    assert!(b.compressed < 100);
+}
+
+#[test]
+fn kinds_come_from_magic_bytes() {
+    assert_eq!(inventory::kind(b"Yaz0\0\0\0\x10"), "yaz0");
+    assert_eq!(inventory::kind(b"THP\0\0\x01"), "thp");
+    let mut adx = vec![0x80, 0x00, 0x00, 0x1C];
+    adx.resize(0x20, 0);
+    adx[0x1A..0x20].copy_from_slice(b"(c)CRI");
+    assert_eq!(inventory::kind(&adx), "adx");
+    assert_eq!(inventory::kind(&[0; 16]), "zero");
+    assert_eq!(inventory::kind(b"other"), "?");
+}

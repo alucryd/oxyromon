@@ -32,6 +32,8 @@ use lzma_rust2::filter::bcj::BcjWriter;
 use rayon::prelude::*;
 use sha1::{Digest, Sha1};
 
+pub mod inventory;
+
 /// The span the generator restarts at, and RVZ looks for padding in.
 const BLOCK: u64 = 0x8000;
 /// Index bytes a chunk, as an RVZ group entry.
