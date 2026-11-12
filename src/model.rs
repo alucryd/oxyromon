@@ -183,7 +183,7 @@ pub struct Setting {
 }
 
 /// How a clone list title's search term finds games
-#[derive(Clone, Copy, FromPrimitive, Type, Eq, PartialEq)]
+#[derive(Clone, Copy, FromPrimitive, Eq, PartialEq)]
 #[repr(i8)]
 pub enum CloneListNameType {
     /// The title `INFER_CLONES` groups games by
