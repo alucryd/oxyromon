@@ -65,8 +65,16 @@ ore_rs::compress_to_store(iso, ore, store, &Options::default(), &[], &mut |_| {}
   `StoreOptions` says otherwise, and chunk ids are 32 bits unless it says 64.
 - **[`attach`] and [`detach`]** move a game into a store and out of it,
   its disc, hashes and metadata as they were.
+- **Parity**: each segment is sealed with Reed-Solomon parity, RS(255,239)
+  by default, 6.9% with its CRCs. [`check_store`] checks every segment
+  and rebuilds what is damaged from it, a burst of 16 shards or bad
+  sectors anywhere, up to 16 in a row of 4 KiB blocks across the segment;
+  then decodes every group and hashes every chunk, and names the games
+  using what is past repair. `StoreOptions` takes 8 parity shards, 3.2%,
+  or none.
 - **[`purge`]** counts again which chunks the games beneath the store use,
-  and copies what is left of mostly dead segments into a new one.
+  and copies what is left of mostly dead segments into a new one, and of
+  the small segments a write that adds little leaves.
 - **[`Reader::sizes`]** gives what a game weighs: its own chunks, its share
   of those it shares, and about what it would weigh detached.
 - One writer at a time: a write waits for another to be done.
@@ -94,7 +102,8 @@ orers -p archive -c lzma2 game.iso      # smaller, slower to read
 orers game.ore                          # back to game.iso
 orers --store GameCube/.ore-store -o GameCube/ *.iso   # thin OREs, chunks in the store
 orers --detach -o out/ GameCube/game.ore               # a standalone ORE again
-orers GameCube/.ore-store               # purge the store of what no game uses
+orers GameCube/.ore-store               # check the store, repairing what parity covers
+orers --purge GameCube/.ore-store       # and purge it of what no game uses
 ```
 
 | Flag | Meaning |
@@ -104,10 +113,13 @@ orers GameCube/.ore-store               # purge the store of what no game uses
 | `-c CODEC` | `zstd` (default) or `lzma2` |
 | `--store DIR` | write ISOs as thin OREs, their chunks in the store `DIR`, made if missing; attach OREs to it |
 | `--detach` | write OREs as standalone OREs |
+| `--purge` | once a store is checked, purge it of what no game uses |
 | `--keys FILE` | where the Wii common key is |
 
 An ORE written from an ORE needs `-o`, so it lands beside its input rather
-than over it. A purge copies what is left of segments half dead or more.
+than over it. A store given as input is checked and repaired, and fails if anything is
+past repair, naming the games it harms. A purge copies what is left of
+segments half dead or more.
 
 Like every oxyROMon tool, `orers` draws oxyROMon's progress bar, reports each
 input on a line of its own, and exits non-zero when any of them failed.
@@ -119,7 +131,9 @@ Wii disc, a hash exception included, through every profile and codec, reads
 at offsets across areas, and flips bytes of a group, the index and the
 metadata to check each is caught. `tests/store.rs` writes discs sharing a
 file to a store, checks it is stored once, attaches, detaches and purges,
-and damages the index and a segment. The chunker is checked against
+damages the index and segments, and repairs them; the parity is checked
+against scattered damage, a burst as long as the parity, a row past it,
+and a segment cut short. The chunker is checked against
 [mothcdc](https://crates.io/crates/mothcdc)'s MinCDC, which it is a port of.
 
 ```sh
@@ -138,6 +152,8 @@ them in, so this crate stands alone.
 The padding generator and its seed recovery are Dolphin's, by the
 [Dolphin Emulator Project](https://github.com/dolphin-emu/dolphin), through
 gcwii. MinCDC is Orson Peters's [algorithm](https://github.com/orlp/mincdc).
+Reed-Solomon coding is
+[reed-solomon-erasure](https://crates.io/crates/reed-solomon-erasure)'s.
 
 ## License
 

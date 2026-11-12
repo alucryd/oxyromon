@@ -11,10 +11,13 @@ use std::io::{Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use rayon::prelude::*;
+
 use super::error::{Error, Result};
 use super::format::*;
 use super::io;
 use super::pack::{Cache, Packer, read_group};
+use super::parity::{self, Layout};
 use super::reader::Reader;
 use super::writer::{Options, is_ore};
 
@@ -45,6 +48,10 @@ pub struct StoreOptions {
     /// The width of a chunk id, 32 or 64 bits: how many chunks the store
     /// may come to hold.
     pub id_bits: u8,
+    /// Parity shards a segment, against its 239 data shards, from 0 to 16:
+    /// how many of a row's blocks a check can rebuild. 16, the default,
+    /// adds 6.7%; 8 adds 3.2%; 0, nothing, and rebuilds nothing.
+    pub parity: u8,
 }
 
 impl Default for StoreOptions {
@@ -52,12 +59,14 @@ impl Default for StoreOptions {
         Self {
             segment_size: u32::MAX as u64,
             id_bits: 32,
+            parity: 16,
         }
     }
 }
 
 pub(super) struct Segment {
     pub number: u32,
+    /// What its parity covers: its header and groups.
     pub len: u64,
 }
 
@@ -91,6 +100,7 @@ pub(super) struct Chunk {
 pub(super) struct Index {
     pub uuid: [u8; 16],
     id_bits: u8,
+    parity: u8,
     segment_size: u64,
     next_segment: u32,
     pub segments: Vec<Segment>,
@@ -113,7 +123,7 @@ impl Index {
         );
         out.extend_from_slice(&INDEX_MAGIC);
         out.extend_from_slice(&VERSION.to_be_bytes());
-        out.extend_from_slice(&[self.id_bits, 0]);
+        out.extend_from_slice(&[self.id_bits, self.parity]);
         out.extend_from_slice(&self.uuid);
         out.extend_from_slice(&self.segment_size.to_be_bytes());
         out.extend_from_slice(&self.next_segment.to_be_bytes());
@@ -163,7 +173,10 @@ impl Index {
             return Err(Error::Unsupported(format!("store version {version}")));
         }
         let id_bits = cursor.u8()?;
-        cursor.u8()?;
+        let parity = cursor.u8()?;
+        if parity > 16 {
+            return Err(corrupt("more than 16 parity shards"));
+        }
         let uuid = cursor.be()?;
         let segment_size = u64::from_be_bytes(cursor.be()?);
         let next_segment = u32::from_be_bytes(cursor.be()?);
@@ -247,6 +260,7 @@ impl Index {
         Ok(Self {
             uuid,
             id_bits,
+            parity,
             segment_size,
             next_segment,
             segments,
@@ -276,14 +290,32 @@ impl Index {
     }
 
     /// What a chunk weighs: its part of its group's stored bytes, in
-    /// proportion to its length.
+    /// proportion to its length, and of its segment's parity, in
+    /// proportion to those.
     pub fn weight(&self, chunk: &Chunk) -> f64 {
-        let group = &self.groups[chunk.group as usize].group;
-        group.stored_len as f64 * chunk.len as f64 / group.logical_len as f64
+        let at = &self.groups[chunk.group as usize];
+        let group = &at.group;
+        // Segments stay in the order of their numbers
+        let sealed = self
+            .segments
+            .binary_search_by_key(&at.segment, |segment| segment.number)
+            .map_or(1.0, |i| {
+                let segment = &self.segments[i];
+                self.file_len(segment) as f64 / segment.len as f64
+            });
+        group.stored_len as f64 * chunk.len as f64 / group.logical_len as f64 * sealed
+    }
+
+    /// The size of a segment's file, sealed.
+    fn file_len(&self, segment: &Segment) -> u64 {
+        segment.len + Layout::new(segment.len, self.parity).footer_len()
     }
 
     fn size(&self) -> u64 {
-        self.segments.iter().map(|segment| segment.len).sum()
+        self.segments
+            .iter()
+            .map(|segment| self.file_len(segment))
+            .sum()
     }
 }
 
@@ -339,6 +371,9 @@ pub fn create_store(dir: &Path, options: &StoreOptions) -> Result<()> {
     if options.segment_size <= SEGMENT_HEADER {
         return Err(Error::InvalidOption("segments too small".into()));
     }
+    if options.parity > 16 {
+        return Err(Error::InvalidOption("parity of 16 shards at most".into()));
+    }
     if dir.join(INDEX).exists() || dir.join(COPY).exists() {
         return Err(Error::Io(std::io::Error::new(
             std::io::ErrorKind::AlreadyExists,
@@ -359,6 +394,7 @@ pub fn create_store(dir: &Path, options: &StoreOptions) -> Result<()> {
     Index {
         uuid: hasher.finalize().as_bytes()[..16].try_into().unwrap(),
         id_bits: options.id_bits,
+        parity: options.parity,
         segment_size: options.segment_size,
         next_segment: 1,
         segments: Vec::new(),
@@ -409,9 +445,22 @@ impl StoreReader {
     }
 }
 
+/// Lock the store at `dir`, waiting for whoever holds it, until the file
+/// returned is dropped.
+fn lock(dir: &Path) -> Result<File> {
+    let lock = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(false)
+        .open(dir.join(LOCK))?;
+    lock.lock()?;
+    Ok(lock)
+}
+
 /// A store being written to, which one writer does at a time: chunks added
-/// to it are gathered into groups at the end of its last segment, and its
-/// index saved once they all are written.
+/// to it are gathered into groups in segments of the writer's own, each
+/// sealed as it is done, and its index saved once they all are written. A
+/// sealed segment is never written to again, but to repair it.
 pub(super) struct StoreWriter {
     dir: PathBuf,
     /// Held locked for as long as the writer lives.
@@ -422,7 +471,7 @@ pub(super) struct StoreWriter {
     // in the index, read in place, when a store grows that large
     ids: HashMap<[u8; 16], u64>,
     packer: Packer,
-    /// The last segment, once written to.
+    /// The segment being written, the last the index lists.
     file: Option<File>,
     /// Bytes this writer added to the segments.
     added: u64,
@@ -432,12 +481,7 @@ impl StoreWriter {
     /// Open the store at `dir`, waiting for any other writer to be done.
     /// New groups are compressed with `codec`, to `group_size` at most.
     pub fn open(dir: &Path, codec: Codec, group_size: usize) -> Result<Self> {
-        let lock = OpenOptions::new()
-            .create(true)
-            .write(true)
-            .truncate(false)
-            .open(dir.join(LOCK))?;
-        lock.lock()?;
+        let lock = lock(dir)?;
         let index = Index::load(dir)?;
         let ids = index
             .chunks
@@ -509,27 +553,18 @@ impl StoreWriter {
         Ok(())
     }
 
-    /// Write a group at the end of the last segment, or of a new one if
-    /// that would outgrow a segment's size.
+    /// Write a group at the end of the segment being written, or of a new
+    /// one if that would take it, sealed, past a segment's size.
     fn append(&mut self, envelope: &[u8], stored: &[u8], group: Group) -> Result<()> {
         let need = (envelope.len() + stored.len()) as u64;
-        if self.index.segments.last().is_none_or(|segment| {
-            segment.len > SEGMENT_HEADER && segment.len + need > self.index.segment_size
-        }) {
+        let (parity, size) = (self.index.parity, self.index.segment_size);
+        let full = |len: u64| len + need + Layout::new(len + need, parity).footer_len() > size;
+        let len = self.index.segments.last().map_or(0, |segment| segment.len);
+        if self.file.is_none() || (len > SEGMENT_HEADER && full(len)) {
             self.new_segment()?;
         }
         let segment = self.index.segments.last_mut().unwrap();
-        let file = match &mut self.file {
-            Some(file) => file,
-            none => {
-                let file = OpenOptions::new()
-                    .write(true)
-                    .open(segment_path(&self.dir, segment.number))?;
-                // What a writer that failed left past the end goes
-                file.set_len(segment.len)?;
-                none.insert(file)
-            }
-        };
+        let file = self.file.as_mut().unwrap();
         file.seek(SeekFrom::Start(segment.len))?;
         file.write_all(envelope)?;
         file.write_all(stored)?;
@@ -543,16 +578,20 @@ impl StoreWriter {
         Ok(())
     }
 
-    /// Seal the last segment and start the next.
+    /// Seal the segment being written, if any, and start the next.
     fn new_segment(&mut self) -> Result<()> {
-        if let Some(file) = self.file.take() {
-            file.sync_all()?;
-        }
+        self.seal()?;
         let number = self.index.next_segment;
         self.index.next_segment = number
             .checked_add(1)
             .ok_or_else(|| Error::Unsupported("more than 2^32 segments".into()))?;
-        let mut file = File::create(segment_path(&self.dir, number))?;
+        // A segment a writer that failed left goes
+        let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(segment_path(&self.dir, number))?;
         file.write_all(&segment_header(&self.index.uuid, number))?;
         self.index.segments.push(Segment {
             number,
@@ -563,13 +602,22 @@ impl StoreWriter {
         Ok(())
     }
 
+    /// Give the segment being written its parity, and close it.
+    fn seal(&mut self) -> Result<()> {
+        if let Some(file) = self.file.take() {
+            let segment = self.index.segments.last().unwrap();
+            parity::seal(&file, segment.len, self.index.parity)?;
+            file.sync_all()?;
+            self.added += Layout::new(segment.len, self.index.parity).footer_len();
+        }
+        Ok(())
+    }
+
     /// Write what is left to, then the index: only now does the store hold
     /// what was added. Returns the bytes added to its segments.
     pub fn commit(&mut self) -> Result<u64> {
         self.write(true)?;
-        if let Some(file) = &self.file {
-            file.sync_all()?;
-        }
+        self.seal()?;
         if self.index.chunks.len() as u128 > 1 << self.index.id_bits
             || self.index.groups.len() >= NOWHERE as usize
         {
@@ -586,40 +634,14 @@ impl StoreWriter {
     /// beneath the store's parent directory, which is where a game finds
     /// its store from. Returns how many games there are.
     fn recount(&mut self) -> Result<u64> {
-        for chunk in &mut self.index.chunks {
+        let chunks = &mut self.index.chunks;
+        for chunk in chunks.iter_mut() {
             chunk.refs = 0;
         }
-        let root = std::path::absolute(&self.dir)?;
-        let root = root.parent().unwrap_or(&root).to_path_buf();
         let mut games = 0;
-        self.count_beneath(&root, 0, &mut games)?;
-        Ok(games)
-    }
-
-    fn count_beneath(&mut self, dir: &Path, depth: u32, games: &mut u64) -> Result<()> {
-        for entry in std::fs::read_dir(dir)? {
-            let path = entry?.path();
-            if path.is_dir() {
-                // Links may loop
-                if depth < 32 && path.file_name().is_some_and(|name| name != STORE_DIR) {
-                    self.count_beneath(&path, depth + 1, games)?;
-                }
-                continue;
-            }
-            let ore = path
-                .extension()
-                .is_some_and(|extension| extension.eq_ignore_ascii_case("ore"));
-            if !ore || !is_ore(&path)? {
-                continue;
-            }
-            // A game that cannot be read stops the purge, lest its chunks go
-            let named = |error| Error::Corrupt(format!("{}: {error}", path.display()));
-            let reader = Reader::inspect(&path).map_err(named)?;
-            let Some(ids) = reader.store_ids(&self.index.uuid) else {
-                continue;
-            };
+        for_each_game(&self.dir, &self.index.uuid, &mut |path, ids| {
             for id in ids {
-                match self.index.chunks.get_mut(id as usize) {
+                match chunks.get_mut(id as usize) {
                     Some(chunk) if chunk.group != NOWHERE => {
                         chunk.refs = chunk.refs.saturating_add(1)
                     }
@@ -631,14 +653,16 @@ impl StoreWriter {
                     }
                 }
             }
-            *games += 1;
-        }
-        Ok(())
+            games += 1;
+            Ok(())
+        })?;
+        Ok(games)
     }
 
     /// Copy what games still use of the segments at least `threshold` dead,
-    /// by the bytes of their chunks, into a new segment, and drop them from
-    /// the index. Their files go once the index is saved.
+    /// by the bytes of their chunks, and of the small segments if there
+    /// are several, into new segments, and drop them from the index. Their
+    /// files go once the index is saved.
     fn compact(&mut self, threshold: f64) -> Result<()> {
         // Dead and all bytes of chunks, by segment
         let mut bytes: HashMap<u32, (u64, u64)> = HashMap::new();
@@ -652,24 +676,32 @@ impl StoreWriter {
                 }
             }
         }
-        let last = self.index.segments.last().map(|segment| segment.number);
-        let dropped: HashSet<u32> = self
+        // A segment a sixteenth full or less is small, as a commit that
+        // adds little leaves one
+        let small: Vec<u32> = self
+            .index
+            .segments
+            .iter()
+            .filter(|segment| self.index.file_len(segment) <= self.index.segment_size / 16)
+            .map(|segment| segment.number)
+            .collect();
+        let mut dropped: HashSet<u32> = self
             .index
             .segments
             .iter()
             .filter(|segment| match bytes.get(&segment.number) {
                 Some(&(dead, all)) => dead > 0 && dead as f64 >= threshold * all as f64,
-                // No chunk left: nothing to keep it for, unless it is the
-                // one being filled
-                None => Some(segment.number) != last,
+                // No chunk left: nothing to keep it for
+                None => true,
             })
             .map(|segment| segment.number)
             .collect();
+        if small.len() > 1 {
+            dropped.extend(small);
+        }
         if dropped.is_empty() {
             return Ok(());
         }
-        self.write(true)?;
-        self.new_segment()?;
 
         // Their chunks, group by group, in the order they lie
         let mut moving: Vec<(u32, u32, u64)> = self
@@ -707,9 +739,7 @@ impl StoreWriter {
                 }
             };
             if live.len() as u64 == group.chunks {
-                let mut raw = vec![0; (envelope_len + group.stored_len) as usize];
-                io::read_exact_at(file, &mut raw, offset)?;
-                whole.push((raw, envelope_len as usize, group, live));
+                whole.push((segment, offset, envelope_len, group, live));
                 continue;
             }
             let data = read_group(file, offset, envelope_len, &group)?;
@@ -721,8 +751,10 @@ impl StoreWriter {
             self.write(false)?;
         }
         self.write(true)?;
-        for (raw, envelope_len, group, live) in whole {
-            let (envelope, stored) = raw.split_at(envelope_len);
+        for (segment, offset, envelope_len, group, live) in whole {
+            let mut raw = vec![0; (envelope_len + group.stored_len) as usize];
+            io::read_exact_at(&files[&segment], &mut raw, offset)?;
+            let (envelope, stored) = raw.split_at(envelope_len as usize);
             self.append(envelope, stored, group)?;
             for id in live {
                 self.index.chunks[id as usize].group = self.index.groups.len() as u32 - 1;
@@ -816,4 +848,148 @@ pub fn purge(store: &Path, options: &Options, threshold: f64) -> Result<Purged> 
         before,
         after,
     })
+}
+
+/// Call `f` with every thin ORE of the store `uuid` at `store` and the
+/// chunks it uses, from beneath the store's parent directory, which is
+/// where a game finds its store from. A game that cannot be read fails.
+fn for_each_game(
+    store: &Path,
+    uuid: &[u8; 16],
+    f: &mut dyn FnMut(&Path, Vec<u64>) -> Result<()>,
+) -> Result<()> {
+    fn beneath(
+        dir: &Path,
+        uuid: &[u8; 16],
+        depth: u32,
+        f: &mut dyn FnMut(&Path, Vec<u64>) -> Result<()>,
+    ) -> Result<()> {
+        for entry in std::fs::read_dir(dir)? {
+            let path = entry?.path();
+            if path.is_dir() {
+                // Links may loop
+                if depth < 32 && path.file_name().is_some_and(|name| name != STORE_DIR) {
+                    beneath(&path, uuid, depth + 1, f)?;
+                }
+                continue;
+            }
+            let ore = path
+                .extension()
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("ore"));
+            if !ore || !is_ore(&path)? {
+                continue;
+            }
+            let named = |error| Error::Corrupt(format!("{}: {error}", path.display()));
+            let reader = Reader::inspect(&path).map_err(named)?;
+            if let Some(ids) = reader.store_ids(uuid) {
+                f(&path, ids)?;
+            }
+        }
+        Ok(())
+    }
+    let store = std::path::absolute(store)?;
+    beneath(store.parent().unwrap_or(&store), uuid, 0, f)
+}
+
+/// What checking a store found.
+#[derive(Debug, Clone, Default)]
+pub struct StoreChecked {
+    pub segments: u64,
+    /// Blocks of its segments that failed their CRC.
+    pub damaged: u64,
+    /// Of those, the blocks rebuilt from parity.
+    pub repaired: u64,
+    /// Groups damaged and not repaired: past what parity rebuilds, or
+    /// without `repair`.
+    pub lost_groups: u64,
+    /// The games using a chunk of those groups.
+    pub lost_games: Vec<PathBuf>,
+}
+
+/// Check the store at `store` whole: every segment against its CRCs, and
+/// with `repair`, what fails them rebuilt from parity, in place; then
+/// every group decoded, checked against its CRC, and every chunk against
+/// its hash. Each chunk is read once, however many games share it.
+pub fn check_store(store: &Path, repair: bool) -> Result<StoreChecked> {
+    let _lock = lock(store)?;
+    let index = Index::load(store)?;
+    let mut checked = StoreChecked::default();
+    let mut lost: HashSet<usize> = HashSet::new();
+    let mut files = HashMap::new();
+    for segment in &index.segments {
+        checked.segments += 1;
+        let groups = || {
+            index
+                .groups
+                .iter()
+                .enumerate()
+                .filter(move |(_, group)| group.segment == segment.number)
+        };
+        let path = segment_path(store, segment.number);
+        let Ok(file) = File::options().read(true).write(repair).open(&path) else {
+            lost.extend(groups().map(|(number, _)| number));
+            continue;
+        };
+        if index.parity > 0 {
+            let found = parity::check(&file, &Layout::new(segment.len, index.parity), repair)?;
+            checked.damaged += found.damaged;
+            checked.repaired += found.repaired;
+            for (number, group) in groups() {
+                let end = group.offset + group.envelope_len() + group.group.stored_len;
+                if found
+                    .lost
+                    .iter()
+                    .any(|&(at, len)| at < end && group.offset < at + len)
+                {
+                    lost.insert(number);
+                }
+            }
+        }
+        let mut header = [0; SEGMENT_HEADER as usize];
+        let read = io::read_exact_at(&file, &mut header, 0);
+        if read.is_err() || header != segment_header(&index.uuid, segment.number) {
+            lost.extend(groups().map(|(number, _)| number));
+        }
+        files.insert(segment.number, file);
+    }
+
+    let mut chunks: Vec<Vec<usize>> = vec![Vec::new(); index.groups.len()];
+    for (id, chunk) in index.chunks.iter().enumerate() {
+        if chunk.group != NOWHERE {
+            chunks[chunk.group as usize].push(id);
+        }
+    }
+    let bad: Vec<usize> = (0..index.groups.len())
+        .into_par_iter()
+        .filter(|number| !lost.contains(number))
+        .filter(|&number| {
+            let group = &index.groups[number];
+            let Some(file) = files.get(&group.segment) else {
+                return true;
+            };
+            match read_group(file, group.offset, group.envelope_len(), &group.group) {
+                Err(_) => true,
+                Ok(data) => chunks[number].iter().any(|&id| {
+                    let chunk = &index.chunks[id];
+                    let bytes = &data[chunk.offset as usize..][..chunk.len as usize];
+                    blake3::hash(bytes).as_bytes()[..16] != chunk.digest
+                }),
+            }
+        })
+        .collect();
+    lost.extend(bad);
+    checked.lost_groups = lost.len() as u64;
+    if !lost.is_empty() {
+        let ids: HashSet<u64> = lost
+            .iter()
+            .flat_map(|&number| chunks[number].iter().map(|&id| id as u64))
+            .collect();
+        for_each_game(store, &index.uuid, &mut |path, used| {
+            if used.iter().any(|id| ids.contains(id)) {
+                checked.lost_games.push(path.to_path_buf());
+            }
+            Ok(())
+        })?;
+    }
+    Ok(checked)
 }

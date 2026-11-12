@@ -11,7 +11,7 @@ use ore_rs::{Codec, Options, Profile};
 fn cli() -> Command {
     Command::new("orers")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("ORE compression and decompression: GameCube and Wii ISOs are compressed, OREs decompressed, stores purged")
+        .about("ORE compression and decompression: GameCube and Wii ISOs are compressed, OREs decompressed, stores checked and repaired")
         .after_help(format!(
             "Writing an ORE from a Wii ISO needs the Wii common key among the keys; orers ships none.\n\n\
              A thin ORE finds its store as the nearest .ore-store up from its folder: keep the store in the\n\
@@ -20,7 +20,7 @@ fn cli() -> Command {
         ))
         .arg(
             Arg::new("INPUTS")
-                .help("ISOs to compress, OREs to decompress, stores to purge")
+                .help("ISOs to compress, OREs to decompress, stores to check and repair")
                 .required(true)
                 .num_args(1..)
                 .value_parser(value_parser!(PathBuf)),
@@ -62,6 +62,12 @@ fn cli() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("purge")
+                .long("purge")
+                .help("Once a store is checked, purge it of what no game uses")
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("keys")
                 .long("keys")
                 .help("Keys file holding the Wii common key: text, a BootMii keys.bin, or an otp.bin")
@@ -77,7 +83,7 @@ fn main() -> ExitCode {
 /// what is left of it into a new one.
 const PURGE_THRESHOLD: f64 = 0.5;
 
-/// Purge `input` if it is a store; with an ORE, attach it to a store,
+/// Check and repair `input` if it is a store, and purge it with `--purge`; with an ORE, attach it to a store,
 /// detach it, or decompress it; compress anything else.
 fn convert(
     input: &Path,
@@ -86,14 +92,7 @@ fn convert(
 ) -> Result<String, String> {
     let options = options(matches);
     if input.is_dir() {
-        let purged = ore_rs::purge(input, &options, PURGE_THRESHOLD).map_err(|e| e.to_string())?;
-        return Ok(format!(
-            "purged {}: {} games, {} to {} bytes",
-            input.display(),
-            purged.games,
-            purged.before,
-            purged.after
-        ));
+        return store(input, matches, &options);
     }
     let size = std::fs::metadata(input).map_err(|e| e.to_string())?.len();
     let dir = ui::output_dir(input, matches)?;
@@ -144,6 +143,39 @@ fn convert(
         ui::wrote(&output),
         stats.ratio_percent()
     ))
+}
+
+/// Check the store `input`, repairing what its parity covers, then purge
+/// it if asked to and nothing is lost.
+fn store(input: &Path, matches: &ArgMatches, options: &Options) -> Result<String, String> {
+    let checked = ore_rs::check_store(input, true).map_err(|e| e.to_string())?;
+    if checked.lost_groups > 0 {
+        let games: Vec<String> = checked
+            .lost_games
+            .iter()
+            .map(|game| game.display().to_string())
+            .collect();
+        return Err(format!(
+            "{} groups past repair, used by: {}",
+            checked.lost_groups,
+            games.join(", ")
+        ));
+    }
+    let mut message = format!(
+        "checked {}: {} segments, {} of {} damaged blocks repaired",
+        input.display(),
+        checked.segments,
+        checked.repaired,
+        checked.damaged
+    );
+    if matches.get_flag("purge") {
+        let purged = ore_rs::purge(input, options, PURGE_THRESHOLD).map_err(|e| e.to_string())?;
+        message += &format!(
+            "; purged: {} games, {} to {} bytes",
+            purged.games, purged.before, purged.after
+        );
+    }
+    Ok(message)
 }
 
 fn options(matches: &ArgMatches) -> Options {

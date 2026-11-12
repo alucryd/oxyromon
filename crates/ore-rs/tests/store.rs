@@ -99,9 +99,13 @@ fn games_share_their_chunks_and_round_trip() {
     check(&b, &discs[1]);
 
     // The shared file is stored once: the store holds three files' noise,
-    // and what else the discs hold, once
+    // and what else the discs hold, once, and their parity, its shards
+    // rounded up to whole blocks, which small segments feel
     let store = library.store_size();
-    assert!(store < 0x200000 + 0x70000, "store of {store} bytes");
+    assert!(
+        store < (0x200000 + 0x70000) * 112 / 100,
+        "store of {store} bytes"
+    );
     assert!(len(&a) < 0x10000, "a thin ORE of {} bytes", len(&a));
 
     // Each game owns its own file, shares the other, and the shares add up
@@ -201,14 +205,19 @@ fn segments_stay_under_their_size() {
     let library = Library::new(&StoreOptions {
         segment_size: 0x40000,
         id_bits: 64,
+        parity: 16,
     });
     let discs = discs();
     let a = library.add("a.ore", &discs[0], &[]);
     let b = library.add("b.ore", &discs[1], &[]);
     let segments = segments(&library.store);
     assert!(segments.len() > 2, "{} segments", segments.len());
-    // A segment holds a group at least, 1 MiB at most
-    assert!(segments.iter().all(|path| len(path) <= 0x40000 + (1 << 20)));
+    // A segment holds a group at least, 1 MiB at most, and its parity
+    assert!(
+        segments
+            .iter()
+            .all(|path| len(path) <= (0x40000 + (1 << 20)) * 110 / 100)
+    );
     check(&a, &discs[0]);
     check(&b, &discs[1]);
 }
@@ -218,16 +227,18 @@ fn purging_a_game_keeps_the_others() {
     let library = Library::new(&StoreOptions {
         segment_size: 0x40000,
         id_bits: 32,
+        parity: 8,
     });
     let discs = discs();
     let a = library.add("a.ore", &discs[0], &[]);
     let b = library.add("b.ore", &discs[1], &[]);
-    let full = library.store_size();
 
-    // Nothing to purge while both are there
+    // Nothing to purge while both are there, once the small segments
+    // each commit leaves are merged
     let purged = ore_rs::purge(&library.store, &Options::default(), 0.0).unwrap();
     assert_eq!(purged.games, 2);
-    assert_eq!(purged.after, purged.before);
+    assert!(purged.after <= purged.before * 101 / 100);
+    let full = purged.after;
 
     std::fs::remove_file(&a).unwrap();
     let purged = ore_rs::purge(&library.store, &Options::default(), 0.0).unwrap();
@@ -279,6 +290,13 @@ fn a_damaged_segment_fails() {
     write(segment, &bytes);
     let out = library.root.join("a.iso");
     assert!(ore_rs::decompress(&ore, &out, &mut |_| {}).is_err());
+    // A check finds it, and names the game
+    let checked = ore_rs::check_store(&library.store, false).unwrap();
+    assert_eq!(
+        (checked.damaged, checked.repaired, checked.lost_groups),
+        (1, 0, 1)
+    );
+    assert_eq!(checked.lost_games, std::slice::from_ref(&ore));
     assert!(
         ore_rs::detach(
             &ore,
@@ -289,4 +307,47 @@ fn a_damaged_segment_fails() {
         .is_err()
     );
     assert!(!out.exists());
+}
+
+#[test]
+fn a_check_repairs_what_parity_covers() {
+    let library = Library::new(&StoreOptions::default());
+    let discs = discs();
+    let a = library.add("a.ore", &discs[0], &[]);
+    let b = library.add("b.ore", &discs[1], &[]);
+    let segment = &segments(&library.store)[0];
+    let whole = std::fs::read(segment).unwrap();
+    // Bad sectors, and a burst of 40 KiB
+    let mut bytes = whole.clone();
+    for at in (100..bytes.len()).step_by(150_001) {
+        bytes[at] ^= 0x40;
+    }
+    for byte in &mut bytes[300_000..340_000] {
+        *byte ^= 0x40;
+    }
+    write(segment, &bytes);
+    let checked = ore_rs::check_store(&library.store, true).unwrap();
+    assert!(checked.damaged > 10 && checked.repaired == checked.damaged);
+    assert_eq!((checked.lost_groups, checked.lost_games.len()), (0, 0));
+    assert!(std::fs::read(segment).unwrap() == whole);
+    check(&a, &discs[0]);
+    check(&b, &discs[1]);
+    let checked = ore_rs::check_store(&library.store, true).unwrap();
+    assert_eq!((checked.damaged, checked.segments), (0, 2));
+}
+
+#[test]
+fn without_parity_a_check_only_finds_damage() {
+    let library = Library::new(&StoreOptions {
+        parity: 0,
+        ..StoreOptions::default()
+    });
+    let ore = library.add("a.ore", &discs()[0], &[]);
+    let segment = &segments(&library.store)[0];
+    let mut bytes = std::fs::read(segment).unwrap();
+    bytes[1000] ^= 0x40;
+    write(segment, &bytes);
+    let checked = ore_rs::check_store(&library.store, true).unwrap();
+    assert_eq!((checked.damaged, checked.lost_groups), (0, 1));
+    assert_eq!(checked.lost_games, [ore]);
 }
