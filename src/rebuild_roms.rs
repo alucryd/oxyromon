@@ -447,10 +447,10 @@ async fn add_rom(
             .await?;
         update_rom_romfile(connection, rom.id, Some(romfile_id)).await;
     } else {
-        // source and destination are files
-        let romfile_id = source_romfile
-            .copy(progress_bar, destination_directory, false)
-            .await?
+        // source and destination are files, the copy taking the clone's ROM name
+        let destination_path = destination_directory.join(&rom.name);
+        copy_file(progress_bar, &source_romfile.path, &destination_path, false).await?;
+        let romfile_id = CommonRomfile::from_path(&destination_path)?
             .create(connection, progress_bar, RomfileType::Romfile)
             .await?;
         update_rom_romfile(connection, rom.id, Some(romfile_id)).await;
