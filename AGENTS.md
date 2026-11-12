@@ -138,7 +138,9 @@ global `MultiProgress`.
 `xdelta-rs`, `xps-rs` and `xso-rs`, each a port of the tool oxyromon used to
 run (chdman, ctrtool, gdidrop, nsz, Dolphin, wit, xdelta3, Flips, maxcso),
 published on its own and keeping its upstream's license — MIT for `cia-rs`, whose upstream shipped none. `wux-rs`
-follows wudd and Cemu instead, under wudd's GPL-3.0+, and ships no key. Every crate follows these, and a new one must too:
+follows wudd and Cemu instead, under wudd's GPL-3.0+, and ships no key. `ore-rs`
+is oxyROMon's own format, ORE, specified in `formats/design/`, under GPL-3.0+;
+not yet used by oxyromon nor shipped by `dist.sh` while the format is a draft. Every crate follows these, and a new one must too:
 
 - **Library first, CLI behind a default `cli` feature.** oxyromon depends on a
   crate by `path` and `version` with `default-features = false`.
@@ -180,8 +182,8 @@ follows wudd and Cemu instead, under wudd's GPL-3.0+, and ships no key. Every cr
 
 What is specific to a system rather than a format, and shared by several
 format crates, lives in a small crate of its own that is never published:
-`gcwii`, the GameCube and Wii disc specifics shared by `rvz-rs` and
-`wbfs-rs`. Each format crate embeds it, so that the crate it publishes holds
+`gcwii`, the GameCube and Wii disc specifics shared by `rvz-rs`,
+`wbfs-rs` and `ore-rs`. Each format crate embeds it, so that the crate it publishes holds
 a copy and stands alone:
 
 - **Symlinked, not depended on.** `crates/<host>/src/<embedded>` is a symlink

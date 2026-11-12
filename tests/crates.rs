@@ -10,6 +10,7 @@ fn every_cli_shares_one_ui() {
         "crates/cia-rs/src/bin/ciars/ui.rs",
         "crates/gdi-rs/src/bin/gdirs/ui.rs",
         "crates/nsz-rs/src/bin/nszrs/ui.rs",
+        "crates/ore-rs/src/bin/orers/ui.rs",
         "crates/rvz-rs/src/bin/rvzrs/ui.rs",
         "crates/wbfs-rs/src/bin/wbfsrs/ui.rs",
         "crates/xdelta-rs/src/bin/xdeltars/ui.rs",
@@ -25,6 +26,8 @@ fn every_cli_shares_one_ui() {
 const EMBEDDED: &[(&str, &[&str])] = &[(
     "crates/gcwii",
     &[
+        "crates/ore-rs/src/gcwii",
+        "crates/ore-rs/tests/common",
         "crates/rvz-rs/src/gcwii",
         "crates/rvz-rs/tests/common",
         "crates/wbfs-rs/src/gcwii",
