@@ -147,11 +147,14 @@ async fn test() {
     let clone_romfile = find_romfile_by_id(&mut connection, clone_rom.romfile_id.unwrap()).await;
     let clone_common_romfile =
         find_romfile_by_id(&mut connection, clone_common_rom.romfile_id.unwrap()).await;
-    for romfile in [&clone_romfile, &clone_common_romfile] {
+    // named after the clone's roms, not the parent's they merge
+    for (romfile, name) in [
+        (&clone_romfile, "Test Clone.rom"),
+        (&clone_common_romfile, "Test Clone Common.rom"),
+    ] {
         let absolute = rom_directory.path().join(&romfile.path);
         assert!(absolute.is_file(), "Missing \"{:?}\"", absolute);
-        assert!(absolute.starts_with(&system_directory));
-        assert!(absolute.starts_with(system_directory.join("Test Clone")));
+        assert_eq!(absolute, system_directory.join("Test Clone").join(name));
     }
     // the parent's own files are untouched
     let parent_rom = find_rom_by_name_and_game_id(&mut connection, "Test Parent.rom", parent.id)

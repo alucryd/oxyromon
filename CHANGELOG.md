@@ -48,6 +48,7 @@
 - Fixed `rebuild-roms -f` skipping clones in sets already `NON_MERGED` or `FULL_NON_MERGED`
 - Fixed `rebuild-roms` computing completion with the strategy it rebuilt from
 - Fixed `rebuild-roms` leaving a parent's files in a clone's directory when another of the clone's files was missing
+- Fixed `rebuild-roms` naming a clone's loose copies after its parent's ROMs instead of its own, which `check-roms` then failed
 - Fixed `rebuild-roms` exiting silently when there are no arcade systems
 - Fixed `import-dats` slowing down on DATs with ROMs shared by many machines, such as HBMAME's
 - Fixed commands printing nothing but fatal errors when stderr is not a terminal
