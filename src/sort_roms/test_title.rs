@@ -1,5 +1,9 @@
 use super::*;
 
+fn get_title(name: &str) -> String {
+    get_title_and_editions(name).0
+}
+
 #[test]
 fn test() {
     // regions, languages, versions and release statuses are left out

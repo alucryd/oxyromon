@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT INTO clone_list_titles (group_name, search_term, name_type, priority, match_regions, match_languages, match_string, clone_list_id)\n        VALUES (?, ?, ?, ?, ?, ?, ?, ?)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 8
+    },
+    "nullable": []
+  },
+  "hash": "9930ca0b3e7dca89107dcf73df828be43b79c06545cc1eaaf71f8a8faf286afc"
+}

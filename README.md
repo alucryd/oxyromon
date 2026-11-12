@@ -329,6 +329,7 @@ Commands:
   import-irds         Parse and import PlayStation 3 IRD files into oxyromon
   import-patches      Import patch files into oxyromon
   import-keys         Import Wii, Wii U and Switch keys into oxyromon
+  import-clone-lists  Import Retool clone lists into oxyromon
   import-roms         Validate and import ROM files or directories into oxyromon
   purge-games         Move the files of games to the trash
   purge-irds          Unassociate games from IRD files
@@ -547,6 +548,25 @@ Options:
   -h, --help  Print help
 ```
 
+### import-clone-lists
+
+Imports Retool's clone lists, such as those in [retool-clonelists-metadata](https://github.com/unexpectedpanda/retool-clonelists-metadata)'s `clonelists` folder, which `INFER_CLONES` reads to group titles a DAT names differently, as `Wipeout XL` and `Wipeout 2097`, and to elect one of a region's releases over another.
+A list goes to the system its name gives, `Sony - PlayStation (Redump)` to `Sony - PlayStation`, and is skipped when that system's DAT comes from another release group than the one the name ends with, as its URL tells.
+A system has one list: importing another replaces it, and importing the same version again is skipped, unless forced.
+Of each group, the titles are read, supersets among them, with their priorities and their filters on regions, languages and names.
+Compilations, filters on the region order, and region-free search terms are skipped, and the import says how many.
+
+```text
+Usage: oxyromon import-clone-lists [OPTIONS] <CLONE_LISTS>...
+
+Arguments:
+  <CLONE_LISTS>...  Set the clone list files to import
+
+Options:
+  -f, --force  Force import of clone lists already imported
+  -h, --help   Print help
+```
+
 ### import-roms
 
 Hashes files and directories and moves those that match the database into their system's directory.
@@ -593,6 +613,8 @@ Without Parent-Clone data, as in Redump's DATs, every game is a group of its own
 `INFER_CLONES` groups such a system's games by title instead, leaving out of a name its regions, languages, versions, release status, and the flags that only tell editions apart: budget lines and reissues, limited editions and bundles, serials, ring codes, and demos.
 A game's disc number and any other flag stay, so `Game (Europe) (Disc 2)` is grouped with `Game (USA) (Disc 2)`, and `Game (USA) (Bonus Disc)` has a group of its own.
 These groups have no parent, so `PREFER_PARENTS` doesn't apply to them.
+A clone list imported with `import-clone-lists` adds to these groups: the titles it names as one game share a group, whatever their names, a filter moving a region's release to another, and within a region its priorities elect a release before the `PREFER_*` settings do, a lower number first.
+A title naming an edition, as `Game (Premium Box)`, takes precedence over one naming the game for that edition's releases.
 
 Arcade systems sort by set type instead.
 `REGIONS_ALL_ARCADE` and `REGIONS_ONE_ARCADE` say which of `bios`, `parent` and `clone` go to each directory.
