@@ -8,13 +8,14 @@ use std::sync::{Arc, Mutex};
 
 use rayon::prelude::*;
 
-use super::codec;
 use super::crypto::Key;
 use super::error::{Error, Result};
 use super::format::*;
 use super::io;
 use super::lfg::{Lfg, SEED_BYTES};
-use super::segment::{BLOCK, RECORD_MAX};
+use super::pack::{Cache, read_group};
+use super::segment::{BLOCK, RECORD_MAX, Run};
+use super::store::{Index, NOWHERE, StoreReader, find_store, hex};
 use super::wii::{
     self, BLOCK_DATA_SIZE, BLOCK_TOTAL_SIZE, BLOCKS_PER_GROUP, BlockData, GROUP_DATA_SIZE,
     GROUP_TOTAL_SIZE, HashBlock,
@@ -24,12 +25,16 @@ use super::writer::Stats;
 /// What a core decodes at a time when writing a disc out: four Wii groups.
 const SLICE: u64 = 4 * GROUP_TOTAL_SIZE;
 
+#[derive(Clone)]
 enum Record {
     Zero,
     Padding(Box<[u8; SEED_BYTES]>),
     Chunk(u32),
+    /// A chunk of the store, by its id there.
+    Store(u64),
 }
 
+#[derive(Clone)]
 struct AreaIndex {
     start: u64,
     len: u64,
@@ -49,6 +54,7 @@ struct ChunkAt {
     offset: u32,
 }
 
+#[derive(Clone)]
 struct GroupAt {
     /// Where its envelope starts.
     offset: u64,
@@ -56,15 +62,35 @@ struct GroupAt {
     group: Group,
 }
 
+/// What a game weighs, in bytes. A standalone ORE's own, share and
+/// standalone sizes are its file's; a thin one's count its chunks in the
+/// store, each its part of its group's bytes, plus its file.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Sizes {
+    /// The disc's.
+    pub uncompressed: u64,
+    /// What only this game uses: what deleting it frees, once the store
+    /// is purged.
+    pub own: u64,
+    /// Every chunk it uses divided among the games using it: summed over a
+    /// store's games, the store's size.
+    pub share: u64,
+    /// About what it would weigh detached.
+    pub standalone: u64,
+}
+
 /// An ORE, read as the disc it holds.
 pub struct Reader {
     file: File,
-    header: Header,
-    meta: Meta,
+    file_size: u64,
+    pub(super) header: Header,
+    pub(super) meta: Meta,
     areas: Vec<AreaIndex>,
     chunks: Vec<ChunkAt>,
     groups: Vec<GroupAt>,
-    cache: HashMap<u32, Arc<Vec<u8>>>,
+    cache: Cache,
+    /// The store a thin ORE's chunks lie in, once found.
+    store: Option<StoreReader>,
     /// The Wii group last encrypted: its area, its number, its bytes.
     wii: Option<(usize, u64, Vec<u8>)>,
 }
@@ -74,7 +100,52 @@ fn corrupt(what: &str) -> Error {
 }
 
 impl Reader {
+    /// Open the ORE at `path`, and if it is thin, the store its chunks lie
+    /// in: the nearest `.ore-store` up from its folder.
     pub fn open(path: &Path) -> Result<Self> {
+        let mut reader = Self::inspect(path)?;
+        if let Some(uuid) = reader.store_uuid() {
+            let missing = |found: String| {
+                Error::Io(std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    format!("needs the ORE store {}, {found}", hex(&uuid)),
+                ))
+            };
+            let dir = find_store(path).ok_or_else(|| missing("none found above it".into()))?;
+            let index = Index::load(&dir)?;
+            if index.uuid != uuid {
+                return Err(missing(format!("not {}", dir.display())));
+            }
+            reader.attach_store(StoreReader::new(dir, Arc::new(index)))?;
+        }
+        Ok(reader)
+    }
+
+    /// Check a thin ORE's records against its store's index, and read
+    /// through it.
+    fn attach_store(&mut self, store: StoreReader) -> Result<()> {
+        for area in &self.areas {
+            for (record, window) in area.records.iter().zip(area.starts.windows(2)) {
+                if let &Record::Store(id) = record {
+                    let chunk = store.index.chunks.get(id as usize);
+                    if chunk.is_none_or(|chunk| {
+                        chunk.group == NOWHERE || chunk.len as u64 != window[1] - window[0]
+                    }) {
+                        return Err(Error::Corrupt(format!(
+                            "chunk {id} is not in {}",
+                            store.dir().display()
+                        )));
+                    }
+                }
+            }
+        }
+        self.store = Some(store);
+        Ok(())
+    }
+
+    /// The ORE at `path`, without the store it may need: enough for its
+    /// identity and the store it needs, not to read a thin one's disc.
+    pub fn inspect(path: &Path) -> Result<Self> {
         let file = File::open(path)?;
         let file_size = file.metadata()?.len();
         let mut bytes = [0; HEADER_LEN];
@@ -114,6 +185,16 @@ impl Reader {
         if meta.media.size != header.logical_size {
             return Err(corrupt("metadata and header disagree on the disc's size"));
         }
+        let thin = header.flags_required & REQ_LIBRARY != 0;
+        if thin != meta.store.is_some()
+            || meta
+                .store
+                .as_ref()
+                .is_some_and(|store| store.uuid.len() != 16)
+        {
+            return Err(corrupt("a thin ORE names no store"));
+        }
+        let mut last_id = 0u64;
 
         // Records, area by area, the areas tiling the disc
         let mut cursor = Cursor::new(&index);
@@ -175,14 +256,20 @@ impl Reader {
                         }
                         Record::Padding(Box::new(cursor.take(SEED_BYTES)?.try_into().unwrap()))
                     }
-                    KIND_SOLID => {
+                    KIND_STORE if thin => {
+                        last_id = last_id
+                            .checked_add_signed(unzigzag(cursor.uvarint()?))
+                            .ok_or_else(|| corrupt("a chunk id out of range"))?;
+                        Record::Store(last_id)
+                    }
+                    KIND_SOLID if !thin => {
                         if len > GROUP_MAX {
                             return Err(corrupt("a chunk larger than a group"));
                         }
                         stored_lens.push(len as u32);
                         Record::Chunk(stored_lens.len() as u32 - 1)
                     }
-                    KIND_DEDUP => {
+                    KIND_DEDUP if !thin => {
                         let target = cursor.uvarint()?;
                         if target >= stored_lens.len() as u64
                             || stored_lens[target as usize] as u64 != len
@@ -266,14 +353,128 @@ impl Reader {
         }
         Ok(Self {
             file,
+            file_size,
             header,
             meta,
             areas,
             chunks,
             groups,
-            cache: HashMap::new(),
+            cache: Cache::default(),
+            store: None,
             wii: None,
         })
+    }
+
+    /// Another reader of the same ORE, sharing its store's index.
+    pub fn try_clone(&self) -> Result<Self> {
+        Ok(Self {
+            file: self.file.try_clone()?,
+            file_size: self.file_size,
+            header: self.header.clone(),
+            meta: self.meta.clone(),
+            areas: self.areas.clone(),
+            chunks: self.chunks.clone(),
+            groups: self.groups.clone(),
+            cache: Cache::default(),
+            store: self
+                .store
+                .as_ref()
+                .map(|store| StoreReader::new(store.dir().to_path_buf(), store.index.clone())),
+            wii: None,
+        })
+    }
+
+    /// The id of the store a thin ORE's chunks lie in.
+    pub fn store_uuid(&self) -> Option<[u8; 16]> {
+        let store = self.meta.store.as_ref()?;
+        Some(store.uuid.as_slice().try_into().unwrap())
+    }
+
+    /// The chunks a thin ORE of the store `uuid` uses, each once.
+    pub(super) fn store_ids(&self, uuid: &[u8; 16]) -> Option<Vec<u64>> {
+        if self.store_uuid()? != *uuid {
+            return None;
+        }
+        let mut ids: Vec<u64> = self
+            .areas
+            .iter()
+            .flat_map(|area| &area.records)
+            .filter_map(|record| match record {
+                &Record::Store(id) => Some(id),
+                _ => None,
+            })
+            .collect();
+        ids.sort_unstable();
+        ids.dedup();
+        Some(ids)
+    }
+
+    /// What the game weighs.
+    pub fn sizes(&self) -> Sizes {
+        let file = self.file_size;
+        let (mut own, mut share, mut standalone) = (file as f64, file as f64, file as f64);
+        if let Some(store) = &self.store {
+            let index = &store.index;
+            for id in self.store_ids(&index.uuid).unwrap_or_default() {
+                let chunk = &index.chunks[id as usize];
+                let weight = index.weight(chunk);
+                if chunk.refs <= 1 {
+                    own += weight;
+                }
+                share += weight / chunk.refs.max(1) as f64;
+                standalone += weight;
+            }
+        }
+        Sizes {
+            uncompressed: self.size(),
+            own: own as u64,
+            share: share as u64,
+            standalone: standalone as u64,
+        }
+    }
+
+    /// Every record as the run it was written from, in order, with how far
+    /// through the disc each ends.
+    pub(super) fn runs(&mut self, emit: &mut dyn FnMut(Run, u64) -> Result<()>) -> Result<()> {
+        for area in 0..self.areas.len() {
+            let (start, len, stored) = {
+                let area = &self.areas[area];
+                (area.start, area.len, *area.starts.last().unwrap())
+            };
+            for record in 0..self.areas[area].records.len() {
+                let (from, to) = {
+                    let starts = &self.areas[area].starts;
+                    (starts[record], starts[record + 1])
+                };
+                let length = to - from;
+                let done = start + (to as u128 * len as u128 / stored as u128) as u64;
+                match self.areas[area].records[record].clone() {
+                    Record::Zero => emit(Run::Zero(length), done)?,
+                    Record::Padding(seed) => emit(Run::Padding(length, *seed), done)?,
+                    Record::Chunk(id) => {
+                        let chunk = self.chunks[id as usize];
+                        let group = self.group(chunk.group)?;
+                        let at = chunk.offset as usize;
+                        emit(Run::Chunk(&group[at..at + length as usize]), done)?;
+                    }
+                    Record::Store(id) => {
+                        let store = self.store.as_mut().expect("a thin ORE has its store");
+                        let (group, at) = store.chunk(id)?;
+                        let bytes = &group[at..at + length as usize];
+                        // What leaves the store is what went in
+                        if blake3::hash(bytes).as_bytes()[..16]
+                            != store.index.chunks[id as usize].digest
+                        {
+                            return Err(Error::Corrupt(format!(
+                                "chunk {id} of the store does not match its hash"
+                            )));
+                        }
+                        emit(Run::Chunk(bytes), done)?;
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 
     /// The size of the disc.
@@ -396,6 +597,14 @@ impl Reader {
                     let from = chunk.offset as usize + within as usize;
                     out.copy_from_slice(&group[from..from + length]);
                 }
+                &Record::Store(id) => {
+                    let store = self.store.as_mut().ok_or_else(|| {
+                        Error::Unsupported("a thin ORE read without its store".into())
+                    })?;
+                    let (group, at) = store.chunk(id)?;
+                    let from = at + within as usize;
+                    out.copy_from_slice(&group[from..from + length]);
+                }
             }
             buf = &mut buf[length..];
             offset += length as u64;
@@ -416,35 +625,11 @@ impl Reader {
 
     /// A group, decoded and checked against its envelope.
     fn group(&mut self, index: u32) -> Result<Arc<Vec<u8>>> {
-        if let Some(group) = self.cache.get(&index) {
-            return Ok(group.clone());
-        }
         let at = &self.groups[index as usize];
-        let mut bytes = vec![0; (at.envelope_len + at.group.stored_len) as usize];
-        io::read_exact_at(&self.file, &mut bytes, at.offset)?;
-        let (envelope, stored) = bytes.split_at(at.envelope_len as usize);
-        let mut cursor = Cursor::new(envelope);
-        if cursor.take(2)? != ENVELOPE_MAGIC
-            || cursor.u8()? != KIND_SOLID
-            || cursor.u8()? != at.group.codec.id() << 4
-        {
-            return Err(Error::Corrupt(format!("group {index}'s envelope")));
-        }
-        cursor.uvarint()?;
-        cursor.uvarint()?;
-        let crc = u32::from_be_bytes(cursor.take(4)?.try_into().unwrap());
-        let data = codec::decompress(at.group.codec, stored, at.group.logical_len as usize)?;
-        if crc32c::crc32c(&data) != crc {
-            return Err(Error::Corrupt(format!("group {index} fails its CRC")));
-        }
-        // ponytail: forget every group past a few, an LRU if dedup-heavy
-        // reads ever thrash
-        if self.cache.len() >= 16 {
-            self.cache.clear();
-        }
-        let data = Arc::new(data);
-        self.cache.insert(index, data.clone());
-        Ok(data)
+        let file = &self.file;
+        self.cache.get(index, || {
+            read_group(file, at.offset, at.envelope_len, &at.group)
+        })
     }
 }
 
@@ -455,9 +640,12 @@ impl Reader {
 pub fn decompress(input: &Path, output: &Path, progress: &mut dyn FnMut(u64)) -> Result<Stats> {
     let input_size = std::fs::metadata(input)?.len();
     // A reader a core, each decoding slices of the disc, written in order
-    let readers: Vec<Mutex<Reader>> = (0..rayon::current_num_threads())
-        .map(|_| Reader::open(input).map(Mutex::new))
-        .collect::<Result<_>>()?;
+    let first = Reader::open(input)?;
+    let mut readers = vec![];
+    for _ in 1..rayon::current_num_threads() {
+        readers.push(Mutex::new(first.try_clone()?));
+    }
+    readers.push(Mutex::new(first));
     let (size, logical_hash) = {
         let reader = readers[0].lock().unwrap();
         (reader.size(), reader.header.logical_hash)

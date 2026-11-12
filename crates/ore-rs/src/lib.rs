@@ -34,8 +34,10 @@ mod format;
 #[allow(dead_code, unused_imports)]
 #[path = "gcwii/lib.rs"]
 mod gcwii;
+mod pack;
 mod reader;
 mod segment;
+mod store;
 mod writer;
 
 use gcwii::{crypto, disc, error, fst, io, keys, lfg, wii};
@@ -44,5 +46,6 @@ pub use crypto::Key;
 pub use error::{Error, Result};
 pub use format::{Codec, Profile};
 pub use keys::{is_bootmii, load_keys, parse_key_file, parse_keys, parse_otp};
-pub use reader::{Reader, decompress};
-pub use writer::{Options, Stats, compress, is_ore};
+pub use reader::{Reader, Sizes, decompress};
+pub use store::{Purged, STORE_DIR, StoreOptions, create_store, find_store, purge};
+pub use writer::{Options, Stats, attach, compress, compress_to_store, detach, is_ore};

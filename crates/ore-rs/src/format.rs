@@ -14,9 +14,14 @@ pub const HEADER_LEN: usize = 192;
 pub const ENVELOPE_MAGIC: [u8; 2] = *b"OC";
 
 pub const REQ_VARIABLE_CHUNKS: u32 = 1 << 0;
+/// The object's chunks lie in a store, which its metadata names.
+pub const REQ_LIBRARY: u32 = 1 << 1;
 pub const REQ_SOLID_GROUPS: u32 = 1 << 5;
 /// Every required flag this reader understands.
-const REQ_KNOWN: u32 = REQ_VARIABLE_CHUNKS | REQ_SOLID_GROUPS;
+const REQ_KNOWN: u32 = REQ_VARIABLE_CHUNKS | REQ_LIBRARY | REQ_SOLID_GROUPS;
+
+pub const INDEX_FLAT: u8 = 0;
+pub const INDEX_LIBRARY: u8 = 2;
 
 pub const MEDIA_DVD_2048: u16 = 64;
 
@@ -25,6 +30,8 @@ pub const KIND_ZERO: u8 = 2;
 pub const KIND_GENERATED: u8 = 4;
 pub const KIND_DEDUP: u8 = 5;
 pub const KIND_SOLID: u8 = 7;
+/// A chunk of the store, by its id.
+pub const KIND_STORE: u8 = 9;
 
 /// The GameCube and Wii padding generator.
 pub const GEN_GC_WII_FILLER: u8 = 4;
@@ -195,8 +202,11 @@ impl Header {
                 header.media_class
             )));
         }
-        if header.index_kind != 0 || header.object_count != 1 {
-            return Err(Error::Unsupported("library objects".into()));
+        let thin = header.flags_required & REQ_LIBRARY != 0;
+        if header.index_kind != if thin { INDEX_LIBRARY } else { INDEX_FLAT }
+            || header.object_count != 1
+        {
+            return Err(Error::Unsupported("files of several objects".into()));
         }
         Ok(header)
     }
@@ -208,6 +218,15 @@ pub fn put_uvarint(out: &mut Vec<u8>, mut value: u64) {
         value >>= 7;
     }
     out.push(value as u8);
+}
+
+/// A signed difference as an unsigned integer small for small differences.
+pub fn zigzag(value: i64) -> u64 {
+    ((value << 1) ^ (value >> 63)) as u64
+}
+
+pub fn unzigzag(value: u64) -> i64 {
+    (value >> 1) as i64 ^ -((value & 1) as i64)
 }
 
 /// Bytes being read, each read failing past the end as corrupt.
@@ -232,6 +251,11 @@ impl<'a> Cursor<'a> {
             .ok_or_else(truncated)?;
         self.at += n;
         Ok(bytes)
+    }
+
+    /// `N` bytes, as a big-endian integer's.
+    pub fn be<const N: usize>(&mut self) -> Result<[u8; N]> {
+        Ok(self.take(N)?.try_into().unwrap())
     }
 
     pub fn u8(&mut self) -> Result<u8> {
@@ -288,15 +312,24 @@ pub struct Group {
 // The metadata, as canonical CBOR: every map's keys are declared shortest
 // first, then in byte order, as that is the order they are written in.
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Meta {
     pub media: Media,
+    /// The store a thin object's chunks lie in.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub store: Option<StoreRef>,
     pub ledger: Vec<Step>,
     pub identity: Vec<Identity>,
     pub provenance: Provenance,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StoreRef {
+    #[serde(with = "serde_bytes")]
+    pub uuid: Vec<u8>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Media {
     pub size: u64,
     pub areas: Vec<Area>,
@@ -305,7 +338,7 @@ pub struct Media {
 }
 
 /// A stretch of the disc, in disc order, the areas tiling it.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Area {
     /// Bytes of disc it covers.
     pub len: u64,
@@ -331,7 +364,7 @@ pub enum AreaKind {
     WiiPartition,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Exception {
     /// The block, counted from the partition's data.
     pub block: u64,
@@ -340,7 +373,7 @@ pub struct Exception {
     pub hashes: Vec<u8>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Step {
     pub id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -348,7 +381,7 @@ pub struct Step {
     pub verified: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Identity {
     pub algo: String,
     pub view: String,
@@ -356,14 +389,14 @@ pub struct Identity {
     pub value: Vec<u8>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Provenance {
     pub tool: String,
     pub params: Params,
 }
 
 /// What an encode was asked for, which `params_digest` digests.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Params {
     pub codec: Codec,
     pub group: u64,
@@ -371,7 +404,7 @@ pub struct Params {
     pub chunker: Chunker,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Chunker {
     pub max: u64,
     pub min: u64,

@@ -1,6 +1,6 @@
 //! Writing an ORE from a disc image.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufWriter, Seek, SeekFrom, Write};
 use std::path::Path;
@@ -11,14 +11,17 @@ use rayon::prelude::*;
 use sha1::{Digest, Sha1};
 
 use super::cdc;
-use super::codec::{self, LZMA2_PRESET, ZSTD_LEVEL};
+use super::codec::{LZMA2_PRESET, ZSTD_LEVEL};
 use super::crypto::Key;
 use super::disc::{Iso, PARTITION_DATA_SIZE, Platform, Source, Volume};
 use super::error::{Error, Result};
 use super::format::*;
 use super::fst::FileSystem;
 use super::io;
+use super::pack::Packer;
+use super::reader::Reader;
 use super::segment::{BLOCK, Run, Segmenter};
+use super::store::StoreWriter;
 use super::wii::{
     self, BLOCK_DATA_SIZE, BLOCK_TOTAL_SIZE, BLOCKS_PER_GROUP, BlockData, GROUP_DATA_SIZE,
     GROUP_TOTAL_SIZE, HashBlock,
@@ -159,29 +162,68 @@ impl Hashes {
     }
 }
 
-/// Stored chunks, deduped and gathered into groups, written as they fill.
+/// Where an encoder's stored chunks go.
+enum Sink {
+    /// Into groups in the ORE itself, each chunk once.
+    Inline {
+        packer: Packer,
+        seen: HashMap<[u8; 32], u64>,
+        stored: u64,
+        groups: Vec<Group>,
+        /// Bytes of stored chunks in the groups written.
+        written: u64,
+    },
+    /// Into a store, the ORE naming them by their ids there.
+    Store {
+        writer: StoreWriter,
+        last: u64,
+        used: HashSet<u64>,
+    },
+}
+
+/// An ORE being written: its index records as runs come, its stored chunks
+/// to its sink.
 struct Encoder {
     file: BufWriter<File>,
-    codec: Codec,
-    group_size: usize,
     index: Vec<u8>,
     records: u64,
     record_max: u64,
-    seen: HashMap<[u8; 32], u64>,
-    stored: u64,
-    group: Vec<u8>,
-    group_chunks: u64,
-    /// Groups closed but not yet written.
-    closed: Vec<(Vec<u8>, u64)>,
-    groups: Vec<Group>,
-    /// Bytes of stored chunks in the groups written.
-    written: u64,
+    sink: Sink,
     padding: u64,
     zeros: u64,
     deduped: u64,
 }
 
 impl Encoder {
+    fn new(part: &Path, options: &Options, store: Option<StoreWriter>) -> Result<Self> {
+        let mut file = BufWriter::with_capacity(8 << 20, File::create(part)?);
+        file.write_all(&[0; HEADER_LEN])?;
+        let sink = match store {
+            Some(writer) => Sink::Store {
+                writer,
+                last: 0,
+                used: HashSet::new(),
+            },
+            None => Sink::Inline {
+                packer: Packer::new(options.codec, options.profile.group_size()),
+                seen: HashMap::new(),
+                stored: 0,
+                groups: Vec::new(),
+                written: 0,
+            },
+        };
+        Ok(Self {
+            file,
+            index: Vec::new(),
+            records: 0,
+            record_max: 0,
+            sink,
+            padding: 0,
+            zeros: 0,
+            deduped: 0,
+        })
+    }
+
     fn push(&mut self, run: Run) {
         let length = match run {
             Run::Zero(n) => {
@@ -201,21 +243,36 @@ impl Encoder {
             Run::Chunk(bytes) => {
                 let n = bytes.len() as u64;
                 let digest: [u8; 32] = blake3::hash(bytes).into();
-                if let Some(&target) = self.seen.get(&digest) {
-                    self.index.push(KIND_DEDUP);
-                    put_uvarint(&mut self.index, n);
-                    put_uvarint(&mut self.index, target);
-                    self.deduped += n;
-                } else {
-                    self.seen.insert(digest, self.stored);
-                    self.stored += 1;
-                    self.index.push(KIND_SOLID);
-                    put_uvarint(&mut self.index, n);
-                    if self.group.len() + bytes.len() > self.group_size {
-                        self.close_group();
+                match &mut self.sink {
+                    Sink::Inline {
+                        packer,
+                        seen,
+                        stored,
+                        ..
+                    } => {
+                        if let Some(&target) = seen.get(&digest) {
+                            self.index.push(KIND_DEDUP);
+                            put_uvarint(&mut self.index, n);
+                            put_uvarint(&mut self.index, target);
+                            self.deduped += n;
+                        } else {
+                            seen.insert(digest, *stored);
+                            *stored += 1;
+                            self.index.push(KIND_SOLID);
+                            put_uvarint(&mut self.index, n);
+                            packer.push(bytes);
+                        }
                     }
-                    self.group.extend_from_slice(bytes);
-                    self.group_chunks += 1;
+                    Sink::Store { writer, last, used } => {
+                        let id = writer.add(digest[..16].try_into().unwrap(), bytes);
+                        if !used.insert(id) {
+                            self.deduped += n;
+                        }
+                        self.index.push(KIND_STORE);
+                        put_uvarint(&mut self.index, n);
+                        put_uvarint(&mut self.index, zigzag(id as i64 - *last as i64));
+                        *last = id;
+                    }
                 }
                 n
             }
@@ -224,45 +281,120 @@ impl Encoder {
         self.record_max = self.record_max.max(length);
     }
 
-    fn close_group(&mut self) {
-        if self.group_chunks > 0 {
-            let group = std::mem::replace(&mut self.group, Vec::with_capacity(self.group_size));
-            self.closed.push((group, self.group_chunks));
-            self.group_chunks = 0;
+    /// Write the groups filled, once there are enough to keep every core
+    /// busy, or with `all` every one.
+    fn flush(&mut self, all: bool) -> Result<()> {
+        match &mut self.sink {
+            Sink::Inline {
+                packer,
+                groups,
+                written,
+                ..
+            } => {
+                for packed in packer.take(all)? {
+                    let group = packed.group;
+                    self.file.write_all(&envelope(
+                        group.codec,
+                        *written,
+                        group.stored_len,
+                        packed.crc,
+                    ))?;
+                    self.file.write_all(&packed.stored)?;
+                    groups.push(group);
+                    *written += group.logical_len;
+                }
+                Ok(())
+            }
+            Sink::Store { writer, .. } => writer.write(all),
         }
     }
 
-    /// Compress and write the groups closed, once there are enough to keep
-    /// every core busy, or all of them at the end.
-    fn write_closed(&mut self, all: bool) -> Result<()> {
-        if self.closed.is_empty() || (!all && self.closed.len() < rayon::current_num_threads()) {
-            return Ok(());
+    /// Write the index, `meta` and the header, then commit the store the
+    /// chunks went to, if any. Returns the ORE's size.
+    fn finish(mut self, mut meta: Meta, options: &Options, logical_hash: [u8; 32]) -> Result<u64> {
+        self.flush(true)?;
+        let mut index = std::mem::take(&mut self.index);
+        let (flags, index_kind) = match &self.sink {
+            Sink::Inline { groups, .. } => {
+                put_uvarint(&mut index, groups.len() as u64);
+                for group in groups {
+                    index.push(group.codec.id());
+                    put_uvarint(&mut index, group.chunks);
+                    put_uvarint(&mut index, group.logical_len);
+                    put_uvarint(&mut index, group.stored_len);
+                }
+                meta.store = None;
+                (REQ_VARIABLE_CHUNKS | REQ_SOLID_GROUPS, INDEX_FLAT)
+            }
+            Sink::Store { writer, .. } => {
+                put_uvarint(&mut index, 0);
+                meta.store = Some(StoreRef {
+                    uuid: writer.uuid().to_vec(),
+                });
+                (REQ_VARIABLE_CHUNKS | REQ_LIBRARY, INDEX_LIBRARY)
+            }
+        };
+        let params = Params {
+            codec: options.codec,
+            group: options.profile.group_size() as u64,
+            level: match options.codec {
+                Codec::Zstd => ZSTD_LEVEL as u32,
+                Codec::Lzma2 => LZMA2_PRESET,
+            },
+            chunker: Chunker {
+                max: cdc::MAX as u64,
+                min: cdc::MIN as u64,
+                name: "mincdc-hash4".into(),
+            },
+        };
+        let params_digest: [u8; 8] = blake3::hash(&to_cbor(&params)).as_bytes()[..8]
+            .try_into()
+            .unwrap();
+        meta.provenance = Provenance {
+            tool: concat!("ore-rs ", env!("CARGO_PKG_VERSION")).into(),
+            params,
+        };
+
+        let mut file = self.file;
+        let index_offset = file.stream_position()?;
+        file.write_all(&index)?;
+        let meta_bytes = to_cbor(&meta);
+        let meta_offset = index_offset + index.len() as u64;
+        file.write_all(&meta_bytes)?;
+        let header = Header {
+            flags_required: flags,
+            profile: options.profile.id(),
+            media_class: MEDIA_DVD_2048,
+            index_kind,
+            logical_size: meta.media.size,
+            chunk_max: self.record_max as u32,
+            chunk_count: u32::try_from(self.records)
+                .map_err(|_| Error::Unsupported("more than 2^32 index records".into()))?,
+            object_count: 1,
+            index_offset,
+            index_len: index.len() as u64,
+            index_crc: crc32c::crc32c(&index),
+            meta_offset,
+            meta_len: meta_bytes.len() as u32,
+            meta_crc: crc32c::crc32c(&meta_bytes),
+            logical_hash,
+            params_digest,
+            ..Header::default()
+        };
+        file.seek(SeekFrom::Start(0))?;
+        file.write_all(&header.write())?;
+        file.into_inner().map_err(|e| e.into_error())?.sync_all()?;
+        // The store is committed once the ORE naming its chunks is whole
+        if let Sink::Store {
+            mut writer, used, ..
+        } = self.sink
+        {
+            for id in used {
+                writer.reference(id);
+            }
+            writer.commit()?;
         }
-        let (codec, group_size) = (self.codec, self.group_size);
-        let compressed: Vec<(Vec<u8>, u32)> = self
-            .closed
-            .par_iter()
-            .map(|(data, _)| {
-                Ok((
-                    codec::compress(codec, data, group_size)?,
-                    crc32c::crc32c(data),
-                ))
-            })
-            .collect::<Result<_>>()?;
-        for ((data, chunks), (stored, crc)) in self.closed.drain(..).zip(compressed) {
-            let stored_len = stored.len() as u64;
-            self.file
-                .write_all(&envelope(codec, self.written, stored_len, crc))?;
-            self.file.write_all(&stored)?;
-            self.groups.push(Group {
-                codec,
-                chunks,
-                logical_len: data.len() as u64,
-                stored_len,
-            });
-            self.written += data.len() as u64;
-        }
-        Ok(())
+        Ok(meta_offset + meta_bytes.len() as u64)
     }
 }
 
@@ -277,6 +409,32 @@ pub fn compress(
     keys: &[Key],
     progress: &mut dyn FnMut(u64),
 ) -> Result<Stats> {
+    encode(input, output, options, keys, None, progress)
+}
+
+/// Like [`compress`], but the disc's chunks go to the store at `store`, and
+/// `output` is a thin ORE naming them there. The store is made with
+/// [`create_store`](super::create_store); a game finds it again as the
+/// nearest `.ore-store` up from its folder.
+pub fn compress_to_store(
+    input: &Path,
+    output: &Path,
+    store: &Path,
+    options: &Options,
+    keys: &[Key],
+    progress: &mut dyn FnMut(u64),
+) -> Result<Stats> {
+    encode(input, output, options, keys, Some(store), progress)
+}
+
+fn encode(
+    input: &Path,
+    output: &Path,
+    options: &Options,
+    keys: &[Key],
+    store: Option<&Path>,
+    progress: &mut dyn FnMut(u64),
+) -> Result<Stats> {
     let mut iso = Iso::open(input)?;
     let size = iso.size();
     let Some(mut volume) = Volume::new(&mut iso, keys)? else {
@@ -287,26 +445,10 @@ pub fn compress(
     let plans = plan(&mut iso, &mut volume)?;
     let part = io::part(output);
     let result = (|| {
-        let mut file = BufWriter::with_capacity(8 << 20, File::create(&part)?);
-        file.write_all(&[0; HEADER_LEN])?;
-        let mut encoder = Encoder {
-            file,
-            codec: options.codec,
-            group_size: options.profile.group_size(),
-            index: Vec::new(),
-            records: 0,
-            record_max: 0,
-            seen: HashMap::new(),
-            stored: 0,
-            group: Vec::with_capacity(options.profile.group_size()),
-            group_chunks: 0,
-            closed: Vec::new(),
-            groups: Vec::new(),
-            written: 0,
-            padding: 0,
-            zeros: 0,
-            deduped: 0,
-        };
+        let store = store
+            .map(|dir| StoreWriter::open(dir, options.codec, options.profile.group_size()))
+            .transpose()?;
+        let mut encoder = Encoder::new(&part, options, store)?;
         let mut hashes = Hashes::default();
         let mut areas = Vec::new();
         let mut exception_count = 0;
@@ -327,7 +469,7 @@ pub fn compress(
                         iso.read_at(plan.start + at, buf)?;
                         hashes.update(buf);
                         segmenter.feed(buf, at, fs, &mut |run| encoder.push(run));
-                        encoder.write_closed(false)?;
+                        encoder.flush(false)?;
                         progress(length as u64);
                         at += length as u64;
                     }
@@ -349,7 +491,7 @@ pub fn compress(
                         segmenter.feed(&data, group * GROUP_DATA_SIZE, fs, &mut |run| {
                             encoder.push(run)
                         });
-                        encoder.write_closed(false)?;
+                        encoder.flush(false)?;
                         progress(raw.len() as u64);
                     }
                     segmenter.finish(&mut |run| encoder.push(run));
@@ -365,38 +507,7 @@ pub fn compress(
                 exceptions,
             });
         }
-        encoder.close_group();
-        encoder.write_closed(true)?;
 
-        // The index: records, then the group table
-        let mut index = std::mem::take(&mut encoder.index);
-        put_uvarint(&mut index, encoder.groups.len() as u64);
-        for group in &encoder.groups {
-            index.push(group.codec.id());
-            put_uvarint(&mut index, group.chunks);
-            put_uvarint(&mut index, group.logical_len);
-            put_uvarint(&mut index, group.stored_len);
-        }
-        let mut file = encoder.file;
-        let index_offset = file.stream_position()?;
-        file.write_all(&index)?;
-
-        let params = Params {
-            codec: options.codec,
-            group: options.profile.group_size() as u64,
-            level: match options.codec {
-                Codec::Zstd => ZSTD_LEVEL as u32,
-                Codec::Lzma2 => LZMA2_PRESET,
-            },
-            chunker: Chunker {
-                max: cdc::MAX as u64,
-                min: cdc::MIN as u64,
-                name: "mincdc-hash4".into(),
-            },
-        };
-        let params_digest: [u8; 8] = blake3::hash(&to_cbor(&params)).as_bytes()[..8]
-            .try_into()
-            .unwrap();
         let Hashes {
             crc32,
             md5,
@@ -425,6 +536,7 @@ pub fn compress(
                 class: MEDIA_DVD_2048,
                 platform: if wii { "wii" } else { "gamecube" }.into(),
             },
+            store: None,
             ledger,
             identity: vec![
                 identity("blake3-256", logical_hash.to_vec()),
@@ -432,42 +544,85 @@ pub fn compress(
                 identity("md5", md5.finalize().to_vec()),
                 identity("crc-32", crc32.finalize().to_be_bytes().to_vec()),
             ],
+            // Filled in as the ORE is finished
             provenance: Provenance {
-                tool: concat!("ore-rs ", env!("CARGO_PKG_VERSION")).into(),
-                params,
+                tool: String::new(),
+                params: Params {
+                    codec: options.codec,
+                    group: 0,
+                    level: 0,
+                    chunker: Chunker {
+                        max: 0,
+                        min: 0,
+                        name: String::new(),
+                    },
+                },
             },
         };
-        let meta = to_cbor(&meta);
-        let meta_offset = index_offset + index.len() as u64;
-        file.write_all(&meta)?;
-        let output_size = meta_offset + meta.len() as u64;
-
-        let header = Header {
-            flags_required: REQ_VARIABLE_CHUNKS | REQ_SOLID_GROUPS,
-            profile: options.profile.id(),
-            media_class: MEDIA_DVD_2048,
-            logical_size: size,
-            chunk_max: encoder.record_max as u32,
-            chunk_count: u32::try_from(encoder.records)
-                .map_err(|_| Error::Unsupported("more than 2^32 index records".into()))?,
-            object_count: 1,
-            index_offset,
-            index_len: index.len() as u64,
-            index_crc: crc32c::crc32c(&index),
-            meta_offset,
-            meta_len: meta.len() as u32,
-            meta_crc: crc32c::crc32c(&meta),
-            logical_hash,
-            params_digest,
-            ..Header::default()
-        };
-        file.seek(SeekFrom::Start(0))?;
-        file.write_all(&header.write())?;
-        let file = file.into_inner().map_err(|e| e.into_error())?;
-        file.sync_all()?;
         Ok(Stats {
             input_size: size,
-            output_size,
+            output_size: encoder.finish(meta, options, logical_hash)?,
+        })
+    })();
+    io::finish(&part, output, result)
+}
+
+/// Move the ORE at `input`'s chunks into the store at `store`, writing a
+/// thin ORE naming them there to `output`. Its disc, hashes and metadata
+/// stay as they are; chunks the store lacks are compressed as `options` say.
+pub fn attach(
+    input: &Path,
+    output: &Path,
+    store: &Path,
+    options: &Options,
+    progress: &mut dyn FnMut(u64),
+) -> Result<Stats> {
+    rewrite(input, output, Some(store), options, progress)
+}
+
+/// Write the ORE at `input`, thin or not, to `output` as a standalone ORE
+/// holding its chunks itself, compressed as `options` say: what exporting a
+/// game from a store takes.
+pub fn detach(
+    input: &Path,
+    output: &Path,
+    options: &Options,
+    progress: &mut dyn FnMut(u64),
+) -> Result<Stats> {
+    rewrite(input, output, None, options, progress)
+}
+
+/// Write an ORE again record for record, its chunks to `store` or inline.
+fn rewrite(
+    input: &Path,
+    output: &Path,
+    store: Option<&Path>,
+    options: &Options,
+    progress: &mut dyn FnMut(u64),
+) -> Result<Stats> {
+    let input_size = std::fs::metadata(input)?.len();
+    let mut reader = Reader::open(input)?;
+    let part = io::part(output);
+    let result = (|| {
+        let store = store
+            .map(|dir| StoreWriter::open(dir, options.codec, options.profile.group_size()))
+            .transpose()?;
+        let mut encoder = Encoder::new(&part, options, store)?;
+        let size = reader.size();
+        let mut reported = 0;
+        reader.runs(&mut |run, done| {
+            encoder.push(run);
+            encoder.flush(false)?;
+            // Scale the progress through the disc to the file
+            let consumed = (done as u128 * input_size as u128 / size as u128) as u64;
+            progress(consumed - reported);
+            reported = consumed;
+            Ok(())
+        })?;
+        let (meta, logical_hash) = (reader.meta.clone(), reader.header.logical_hash);
+        Ok(Stats {
+            input_size,
+            output_size: encoder.finish(meta, options, logical_hash)?,
         })
     })();
     io::finish(&part, output, result)
