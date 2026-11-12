@@ -182,6 +182,33 @@ pub struct Setting {
     pub system_id: Option<i64>,
 }
 
+/// How a clone list title's search term finds games
+#[derive(Clone, Copy, FromPrimitive, Eq, PartialEq)]
+#[repr(i8)]
+pub enum CloneListNameType {
+    /// The title `INFER_CLONES` groups games by
+    Short = 0,
+    /// The full name
+    Full = 1,
+    /// A regex searched in the name, ignoring case
+    Regex = 2,
+}
+
+/// A title of a clone list group, or one of its filters: when the game's
+/// regions and languages include all those listed and its name matches the
+/// pattern, the filter's group and priority apply instead of the title's
+#[derive(FromRow)]
+pub struct CloneListTitle {
+    pub id: i64,
+    pub group_name: String,
+    pub search_term: String,
+    pub name_type: i64,
+    pub priority: i64,
+    pub match_regions: Option<String>,
+    pub match_languages: Option<String>,
+    pub match_string: Option<String>,
+}
+
 #[derive(Deserialize)]
 pub struct ProfileXml {
     #[serde(alias = "datfile")]
@@ -328,4 +355,62 @@ pub struct Irdfile {
     pub regions_hashes: Vec<String>,
     pub files_count: usize,
     pub files_hashes: HashMap<u64, String>,
+}
+
+/// A Retool clone list, of which `import-clone-lists` reads the groups' titles
+/// and supersets
+#[derive(Deserialize)]
+pub struct CloneListJson {
+    pub description: CloneListDescriptionJson,
+    #[serde(default)]
+    pub variants: Vec<CloneListVariantJson>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CloneListDescriptionJson {
+    pub name: String,
+    pub last_updated: String,
+}
+
+#[derive(Deserialize)]
+pub struct CloneListVariantJson {
+    pub group: String,
+    #[serde(default)]
+    pub titles: Vec<CloneListVariantTitleJson>,
+    #[serde(default)]
+    pub supersets: Vec<CloneListVariantTitleJson>,
+    #[serde(default)]
+    pub compilations: Vec<serde_json::Value>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CloneListVariantTitleJson {
+    pub search_term: String,
+    pub name_type: Option<String>,
+    pub priority: Option<i64>,
+    #[serde(default)]
+    pub filters: Vec<CloneListFilterJson>,
+}
+
+#[derive(Deserialize)]
+pub struct CloneListFilterJson {
+    pub conditions: CloneListConditionsJson,
+    pub results: CloneListResultsJson,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CloneListConditionsJson {
+    pub match_regions: Option<Vec<String>>,
+    pub match_languages: Option<Vec<String>>,
+    pub match_string: Option<String>,
+    pub region_order: Option<serde_json::Value>,
+}
+
+#[derive(Deserialize)]
+pub struct CloneListResultsJson {
+    pub group: Option<String>,
+    pub priority: Option<i64>,
 }

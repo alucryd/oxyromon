@@ -1,0 +1,65 @@
+{
+	"description": {
+		"name": "Test System (Clone Lists) (Redump)",
+		"lastUpdated": "2026-11-11 00:00:00",
+		"minimumVersion": "2.4.8"
+	},
+	"variants": [
+		{
+			"group": "Another Game",
+			"titles": [
+				{"searchTerm": "Another Game (Premium Box)"},
+				{"searchTerm": "Another Game", "priority": 2}
+			]
+		},
+		{
+			"group": "First Game",
+			"titles": [
+				{"searchTerm": "First Game", "filters": [{"conditions": {"matchRegions": ["Japan"]}, "results": {"group": "First Game (Japan)"}}]}
+			]
+		},
+		{
+			"group": "Fishing Game",
+			"titles": [
+				{"searchTerm": "Fishing Game"}
+			]
+		},
+		{
+			"group": "Fishing Game (Doukon Pack)",
+			"titles": [
+				{"searchTerm": "Fishing Game (Doukon Pack)"}
+			]
+		},
+		{
+			"group": "Sequel Game",
+			"titles": [
+				{"searchTerm": "Sequel Game", "filters": [{"conditions": {"matchRegions": ["Japan"]}, "results": {"group": "First Game"}}]}
+			],
+			"compilations": [
+				{"searchTerm": "First Game & Sequel Game", "titlePosition": 2}
+			]
+		},
+		{
+			"group": "Test Game",
+			"titles": [
+				{"searchTerm": "Test Game"},
+				{"searchTerm": "Testjuego.*", "nameType": "regex"},
+				{"searchTerm": "Testspiel (Germany)", "nameType": "full"},
+				{"searchTerm": "Test Game", "nameType": "regionFree"}
+			]
+		},
+		{
+			"group": "Word Game",
+			"titles": [
+				{"searchTerm": "Word Game", "filters": [
+					{"conditions": {"matchLanguages": ["En"]}, "results": {"group": "Word Game (English)"}},
+					{"conditions": {"matchString": "Rev 1"}, "results": {"group": "Word Game (Rev 1)"}},
+					{"conditions": {"regionOrder": {"higherRegions": ["Germany"], "lowerRegions": ["USA"]}}, "results": {"priority": 2}},
+					{"conditions": {"matchString": "Rev ("}, "results": {"priority": 2}},
+					{"conditions": {"matchRegions": ["Germany"]}, "results": {}}
+				]},
+				{"searchTerm": "Word Game (", "nameType": "regex"}
+			]
+		}
+	]
+}

@@ -1,0 +1,110 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT clone_list_titles.id, group_name, search_term, name_type, priority, match_regions, match_languages, match_string\n        FROM clone_list_titles\n        JOIN clone_lists ON clone_lists.id = clone_list_titles.clone_list_id\n        WHERE clone_lists.system_id = ?\n        ORDER BY clone_list_titles.id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "clone_list_titles",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "group_name",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "clone_list_titles",
+            "name": "group_name"
+          }
+        }
+      },
+      {
+        "name": "search_term",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "clone_list_titles",
+            "name": "search_term"
+          }
+        }
+      },
+      {
+        "name": "name_type",
+        "ordinal": 3,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "clone_list_titles",
+            "name": "name_type"
+          }
+        }
+      },
+      {
+        "name": "priority",
+        "ordinal": 4,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "clone_list_titles",
+            "name": "priority"
+          }
+        }
+      },
+      {
+        "name": "match_regions",
+        "ordinal": 5,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "clone_list_titles",
+            "name": "match_regions"
+          }
+        }
+      },
+      {
+        "name": "match_languages",
+        "ordinal": 6,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "clone_list_titles",
+            "name": "match_languages"
+          }
+        }
+      },
+      {
+        "name": "match_string",
+        "ordinal": 7,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "clone_list_titles",
+            "name": "match_string"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "f8dae84b0173d024ada5932477f73973cf3d6c0502eb0011f3e41f44f6027b34"
+}

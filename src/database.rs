@@ -2780,6 +2780,124 @@ pub async fn find_patches_by_rom_id(connection: &mut SqliteConnection, rom_id: i
     .unwrap_or_else(|_| panic!("Error while finding patches with rom id {}", rom_id))
 }
 
+pub async fn create_clone_list(
+    connection: &mut SqliteConnection,
+    name: &str,
+    version: &str,
+    system_id: i64,
+) -> i64 {
+    sqlx::query!(
+        "
+        INSERT INTO clone_lists (name, version, system_id)
+        VALUES (?, ?, ?)
+        ",
+        name,
+        version,
+        system_id,
+    )
+    .execute(connection)
+    .await
+    .expect("Error while creating clone list")
+    .last_insert_rowid()
+}
+
+pub async fn find_clone_list_version_by_system_id(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+) -> Option<String> {
+    sqlx::query_scalar!(
+        "
+        SELECT version
+        FROM clone_lists
+        WHERE system_id = ?
+        ",
+        system_id,
+    )
+    .fetch_optional(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding clone list with system id {}",
+            system_id
+        )
+    })
+}
+
+pub async fn delete_clone_list_by_system_id(connection: &mut SqliteConnection, system_id: i64) {
+    sqlx::query!(
+        "
+        DELETE FROM clone_lists
+        WHERE system_id = ?
+        ",
+        system_id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while deleting clone list with system id {}",
+            system_id
+        )
+    });
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn create_clone_list_title(
+    connection: &mut SqliteConnection,
+    group_name: &str,
+    search_term: &str,
+    name_type: CloneListNameType,
+    priority: i64,
+    match_regions: Option<&str>,
+    match_languages: Option<&str>,
+    match_string: Option<&str>,
+    clone_list_id: i64,
+) {
+    let name_type = name_type as i8;
+    sqlx::query!(
+        "
+        INSERT INTO clone_list_titles (group_name, search_term, name_type, priority, match_regions, match_languages, match_string, clone_list_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ",
+        group_name,
+        search_term,
+        name_type,
+        priority,
+        match_regions,
+        match_languages,
+        match_string,
+        clone_list_id,
+    )
+    .execute(connection)
+    .await
+    .expect("Error while creating clone list title");
+}
+
+pub async fn find_clone_list_titles_by_system_id(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+) -> Vec<CloneListTitle> {
+    sqlx::query_as!(
+        CloneListTitle,
+        "
+        SELECT clone_list_titles.id, group_name, search_term, name_type, priority, match_regions, match_languages, match_string
+        FROM clone_list_titles
+        JOIN clone_lists ON clone_lists.id = clone_list_titles.clone_list_id
+        WHERE clone_lists.system_id = ?
+        ORDER BY clone_list_titles.id
+        ",
+        system_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding clone list titles with system id {}",
+            system_id
+        )
+    })
+}
+
 pub async fn create_romfile(
     connection: &mut SqliteConnection,
     path: &str,

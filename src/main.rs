@@ -17,6 +17,7 @@ mod download_dats;
 mod export_roms;
 mod gdi;
 mod generate_playlists;
+mod import_clone_lists;
 mod import_dats;
 mod import_irds;
 mod import_keys;
@@ -77,6 +78,7 @@ async fn main() -> Result<()> {
         import_irds::subcommand(),
         import_patches::subcommand(),
         import_keys::subcommand(),
+        import_clone_lists::subcommand(),
         import_roms::subcommand(),
         purge_games::subcommand(),
         purge_irds::subcommand(),
@@ -158,6 +160,9 @@ async fn main() -> Result<()> {
                     import_patches::main(connection, sub_matches, &progress_bar).await?
                 }
                 "import-keys" => import_keys::main(connection, sub_matches, &progress_bar).await?,
+                "import-clone-lists" => {
+                    import_clone_lists::main(connection, sub_matches, &progress_bar).await?
+                }
                 "import-roms" => import_roms::main(connection, sub_matches, &progress_bar).await?,
                 "sort-roms" => sort_roms::main(connection, sub_matches, &progress_bar).await?,
                 "convert-roms" => {
