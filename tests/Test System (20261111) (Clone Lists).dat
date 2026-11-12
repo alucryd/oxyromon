@@ -75,4 +75,22 @@
 		<rom name="Testspiel (Germany).rom" size="256" crc="84508afc"
 			md5="889512906c2c9a38c7b9fb231cd953d0" sha1="ecc75605477b486c77655bcd9059ae7df6aa3fcb" />
 	</game>
+	<game name="Word Game (Germany)">
+		<category>Games</category>
+		<description>Word Game (Germany)</description>
+		<rom name="Word Game (Germany).rom" size="256" crc="15ff2638"
+			md5="c4a989acc59b4e511bb7cf48cd5ade77" sha1="17b2a78458442e72fc65be0b839159beca55eeb4" />
+	</game>
+	<game name="Word Game (Germany) (En,De)">
+		<category>Games</category>
+		<description>Word Game (Germany) (En,De)</description>
+		<rom name="Word Game (Germany) (En,De).rom" size="256" crc="a5b9cab8"
+			md5="56a7d1cdefe94af21c469d20d743f9eb" sha1="1049e97960c7802e6063cdf1d16a9923a9533f86" />
+	</game>
+	<game name="Word Game (Germany) (Rev 1)">
+		<category>Games</category>
+		<description>Word Game (Germany) (Rev 1)</description>
+		<rom name="Word Game (Germany) (Rev 1).rom" size="256" crc="a7e6b672"
+			md5="c0002cccef17f6b694307afcee06af57" sha1="9a9e762203c91fb59f7ee245a99d440b83a91c9f" />
+	</game>
 </datafile>

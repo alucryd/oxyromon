@@ -75,7 +75,7 @@ async fn test() {
 
     // then
     let games = find_games_by_system_id(&mut connection, system.id).await;
-    assert_eq!(11, games.len());
+    assert_eq!(14, games.len());
 
     let sortings: Vec<(&str, i64)> = games
         .iter()
@@ -108,6 +108,11 @@ async fn test() {
             ("Test Game (USA)", Sorting::OneRegion as i64),
             ("Testjuego (Spain)", Sorting::Ignored as i64),
             ("Testspiel (Germany)", Sorting::Ignored as i64),
+            // the English release and the revision are games of their own, by
+            // their languages and by their names
+            ("Word Game (Germany)", Sorting::OneRegion as i64),
+            ("Word Game (Germany) (En,De)", Sorting::OneRegion as i64),
+            ("Word Game (Germany) (Rev 1)", Sorting::OneRegion as i64),
         ]
     );
 }

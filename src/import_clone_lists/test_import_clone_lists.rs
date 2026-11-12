@@ -4,6 +4,17 @@ use super::*;
 use std::io::Write;
 use tempfile::{NamedTempFile, TempDir};
 
+/// A stored title: its group, search term, name type, priority and conditions
+type CloneListTitleRow<'a> = (
+    &'a str,
+    &'a str,
+    i64,
+    i64,
+    Option<&'a str>,
+    Option<&'a str>,
+    Option<&'a str>,
+);
+
 #[tokio::test]
 async fn test() {
     // given
@@ -48,10 +59,12 @@ async fn test() {
         Some("2026-11-11 00:00:00")
     );
 
-    // each filter comes before its title; the compilation and the region-free
-    // title are skipped
+    // each filter comes before its title; the compilation, the region-free
+    // title and the title whose regex doesn't compile are skipped, and so are
+    // the filters that need a region order, change nothing or have a pattern
+    // that doesn't compile
     let titles = find_clone_list_titles_by_system_id(&mut connection, system.id).await;
-    let titles: Vec<(&str, &str, i64, i64, Option<&str>)> = titles
+    let titles: Vec<CloneListTitleRow> = titles
         .iter()
         .map(|title| {
             (
@@ -60,29 +73,68 @@ async fn test() {
                 title.name_type,
                 title.priority,
                 title.match_regions.as_deref(),
+                title.match_languages.as_deref(),
+                title.match_string.as_deref(),
             )
         })
         .collect();
     assert_eq!(
         titles,
         vec![
-            ("Another Game", "Another Game (Premium Box)", 0, 1, None),
-            ("Another Game", "Another Game", 0, 2, None),
-            ("First Game (Japan)", "First Game", 0, 1, Some("Japan")),
-            ("First Game", "First Game", 0, 1, None),
-            ("Fishing Game", "Fishing Game", 0, 1, None),
+            (
+                "Another Game",
+                "Another Game (Premium Box)",
+                0,
+                1,
+                None,
+                None,
+                None
+            ),
+            ("Another Game", "Another Game", 0, 2, None, None, None),
+            (
+                "First Game (Japan)",
+                "First Game",
+                0,
+                1,
+                Some("Japan"),
+                None,
+                None
+            ),
+            ("First Game", "First Game", 0, 1, None, None, None),
+            ("Fishing Game", "Fishing Game", 0, 1, None, None, None),
             (
                 "Fishing Game (Doukon Pack)",
                 "Fishing Game (Doukon Pack)",
                 0,
                 1,
+                None,
+                None,
                 None
             ),
-            ("First Game", "Sequel Game", 0, 1, Some("Japan")),
-            ("Sequel Game", "Sequel Game", 0, 1, None),
-            ("Test Game", "Test Game", 0, 1, None),
-            ("Test Game", "Testjuego.*", 2, 1, None),
-            ("Test Game", "Testspiel (Germany)", 1, 1, None),
+            ("First Game", "Sequel Game", 0, 1, Some("Japan"), None, None),
+            ("Sequel Game", "Sequel Game", 0, 1, None, None, None),
+            ("Test Game", "Test Game", 0, 1, None, None, None),
+            ("Test Game", "Testjuego.*", 2, 1, None, None, None),
+            ("Test Game", "Testspiel (Germany)", 1, 1, None, None, None),
+            (
+                "Word Game (English)",
+                "Word Game",
+                0,
+                1,
+                None,
+                Some("En"),
+                None
+            ),
+            (
+                "Word Game (Rev 1)",
+                "Word Game",
+                0,
+                1,
+                None,
+                None,
+                Some("Rev 1")
+            ),
+            ("Word Game", "Word Game", 0, 1, None, None, None),
         ]
     );
 
@@ -108,7 +160,7 @@ async fn test() {
         find_clone_list_titles_by_system_id(&mut connection, system.id)
             .await
             .len(),
-        11
+        14
     );
 
     // when it's forced

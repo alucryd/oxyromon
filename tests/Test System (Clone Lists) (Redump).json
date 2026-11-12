@@ -47,6 +47,19 @@
 				{"searchTerm": "Testspiel (Germany)", "nameType": "full"},
 				{"searchTerm": "Test Game", "nameType": "regionFree"}
 			]
+		},
+		{
+			"group": "Word Game",
+			"titles": [
+				{"searchTerm": "Word Game", "filters": [
+					{"conditions": {"matchLanguages": ["En"]}, "results": {"group": "Word Game (English)"}},
+					{"conditions": {"matchString": "Rev 1"}, "results": {"group": "Word Game (Rev 1)"}},
+					{"conditions": {"regionOrder": {"higherRegions": ["Germany"], "lowerRegions": ["USA"]}}, "results": {"priority": 2}},
+					{"conditions": {"matchString": "Rev ("}, "results": {"priority": 2}},
+					{"conditions": {"matchRegions": ["Germany"]}, "results": {}}
+				]},
+				{"searchTerm": "Word Game (", "nameType": "regex"}
+			]
 		}
 	]
 }
