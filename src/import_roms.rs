@@ -1313,7 +1313,11 @@ async fn import_archive(
                 "Extracted {} of {} file(s), left \"{}\" in place",
                 extracted_count,
                 romfiles_count,
-                romfile.path.file_name().unwrap().to_str().unwrap()
+                romfile
+                    .path
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
             ),
         );
     }

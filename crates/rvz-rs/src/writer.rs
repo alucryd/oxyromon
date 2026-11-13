@@ -75,13 +75,20 @@ impl Stats {
     }
 }
 
-/// Whether a chunk size is one RVZ allows.
+/// The largest chunk read or written. RVZ allows any multiple of a group, but
+/// a reader allocates a chunk at a time, and Dolphin offers 2 MiB at most.
+// ponytail: 32 MiB ceiling, raise it if a real dump ever uses larger chunks
+pub const MAX_CHUNK_SIZE: u64 = 16 * GROUP_TOTAL_SIZE;
+
+/// Whether a chunk size is one RVZ allows, up to [`MAX_CHUNK_SIZE`].
 pub fn is_valid_chunk_size(chunk_size: u32) -> bool {
     let chunk_size = chunk_size as u64;
     (chunk_size >= BLOCK_TOTAL_SIZE
         && chunk_size.is_power_of_two()
         && chunk_size <= GROUP_TOTAL_SIZE)
-        || (chunk_size > 0 && chunk_size.is_multiple_of(GROUP_TOTAL_SIZE))
+        || (chunk_size > 0
+            && chunk_size.is_multiple_of(GROUP_TOTAL_SIZE)
+            && chunk_size <= MAX_CHUNK_SIZE)
 }
 
 /// Whether `path` is an RVZ, by its magic.

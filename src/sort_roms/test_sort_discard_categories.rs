@@ -24,7 +24,7 @@ async fn test() {
 
     let matches = import_dats::subcommand().get_matches_from([
         "import-dats",
-        "tests/Test System (20261109) (Categories).dat",
+        "tests/Test System (20261109) (Parent-Clone) (Categories).dat",
     ]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await

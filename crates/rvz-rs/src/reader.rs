@@ -108,12 +108,12 @@ impl Reader {
         {
             return Err(corrupt("bad compressor data"));
         }
-        let chunk_size = header_2.chunk_size as u64;
-        if (chunk_size < BLOCK_TOTAL_SIZE || !chunk_size.is_power_of_two())
-            && !chunk_size.is_multiple_of(GROUP_TOTAL_SIZE)
-        {
+        // Also bounds the allocation of a chunk, which a crafted header could
+        // otherwise make gigabytes long
+        if !crate::writer::is_valid_chunk_size(header_2.chunk_size) {
             return Err(corrupt("bad chunk size"));
         }
+        let chunk_size = header_2.chunk_size as u64;
         let compression = Compression::from_id(header_2.compression_type).ok_or_else(|| {
             Error::Unsupported(format!("compression method {}", header_2.compression_type))
         })?;

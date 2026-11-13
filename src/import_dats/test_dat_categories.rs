@@ -20,7 +20,7 @@ async fn test() {
     let tmp_directory = TempDir::new_in(test_directory).unwrap();
     set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
-    let dat_path = test_directory.join("Test System (20261109) (Categories).dat");
+    let dat_path = test_directory.join("Test System (20261109) (Parent-Clone) (Categories).dat");
     let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
 
     // when

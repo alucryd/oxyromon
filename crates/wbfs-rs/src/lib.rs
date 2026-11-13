@@ -257,7 +257,9 @@ pub fn extract(input: &Path, output: &Path, progress: &mut dyn FnMut(u64)) -> Re
     let result = (|| {
         let mut file = File::create(&part)?;
         progress(block_size);
-        let mut buf = vec![0; block_size as usize];
+        // Sized at the first stored block, which the table check bounds by
+        // the file's size: a header alone cannot make it gigabytes long
+        let mut buf = Vec::new();
         for (block, &stored) in table.iter().enumerate() {
             let offset = block as u64 * block_size;
             if offset >= output_size {
@@ -266,6 +268,7 @@ pub fn extract(input: &Path, output: &Path, progress: &mut dyn FnMut(u64)) -> Re
             // What is not stored is left a hole, which reads as zeros
             if stored != 0 {
                 let length = block_size.min(output_size - offset) as usize;
+                buf.resize(block_size as usize, 0);
                 read_exact_at(&source, &mut buf, stored * block_size)?;
                 file.seek(SeekFrom::Start(offset))?;
                 file.write_all(&buf[..length])?;

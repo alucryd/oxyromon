@@ -174,7 +174,7 @@ These environment variables change where things go:
 | `CHD_HD_COMPRESSION_ALGORITHMS`   | Up to 4 CHD codecs for hard disks: `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd`                        | auto      |
 | `CHD_LD_HUNK_SIZE`                | CHD hunk size in bytes for LaserDiscs, `16` to `1048576`                                                 | auto      |
 | `CHD_LD_COMPRESSION_ALGORITHMS`   | CHD codecs for LaserDiscs: `none`, `avhu`                                                                | auto      |
-| `RVZ_BLOCK_SIZE`                  | RVZ block size in KiB, `32` to `2048`                                                                    | `128`     |
+| `RVZ_BLOCK_SIZE`                  | RVZ block size in KiB, `32` to `2048`, rounded up to a power of two                                      | `128`     |
 | `RVZ_COMPRESSION_ALGORITHM`       | RVZ codec: `none`, `zstd`, `bzip2`, `lzma`, `lzma2`                                                      | `zstd`    |
 | `RVZ_COMPRESSION_LEVEL`           | RVZ level, `1` to `22` for zstd and `1` to `9` otherwise                                                 | `5`       |
 | `SEVENZIP_COMPRESSION_ALGORITHM`  | 7Z codec: `lzma2` or `zstd`                                                                              | `lzma2`   |

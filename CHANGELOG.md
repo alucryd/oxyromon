@@ -26,6 +26,7 @@
 
 - `-s` now means `--system` in every command with that option but `config`: `check-roms --size` has no short form any more, and `import-irds` and `purge-irds` gain `-s`
 - RVZ support now comes from the new rvz-rs crate, a port of Dolphin's RVZ code, instead of `dolphin-tool`; its CLI (`rvzrs`) ships in the release archives too
+- `RVZ_BLOCK_SIZE` is rounded up to a power of two, the only sizes up to 2 MiB that RVZ allows
 - WBFS support now comes from the new wbfs-rs crate, a port of wit, instead of `wit`, and exports from RVZ without decoding an ISO; its CLI (`wbfsrs`) ships in the release archives too
 - The `nod` feature is gone
 - Compressing a Wii ISO to RVZ or WBFS needs the Wii common key, which `import-keys` takes from a Wii's or a Wii U's `otp.bin` or BootMii's `keys.bin`
