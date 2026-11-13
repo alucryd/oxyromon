@@ -57,7 +57,7 @@ fn cli() -> Command {
             Arg::new("block")
                 .short('b')
                 .long("block")
-                .help("Block size in bytes: a power of two from 32 KiB to 2 MiB, or a multiple of 2 MiB")
+                .help("Block size in bytes: a power of two from 32 KiB to 2 MiB, or a multiple of 2 MiB up to 32 MiB")
                 .value_parser(value_parser!(u32))
                 .default_value("131072"),
         )

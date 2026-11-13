@@ -238,8 +238,8 @@ fn options(algorithm: &RvzCompressionAlgorithm, level: usize, block_size: usize)
     Options {
         compression,
         level: (level as i32).clamp(*levels.start(), *levels.end()),
-        // The setting is in KiB, rvz-rs wants bytes
-        chunk_size: (block_size * 1024) as u32,
+        // The setting is in KiB, rvz-rs wants bytes and a power of two
+        chunk_size: (block_size.next_power_of_two() * 1024) as u32,
         scrub: false,
     }
 }

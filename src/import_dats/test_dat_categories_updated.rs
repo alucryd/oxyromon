@@ -22,7 +22,7 @@ async fn test() {
 
     for dat_name in [
         "Test System (20200721) (Parent-Clone).dat",
-        "Test System (20261109) (Categories).dat",
+        "Test System (20261109) (Parent-Clone) (Categories).dat",
     ] {
         let dat_path = test_directory.join(dat_name);
         let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();

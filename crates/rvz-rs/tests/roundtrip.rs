@@ -289,3 +289,51 @@ fn refuses_a_bad_chunk_size() {
         );
     }
 }
+
+/// Rewrite both header hashes, so a change to the second header is only
+/// caught by what checks its fields.
+fn rehash(rvz: &mut [u8]) {
+    use sha1::{Digest, Sha1};
+    let header_2_size = u32::from_be_bytes(rvz[12..16].try_into().unwrap()) as usize;
+    let hash = Sha1::digest(&rvz[0x48..0x48 + header_2_size]);
+    rvz[16..36].copy_from_slice(&hash);
+    let hash = Sha1::digest(&rvz[..52]);
+    rvz[52..72].copy_from_slice(&hash);
+}
+
+#[test]
+fn refuses_a_damaged_rvz() {
+    let dir = TempDir::new().unwrap();
+    let damaged = dir.path().join("damaged.rvz");
+    let back = dir.path().join("back.iso");
+    let good = round_trip(
+        dir.path(),
+        &gamecube_disc(0x580000),
+        &options(Compression::Zstd, 5, 0x20000),
+        &[],
+    );
+    let refused = |bytes: &[u8]| {
+        write(&damaged, bytes);
+        let error = rvz_rs::decompress(&damaged, &back, &mut |_| {}).unwrap_err();
+        assert!(matches!(error, Error::Corrupt(_)), "{error}");
+        assert!(!back.exists());
+    };
+
+    // Cut short
+    refused(&good[..good.len() - 0x200]);
+
+    // Either header flipped
+    for offset in [0x20, 0x48 + 0x20] {
+        let mut bad = good.clone();
+        bad[offset] ^= 0xFF;
+        refused(&bad);
+    }
+
+    // A chunk size no RVZ has, or one too large to allocate, behind valid hashes
+    for chunk_size in [0u32, 0x30000, 0x8000_0000] {
+        let mut bad = good.clone();
+        bad[0x48 + 12..0x48 + 16].copy_from_slice(&chunk_size.to_be_bytes());
+        rehash(&mut bad);
+        refused(&bad);
+    }
+}

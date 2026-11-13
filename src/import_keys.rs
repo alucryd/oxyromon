@@ -85,7 +85,7 @@ fn import_keys(
                     .with_context(|| format!("Failed to read \"{}\"", path.display()));
             }
             (Err(_), Err(_)) => bail!(
-                "Failed to read \"{}\": expected Cemu's keys.txt, a Wii U's or a Wii's otp.bin, or BootMii's keys.bin",
+                "Failed to read \"{}\": expected Cemu's keys.txt, a Wii U's or a Wii's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys",
                 path.display()
             ),
             (wiiu, wii) => wiiu
@@ -97,7 +97,10 @@ fn import_keys(
         if found.is_empty() {
             print_warning(
                 progress_bar,
-                &format!("No keys found in \"{}\"", path.display()),
+                &format!(
+                    "No keys found in \"{}\": expected Cemu's keys.txt, a Wii U's or a Wii's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys",
+                    path.display()
+                ),
             );
         }
         keys.extend(found);

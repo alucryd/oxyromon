@@ -4,6 +4,8 @@
 use std::collections::BTreeMap;
 
 const ENTRY_SIZE: usize = 12;
+/// How deep directories nest, far beyond any real disc's.
+const MAX_DEPTH: u32 = 256;
 
 /// What no file system should exceed: more than a Wii's whole RAM.
 pub const MAX_SIZE: u64 = 128 * 1024 * 1024;
@@ -40,7 +42,7 @@ impl FileSystem {
         if fs.fst.last() != Some(&0) {
             return None;
         }
-        if !fs.is_valid(0, 0) {
+        if !fs.is_valid(0, 0, 0) {
             return None;
         }
         for index in 0..fs.entries {
@@ -77,7 +79,12 @@ impl FileSystem {
         }
     }
 
-    fn is_valid(&self, index: u32, parent: u32) -> bool {
+    /// `depth` bounds the recursion, which a crafted chain of directories
+    /// could otherwise take as deep as the table is long.
+    fn is_valid(&self, index: u32, parent: u32, depth: u32) -> bool {
+        if depth > MAX_DEPTH {
+            return false;
+        }
         let name_offset =
             ENTRY_SIZE as u64 * self.entries as u64 + (self.get(index, 0) & 0xFFFFFF) as u64;
         if name_offset >= self.fst.len() as u64 {
@@ -93,7 +100,7 @@ impl FileSystem {
             }
             let mut child = index + 1;
             while child < size {
-                if !self.is_valid(child, index) {
+                if !self.is_valid(child, index, depth + 1) {
                     return false;
                 }
                 child = self.next_index(child);
