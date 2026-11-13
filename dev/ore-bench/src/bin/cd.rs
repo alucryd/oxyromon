@@ -573,13 +573,64 @@ fn sbi(paths: &[PathBuf]) -> Result<()> {
     Ok(())
 }
 
+/// Each disc's Form 2 sectors marked audio, as `OUT/<disc>.xa`: a sector's
+/// subheader, 4 bytes, then its 2324 bytes of data. A row a disc: its Form 2
+/// sectors by what their submode says they are.
+fn xa(scratch: &Path, out: &Path, chds: &[PathBuf]) -> Result<()> {
+    fs::create_dir_all(out)?;
+    println!(
+        "disc\tsectors\tform2\tform2_audio\tform2_video\tform2_data\tform2_other\taudio_4bit\taudio_stereo"
+    );
+    for chd in chds {
+        let disc = name(chd);
+        eprintln!("{disc}");
+        let (cue, _) = extract(chd, scratch)?;
+        let split = split(&cue)?;
+        let mut counts = [0u64; 7];
+        let mut dump = Vec::new();
+        for (i, &kind) in split.kinds_of.iter().enumerate() {
+            counts[0] += 1;
+            if !matches!(kind, Kind::Form2 | Kind::Form2NoEdc) {
+                continue;
+            }
+            counts[1] += 1;
+            let raw = &split.raw[i * SECTOR..][..SECTOR];
+            let (submode, coding) = (raw[18], raw[19]);
+            let class = match () {
+                _ if submode & 0x04 != 0 => 2,
+                _ if submode & 0x02 != 0 => 3,
+                _ if submode & 0x08 != 0 => 4,
+                _ => 5,
+            };
+            counts[class] += 1;
+            if class == 2 {
+                counts[6] += u64::from(coding & 0x30 == 0);
+                dump.extend_from_slice(&raw[16..20]);
+                dump.extend_from_slice(&raw[24..24 + 2324]);
+            }
+        }
+        let stereo = dump.chunks(2328).filter(|s| s[3] & 3 == 1).count();
+        print!("{disc}");
+        for count in counts {
+            print!("\t{count}");
+        }
+        println!("\t{stereo}");
+        fs::write(out.join(format!("{disc}.xa")), dump)?;
+        fs::remove_dir_all(scratch)?;
+    }
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let paths = |from: usize| args[from..].iter().map(PathBuf::from).collect::<Vec<_>>();
     match args.first().map(String::as_str) {
         Some("data") if args.len() > 2 => data(Path::new(&args[1]), &paths(2)),
         Some("audio") if args.len() > 2 => audio(Path::new(&args[1]), &paths(2)),
+        Some("xa") if args.len() > 3 => xa(Path::new(&args[1]), Path::new(&args[2]), &paths(3)),
         Some("sbi") => sbi(&paths(1)),
-        _ => bail!("usage: cd data|audio SCRATCH <CHD>... | cd sbi <SBI>..."),
+        _ => bail!(
+            "usage: cd data|audio SCRATCH <CHD>... | cd xa SCRATCH OUT <CHD>... | cd sbi <SBI>..."
+        ),
     }
 }

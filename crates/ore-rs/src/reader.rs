@@ -36,9 +36,11 @@ enum Record {
     Store(u64),
 }
 
-/// What [`Reader::runs`] gives: an area starting, or a run of it.
+/// What [`Reader::runs`] gives: an area starting, a CD data track's XA
+/// plane starting, or a run.
 pub(super) enum Event<'a> {
     Area(AreaKind),
+    Xa,
     Run(Run<'a>),
 }
 
@@ -238,7 +240,7 @@ impl Reader {
             };
             let stored_len = match area.kind {
                 AreaKind::Raw | AreaKind::CdAudio => area.len,
-                AreaKind::CdData => map.as_ref().unwrap().data_len(),
+                AreaKind::CdData => map.as_ref().unwrap().stored_len(),
                 AreaKind::WiiPartition => {
                     if !area.len.is_multiple_of(BLOCK_TOTAL_SIZE) {
                         return Err(corrupt("a partition of partial blocks"));
@@ -471,11 +473,18 @@ impl Reader {
                 (area.start, area.len, *area.starts.last().unwrap())
             };
             emit(Event::Area(self.areas[area].kind), start)?;
+            let xa = self.areas[area].map.as_ref().map(|map| map.plane_len());
             for record in 0..self.areas[area].records.len() {
                 let (from, to) = {
                     let starts = &self.areas[area].starts;
                     (starts[record], starts[record + 1])
                 };
+                if xa == Some(from) {
+                    emit(
+                        Event::Xa,
+                        start + (from as u128 * len as u128 / stored as u128) as u64,
+                    )?;
+                }
                 let length = to - from;
                 let done = start + (to as u128 * len as u128 / stored as u128) as u64;
                 match self.areas[area].records[record].clone() {
@@ -637,15 +646,20 @@ impl Reader {
         };
         let first = (within / SECTOR as u64) as usize;
         let end = (within + buf.len() as u64).div_ceil(SECTOR as u64) as usize;
-        let range = map.data_range(first..end);
-        let mut data = vec![0; (range.end - range.start) as usize];
-        self.read_stored(area, range.start, &mut data)?;
+        // The sectors' bytes in each plane, read in one go each
+        let ranges = map.ranges(first..end);
+        let mut planes = [Vec::new(), Vec::new()];
+        for (plane, range) in planes.iter_mut().zip(&ranges) {
+            plane.resize((range.end - range.start) as usize, 0);
+            self.read_stored(area, range.start, plane)?;
+        }
         let mut sector = [0; SECTOR];
         let mut out = 0;
         for i in first..end {
-            let at = map.data_range(i..i + 1);
-            let from = (at.start - range.start) as usize..(at.end - range.start) as usize;
-            map.rebuild(i, frame + i as u32, &data[from], &mut sector);
+            let (plane, at) = map.at(i);
+            let from = ranges[plane].start;
+            let data = &planes[plane][(at.start - from) as usize..(at.end - from) as usize];
+            map.rebuild(i, frame + i as u32, data, &mut sector);
             // The part of the sector the read covers
             let start = (within + out as u64 - (i * SECTOR) as u64) as usize;
             let length = (SECTOR - start).min(buf.len() - out);

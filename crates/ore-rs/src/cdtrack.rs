@@ -5,9 +5,21 @@
 //! subheader's two copies differ; then, for a sector with a subheader, its
 //! first copy, and its second when it differs. The map is Zstandard
 //! compressed in the area's metadata, a few KB a disc.
+//!
+//! The stream is two planes: the data of every sector but the XA ADPCM
+//! ones, in order; then the XA ADPCM sectors, in order, each a record of
+//! its subheader and its data, as the `xa` codec takes them.
+
+use std::ops::Range;
 
 use super::cd::sector::{self, Kind, SECTOR};
 use super::error::{Error, Result};
+use super::xa;
+
+/// Whether a sector goes in the XA plane: Form 2, XA ADPCM.
+pub fn is_xa(kind: Kind, subheader: &[u8]) -> bool {
+    matches!(kind, Kind::Form2 | Kind::Form2NoEdc) && xa::is_adpcm(subheader)
+}
 
 const DIFFERS: u8 = 0x80;
 
@@ -17,9 +29,11 @@ const DIFFERS: u8 = 0x80;
 pub struct SectorMap {
     kinds: Vec<Kind>,
     subheaders: Vec<[u8; 8]>,
-    /// Where each sector's data starts in the stream, and where the last
-    /// ends.
+    /// Where each sector's data starts in the first plane, or would, and
+    /// where the last ends: its length.
     starts: Vec<u64>,
+    /// How many XA sectors come before each, and in all.
+    xa_before: Vec<u64>,
 }
 
 /// The map being written, a sector at a time.
@@ -65,9 +79,10 @@ impl SectorMap {
             kinds: Vec::with_capacity(sectors as usize),
             subheaders: Vec::with_capacity(sectors as usize),
             starts: Vec::with_capacity(sectors as usize + 1),
+            xa_before: Vec::with_capacity(sectors as usize + 1),
         };
         let mut at = 0;
-        let mut start = 0;
+        let (mut start, mut xa_before) = (0, 0);
         while at < bytes.len() {
             let byte = bytes[at];
             at += 1;
@@ -89,23 +104,49 @@ impl SectorMap {
             map.kinds.push(kind);
             map.subheaders.push(subheader);
             map.starts.push(start);
-            start += kind.data_len() as u64;
+            map.xa_before.push(xa_before);
+            if is_xa(kind, &subheader) {
+                xa_before += 1;
+            } else {
+                start += kind.data_len() as u64;
+            }
         }
         map.starts.push(start);
+        map.xa_before.push(xa_before);
         if map.kinds.len() as u64 != sectors {
             return Err(corrupt("not a sector a sector"));
         }
         Ok(map)
     }
 
-    /// The length of the track's stream.
-    pub fn data_len(&self) -> u64 {
+    /// The length of the first plane, where the XA plane starts.
+    pub fn plane_len(&self) -> u64 {
         *self.starts.last().unwrap()
     }
 
-    /// Where the data of sectors `range` lies in the stream.
-    pub fn data_range(&self, sectors: std::ops::Range<usize>) -> std::ops::Range<u64> {
-        self.starts[sectors.start]..self.starts[sectors.end]
+    /// The length of the track's stream.
+    pub fn stored_len(&self) -> u64 {
+        self.plane_len() + *self.xa_before.last().unwrap() * xa::RECORD as u64
+    }
+
+    /// Where the stored bytes of sectors `sectors` lie in the stream: in
+    /// the first plane, and in the XA plane.
+    pub fn ranges(&self, sectors: Range<usize>) -> [Range<u64>; 2] {
+        let xa = |i: usize| self.plane_len() + self.xa_before[i] * xa::RECORD as u64;
+        [
+            self.starts[sectors.start]..self.starts[sectors.end],
+            xa(sectors.start)..xa(sectors.end),
+        ]
+    }
+
+    /// Where sector `i`'s data lies in the stream, and in which plane.
+    pub fn at(&self, i: usize) -> (usize, Range<u64>) {
+        let [plane, xa] = self.ranges(i..i + 1);
+        if xa.is_empty() {
+            (0, plane)
+        } else {
+            (1, xa.start + 4..xa.end)
+        }
     }
 
     /// Rebuild sector `i` of the track, `frame` frames from 00:00:00, from
@@ -142,16 +183,27 @@ mod tests {
         sectors.push((weird, weird.to_vec()));
 
         let mut writer = MapWriter::default();
-        let mut stream = Vec::new();
+        let (mut stream, mut xa_plane) = (Vec::new(), Vec::new());
         for (i, (raw, data)) in sectors.iter().enumerate() {
             let kind = writer.push(raw, LEAD_IN + i as u32);
             assert_eq!(&raw[sector::data_range(kind)], &data[..]);
-            stream.extend_from_slice(data);
+            if is_xa(kind, &raw[16..20]) {
+                xa_plane.extend_from_slice(&raw[16..20]);
+                xa_plane.extend_from_slice(data);
+            } else {
+                stream.extend_from_slice(data);
+            }
         }
+        assert_eq!(
+            xa_plane.len(),
+            2 * xa::RECORD,
+            "the two Form 2 sectors are XA"
+        );
+        stream.extend_from_slice(&xa_plane);
         let map = SectorMap::read(&writer.finish(), sectors.len() as u64).unwrap();
-        assert_eq!(map.data_len(), stream.len() as u64);
+        assert_eq!(map.stored_len(), stream.len() as u64);
         for (i, (raw, _)) in sectors.iter().enumerate() {
-            let range = map.data_range(i..i + 1);
+            let (_, range) = map.at(i);
             let mut out = [0; SECTOR];
             map.rebuild(
                 i,

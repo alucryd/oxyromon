@@ -9,6 +9,7 @@ use rusty_flac::{Encoder, FrameDecoder, StreamInfo};
 
 use super::error::{Error, Result};
 use super::format::Codec;
+use super::xa;
 
 pub const ZSTD_LEVEL: i32 = 19;
 pub const LZMA2_PRESET: u32 = 9;
@@ -23,6 +24,21 @@ const FLAC_CONTAINER: usize = 8 + 34;
 /// The window or dictionary for a group of at most `group` bytes.
 fn window_log(group: usize) -> u32 {
     group.next_power_of_two().max(4096).trailing_zeros()
+}
+
+/// The zstd level that tries whether a group meant for `xa` is XA
+/// ADPCM at all.
+const PROBE_LEVEL: i32 = 3;
+
+/// Compress a group with `codec`, or, for `xa`, with Zstandard when a
+/// quick try of it does better: some discs flag data as XA audio. Returns
+/// the codec used.
+pub fn compress_best(codec: Codec, data: &[u8], group: usize) -> Result<(Codec, Vec<u8>)> {
+    let stored = compress(codec, data, group)?;
+    if codec == Codec::Xa && zstd::bulk::compress(data, PROBE_LEVEL)?.len() < stored.len() {
+        return Ok((Codec::Zstd, compress(Codec::Zstd, data, group)?));
+    }
+    Ok((codec, stored))
 }
 
 pub fn compress(codec: Codec, data: &[u8], group: usize) -> Result<Vec<u8>> {
@@ -41,6 +57,7 @@ pub fn compress(codec: Codec, data: &[u8], group: usize) -> Result<Vec<u8>> {
             Ok(writer.finish()?)
         }
         Codec::Flac => flac_encode(data),
+        Codec::Xa => Ok(xa::encode(data)),
     }
 }
 
@@ -112,6 +129,7 @@ pub fn decompress(codec: Codec, data: &[u8], length: usize) -> Result<Vec<u8>> {
             out
         }
         Codec::Flac => flac_decode(data, length)?,
+        Codec::Xa => xa::decode(data, length),
     };
     if out.len() != length {
         return Err(Error::Corrupt(format!(

@@ -224,6 +224,8 @@ fn a_cd_records_each_files_hashes_and_reads_anywhere() {
     for (at, len) in [
         (0, 10),
         (SECTOR * 99 + 7, SECTOR * 3),
+        // Form 1 into XA, from one plane into the other
+        (SECTOR * 198 + 5, SECTOR * 5),
         (SECTOR * 598, SECTOR * 5),
         (stream.len() - 9, 9),
     ] {

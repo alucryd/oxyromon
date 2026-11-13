@@ -51,6 +51,7 @@ mod reader;
 mod segment;
 mod store;
 mod writer;
+mod xa;
 
 use gcwii::{crypto, disc, error, fst, io, keys, lfg, wii};
 

@@ -54,6 +54,9 @@ pub enum Codec {
     /// FLAC, level 8, for CD audio: a group is its PCM, 16-bit stereo at
     /// 44.1 kHz, in frames of 4,704 samples, 8 sectors.
     Flac,
+    /// XA ADPCM, for CD-ROM XA audio sectors: a group is records of a
+    /// sector's subheader and data, coded as `xa.rs` says.
+    Xa,
 }
 
 impl Codec {
@@ -62,6 +65,7 @@ impl Codec {
             Self::Zstd => 2,
             Self::Lzma2 => 8,
             Self::Flac => 6,
+            Self::Xa => 9,
         }
     }
 
@@ -70,6 +74,7 @@ impl Codec {
             2 => Ok(Self::Zstd),
             8 => Ok(Self::Lzma2),
             6 => Ok(Self::Flac),
+            9 => Ok(Self::Xa),
             _ => Err(Error::Unsupported(format!("codec {id}"))),
         }
     }

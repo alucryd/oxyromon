@@ -13,7 +13,7 @@ use sha1::{Digest, Sha1};
 use super::cd::cue::{self, Mode};
 use super::cd::sector::{LEAD_IN, SECTOR, data_range};
 use super::cdc;
-use super::cdtrack::MapWriter;
+use super::cdtrack::{MapWriter, is_xa};
 use super::codec::{FLAC_LEVEL, LZMA2_PRESET, ZSTD_LEVEL};
 use super::crypto::Key;
 use super::disc::{Iso, PARTITION_DATA_SIZE, Platform, Source, Volume};
@@ -29,6 +29,7 @@ use super::wii::{
     self, BLOCK_DATA_SIZE, BLOCK_TOTAL_SIZE, BLOCKS_PER_GROUP, BlockData, GROUP_DATA_SIZE,
     GROUP_TOTAL_SIZE, HashBlock,
 };
+use super::xa;
 
 /// How an ORE is written.
 #[derive(Clone, Copy, Debug, Default)]
@@ -361,6 +362,7 @@ impl Encoder {
                 Codec::Zstd => ZSTD_LEVEL as u32,
                 Codec::Lzma2 => LZMA2_PRESET,
                 Codec::Flac => FLAC_LEVEL,
+                Codec::Xa => 0,
             },
             chunker: Chunker {
                 max: cdc::MAX as u64,
@@ -657,6 +659,7 @@ fn rewrite(
                 } else {
                     options.codec
                 })?,
+                Event::Xa => encoder.set_codec(Codec::Xa)?,
                 Event::Run(run) => {
                     encoder.push(run);
                     encoder.flush(false)?;
@@ -785,6 +788,8 @@ fn encode_cd(
             let mut map = MapWriter::default();
             let mut cutter = Cutter::default();
             let mut plane = Vec::new();
+            // The XA sectors, by number, stored after the rest
+            let mut xa_sectors = Vec::new();
             let mut at = 0;
             while at < len {
                 let length = (len - at).min(buf.len() as u64) as usize;
@@ -807,7 +812,11 @@ fn encode_cd(
                         let kind = map.push(raw, frame + sector_at + i as u32);
                         let range = data_range(kind);
                         generated += (SECTOR - range.len()) as u64;
-                        plane.extend_from_slice(&raw[range]);
+                        if is_xa(kind, &raw[16..20]) {
+                            xa_sectors.push(sector_at + i as u32);
+                        } else {
+                            plane.extend_from_slice(&raw[range]);
+                        }
                     }
                     cutter.feed(&plane, &mut |run| encoder.push(run));
                 }
@@ -816,6 +825,10 @@ fn encode_cd(
                 at += length as u64;
             }
             cutter.finish(&mut |run| encoder.push(run));
+            if !xa_sectors.is_empty() {
+                encoder.set_codec(Codec::Xa)?;
+                push_xa(&mut encoder, &file, &xa_sectors, &mut buf)?;
+            }
             let name = file_name(&track.file);
             let Hashes {
                 crc32, md5, sha1, ..
@@ -899,6 +912,37 @@ fn encode_cd(
         })
     })();
     io::finish(&part, output, result)
+}
+
+/// The most XA records in a chunk, 37 KB.
+const XA_CHUNK: usize = 16;
+
+/// The XA plane of a data track, read again from `file`: the sectors
+/// `sectors`, each a record of its subheader and data, cut into chunks
+/// after any record whose CRC-32C is a multiple of 8, so that a run of
+/// sectors another disc holds is the same chunks there.
+fn push_xa(encoder: &mut Encoder, file: &File, sectors: &[u32], buf: &mut [u8]) -> Result<()> {
+    let window = (buf.len() / SECTOR) as u32;
+    let mut chunk = Vec::with_capacity(XA_CHUNK * xa::RECORD);
+    for run in sectors.chunk_by(|a, b| a / window == b / window) {
+        let first = run[0] / window * window;
+        let length = (run.last().unwrap() + 1 - first) as usize * SECTOR;
+        io::read_exact_at(file, &mut buf[..length], first as u64 * SECTOR as u64)?;
+        for &i in run {
+            let raw = &buf[(i - first) as usize * SECTOR..][..SECTOR];
+            let record = [&raw[16..20], &raw[24..24 + xa::RECORD - 4]].concat();
+            chunk.extend_from_slice(&record);
+            if chunk.len() == XA_CHUNK * xa::RECORD || crc32c::crc32c(&record).is_multiple_of(8) {
+                encoder.push(Run::Chunk(&chunk));
+                chunk.clear();
+            }
+        }
+        encoder.flush(false)?;
+    }
+    if !chunk.is_empty() {
+        encoder.push(Run::Chunk(&chunk));
+    }
+    Ok(())
 }
 
 /// A file's CRC-32, MD5 and SHA-1, as a DAT lists them, by its name.

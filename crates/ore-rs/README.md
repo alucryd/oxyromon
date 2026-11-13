@@ -63,13 +63,19 @@ ore_rs::decompress(ore, Path::new("out/Game (Europe).cue"), &mut |_| {}).unwrap(
   generated rather than stored, a sector that does not fit the standard
   exactly kept whole; what is left, its subheader and 2048 or 2324 bytes
   of data, is cut and deduped as a disc image's bytes are.
+- **XA audio coded as XA**: each 4-bit sample of a Form 2 XA ADPCM sector
+  range coded against what a predictor of the decoded channel expects of
+  it, 12.7% under Zstandard, losslessly; a group Zstandard does better on,
+  data a disc flags as audio, is stored with Zstandard.
 - **Audio in FLAC**, in frames of 8 sectors, each chunk of 8 sectors stored
   once: a track another disc holds costs nothing in a store.
 - **Each file's hashes**: every track, the cue sheet and the SBI are
   recorded under their names, as a DAT lists them.
 - On the maintainer's PlayStation library, 10-15% smaller than its CHDs a
   disc, 26-29% in a store
-  ([results](../../formats/results/2026-11-13-ps1/README.md)).
+  ([results](../../formats/results/2026-11-13-ps1/README.md)), before XA's
+  coder took about 3.4 points more
+  ([results](../../formats/results/2026-11-13-xa/README.md)).
 
 ## A store
 
@@ -171,7 +177,8 @@ and a segment cut short. `tests/cd.rs` builds a CD of every kind of
 sector PlayStation discs hold, subheader copies that differ and a sector
 nothing generates among them, with two audio tracks and an SBI, and
 round-trips it as its files, alone and through a store, detached,
-attached and purged. On real discs, 11 of the maintainer's PlayStation
+attached and purged, its XA sectors through the `xa` codec, which
+`src/xa.rs` also round-trips on arbitrary bytes. On real discs, 11 of the maintainer's PlayStation
 library come back with every track and cue sheet matching the Redump DAT
 ([results](../../formats/results/2026-11-13-ps1/README.md#ore-rs)). The
 chunker is checked against
@@ -196,6 +203,9 @@ The padding generator and its seed recovery are Dolphin's, by the
 gcwii. MinCDC is Orson Peters's [algorithm](https://github.com/orlp/mincdc).
 The CD ECC is MAME's, through oxyROMon's `cd` crate, under BSD-3-Clause.
 FLAC is [rusty_flac](https://crates.io/crates/rusty_flac)'s.
+The XA ADPCM decoder `xa` models is as Martin Korth's
+[psx-spx](https://problemkaputt.de/psxspx-cdrom-xa-audio-adpcm-compression.htm)
+documents it; its range coder is LZMA's.
 Reed-Solomon coding is
 [reed-solomon-erasure](https://crates.io/crates/reed-solomon-erasure)'s.
 

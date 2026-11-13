@@ -82,7 +82,7 @@ impl Packer {
         std::mem::take(&mut self.closed)
             .into_par_iter()
             .map(|(data, chunks)| {
-                let stored = codec::compress(codec, &data, group_size)?;
+                let (codec, stored) = codec::compress_best(codec, &data, group_size)?;
                 Ok(Packed {
                     group: Group {
                         codec,
