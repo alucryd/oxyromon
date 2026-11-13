@@ -621,6 +621,101 @@ fn xa(scratch: &Path, out: &Path, chds: &[PathBuf]) -> Result<()> {
     Ok(())
 }
 
+/// A disc's video sectors of one header: how many, their data, and how
+/// many of their frames' first chunks are each BS version.
+type Found = (u64, Vec<u8>, [u64; 5]);
+
+/// What a video sector's header says it is, as jpsxdec identifies them: a
+/// StStatus of 0160h and a plausible chunk and frame, or Final Fantasy
+/// VIII's `SMJ\1`. Its magic, and, for a frame's first chunk of the
+/// standard header, its BS version.
+fn video(data: &[u8]) -> Option<(u32, Option<u16>)> {
+    let u16_at = |at: usize| u16::from_le_bytes([data[at], data[at + 1]]);
+    let u32_at = |at: usize| u32::from_le_bytes(data[at..at + 4].try_into().unwrap());
+    if data.starts_with(b"SMJ\x01") {
+        return Some((u32_at(0), None));
+    }
+    let (magic, chunk, chunks, frame) = (u32_at(0), u16_at(4), u16_at(6), u32_at(8));
+    // 0160h, but not FF9's audio
+    if magic & 0xFFFF != 0x0160 || magic == 0x0008_0160 || chunks == 0 || chunks > 64 {
+        return None;
+    }
+    if chunk >= chunks || frame == 0 || frame > 1_000_000 {
+        return None;
+    }
+    let version = (chunk == 0 && u16_at(0x16) == 0x3800).then(|| u16_at(0x1A));
+    Some((magic, version))
+}
+
+/// Each disc's video sectors: how many, of which header and BS version,
+/// what of the data plane, XA aside, they are, and what Zstandard makes of
+/// them in 1 MiB groups, as ORE stores them now. A row a disc and header.
+/// With `STR_DUMP` set, each disc's Form 1 video sectors' data also goes
+/// to `STR_DUMP/<disc>.str`, for `str` to read.
+fn str_video(scratch: &Path, chds: &[PathBuf]) -> Result<()> {
+    let dump_dir = std::env::var_os("STR_DUMP").map(PathBuf::from);
+    println!("disc\tplane\tmagic\tform2\tsectors\tbytes\tzstd\tframes\tv0\tv1\tv2\tv3\tother");
+    for chd in chds {
+        let disc = name(chd);
+        eprintln!("{disc}");
+        let (cue, _) = extract(chd, scratch)?;
+        let split = split(&cue)?;
+        let mut plane = 0u64;
+        // By magic and form: sectors, data, versions of first chunks
+        let mut found: std::collections::BTreeMap<(u32, bool), Found> = Default::default();
+        let mut dump = Vec::new();
+        for (i, &kind) in split.kinds_of.iter().enumerate() {
+            let raw = &split.raw[i * SECTOR..][..SECTOR];
+            let form2 = matches!(kind, Kind::Form2 | Kind::Form2NoEdc);
+            if form2 && raw[18] & 0x04 != 0 && raw[19] & 0x30 == 0 {
+                continue;
+            }
+            let data = &split.data[split.starts[i]..][..kind.data_len()];
+            plane += data.len() as u64;
+            if !matches!(
+                kind,
+                Kind::Form1 | Kind::Mode1 | Kind::Form2 | Kind::Form2NoEdc
+            ) {
+                continue;
+            }
+            if let Some((magic, version)) = video(data) {
+                if !form2 && dump_dir.is_some() {
+                    dump.extend_from_slice(data);
+                }
+                let entry = found.entry((magic, form2)).or_default();
+                entry.0 += 1;
+                entry.1.extend_from_slice(data);
+                if let Some(version) = version {
+                    entry.2[(version as usize).min(4)] += 1;
+                }
+            }
+        }
+        for ((magic, form2), (sectors, bytes, versions)) in &found {
+            let zstd = packed(bytes.chunks(2048), Codec::Zstd(MIB));
+            let frames: u64 = versions.iter().sum();
+            print!(
+                "{disc}\t{plane}\t{magic:08x}\t{form2}\t{sectors}\t{}\t{zstd}\t{frames}",
+                bytes.len()
+            );
+            for count in versions {
+                print!("\t{count}");
+            }
+            println!();
+        }
+        if found.is_empty() {
+            println!("{disc}\t{plane}\t\t\t0\t0\t0\t0\t0\t0\t0\t0\t0");
+        }
+        if let Some(dir) = &dump_dir
+            && !dump.is_empty()
+        {
+            fs::create_dir_all(dir)?;
+            fs::write(dir.join(format!("{disc}.str")), &dump)?;
+        }
+        fs::remove_dir_all(scratch)?;
+    }
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let paths = |from: usize| args[from..].iter().map(PathBuf::from).collect::<Vec<_>>();
@@ -628,9 +723,10 @@ fn main() -> Result<()> {
         Some("data") if args.len() > 2 => data(Path::new(&args[1]), &paths(2)),
         Some("audio") if args.len() > 2 => audio(Path::new(&args[1]), &paths(2)),
         Some("xa") if args.len() > 3 => xa(Path::new(&args[1]), Path::new(&args[2]), &paths(3)),
+        Some("str") if args.len() > 2 => str_video(Path::new(&args[1]), &paths(2)),
         Some("sbi") => sbi(&paths(1)),
         _ => bail!(
-            "usage: cd data|audio SCRATCH <CHD>... | cd xa SCRATCH OUT <CHD>... | cd sbi <SBI>..."
+            "usage: cd data|audio SCRATCH <CHD>... | cd xa SCRATCH OUT <CHD>... | cd str SCRATCH <CHD>... | cd sbi <SBI>..."
         ),
     }
 }
