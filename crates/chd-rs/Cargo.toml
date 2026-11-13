@@ -31,7 +31,7 @@ zstd.workspace = true
 crc32fast.workspace = true
 # libm: encoder decisions that do not depend on the platform libm, so a
 # CHD comes out the same bytes on every host
-rusty_flac = { version = "0.2.2", default-features = false, features = ["std", "libm"] }
+rusty_flac = { version = "0.5.0", default-features = false, features = ["std", "libm"] }
 lzma-rust2 = { workspace = true, features = ["encoder", "optimization"] }
 
 [dev-dependencies]
