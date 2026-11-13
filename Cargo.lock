@@ -762,7 +762,7 @@ dependencies = [
  "indicatif",
  "lzma-rust2 0.25.0",
  "rayon",
- "rusty_flac",
+ "rusty_flac 0.5.0",
  "sha1 0.11.0",
  "tempfile",
  "thiserror 2.0.21",
@@ -2938,7 +2938,7 @@ dependencies = [
  "mothcdc",
  "rayon",
  "reed-solomon-erasure",
- "rusty_flac",
+ "rusty_flac 0.2.2",
  "serde",
  "serde_bytes",
  "sha1 0.11.0",
@@ -3977,6 +3977,15 @@ name = "rustversion"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
+
+[[package]]
+name = "rusty_flac"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c92a2a83d47ba867b3b0130da88604aed5e30cad981e2c040c5b37208e796803"
+dependencies = [
+ "libm",
+]
 
 [[package]]
 name = "rusty_flac"
