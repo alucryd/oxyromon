@@ -33,7 +33,7 @@ crc32fast.workspace = true
 lzma-rust2 = { workspace = true, features = ["encoder"] }
 md-5.workspace = true
 reed-solomon-erasure = { version = "6", default-features = false }
-rusty_flac = { version = "0.2.2", default-features = false, features = ["std", "libm"] }
+rusty_flac.workspace = true
 serde = { version = "1", features = ["derive"] }
 serde_bytes = "0.11"
 zstd.workspace = true

@@ -20,11 +20,9 @@ ore_rs::decompress(ore, Path::new("out.iso"), &mut |_| {}).unwrap();
 
 ## The format
 
-The specification is oxyROMon's
-[`formats/design/01-format-spec.md`](../../formats/design/01-format-spec.md),
-and the GameCube and Wii profile this crate writes is
-[`07-gamecube-wii-profile.md`](../../formats/design/07-gamecube-wii-profile.md),
-where every choice below is measured. In short:
+The specification, and the GameCube and Wii profile this crate writes,
+where every choice below is measured, are unpublished while the format is a
+draft. In short:
 
 - **What RVZ does**: Wii partitions stored decrypted and without their
   hashes, those recomputing would not give back kept as exceptions; padding
@@ -45,9 +43,8 @@ where every choice below is measured. In short:
 
 A CD is given as its cue sheet, a BIN a track as Redump lists them, and
 comes back as those files, the cue sheet included, with the SBI of a
-LibCrypt disc when one lies beside the cue sheet under its name. The
-PlayStation profile is
-[`08-playstation-profile.md`](../../formats/design/08-playstation-profile.md).
+LibCrypt disc when one lies beside the cue sheet under its name. Its
+PlayStation profile is unpublished too.
 
 ```rust
 use std::path::Path;
@@ -79,11 +76,8 @@ ore_rs::decompress(ore, Path::new("out/Game (Europe).cue"), &mut |_| {}).unwrap(
 - **Each file's hashes**: every track, the cue sheet and the SBI are
   recorded under their names, as a DAT lists them.
 - On the maintainer's PlayStation library, 10-15% smaller than its CHDs a
-  disc, 26-29% in a store
-  ([results](../../formats/results/2026-11-13-ps1/README.md)), before XA's
-  coder took about 3.4 points more
-  ([results](../../formats/results/2026-11-13-xa/README.md)) and video's
-  about 6.3 more ([results](../../formats/results/2026-11-13-str/README.md)).
+  disc, 26-29% in a store, before XA's coder took about 3.4 points more and
+  video's about 6.3 more.
 
 ## A store
 
@@ -190,8 +184,7 @@ attached and purged, its XA sectors through the `xa` codec, which
 video sectors through the `str` codec, which `src/video.rs` also
 round-trips on frames of BS v2 and v3, Final Fantasy IX's among them,
 frames cut short and noise. On real discs, 11 of the maintainer's PlayStation
-library come back with every track and cue sheet matching the Redump DAT
-([results](../../formats/results/2026-11-13-ps1/README.md#ore-rs)). The
+library come back with every track and cue sheet matching the Redump DAT. The
 chunker is checked against
 [mothcdc](https://crates.io/crates/mothcdc)'s MinCDC, which it is a port of.
 

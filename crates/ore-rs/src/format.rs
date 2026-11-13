@@ -1,6 +1,6 @@
 //! The container: header, chunk envelope, index records and metadata, as
-//! `formats/design/01-format-spec.md` lays them out and
-//! `formats/design/07-gamecube-wii-profile.md` specialises them.
+//! the format specification lays them out and its GameCube and Wii profile
+//! specialises them.
 //!
 //! Integers are big endian; `uvarint` is unsigned LEB128.
 

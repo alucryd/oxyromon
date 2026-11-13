@@ -139,7 +139,8 @@ global `MultiProgress`.
 run (chdman, ctrtool, gdidrop, nsz, Dolphin, wit, xdelta3, Flips, maxcso),
 published on its own and keeping its upstream's license — MIT for `cia-rs`, whose upstream shipped none. `wux-rs`
 follows wudd and Cemu instead, under wudd's GPL-3.0+, and ships no key. `ore-rs`
-is oxyROMon's own format, ORE, specified in `formats/design/`, under GPL-3.0+;
+is oxyROMon's own format, ORE, specified in `formats/design/` (a private
+repository checked out there, ignored by this one), under GPL-3.0+;
 not yet used by oxyromon nor shipped by `dist.sh` while the format is a draft. Every crate follows these, and a new one must too:
 
 - **Library first, CLI behind a default `cli` feature.** oxyromon depends on a

@@ -27,8 +27,8 @@
 //! ore_rs::decompress(ore, Path::new("out.iso"), &mut |_| {}).unwrap();
 //! ```
 //!
-//! The format is specified in oxyROMon's `formats/design/01-format-spec.md`,
-//! and its GameCube and Wii profile in `07-gamecube-wii-profile.md`.
+//! The format's specification and its profiles are unpublished while the
+//! format is a draft.
 
 // The CD-ROM specifics, shared with chd-rs: `src/cd` is a symlink to the cd
 // crate's source, which publishing copies in
