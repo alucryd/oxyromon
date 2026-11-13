@@ -650,8 +650,8 @@ fn video(data: &[u8]) -> Option<(u32, Option<u16>)> {
 /// Each disc's video sectors: how many, of which header and BS version,
 /// what of the data plane, XA aside, they are, and what Zstandard makes of
 /// them in 1 MiB groups, as ORE stores them now. A row a disc and header.
-/// With `STR_DUMP` set, each disc's Form 1 video sectors' data also goes
-/// to `STR_DUMP/<disc>.str`, for `str` to read.
+/// With `STR_DUMP` set, the data of each disc's sectors ore-rs puts in its
+/// video plane also goes to `STR_DUMP/<disc>.str`, for `str` and `video`.
 fn str_video(scratch: &Path, chds: &[PathBuf]) -> Result<()> {
     let dump_dir = std::env::var_os("STR_DUMP").map(PathBuf::from);
     println!("disc\tplane\tmagic\tform2\tsectors\tbytes\tzstd\tframes\tv0\tv1\tv2\tv3\tother");
@@ -679,7 +679,14 @@ fn str_video(scratch: &Path, chds: &[PathBuf]) -> Result<()> {
                 continue;
             }
             if let Some((magic, version)) = video(data) {
-                if !form2 && dump_dir.is_some() {
+                // What ore-rs's video plane holds: Form 1 of the standard
+                // header or SMJ, Form 2 of Final Fantasy IX's
+                let plane = if form2 {
+                    magic == 0x0004_0160
+                } else {
+                    magic == 0x8001_0160 || data.starts_with(b"SMJ\x01")
+                };
+                if plane && dump_dir.is_some() {
                     dump.extend_from_slice(data);
                 }
                 let entry = found.entry((magic, form2)).or_default();

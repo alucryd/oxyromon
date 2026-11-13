@@ -8,7 +8,8 @@
 //!
 //! The stream is three planes: the data of every other sector, in order;
 //! then the data of the STR video sectors, Form 1 sectors of a video
-//! sector header, in order, as the `str` codec takes them; then the XA
+//! sector header and Form 2 ones of Final Fantasy IX's, in order, as the
+//! `str` codec takes them; then the XA
 //! ADPCM sectors, in order, each a record of its subheader and its data,
 //! as the `xa` codec takes them.
 
@@ -68,7 +69,8 @@ impl MapWriter {
     /// kind, and so which of its bytes are its data, and its plane.
     pub fn push(&mut self, raw: &[u8; SECTOR], frame: u32) -> (Kind, Plane) {
         let kind = sector::classify(raw, frame);
-        let plane = if kind == Kind::Form1 && video::is_video(&raw[24..]) {
+        let form2 = matches!(kind, Kind::Form2 | Kind::Form2NoEdc);
+        let plane = if (kind == Kind::Form1 || form2) && video::is_video(&raw[24..], form2) {
             Plane::Video
         } else if is_xa(kind, &raw[16..20]) {
             Plane::Xa
@@ -119,8 +121,8 @@ impl SectorMap {
             at += 1;
             let kind =
                 Kind::from_u8(byte & !(DIFFERS | VIDEO)).ok_or_else(|| corrupt("a bad kind"))?;
-            if byte & VIDEO != 0 && kind != Kind::Form1 {
-                return Err(corrupt("video in a sector not Form 1"));
+            if byte & VIDEO != 0 && !kind.has_subheader() {
+                return Err(corrupt("video in a sector not of Mode 2"));
             }
             let mut subheader = [0; 8];
             if kind.has_subheader() {
@@ -208,6 +210,7 @@ mod tests {
             (Kind::Form2NoEdc, [1, 3, 0x64, 1, 1, 1, 0x64, 1]),
             (Kind::Zero, [0; 8]),
             (Kind::Form1, [0, 0, 8, 0, 0, 0, 8, 0]),
+            (Kind::Form2, [0, 1, 0x68, 0, 0, 1, 0x68, 0]),
         ]
         .into_iter()
         .enumerate()
@@ -215,6 +218,9 @@ mod tests {
             let mut data: Vec<u8> = (0..kind.data_len()).map(|b| (b * 7 + i) as u8).collect();
             if i == 4 {
                 data[..8].copy_from_slice(&[0x60, 1, 1, 0x80, 0, 0, 1, 0]);
+            }
+            if i == 5 {
+                data[..8].copy_from_slice(&[0x60, 1, 4, 0, 2, 0, 10, 0]);
             }
             let mut raw = [0; SECTOR];
             sector::rebuild(kind, LEAD_IN + i as u32, &subheader, &data, &mut raw);
@@ -234,7 +240,11 @@ mod tests {
             }
             planes[plane as usize].extend_from_slice(data);
         }
-        assert_eq!(planes[1].len(), 2048, "the second Form 1 sector is video");
+        assert_eq!(
+            planes[1].len(),
+            2048 + 2324,
+            "the second Form 1 sector and the third Form 2 are video"
+        );
         assert_eq!(
             planes[2].len(),
             2 * xa::RECORD,

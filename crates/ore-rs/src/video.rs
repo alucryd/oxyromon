@@ -1,7 +1,9 @@
 //! STR video sectors, coded losslessly: the `str` codec.
 //!
-//! A group is Form 1 sectors' data, 2048 bytes each, as a CD data track's
-//! video plane holds them. The sectors of a frame are gathered, its MDEC
+//! A group is video sectors' data, as a CD data track's video plane holds
+//! them: 2048 bytes a Form 1 sector, and 2324 a Form 2 sector of Final
+//! Fantasy IX's, whose frames start in their last sector and run back. The
+//! sectors of a frame are gathered, its MDEC
 //! bitstream (BS v1, v2 or v3) parsed into its codes, and the codes coded
 //! in context: each block first as the same as the block where it lies in
 //! the frame before or not; a block that is not, its DC against the last of
@@ -20,22 +22,46 @@ use std::sync::LazyLock;
 use super::range::{Bit, Coder, Decoder, Encoder};
 
 pub const SECTOR: usize = 2048;
-/// The standard sector header, `80010160`, and Final Fantasy VIII's, `SMJ\1`.
+/// A Form 2 sector's data.
+const FORM2: usize = 2324;
+/// The standard sector header, `80010160`, Final Fantasy VIII's, `SMJ\1`,
+/// and Final Fantasy IX's, `00040160`, of Form 2 sectors.
 const MAGIC: [u8; 4] = 0x8001_0160u32.to_le_bytes();
 const SMJ: &[u8; 4] = b"SMJ\x01";
-const HEADERS: [usize; 2] = [32, 8];
+const FF9: [u8; 4] = 0x0004_0160u32.to_le_bytes();
+const HEADERS: [usize; 3] = [32, 8, 32];
 /// Final Fantasy VII's camera data, before each frame's BS header.
 const CAMERA: usize = 40;
 
-/// Whether a Form 1 sector of this data goes in the video plane.
-pub fn is_video(data: &[u8]) -> bool {
-    data.starts_with(&MAGIC) || data.starts_with(SMJ)
+/// Whether a sector of this data, of Form 2 or not, goes in the video
+/// plane.
+pub fn is_video(data: &[u8], form2: bool) -> bool {
+    if form2 {
+        data.starts_with(&FF9)
+    } else {
+        data.starts_with(&MAGIC) || data.starts_with(SMJ)
+    }
 }
 
-/// Whether a video sector of this data starts a frame: a chunk is cut
-/// before it.
-pub fn starts_frame(data: &[u8]) -> bool {
-    is_video(data) && data[4] == 0 && (data[..4] == *SMJ || data[5] == 0)
+/// The bytes of a video sector's data the plane stores: a Form 2
+/// sector's all.
+pub fn record_len(data: &[u8]) -> usize {
+    if data.starts_with(&FF9) {
+        FORM2
+    } else {
+        SECTOR
+    }
+}
+
+/// The frame a video sector belongs to, by its header and number: a chunk
+/// is cut where it changes.
+pub fn frame_of(data: &[u8]) -> (u32, u32) {
+    let number = if data.starts_with(SMJ) {
+        u16::from_le_bytes([data[6], data[7]]) as u32
+    } else {
+        u32::from_le_bytes(data[8..12].try_into().unwrap())
+    };
+    (u32::from_le_bytes(data[..4].try_into().unwrap()), number)
 }
 
 pub fn encode(data: &[u8]) -> Vec<u8> {
@@ -563,14 +589,15 @@ impl Fields {
 
 /// The models of a group.
 struct Model {
-    kind: [Bit; 4],
+    kind: [Bit; 8],
     count: [Bit; 64],
-    headers: [Fields; 2],
+    headers: [Fields; 3],
     bs_header: Fields,
     raw: [Bit; 256],
     camera: Bit,
     parsed: Bit,
     padding: Bit,
+    fill: [Bit; 256],
     tail: [Bit; 11],
     tail_zero: Bit,
     same: [Bit; 4],
@@ -586,7 +613,7 @@ struct Model {
 impl Model {
     fn new() -> Self {
         Self {
-            kind: [Bit::default(); 4],
+            kind: [Bit::default(); 8],
             count: [Bit::default(); 64],
             headers: HEADERS.map(Fields::new),
             bs_header: Fields::new(8),
@@ -594,6 +621,7 @@ impl Model {
             camera: Bit::default(),
             parsed: Bit::default(),
             padding: Bit::default(),
+            fill: [Bit::default(); 256],
             tail: [Bit::default(); 11],
             tail_zero: Bit::default(),
             same: [Bit::default(); 4],
@@ -831,33 +859,87 @@ fn code_frame(
     Some(())
 }
 
-/// What the sectors from the first of `sectors` hold, as the encoder
-/// finds it: a frame of the standard header (1) or Final Fantasy VIII's
-/// (2), and its sectors; or a sector of neither (0).
-fn frame_at(sectors: &[[u8; SECTOR]]) -> (u32, usize) {
+/// What a group holds from its start, as the encoder finds it: a frame
+/// of the standard header, Final Fantasy VIII's or Final Fantasy IX's, and
+/// its sectors; or a sector of none, of Form 1 or Form 2.
+fn frame_at(data: &[u8]) -> (Item, usize) {
     let u16_at = |s: &[u8], at: usize| u16::from_le_bytes([s[at], s[at + 1]]);
     let u32_at = |s: &[u8], at: usize| u32::from_le_bytes(s[at..at + 4].try_into().unwrap());
-    let s = &sectors[0];
+    let records = |len: usize| data.chunks_exact(len);
+    let s = data;
     // Final Fantasy VIII: `SMJ\1`, the chunk, the chunks, the frame number
     if s.starts_with(SMJ) {
         let frame = u16_at(s, 6);
-        let count = sectors
-            .iter()
-            .take_while(|t| t.starts_with(SMJ) && u16_at(&t[..], 6) == frame)
+        let count = records(SECTOR)
+            .take_while(|t| t.starts_with(SMJ) && u16_at(t, 6) == frame)
             .count();
-        return (2, count);
+        return (Item::Smj, count);
+    }
+    // Final Fantasy IX: the standard header's fields, a frame's video
+    // chunks after its audio, its used size in words
+    if s.starts_with(&FF9) {
+        if s.len() < FORM2 {
+            return (Item::Raw, 1);
+        }
+        let (first, frame) = (u16_at(s, 4) as usize, u32_at(s, 8));
+        let count = records(FORM2)
+            .enumerate()
+            .take_while(|(k, t)| {
+                t.starts_with(&FF9) && u32_at(t, 8) == frame && u16_at(t, 4) as usize == first + k
+            })
+            .count();
+        let used = u32_at(s, 12) as usize * 4;
+        return if (8..=count * (FORM2 - HEADERS[2])).contains(&used) {
+            (Item::Ff9, count)
+        } else {
+            (Item::Raw2, 1)
+        };
     }
     let chunks = u16_at(s, 6) as usize;
     let used = u32_at(s, 12) as usize;
     let frame = s.starts_with(&MAGIC)
         && u16_at(s, 4) == 0
-        && (1..=sectors.len()).contains(&chunks)
+        && (1..=s.len() / SECTOR).contains(&chunks)
         && (8..=chunks * (SECTOR - HEADERS[0])).contains(&used)
-        && (0..chunks).all(|c| {
-            let t = &sectors[c];
+        && records(SECTOR).take(chunks).enumerate().all(|(c, t)| {
             t.starts_with(&MAGIC) && u16_at(t, 4) as usize == c && u32_at(t, 8) == u32_at(s, 8)
         });
-    if frame { (1, chunks) } else { (0, 1) }
+    if frame {
+        (Item::Standard, chunks)
+    } else {
+        (Item::Raw, 1)
+    }
+}
+
+/// What the decoder is told comes next.
+#[derive(Clone, Copy, PartialEq)]
+enum Item {
+    /// A sector of no frame, of Form 1, 2048 bytes.
+    Raw = 0,
+    Standard = 1,
+    Smj = 2,
+    Ff9 = 3,
+    /// A sector of no frame, of Form 2, 2324 bytes.
+    Raw2 = 4,
+}
+
+impl Item {
+    fn from(v: u32) -> Self {
+        match v {
+            1 => Self::Standard,
+            2 => Self::Smj,
+            3 => Self::Ff9,
+            4 => Self::Raw2,
+            _ => Self::Raw,
+        }
+    }
+
+    fn record(self) -> usize {
+        match self {
+            Self::Ff9 | Self::Raw2 => FORM2,
+            _ => SECTOR,
+        }
+    }
 }
 
 /// Code `data`: encoding reads it, decoding writes it. `None` when what is
@@ -865,52 +947,64 @@ fn frame_at(sectors: &[[u8; SECTOR]]) -> (u32, usize) {
 fn code(coder: &mut impl Coder, data: &mut [u8], encoding: bool) -> Option<()> {
     let mut m = Model::new();
     let mut last = Frame::default();
-    let (sectors, rest) = data.as_chunks_mut::<SECTOR>();
-    let mut i = 0;
-    while i < sectors.len() {
-        let (kind, count) = if encoding {
-            frame_at(&sectors[i..])
+    let mut at = 0;
+    while data.len() - at >= SECTOR {
+        let (item, count) = if encoding {
+            frame_at(&data[at..])
         } else {
-            (0, 0)
+            (Item::Raw, 0)
         };
-        let kind = coder.tree(&mut m.kind, 2, kind);
-        if !(1..=2).contains(&kind) {
-            m.raw(coder, &mut sectors[i]);
-            i += 1;
+        let item = Item::from(coder.tree(&mut m.kind, 3, item as u32));
+        let record = item.record();
+        if matches!(item, Item::Raw | Item::Raw2) {
+            let sector = data.get_mut(at..at + record)?;
+            m.raw(coder, sector);
+            at += record;
             continue;
         }
         let count = number(coder, &mut m.count, count as u32) as usize;
-        let frame = sectors.get_mut(i..i + count).filter(|f| !f.is_empty())?;
-        let header = HEADERS[kind as usize - 1];
-        for sector in frame.iter_mut() {
-            m.headers[kind as usize - 1].code(coder, &mut sector[..header]);
+        let frame = data
+            .get_mut(at..at + count * record)
+            .filter(|f| !f.is_empty())?;
+        let kind = item as usize - 1;
+        let header = HEADERS[kind];
+        let mut records: Vec<&mut [u8]> = frame.chunks_exact_mut(record).collect();
+        for sector in records.iter_mut() {
+            m.headers[kind].code(coder, &mut sector[..header]);
         }
-        let s = &frame[0];
-        let mut payload: Vec<u8> = frame.iter().flat_map(|s| &s[header..]).copied().collect();
-        let (used, macroblocks) = if kind == 1 {
-            let u16_at = |at: usize| u16::from_le_bytes([s[at], s[at + 1]]) as usize;
-            let used = u32::from_le_bytes(s[12..16].try_into().unwrap()) as usize;
-            (
-                used.min(payload.len()),
-                u16_at(16).div_ceil(16) * u16_at(18).div_ceil(16),
-            )
-        } else {
-            (payload.len(), 20 * 14)
+        // Final Fantasy IX's frames start in their last sector
+        if item == Item::Ff9 {
+            records.reverse();
+        }
+        let s = &records[0];
+        let u16_at = |at: usize| u16::from_le_bytes([s[at], s[at + 1]]) as usize;
+        let u32_at = |at: usize| u32::from_le_bytes(s[at..at + 4].try_into().unwrap()) as usize;
+        let size = |w: usize, h: usize| w.div_ceil(16) * h.div_ceil(16);
+        let (used, macroblocks) = match item {
+            Item::Standard => (u32_at(12), size(u16_at(16), u16_at(18))),
+            Item::Ff9 => (u32_at(12) * 4, size(u16_at(16), u16_at(18))),
+            _ => (usize::MAX, 20 * 14),
         };
+        let mut payload: Vec<u8> = records.iter().flat_map(|s| &s[header..]).copied().collect();
+        let used = used.min(payload.len());
         let (bytes, padding) = payload.split_at_mut(used);
         code_frame(coder, &mut m, bytes, macroblocks, encoding, &mut last)?;
-        let zero = padding.iter().all(|&b| b == 0);
-        if coder.bit(&mut m.padding, zero as u32) == 1 {
-            padding.fill(0);
+        // The padding, a byte over and over, or not
+        let fill = padding.first().copied().unwrap_or(0);
+        let uniform = padding.iter().all(|&b| b == fill);
+        if coder.bit(&mut m.padding, uniform as u32) == 1 {
+            let mut fill = fill;
+            coder.byte(&mut m.fill, &mut fill);
+            padding.fill(fill);
         } else {
             m.raw(coder, padding);
         }
-        for (sector, data) in frame.iter_mut().zip(payload.chunks(SECTOR - header)) {
+        for (sector, data) in records.iter_mut().zip(payload.chunks(record - header)) {
             sector[header..].copy_from_slice(data);
         }
-        i += count;
+        at += count * record;
     }
-    m.raw(coder, rest);
+    m.raw(coder, &mut data[at..]);
     Some(())
 }
 
@@ -958,8 +1052,10 @@ mod tests {
         out
     }
 
-    /// Frames of 32x32 written as their sectors: v2 then v3.
-    fn sectors() -> Vec<u8> {
+    /// Frames of 32x32 written as their sectors: v2 then v3; of the
+    /// standard header, a sector each, or Final Fantasy IX's, three, the
+    /// frame in the last and the others 0xFF.
+    fn sectors(ff9: bool) -> Vec<u8> {
         let mut out = Vec::new();
         let mut last = Vec::new();
         for (n, version) in [2u16, 2, 3, 3].into_iter().enumerate() {
@@ -973,6 +1069,26 @@ mod tests {
             let len = w.bits().div_ceil(32) * 4;
             let bs = w.finish(len);
             assert!(parse_exact(&bs, 4).is_some(), "frame {n}");
+            if ff9 {
+                for chunk in 2..5u8 {
+                    let mut sector = vec![0xFF; FORM2];
+                    sector[..32].fill(0);
+                    sector[..4].copy_from_slice(&FF9);
+                    sector[4] = chunk;
+                    sector[6] = 5;
+                    sector[8] = n as u8;
+                    sector[12..16].copy_from_slice(&(bs.len() as u32 / 4).to_le_bytes());
+                    sector[16] = 32;
+                    sector[18] = 32;
+                    sector[20..28].copy_from_slice(&bs[..8]);
+                    if chunk == 4 {
+                        sector[32..32 + bs.len()].copy_from_slice(&bs);
+                    }
+                    out.extend_from_slice(&sector);
+                }
+                last = codes;
+                continue;
+            }
             let mut sector = vec![0; SECTOR];
             sector[..4].copy_from_slice(&MAGIC);
             sector[6] = 1;
@@ -989,15 +1105,18 @@ mod tests {
 
     #[test]
     fn frames_round_trip_and_shrink() {
-        let data = sectors();
-        let coded = encode(&data);
-        assert!(coded.len() < 400, "{} of {}", coded.len(), data.len());
-        assert_eq!(decode(&coded, data.len()), data);
+        for ff9 in [false, true] {
+            let data = sectors(ff9);
+            assert!(frame_at(&data).0 == if ff9 { Item::Ff9 } else { Item::Standard });
+            let coded = encode(&data);
+            assert!(coded.len() < 400, "{} of {}", coded.len(), data.len());
+            assert_eq!(decode(&coded, data.len()), data);
+        }
     }
 
     #[test]
     fn anything_round_trips() {
-        let mut frames = sectors();
+        let mut frames = sectors(false);
         // A frame cut short, and one whose bitstream is noise
         frames.truncate(frames.len() - 100);
         frames[SECTOR + 40..2 * SECTOR].copy_from_slice(&noise(SECTOR - 40, 7));
@@ -1006,7 +1125,10 @@ mod tests {
             s[..4].copy_from_slice(SMJ);
             s[6..8].fill(0);
         }
-        for data in [noise(2 * SECTOR + 99, 1), frames, smj] {
+        // Final Fantasy IX's frames between the others, one cut short
+        let mut mixed = [sectors(true), sectors(false), sectors(true)].concat();
+        mixed.truncate(mixed.len() - 3000);
+        for data in [noise(2 * SECTOR + 99, 1), frames, smj, mixed] {
             assert_eq!(decode(&encode(&data), data.len()), data);
         }
         assert_eq!(decode(&encode(&[]), 0), Vec::<u8>::new());

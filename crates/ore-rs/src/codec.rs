@@ -44,7 +44,27 @@ pub fn compress_best(codec: Codec, data: &[u8], group: usize) -> Result<(Codec, 
     Ok((codec, stored))
 }
 
+/// Compress a group with `codec`, to no less than the 1,024th of it a
+/// reader refuses below as a decompression bomb: a still picture, silence
+/// or a repeated pattern codes to less, and is padded with what its
+/// decoder ignores, a Zstandard skippable frame, or zeros after the end.
 pub fn compress(codec: Codec, data: &[u8], group: usize) -> Result<Vec<u8>> {
+    let mut stored = compress_unpadded(codec, data, group)?;
+    let floor = data.len().div_ceil(1024);
+    if stored.len() < floor {
+        if codec == Codec::Zstd {
+            let size = floor.saturating_sub(stored.len() + 8);
+            stored.extend_from_slice(&0x184D_2A50u32.to_le_bytes());
+            stored.extend_from_slice(&(size as u32).to_le_bytes());
+            stored.resize(stored.len() + size, 0);
+        } else {
+            stored.resize(floor, 0);
+        }
+    }
+    Ok(stored)
+}
+
+fn compress_unpadded(codec: Codec, data: &[u8], group: usize) -> Result<Vec<u8>> {
     match codec {
         Codec::Zstd => {
             let mut compressor = zstd::bulk::Compressor::new(ZSTD_LEVEL)?;
@@ -60,17 +80,8 @@ pub fn compress(codec: Codec, data: &[u8], group: usize) -> Result<Vec<u8>> {
             Ok(writer.finish()?)
         }
         Codec::Flac => flac_encode(data),
-        Codec::Xa | Codec::Str => {
-            let mut coded = if codec == Codec::Xa {
-                xa::encode(data)
-            } else {
-                video::encode(data)
-            };
-            // A still picture or silence codes to less than the ratio a
-            // reader takes as a bomb: the range decoder ignores the zeros
-            coded.resize(coded.len().max(data.len().div_ceil(1024)), 0);
-            Ok(coded)
-        }
+        Codec::Xa => Ok(xa::encode(data)),
+        Codec::Str => Ok(video::encode(data)),
     }
 }
 
@@ -152,4 +163,40 @@ pub fn decompress(codec: Codec, data: &[u8], length: usize) -> Result<Vec<u8>> {
         )));
     }
     Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_codec_keeps_to_the_bomb_ratio_and_round_trips() {
+        // A pattern every codec codes to a few bytes a MiB
+        let data: Vec<u8> = (0..1 << 20).map(|i| (i % 4 * 64) as u8).collect();
+        for codec in [
+            Codec::Zstd,
+            Codec::Lzma2,
+            Codec::Flac,
+            Codec::Xa,
+            Codec::Str,
+        ] {
+            // xa and str code it a byte at a time: tests/cd.rs's still
+            // picture takes str under
+            let unpadded = compress_unpadded(codec, &data, data.len()).unwrap();
+            assert!(
+                matches!(codec, Codec::Xa | Codec::Str) || unpadded.len() < data.len() / 1024,
+                "{codec:?} pads"
+            );
+            let stored = compress(codec, &data, data.len()).unwrap();
+            assert!(
+                stored.len() >= data.len() / 1024,
+                "{codec:?}: {}",
+                stored.len()
+            );
+            assert!(
+                decompress(codec, &stored, data.len()).unwrap() == data,
+                "{codec:?}"
+            );
+        }
+    }
 }

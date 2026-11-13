@@ -57,7 +57,7 @@ pub enum Codec {
     /// XA ADPCM, for CD-ROM XA audio sectors: a group is records of a
     /// sector's subheader and data, coded as `xa.rs` says.
     Xa,
-    /// STR video, for CD-ROM XA video sectors: a group is Form 1 sectors'
+    /// STR video, for CD-ROM XA video sectors: a group is video sectors'
     /// data, coded as `video.rs` says.
     Str,
 }

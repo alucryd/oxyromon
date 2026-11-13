@@ -2,8 +2,9 @@
 //! `str` codec.
 //!
 //! `video <DUMP>...`: each dump `cd str` wrote with STR_DUMP set, a video
-//! sector's data each, 2048 bytes, in disc order. Cut into chunks before
-//! each frame, 64 sectors at most, and the chunks into groups of 1 MiB,
+//! sector's data each, in disc order, 2048 bytes, or 2324 of Final
+//! Fantasy IX's Form 2. Cut into chunks where the frame changes, 64
+//! sectors at most, and the chunks into groups of 1 MiB,
 //! as ore-rs's writer does; each group coded by Zstandard 19 and by `str`,
 //! whose output is decoded again and compared; `best` is what ore-rs
 //! stores, Zstandard for a group a quick Zstandard does better on. A row a
@@ -48,16 +49,30 @@ fn groups(dump: &[u8], group: usize) -> Vec<Vec<u8>> {
         }
         groups.last_mut().unwrap().append(chunk);
     };
-    for sector in dump.chunks(video::SECTOR) {
-        if !chunk.is_empty()
-            && (video::starts_frame(sector) || chunk.len() == CHUNK * video::SECTOR)
-        {
+    let (mut at, mut records, mut frame) = (0, 0, None);
+    while at < dump.len() {
+        let record = &dump[at..(at + video::record_len(&dump[at..])).min(dump.len())];
+        at += record.len();
+        let this = Some(video::frame_of(record));
+        if !chunk.is_empty() && (this != frame || records == CHUNK) {
             close(&mut chunk, &mut groups);
+            records = 0;
         }
-        chunk.extend_from_slice(sector);
+        frame = this;
+        chunk.extend_from_slice(record);
+        records += 1;
     }
     close(&mut chunk, &mut groups);
     groups
+}
+
+fn records(dump: &[u8]) -> usize {
+    let (mut at, mut n) = (0, 0);
+    while at < dump.len() {
+        at += video::record_len(&dump[at..]);
+        n += 1;
+    }
+    n
 }
 
 fn main() -> Result<()> {
@@ -108,7 +123,7 @@ fn main() -> Result<()> {
         };
         println!(
             "{name}\t{}\t{}\t{z}\t{s}\t{best}\t{zstd_s:.1}\t{encode_s:.1}\t{decode_s:.1}\t{l}",
-            bytes.len() / video::SECTOR,
+            records(&bytes),
             bytes.len()
         );
     }

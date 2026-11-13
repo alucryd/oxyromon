@@ -932,8 +932,9 @@ const VIDEO_CHUNK: usize = 64;
 /// The video or XA plane of a data track, read again from `file`: the
 /// sectors `sectors`, each a record, cut into chunks so that a run of
 /// sectors another disc holds is the same chunks there. A video record is
-/// a sector's data, cut before each frame; an XA record is a sector's
-/// subheader and data, cut after any whose CRC-32C is a multiple of 8.
+/// a sector's data, cut where the frame changes; an XA record is a
+/// sector's subheader and data, cut after any whose CRC-32C is a multiple
+/// of 8.
 fn push_plane(
     encoder: &mut Encoder,
     file: &File,
@@ -942,11 +943,12 @@ fn push_plane(
     buf: &mut [u8],
 ) -> Result<()> {
     let window = (buf.len() / SECTOR) as u32;
-    let (record_len, most) = match plane {
-        Plane::Video => (video::SECTOR, VIDEO_CHUNK),
-        _ => (xa::RECORD, XA_CHUNK),
+    let most = match plane {
+        Plane::Video => VIDEO_CHUNK,
+        _ => XA_CHUNK,
     };
-    let mut chunk = Vec::with_capacity(most * record_len);
+    let mut chunk = Vec::with_capacity(most * xa::RECORD);
+    let (mut records, mut frame) = (0, None);
     for run in sectors.chunk_by(|a, b| a / window == b / window) {
         let first = run[0] / window * window;
         let length = (run.last().unwrap() + 1 - first) as usize * SECTOR;
@@ -954,23 +956,25 @@ fn push_plane(
         for &i in run {
             let raw = &buf[(i - first) as usize * SECTOR..][..SECTOR];
             if plane == Plane::Video {
-                let record = &raw[24..24 + record_len];
-                if !chunk.is_empty() && video::starts_frame(record) {
+                let record = &raw[24..24 + video::record_len(&raw[24..])];
+                let this = Some(video::frame_of(record));
+                if !chunk.is_empty() && this != frame {
                     encoder.push(Run::Chunk(&chunk));
-                    chunk.clear();
+                    (chunk, records) = (Vec::new(), 0);
                 }
+                frame = this;
                 chunk.extend_from_slice(record);
             } else {
-                let record = [&raw[16..20], &raw[24..24 + record_len - 4]].concat();
+                let record = [&raw[16..20], &raw[24..24 + xa::RECORD - 4]].concat();
                 chunk.extend_from_slice(&record);
                 if crc32c::crc32c(&record).is_multiple_of(8) {
-                    encoder.push(Run::Chunk(&chunk));
-                    chunk.clear();
+                    records = most - 1;
                 }
             }
-            if chunk.len() == most * record_len {
+            records += 1;
+            if records == most {
                 encoder.push(Run::Chunk(&chunk));
-                chunk.clear();
+                (chunk, records) = (Vec::new(), 0);
             }
         }
         encoder.flush(false)?;
