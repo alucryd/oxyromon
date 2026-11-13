@@ -42,7 +42,7 @@ async fn test() {
         .unwrap();
 
     // when
-    import_wiiu_disc(
+    import_disc(
         &mut connection,
         &progress_bar,
         &Some(&system),

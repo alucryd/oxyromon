@@ -53,8 +53,6 @@ pub enum Chunker {
     LeapCdc(usize),
     /// Rabin, from N/2 to 2N.
     Rabin(usize),
-    /// QuickCDC, its maximum 4N.
-    QuickCdc(usize),
 }
 
 impl Chunker {
@@ -68,7 +66,6 @@ impl Chunker {
             Self::SuperCdc(n) => ("supercdc", n),
             Self::LeapCdc(n) => ("leapcdc", n),
             Self::Rabin(n) => ("rabin", n),
-            Self::QuickCdc(n) => ("quickcdc", n),
         };
         format!("{name}-{}K", n >> 10)
     }
@@ -124,13 +121,6 @@ impl Chunker {
             )
             .map(|chunk| (chunk.pos, chunk.len))
             .collect(),
-            Self::QuickCdc(n) => {
-                let base = data.as_ptr() as usize;
-                quickcdc::Chunker::with_params(data, n, n * 4, 0x9E37_79B9_7F4A_7C15)
-                    .expect("valid QuickCDC sizes")
-                    .map(|chunk| (chunk.as_ptr() as usize - base, chunk.len()))
-                    .collect()
-            }
         };
         let records = chunks.len() as u64;
         (chunks, records)

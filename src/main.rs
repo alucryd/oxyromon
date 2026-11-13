@@ -32,6 +32,7 @@ mod model;
 #[cfg(feature = "server")]
 mod mutation;
 mod nsz;
+mod ore;
 mod progress;
 mod prompt;
 mod purge_games;

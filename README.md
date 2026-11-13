@@ -164,7 +164,7 @@ These environment variables change where things go:
 
 | Setting                           | Description                                                                                              | Default   |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------- | --------- |
-| `PREFER_FORMAT`                   | Format imported ROMs are converted to: `ORIGINAL`, `7Z`, `CHD`, `CSO`, `NSZ`, `RVZ`, `ZIP`, `ZSO`; arcade systems take only `ORIGINAL` and `ZIP` |           |
+| `PREFER_FORMAT`                   | Format imported ROMs are converted to: `ORIGINAL`, `7Z`, `CHD`, `CSO`, `NSZ`, `ORE`, `RVZ`, `ZIP`, `ZSO`; arcade systems take only `ORIGINAL` and `ZIP` |           |
 | `CHD_PARENTS`                     | Use the other discs of a game as CHD parents, which needs playlists to have been generated              | `false`   |
 | `CHD_CD_HUNK_SIZE`                | CHD hunk size in bytes for CDs, `16` to `1048576`                                                        | auto      |
 | `CHD_CD_COMPRESSION_ALGORITHMS`   | Up to 4 CHD codecs for CDs: `none`, `cdfl`, `cdlz`, `cdzl`, `cdzs`                                       | auto      |
@@ -174,6 +174,8 @@ These environment variables change where things go:
 | `CHD_HD_COMPRESSION_ALGORITHMS`   | Up to 4 CHD codecs for hard disks: `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd`                        | auto      |
 | `CHD_LD_HUNK_SIZE`                | CHD hunk size in bytes for LaserDiscs, `16` to `1048576`                                                 | auto      |
 | `CHD_LD_COMPRESSION_ALGORITHMS`   | CHD codecs for LaserDiscs: `none`, `avhu`                                                                | auto      |
+| `ORE_COMPRESSION_ALGORITHM`       | ORE codec: `zstd`, quicker to read, or `lzma2`, smaller                                                  | `zstd`    |
+| `ORE_PROFILE`                     | ORE group size: `stream`, 1 MiB, quicker to read, or `archive`, 4 MiB, smaller                           | `stream`  |
 | `RVZ_BLOCK_SIZE`                  | RVZ block size in KiB, `32` to `2048`, rounded up to a power of two                                      | `128`     |
 | `RVZ_COMPRESSION_ALGORITHM`       | RVZ codec: `none`, `zstd`, `bzip2`, `lzma`, `lzma2`                                                      | `zstd`    |
 | `RVZ_COMPRESSION_LEVEL`           | RVZ level, `1` to `22` for zstd and `1` to `9` otherwise                                                 | `5`       |
@@ -214,6 +216,7 @@ Arcade games stored as archives stay as they are.
 | CHD                     | ✔                | ✔       | ✔      | chd-rs                                                       |
 | CSO, ZSO                | ✔                | ✔       | ✔      | xso-rs                                                       |
 | NSZ                     | ✔                | ✔       | ✔      | nsz-rs                                                       |
+| ORE (GameCube, Wii, CD) | ✔                | ✔       |        | ore-rs                                                       |
 | RVZ                     | ✔                | ✔       | ✔      | rvz-rs                                                       |
 | WBFS                    |                  |         | ✔      | wbfs-rs                                                      |
 | WUX (Wii U)             | ✔                | ✔       | ✔      | wux-rs                                                       |
@@ -238,6 +241,12 @@ Reading an RVZ, or rewriting one, needs no key, and neither does a GameCube disc
 
 WBFS files are those `wit copy --wbfs` writes: only what the disc points to is kept, so a WBFS is no longer the original disc, which is why it is an export format only.
 Exporting an RVZ to WBFS needs no key and decodes no ISO on the way; exporting a Wii ISO needs the Wii common key, as compressing it to RVZ does.
+
+ORE is oxyROMon's own format, a draft: an ORE written now may not open in a later version, so keep your originals, or another format, until it is final.
+An ORE holds a GameCube or Wii disc, or a CD as its cue sheet and tracks, an ORE a disc: the cue sheet is inside it, so a CD is one file, which every ROM of the game points to.
+Importing a CD ORE needs every file it holds, its cue sheet included, to match the DAT.
+Like RVZ, compressing a Wii ISO needs the Wii common key, and reading an ORE needs none.
+No emulator reads ORE yet.
 
 Wii U discs are WUDs, which Redump lists as ISOs, so that is what converting back to the original gives; a `.wud` found in the wild is matched and renamed all the same.
 WUX compresses a WUD losslessly, as wudd dumps it and Cemu reads it.
@@ -577,7 +586,7 @@ Files are moved as they are, except archives holding several games, which are ex
 When the system has a `PREFER_FORMAT`, imported ROMs are then converted to it, unless you pass `--as-is`.
 Files needing a choice, such as JB folders or ambiguous matches, prompt by default, and `-u` skips them or picks the first match instead.
 
-Consoles accept every No-Intro and Redump format, 7Z, ZIP, CHD, CIA, CSO, NSZ, RVZ, WUA, WUX, ZSO, JB folders and Wii U title folders.
+Consoles accept every No-Intro and Redump format, 7Z, ZIP, CHD, CIA, CSO, NSZ, ORE, RVZ, WUA, WUX, ZSO, JB folders and Wii U title folders.
 A Wii U title folder, an update or DLC as Nintendo's servers deliver it, is found by its TMD, and either a downloader's names (`title.tmd`, `00000000.app`) or No-Intro's (`tmd.32`, `00000000`) will do.
 Arcade systems accept uncompressed files, ZIP and CHD.
 
@@ -654,6 +663,7 @@ Converts ROM files between lossless formats and back to their originals:
 - Any original format to and from 7Z and ZIP.
 - CUE/BIN and ISO to and from CHD, with CHDs restored to their original split CUE/BIN.
 - ISO to and from CSO, ZSO and RVZ.
+- GameCube and Wii ISOs and CUE/BIN to and from ORE, with OREs restored to their cue sheet and tracks.
 - NSP to and from NSZ.
 - Wii U discs between ISO, WUX and lossless WUA.
 
@@ -664,7 +674,7 @@ Games and systems are selected by case-insensitive name, with SQL wildcards, and
 Usage: oxyromon convert-roms [OPTIONS]
 
 Options:
-  -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, NSZ, RVZ, WUA, WUX, ZIP, ZSO]
+  -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, NSZ, ORE, RVZ, WUA, WUX, ZIP, ZSO]
   -g, --game <GAME>      Select games by name
   -s, --system <SYSTEM>  Select systems by name
   -a, --all              Convert all systems/games

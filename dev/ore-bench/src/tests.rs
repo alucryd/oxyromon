@@ -229,7 +229,6 @@ fn every_chunker_cuts_its_input_whole() {
         cdc::Chunker::SuperCdc(16 << 10),
         cdc::Chunker::LeapCdc(16 << 10),
         cdc::Chunker::Rabin(16 << 10),
-        cdc::Chunker::QuickCdc(16 << 10),
     ];
     for chunker in chunkers {
         // when

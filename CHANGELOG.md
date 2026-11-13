@@ -1,3 +1,9 @@
+# 0.26.0
+
+## Features
+
+- Added ORE, oxyROMon's own format, from the new ore-rs crate: import, check and convert GameCube and Wii discs and CUE/BIN to and from ORE, a CD's cue sheet inside its ORE with its tracks, set by `ORE_COMPRESSION_ALGORITHM` (`zstd` or `lzma2`) and `ORE_PROFILE` (`stream` or `archive`); the format is a draft, and an ORE written now may not open in a later version
+
 # 0.25.0
 
 ## Features

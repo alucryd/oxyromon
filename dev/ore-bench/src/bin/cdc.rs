@@ -25,7 +25,6 @@ fn main() -> Result<()> {
                 Chunker::SuperCdc(k(16)),
                 Chunker::LeapCdc(k(16)),
                 Chunker::Rabin(k(16)),
-                Chunker::QuickCdc(k(16)),
             ]);
             let results = compare(&discs, &chunkers)?;
             println!(

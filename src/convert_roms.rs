@@ -7,6 +7,7 @@ use super::database::*;
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
+use super::ore::{AsOre, OreCompressionAlgorithm, OreProfile, ToOre};
 use super::progress::*;
 use super::prompt::*;
 use super::rvz::{AsRvz, RvzCompressionAlgorithm, ToRvz};
@@ -28,7 +29,7 @@ use std::mem::drop;
 use std::str::FromStr;
 
 pub const ALL_FORMATS: &[&str] = &[
-    "ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "WUA", "WUX", "ZIP", "ZSO",
+    "ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "ORE", "RVZ", "WUA", "WUX", "ZIP", "ZSO",
 ];
 pub const ARCADE_FORMATS: &[&str] = &["ORIGINAL", "ZIP"];
 
@@ -42,7 +43,7 @@ pub fn format_supported_for_system(system: &System, format: &str) -> bool {
 fn format_available(format: &str) -> bool {
     matches!(
         format,
-        "7Z" | "CHD" | "CSO" | "NSZ" | "ORIGINAL" | "RVZ" | "WUA" | "WUX" | "ZIP" | "ZSO"
+        "7Z" | "CHD" | "CSO" | "NSZ" | "ORE" | "ORIGINAL" | "RVZ" | "WUA" | "WUX" | "ZIP" | "ZSO"
     )
 }
 
@@ -292,6 +293,32 @@ pub async fn convert_system(
             )
             .await?
         }
+        "ORE" => {
+            let compression_algorithm = OreCompressionAlgorithm::from_str(
+                &get_string(connection, "ORE_COMPRESSION_ALGORITHM", Some(system.id))
+                    .await
+                    .unwrap(),
+            )
+            .unwrap();
+            let profile = OreProfile::from_str(
+                &get_string(connection, "ORE_PROFILE", Some(system.id))
+                    .await
+                    .unwrap(),
+            )
+            .unwrap();
+            to_ore(
+                connection,
+                progress_bar,
+                roms_by_game_id,
+                romfiles_by_id,
+                recompress,
+                diff,
+                check,
+                &compression_algorithm,
+                &profile,
+            )
+            .await?
+        }
         "RVZ" => {
             let compression_algorithm = RvzCompressionAlgorithm::from_str(
                 &get_string(connection, "RVZ_COMPRESSION_ALGORITHM", Some(system.id))
@@ -448,6 +475,10 @@ async fn to_archive(
     // partition NSZs
     let (nszs, roms_by_game_id) =
         partition_games_by_extensions(roms_by_game_id, &romfiles_by_id, &[NSZ_EXTENSION]);
+
+    // partition OREs
+    let (ores, roms_by_game_id) =
+        partition_games_by_extensions(roms_by_game_id, &romfiles_by_id, &[ORE_EXTENSION]);
 
     // partition RVZs
     let (rvzs, roms_by_game_id) =
@@ -916,6 +947,94 @@ async fn to_archive(
         }
 
         source.delete(progress_bar, false).await?;
+
+        commit_transaction(transaction).await;
+    }
+
+    // convert OREs
+    for roms in ores.values() {
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let mut transaction = begin_transaction(connection).await;
+        let rom = roms.first().unwrap();
+        let game = games_by_id.get(&rom.game_id).unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let ore_romfile = romfile.as_common(&mut transaction).await?.as_ore()?;
+        let directory = ore_romfile.romfile.path.parent().unwrap();
+
+        // a CD's cue sheet and tracks, each ROM's file; a disc image's ISO
+        let files: Vec<(CommonRomfile, &Rom)> = if ore_romfile.is_cd()? {
+            let cue_name = roms
+                .iter()
+                .find(|rom| rom.name.ends_with(CUE_EXTENSION))
+                .map(|rom| rom.name.as_str());
+            let cue_bin_romfile = ore_romfile
+                .to_cue_bin_files(progress_bar, &tmp_directory.path(), cue_name)
+                .await?;
+            files_for_roms(cue_bin_romfile, roms)?
+        } else {
+            let iso_romfile = ore_romfile
+                .to_iso(progress_bar, &tmp_directory.path())
+                .await?;
+            vec![(iso_romfile.romfile, rom)]
+        };
+
+        let mut archive_romfiles: Vec<ArchiveRomfile> = vec![];
+        for (file, _) in &files {
+            archive_romfiles.push(
+                file.to_archive(
+                    progress_bar,
+                    &tmp_directory.path(),
+                    &directory,
+                    &game.name,
+                    &archive_type,
+                    compression,
+                    solid,
+                )
+                .await?,
+            );
+        }
+
+        if check {
+            let mut error = false;
+            for (archive_romfile, (_, rom)) in archive_romfiles.iter().zip(&files) {
+                if archive_romfile
+                    .check(&mut transaction, progress_bar, &None, &[rom])
+                    .await
+                    .is_err()
+                {
+                    error = true;
+                    break;
+                }
+            }
+            if error {
+                print_error(progress_bar, "Integrity check failed, reverting conversion");
+                archive_romfiles
+                    .first()
+                    .unwrap()
+                    .romfile
+                    .delete(progress_bar, false)
+                    .await?;
+                continue;
+            }
+        }
+
+        let archive_romfile = &archive_romfiles.first().unwrap().romfile;
+        archive_romfile
+            .update(&mut transaction, progress_bar, romfile.id)
+            .await?;
+
+        if diff {
+            print_diff(
+                &mut transaction,
+                progress_bar,
+                &roms.iter().collect::<Vec<&Rom>>(),
+                &[&ore_romfile.romfile],
+                &[archive_romfile],
+            )
+            .await?;
+        }
+
+        ore_romfile.romfile.delete(progress_bar, false).await?;
 
         commit_transaction(transaction).await;
     }
@@ -2620,6 +2739,283 @@ async fn to_wua(
 }
 
 #[allow(clippy::too_many_arguments)]
+async fn to_ore(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
+    romfiles_by_id: HashMap<i64, Romfile>,
+    recompress: bool,
+    diff: bool,
+    check: bool,
+    compression_algorithm: &OreCompressionAlgorithm,
+    profile: &OreProfile,
+) -> Result<()> {
+    // partition archives
+    let (archives, others) = partition_games_by_extensions(
+        roms_by_game_id,
+        &romfiles_by_id,
+        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
+    );
+
+    // partition CUE/BINs
+    let (cue_bins, others) =
+        partition_games_by_all_extensions(others, &romfiles_by_id, &[CUE_EXTENSION, BIN_EXTENSION]);
+
+    // partition ISOs
+    let (isos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ISO_EXTENSION]);
+
+    // partition OREs
+    let (ores, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ORE_EXTENSION]);
+
+    // drop others
+    drop(others);
+
+    // convert archives holding an ISO, or a cue sheet and its tracks
+    for roms in archives.values() {
+        let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+            .iter()
+            .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
+        let iso = roms.len() == 1 && roms.first().unwrap().name.ends_with(ISO_EXTENSION);
+        let cd = cue_roms.len() == 1 && !bin_roms.is_empty();
+        if !iso && !cd {
+            continue;
+        }
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let mut transaction = begin_transaction(connection).await;
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let (source, ore_romfile) = if iso {
+            let decoded =
+                archive_to_common(&mut transaction, progress_bar, rom, romfile, &tmp_directory)
+                    .await?;
+            let ore_romfile = decoded
+                .inner
+                .as_iso()?
+                .to_ore(
+                    progress_bar,
+                    &decoded.source.path.parent().unwrap(),
+                    compression_algorithm,
+                    profile,
+                )
+                .await?;
+            (decoded.source, ore_romfile)
+        } else {
+            let decoded = archive_to_cue_bin(
+                &mut transaction,
+                progress_bar,
+                cue_roms.first().unwrap(),
+                &bin_roms,
+                romfile,
+                &tmp_directory,
+            )
+            .await?;
+            let ore_romfile = decoded
+                .inner
+                .to_ore(
+                    progress_bar,
+                    &decoded.source.path.parent().unwrap(),
+                    compression_algorithm,
+                    profile,
+                )
+                .await?;
+            (decoded.source, ore_romfile)
+        };
+        if check_and_persist(
+            &mut transaction,
+            progress_bar,
+            &roms.iter().collect::<Vec<&Rom>>(),
+            &source,
+            &ore_romfile,
+            romfile.id,
+            check,
+            diff,
+            false,
+        )
+        .await?
+        {
+            commit_transaction(transaction).await;
+        }
+    }
+
+    // convert CUE/BINs, the cue sheet into the ORE with its tracks
+    for roms in cue_bins.values() {
+        let mut transaction = begin_transaction(connection).await;
+        let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+            .iter()
+            .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
+        let cue_bin_romfile = assemble_cue_bin(
+            &mut transaction,
+            &romfiles_by_id,
+            cue_roms.first().unwrap(),
+            &bin_roms,
+        )
+        .await?;
+        let ore_romfile = cue_bin_romfile
+            .to_ore(
+                progress_bar,
+                &cue_bin_romfile.cue_romfile.path.parent().unwrap(),
+                compression_algorithm,
+                profile,
+            )
+            .await?;
+        let roms: Vec<&Rom> = roms.iter().collect();
+
+        if check
+            && ore_romfile
+                .check(&mut transaction, progress_bar, &None, &roms)
+                .await
+                .is_err()
+        {
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
+            ore_romfile.romfile.delete(progress_bar, false).await?;
+            continue;
+        }
+
+        if diff {
+            let romfiles = [
+                std::slice::from_ref(&cue_bin_romfile.cue_romfile),
+                cue_bin_romfile.bin_romfiles.as_slice(),
+            ]
+            .concat();
+            print_diff(
+                &mut transaction,
+                progress_bar,
+                &roms,
+                &romfiles.iter().collect::<Vec<&CommonRomfile>>(),
+                &[&ore_romfile.romfile],
+            )
+            .await?;
+        }
+
+        let ore_romfile_id = ore_romfile
+            .romfile
+            .create(&mut transaction, progress_bar, RomfileType::Romfile)
+            .await?;
+        for rom in roms {
+            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+            update_rom_romfile(&mut transaction, rom.id, Some(ore_romfile_id)).await;
+            delete_romfile_by_id(&mut transaction, romfile.id).await;
+            romfile
+                .as_common(&mut transaction)
+                .await?
+                .delete(progress_bar, false)
+                .await?;
+        }
+
+        commit_transaction(transaction).await;
+    }
+
+    // convert ISOs
+    for roms in isos.values() {
+        let mut transaction = begin_transaction(connection).await;
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let decoded = common_as_source(&mut transaction, romfile).await?;
+        let ore_romfile = decoded
+            .inner
+            .as_iso()?
+            .to_ore(
+                progress_bar,
+                &decoded.source.path.parent().unwrap(),
+                compression_algorithm,
+                profile,
+            )
+            .await?;
+        if check_and_persist(
+            &mut transaction,
+            progress_bar,
+            &[rom],
+            &decoded.source,
+            &ore_romfile,
+            romfile.id,
+            check,
+            diff,
+            false,
+        )
+        .await?
+        {
+            commit_transaction(transaction).await;
+        }
+    }
+
+    // recompress OREs
+    if recompress {
+        for roms in ores.values() {
+            let tmp_directory = create_tmp_directory(connection).await?;
+            let mut transaction = begin_transaction(connection).await;
+            let romfile = romfiles_by_id
+                .get(&roms.first().unwrap().romfile_id.unwrap())
+                .unwrap();
+            let source = romfile.as_common(&mut transaction).await?.as_ore()?;
+            let new_ore_romfile = if source.is_cd()? {
+                source
+                    .to_cue_bin_files(progress_bar, &tmp_directory.path(), None)
+                    .await?
+                    .to_ore(
+                        progress_bar,
+                        &tmp_directory.path(),
+                        compression_algorithm,
+                        profile,
+                    )
+                    .await?
+            } else {
+                source
+                    .to_iso(progress_bar, &tmp_directory.path())
+                    .await?
+                    .to_ore(
+                        progress_bar,
+                        &tmp_directory.path(),
+                        compression_algorithm,
+                        profile,
+                    )
+                    .await?
+            };
+            if check_and_persist(
+                &mut transaction,
+                progress_bar,
+                &roms.iter().collect::<Vec<&Rom>>(),
+                &source.romfile,
+                &new_ore_romfile,
+                romfile.id,
+                check,
+                diff,
+                true,
+            )
+            .await?
+            {
+                commit_transaction(transaction).await;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Pair a CD's files with the ROMs they are: the cue sheet with the cue's
+/// ROM, each track with the ROM of its name.
+fn files_for_roms(
+    cue_bin_romfile: CueBinRomfile,
+    roms: &[Rom],
+) -> Result<Vec<(CommonRomfile, &Rom)>> {
+    let mut files = vec![];
+    let mut bin_romfiles = cue_bin_romfile.bin_romfiles;
+    for rom in roms {
+        if rom.name.ends_with(CUE_EXTENSION) {
+            files.push((cue_bin_romfile.cue_romfile.clone(), rom));
+            continue;
+        }
+        let Some(index) = bin_romfiles
+            .iter()
+            .position(|file| file.path.file_name().unwrap().to_str() == Some(&rom.name))
+        else {
+            bail!("\"{}\" is not in the ORE", rom.name);
+        };
+        files.push((bin_romfiles.swap_remove(index), rom));
+    }
+    Ok(files)
+}
+
+#[allow(clippy::too_many_arguments)]
 async fn to_rvz(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -2797,6 +3193,9 @@ async fn to_original(
 
     // partition NSZs
     let (nszs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[NSZ_EXTENSION]);
+
+    // partition OREs
+    let (ores, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ORE_EXTENSION]);
 
     // partition RVZs
     let (rvzs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[RVZ_EXTENSION]);
@@ -3163,6 +3562,74 @@ async fn to_original(
         }
     }
 
+    // convert OREs
+    for roms in ores.values() {
+        let mut transaction = begin_transaction(connection).await;
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let ore_romfile = romfile.as_common(&mut transaction).await?.as_ore()?;
+        let directory = ore_romfile.romfile.path.parent().unwrap();
+        if !ore_romfile.is_cd()? {
+            let iso_romfile = ore_romfile.to_iso(progress_bar, &directory).await?;
+            if check_and_persist(
+                &mut transaction,
+                progress_bar,
+                &[rom],
+                &ore_romfile.romfile,
+                &iso_romfile.romfile,
+                romfile.id,
+                check,
+                false,
+                false,
+            )
+            .await?
+            {
+                commit_transaction(transaction).await;
+            }
+            continue;
+        }
+
+        // a CD's cue sheet and tracks, a romfile each
+        let cue_name = roms
+            .iter()
+            .find(|rom| rom.name.ends_with(CUE_EXTENSION))
+            .map(|rom| rom.name.as_str());
+        let cue_bin_romfile = ore_romfile
+            .to_cue_bin_files(progress_bar, &directory, cue_name)
+            .await?;
+        let files = files_for_roms(cue_bin_romfile, roms)?;
+        if check {
+            let mut error = false;
+            for (file, rom) in &files {
+                if file
+                    .check(&mut transaction, progress_bar, &None, &[rom])
+                    .await
+                    .is_err()
+                {
+                    error = true;
+                    break;
+                }
+            }
+            if error {
+                print_error(progress_bar, "Integrity check failed, reverting conversion");
+                for (file, _) in &files {
+                    file.delete(progress_bar, false).await?;
+                }
+                continue;
+            }
+        }
+        for (file, rom) in &files {
+            let romfile_id = file
+                .create(&mut transaction, progress_bar, RomfileType::Romfile)
+                .await?;
+            update_rom_romfile(&mut transaction, rom.id, Some(romfile_id)).await;
+        }
+        delete_romfile_by_id(&mut transaction, romfile.id).await;
+        ore_romfile.romfile.delete(progress_bar, false).await?;
+
+        commit_transaction(transaction).await;
+    }
+
     // convert RVZs
     for roms in rvzs.values() {
         let mut transaction = begin_transaction(connection).await;
@@ -3278,6 +3745,8 @@ mod test_iso_to_chd_parents;
 #[cfg(test)]
 mod test_iso_to_cso;
 #[cfg(test)]
+mod test_iso_to_ore;
+#[cfg(test)]
 mod test_iso_to_rvz;
 #[cfg(test)]
 mod test_iso_to_zso;
@@ -3294,9 +3763,19 @@ mod test_multiple_tracks_chd_to_zso_should_do_nothing;
 #[cfg(test)]
 mod test_multiple_tracks_cue_bin_to_chd;
 #[cfg(test)]
+mod test_multiple_tracks_cue_bin_to_ore;
+#[cfg(test)]
+mod test_multiple_tracks_ore_to_cue_bin;
+#[cfg(test)]
+mod test_multiple_tracks_ore_to_ore;
+#[cfg(test)]
+mod test_multiple_tracks_ore_to_sevenzip_cue_bin;
+#[cfg(test)]
 mod test_nus_sevenzip_to_original;
 #[cfg(test)]
 mod test_nus_to_sevenzip;
+#[cfg(test)]
+mod test_ore_to_iso;
 #[cfg(test)]
 mod test_original_to_sevenzip;
 #[cfg(test)]
