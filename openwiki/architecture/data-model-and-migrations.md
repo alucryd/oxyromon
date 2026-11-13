@@ -74,6 +74,10 @@ sources:
     resource: repo://migrations/20260811000001_add_prefer_format_setting.sql
   - id: openwiki-source-720480293ae71568113cbf54
     resource: repo://migrations/20261026000001_move_redump_to_redump_info.sql
+  - id: openwiki-source-46456afbc13e4ed1424fffe6
+    resource: repo://migrations/20261109000001_add_categories_to_games.sql
+  - id: openwiki-source-b9d96050860dc0b6e19aed4d
+    resource: repo://migrations/20261111000001_create_clone_lists.sql
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
   - id: openwiki-source-f1234afbb261ce7190a87845
@@ -124,10 +128,10 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # Data Model, SQLite Usage and Migrations
@@ -151,10 +155,10 @@ database with migrations applied.
 `acquire_timeout` of 5 seconds) and then splits on the Cargo feature set with
 `cfg_if`:
 
-| Build | `max_connections` | `PRAGMA locking_mode` |
-| --- | --- | --- |
-| default (CLI) | 1 | `EXCLUSIVE` |
-| `server` or `mcp` | 5 | `NORMAL` |
+| Build             | `max_connections` | `PRAGMA locking_mode` |
+| ----------------- | ----------------- | --------------------- |
+| default (CLI)     | 1                 | `EXCLUSIVE`           |
+| `server` or `mcp` | 5                 | `NORMAL`              |
 
 A single-process batch tool has no writer to contend with, so it takes the
 cheapest locking mode and one connection; a long-lived web or MCP server must
@@ -175,7 +179,7 @@ into SQL, and it is wrapped in `AssertSqlSafe` to satisfy sqlx's safe-SQL lint.
 
 `MIGRATOR` is a `static Migrator = sqlx::migrate!()`, i.e. the `migrations/`
 directory is embedded into the binary at compile time. `MIGRATOR.run(&pool)`
-executes on *every* connection setup, including inside tests, and a failing
+executes on _every_ connection setup, including inside tests, and a failing
 migration panics — there is no version negotiation, no down-migration, and no
 way to start with a half-applied schema. The counterpart, `optimize_database`,
 runs `incremental_vacuum`, `optimize` and `wal_checkpoint(truncate)` once the
@@ -199,6 +203,8 @@ erDiagram
   headers ||--o{ rules : "recognized through"
   romfiles |o--o{ romfiles : "is CHD parent of"
   systems |o--o{ settings : "owns scoped settings"
+  systems ||--o| clone_lists : "sorts with"
+  clone_lists ||--o{ clone_list_titles : "lists"
   systems {
     integer id PK
     text name UK
@@ -227,6 +233,7 @@ erDiagram
     integer parent_id FK
     integer bios_id FK
     integer playlist_id FK
+    text categories
   }
   roms {
     integer id PK
@@ -276,12 +283,29 @@ erDiagram
     text value
     integer system_id FK
   }
+  clone_lists {
+    integer id PK
+    text name
+    text version
+    integer system_id FK UK
+  }
+  clone_list_titles {
+    integer id PK
+    text group_name
+    text search_term
+    integer name_type
+    integer priority
+    text match_regions
+    text match_languages
+    text match_string
+    integer clone_list_id FK
+  }
 ```
 
-*Caption: the eight tables in `migrations/`, their key columns, and the cascade relationships that define deletion behaviour.*
+_Caption: the ten tables in `migrations/`, their key columns, and the cascade relationships that define deletion behaviour._
 
 The spine is **declaration versus reality**. `systems`, `games` and `roms`
-describe what a DAT says *should* exist (name, expected size, expected crc/md5/
+describe what a DAT says _should_ exist (name, expected size, expected crc/md5/
 sha1, merge status); `romfiles` describes what is actually on disk. `roms`
 carries the only join between the two — `roms.romfile_id`, a foreign key declared
 `ON DELETE SET NULL` — so an unmatched ROM keeps its declaration and simply has
@@ -301,8 +325,9 @@ the children of a matched parent.
 
 Uniqueness is scoped deliberately: `systems.name` is globally unique,
 `games` is unique on `(name, system_id)`, `roms` on `(name, game_id)`, `patches`
-on `(name, rom_id)`, and `headers` on `(system_id)` — at most one header per
-system. `romfiles.path` is unique, and that uniqueness is what makes a path a usable
+on `(name, rom_id)`, `headers` on `(system_id)` — at most one header per
+system — and `clone_lists.system_id` is unique, so a system has at most one
+imported Retool clone list and `import-clone-lists` replaces the previous one. `romfiles.path` is unique, and that uniqueness is what makes a path a usable
 identity: `import_rom` calls `find_romfile_by_path` first and skips a file that
 is already registered unless `--force` is given.
 
@@ -335,7 +360,11 @@ columns: `System`, `Header`, `Rule`, `Game`, `Rom`, `Patch`, `Romfile`,
 `Setting`. Under `--features server` the same structs additionally derive
 `SimpleObject` (and `Enum` for the enums), so GraphQL exposes the row shape
 directly instead of a second DTO layer; without the feature the unused fields
-are `#[allow(dead_code)]`.
+are `#[allow(dead_code)]`. The clone-list rows are the deliberate exception:
+`CloneListTitle` derives only `FromRow` and never `SimpleObject`, keeping the
+imported Retool data out of the GraphQL surface. `Game.categories` — the DAT's
+categories joined with `|`, read by `DISCARD_CATEGORIES` — is
+`graphql(skip)`ped for the same kind of reason the row stays otherwise lean.
 
 Two deviations matter:
 
@@ -525,7 +554,15 @@ the same idempotent seed: it installs the per-format compression
 algorithm/level defaults (`SEVENZIP_COMPRESSION_ALGORITHM`,
 `ZIP_COMPRESSION_ALGORITHM`, and the two `*_ZSTD_COMPRESSION_LEVEL` rows) in one
 file, and `20260811000001_add_prefer_format_setting.sql` seeds `PREFER_FORMAT`
-to `NULL`, which is what makes an unset choice behave as "no preference". See [Settings and Configuration](settings-and-configuration.md)
+to `NULL`, which is what makes an unset choice behave as "no preference". The
+1G1R round added two more seeds the same way:
+`20261109000002_add_discard_categories_setting.sql` seeds
+`DISCARD_CATEGORIES` to `NULL` (no categories discarded), and
+`20261110000001_add_infer_clones_setting.sql` seeds `INFER_CLONES` to `'false'`.
+`20261109000001_add_categories_to_games.sql` adds the `games.categories` column
+`import-dats` fills from each game's `<category>` entries, and
+`20261111000001_create_clone_lists.sql` creates `clone_lists` and
+`clone_list_titles` with the cascade and index the sort path relies on. See [Settings and Configuration](settings-and-configuration.md)
 for the key catalogue and CLI surface.
 
 ## Adding a migration
@@ -550,7 +587,7 @@ flowchart TD
   F --> G["commit the migration, the code, and the regenerated .sqlx files together"]
 ```
 
-*Caption: the migration workflow — schema change, row-type change, offline query cache refresh, then an offline-verified build.*
+_Caption: the migration workflow — schema change, row-type change, offline query cache refresh, then an offline-verified build._
 
 Step 3 is not optional. The `sqlx::query!` macros are verified at compile time,
 and there is no live database to verify them against: `cargo sqlx prepare`

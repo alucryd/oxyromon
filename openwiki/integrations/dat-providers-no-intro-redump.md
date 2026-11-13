@@ -2,7 +2,17 @@
 type: integration
 title: DAT Providers and Naming Conventions
 description: The external catalog providers oxyromon knows about (No-Intro dat-o-matic, Redump, MAME/FBNeo), the provider URLs and Redump system-code catalogue that drive download and update-check, the download path's pacing and save option, and how shiratsu-naming No-Intro/TOSEC tokens become the regions, languages, flags and version order used by both DAT import and sorting.
-tags: [dat-providers, no-intro, redump, mame, fbneo, download-dats, naming-tokens, regions]
+tags:
+  [
+    dat-providers,
+    no-intro,
+    redump,
+    mame,
+    fbneo,
+    download-dats,
+    naming-tokens,
+    regions,
+  ]
 sources:
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
@@ -14,6 +24,8 @@ sources:
     resource: repo://frontend/src/components/download_dat_modal.rs
   - id: openwiki-source-720480293ae71568113cbf54
     resource: repo://migrations/20261026000001_move_redump_to_redump_info.sql
+  - id: openwiki-source-70fd476911189a4396e268cd
+    resource: repo://migrations/20261109000002_add_discard_categories_setting.sql
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
@@ -30,6 +42,8 @@ sources:
     resource: repo://src/download_dats/test_redump.rs
   - id: openwiki-source-316c0afa4f03f2eedd9022b5
     resource: repo://src/generate_playlists.rs
+  - id: openwiki-source-b55e47fe678e608c835a7360
+    resource: repo://src/import_clone_lists.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
     resource: repo://src/import_dats.rs
   - id: openwiki-source-2d4a135c93b4a3bee8970761
@@ -82,10 +96,10 @@ sources:
     resource: repo://tests/Test%20System%20(20261025)%20(CDN).dat
   - id: openwiki-source-706217a392bda126ca145591
     resource: repo://tests/Test%20System%20(20261025)%20(WUD).dat
-generated: { by: "claude-code", at: "2026-10-26T22:40:03.236Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # DAT Providers and Naming Conventions
@@ -93,11 +107,11 @@ verified:
 oxyromon never talks to a catalog except through a Logiqx DAT file. Three provider
 families feed it, and only one of them can be reached over the network.
 
-| Provider | Contents | How it enters oxyromon |
-| --- | --- | --- |
-| No-Intro (dat-o-matic) | cartridge consoles, older computers | `import-dats` with a hand-downloaded DAT; `download-dats -n -u` can **only check for updates** |
-| Redump (redump.info) | CD/DVD/BD optical systems | `import-dats`, or `download-dats -r` which **fetches and imports** brand-new and refresh DATs |
-| MAME / FBNeo | arcade | `import-dats` only (Progetto-Snaps for MAME, the libretro FBNeo repo for FBNeo, with `-a` for FBNeo); never fetched |
+| Provider               | Contents                            | How it enters oxyromon                                                                                              |
+| ---------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| No-Intro (dat-o-matic) | cartridge consoles, older computers | `import-dats` with a hand-downloaded DAT; `download-dats -n -u` can **only check for updates**                      |
+| Redump (redump.info)   | CD/DVD/BD optical systems           | `import-dats`, or `download-dats -r` which **fetches and imports** brand-new and refresh DATs                       |
+| MAME / FBNeo           | arcade                              | `import-dats` only (Progetto-Snaps for MAME, the libretro FBNeo repo for FBNeo, with `-a` for FBNeo); never fetched |
 
 The asymmetry is documented in the README (where "Find a way to automatically download
 No-Intro DAT files" is still an open TODO) and encoded in `download_dats::main`:
@@ -194,13 +208,13 @@ Both consumer lists are drawn **from the catalogue**, intersected with the datab
 - `find_redump_systems(connection, update)` keeps catalogue keys whose name is absent
   from (`update = false`) or present in (`update = true`) the set of systems whose
   `url` is `REDUMP_SYSTEM_URL`, then sorts by name. The two halves are complementary,
-  which is why the web UI's *Update only* switch simply re-reads the list.
+  which is why the web UI's _Update only_ switch simply re-reads the list.
 - `download_redump_dats` recomputes the same "not yet imported" set locally before
   offering the multiselect.
 
 Because a name is only ever offered if the catalogue holds its code, a system
 imported from a hand-downloaded Redump DAT under a name the catalogue does not know
-is never offered for a download. Note the asymmetry: the *update* list
+is never offered for a download. Note the asymmetry: the _update_ list
 (`update_redump_dats`) is built from the database via `prompt_for_systems(..., Some(REDUMP_SYSTEM_URL), ...)`, not from the catalogue, so it can yield a name with no catalogue code, such as a system whose rename the migration skipped. `fetch_redump_dat` then fails that one system with `Unknown Redump system`, and the batch fails at the end naming it.
 
 ## Fetch control flow
@@ -314,9 +328,9 @@ The same two primitives are reused by the `server` and `mcp` features, guarded b
 `#[cfg(any(feature = "server", feature = "mcp"))]`:
 
 - `find_redump_systems` backs the GraphQL `downloadableSystems(update:)` query, the
-  MCP `downloadable_systems` tool, and the Leptos *Import DATs from Redump* modal
-  (the *DATs from Redump…* item of the navbar's Import menu), which re-reads
-  the list whenever it opens or flips *Update only*.
+  MCP `downloadable_systems` tool, and the Leptos _Import DATs from Redump_ modal
+  (the _DATs from Redump…_ item of the navbar's Import menu), which re-reads
+  the list whenever it opens or flips _Update only_.
 - `download_redump_systems` backs the GraphQL `download_dats` mutation and the MCP
   `download_dats` tool. It runs `collect_redump_dats` against the real Redump URL
   without a save directory, and each caller only maps the returned `DatOutcomes`
@@ -355,6 +369,12 @@ in `games.regions`. Two rules matter:
 
 **At sort time** the same tokens drive selection and ordering:
 
+- `trim_ignored_games` first partitions out games by **DAT category**, not by
+  name: `has_ignored_category` splits the `games.categories` string — the
+  `<category>` entries of the DAT game, `|`-joined at import — and discards any
+  game carrying one of `DISCARD_CATEGORIES`, which is how Redump's `Demo` or
+  `Coverdisc` games leave the election even though their names carry no token
+  saying so.
 - `trim_ignored_games` partitions games out of the election when a `Languages` token
   contains no language in `LANGUAGES` (codes filtered by `LANGUAGE_REGEX` `[A-Z][a-z]`
   and variants by `VARIANT_REGEX` `[A-Z]{2}`), when a `Release` token's status is in
@@ -367,7 +387,7 @@ in `games.regions`. Two rules matter:
   winning the `PREFER_VERSIONS` comparison, and once per `PREFER_FLAGS` match. Higher
   weight sorts first.
 - `compare_versions` reads `NoIntroVersion` tokens numerically (`major`/`minor` parsed
-  as `u64`, unparseable or absent treated as `0`), and a game that *has* a version token
+  as `u64`, unparseable or absent treated as `0`), and a game that _has_ a version token
   always beats one that does not: `Game (USA) (Rev 2)` outranks `Game (USA)` under
   `new` and is outranked by it under `old`.
 
@@ -379,6 +399,21 @@ The parser is also exposed read-only: GraphQL `game_information` and the MCP
 `parse_game_name` tool both return `title`, `regions`, `languages`, `release` and
 `flags` from the same token walk, so an agent or UI can reason about disc and region
 variants without importing anything.
+
+## Retool clone lists
+
+The providers are not only DATs. `import-clone-lists` reads the JSON files
+Retool publishes for its clone lists — a list names its system, so the command
+resolves the system by name and stores the list and its titles in
+`clone_lists`/`clone_list_titles`, at most one list per system, each import
+replacing the previous one. `INFER_CLONES` then reads the titles during
+`sort-roms` to group games that share a title across regions — and games whose
+names differ entirely, like Wipeout XL and Wipeout 2097 — and to elect one of a
+region's releases by the title's priority. Unlike DATs, a clone list carries no
+provenance constant: its Retool name and version are stored as given.
+`tests/Test System (Clone Lists) (Redump).json` is the fixture, paired with
+`tests/Test System (20261111) (Clone Lists).dat`. See
+[Sorting and the 1G1R Election](../workflows/sorting-and-1g1r-election.md).
 
 ## Header detectors that ride along with a DAT
 
@@ -399,14 +434,14 @@ have no cartridge header.
 The download module keeps its tests next to the code behind `#[cfg(test)] mod`
 declarations and uses `wiremock` so no request leaves the machine:
 
-| Test | What it pins |
-| --- | --- |
-| `src/download_dats/test_redump.rs` | mocks `^/datfile/[A-Z0-9-]+$` with `tests/Test System (20200721).zip`, asserts 1 system / 6 games / 8 ROMs imported and the `-s` copy written |
-| `src/download_dats/test_redump_failures.rs` | an empty ZIP, a two-entry ZIP and a 404 each return `Err` and leave the database empty |
-| `src/download_dats/test_nointro_failures.rs` | an HTTP error status and an unreachable host on the No-Intro profile each return `Err` |
-| `src/download_dats/test_nointro.rs` | mocks `/profile.xml` with `tests/profile.xml` and runs the update check against a DAT-imported system |
-| `src/import_dats/test_regions_world.rs`, `test_regions_france_germany.rs` | the normalized region string produced by token parsing |
-| `src/sort_roms/test_order_*` | weight ordering for parents, broad/narrow regions, new/old versions and preferred flags, each with the arguments swapped |
+| Test                                                                      | What it pins                                                                                                                                  |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/download_dats/test_redump.rs`                                        | mocks `^/datfile/[A-Z0-9-]+$` with `tests/Test System (20200721).zip`, asserts 1 system / 6 games / 8 ROMs imported and the `-s` copy written |
+| `src/download_dats/test_redump_failures.rs`                               | an empty ZIP, a two-entry ZIP and a 404 each return `Err` and leave the database empty                                                        |
+| `src/download_dats/test_nointro_failures.rs`                              | an HTTP error status and an unreachable host on the No-Intro profile each return `Err`                                                        |
+| `src/download_dats/test_nointro.rs`                                       | mocks `/profile.xml` with `tests/profile.xml` and runs the update check against a DAT-imported system                                         |
+| `src/import_dats/test_regions_world.rs`, `test_regions_france_germany.rs` | the normalized region string produced by token parsing                                                                                        |
+| `src/sort_roms/test_order_*`                                              | weight ordering for parents, broad/narrow regions, new/old versions and preferred flags, each with the arguments swapped                      |
 
 Together with the `cfg(test)` catalogue swap, these tests are the reason the whole
 provider layer is exercisable without network access — and the reason the catalogue's

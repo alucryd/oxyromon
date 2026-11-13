@@ -2,7 +2,19 @@
 type: workflow
 title: Sorting and the 1G1R Election
 description: How sort-roms classifies every game of a system into the system directory, 1G1R or Trash — regions, 1G1R and hybrid modes, the discard filters, the weighted 1G1R election and REGIONS_ONE_STRICT, arcade set-type sorting, subfolders, and the confirmed, transactional move plan.
-tags: [sort-roms, 1g1r, regions, election, discard, languages, arcade, subfolders, trash, workflow]
+tags:
+  [
+    sort-roms,
+    1g1r,
+    regions,
+    election,
+    discard,
+    languages,
+    arcade,
+    subfolders,
+    trash,
+    workflow,
+  ]
 sources:
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
@@ -18,6 +30,10 @@ sources:
     resource: repo://src/sort_roms/test_merged.rs
   - id: openwiki-source-9314a022f668e8ef5a081939
     resource: repo://src/sort_roms/test_sort_1g1r_catch_all.rs
+  - id: openwiki-source-1ecefd886ee274df1f2a91b3
+    resource: repo://src/sort_roms/test_sort_1g1r_clone_lists.rs
+  - id: openwiki-source-c188920547914990d564b7b8
+    resource: repo://src/sort_roms/test_sort_1g1r_infer_clones_titles.rs
   - id: openwiki-source-367e36977d822190bc47723f
     resource: repo://src/sort_roms/test_sort_1g1r_strict.rs
   - id: openwiki-source-b008f89c29b69a50d520efbf
@@ -26,10 +42,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # Sorting and the 1G1R Election
@@ -47,15 +63,16 @@ where `import-roms`, `convert-roms` and the others expect it.
 interactive multiselect) and then reads, per system and with that system's
 scope, everything the classification needs:
 
-| Input | Source | Used for |
-| --- | --- | --- |
-| `REGIONS_ALL` | `-r/--regions`, else the setting | regions kept in the system directory |
-| `REGIONS_ONE` | `-o/--1g1r`, else the setting | 1G1R regions, in priority order |
-| `REGIONS_ALL_ARCADE`, `REGIONS_ONE_ARCADE` | settings | arcade set types per directory |
-| `DISCARD_RELEASES`, `DISCARD_FLAGS`, `LANGUAGES` | settings | the discard filter |
-| `PREFER_PARENTS`, `PREFER_REGIONS`, `PREFER_VERSIONS`, `PREFER_FLAGS` | settings | the election weights |
-| `REGIONS_ONE_STRICT` | setting | whether the election ignores ownership |
-| subfolder schemes | `--subfolders` / `--1g1r-subfolders`, else the settings | alphabetical subfolders |
+| Input                                                                  | Source                                                  | Used for                                                    |
+| ---------------------------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------- |
+| `REGIONS_ALL`                                                          | `-r/--regions`, else the setting                        | regions kept in the system directory                        |
+| `REGIONS_ONE`                                                          | `-o/--1g1r`, else the setting                           | 1G1R regions, in priority order                             |
+| `REGIONS_ALL_ARCADE`, `REGIONS_ONE_ARCADE`                             | settings                                                | arcade set types per directory                              |
+| `DISCARD_RELEASES`, `DISCARD_FLAGS`, `DISCARD_CATEGORIES`, `LANGUAGES` | settings                                                | the discard filter                                          |
+| `PREFER_PARENTS`, `PREFER_REGIONS`, `PREFER_VERSIONS`, `PREFER_FLAGS`  | settings                                                | the election weights                                        |
+| `REGIONS_ONE_STRICT`                                                   | setting                                                 | whether the election ignores ownership                      |
+| `INFER_CLONES`                                                         | setting                                                 | whether a DAT without Parent-Clone data is grouped by title |
+| subfolder schemes                                                      | `--subfolders` / `--1g1r-subfolders`, else the settings | alphabetical subfolders                                     |
 
 Regions are TOSEC two-letter codes parsed by `Region::try_from_tosec_region`;
 an unparseable code panics with "Failed to parse region code". `ZZ` parses to
@@ -81,7 +98,7 @@ flowchart TD
   H --> I
 ```
 
-*Caption: the four classification branches; every one ends in the same move plan.*
+_Caption: the four classification branches; every one ends in the same move plan._
 
 Every branch produces three lists — games for the system directory
 (`Sorting::AllRegions`), for `1G1R` (`Sorting::OneRegion`), and for `Trash`
@@ -90,11 +107,15 @@ still get a sorting and feed the wanted list.
 
 ### 1G1R and hybrid mode
 
-When `REGIONS_ONE` is set on a console system, games are processed per
-Parent-Clone group: each parent with all its clones. For each group:
+When `REGIONS_ONE` is set on a console system, games are processed per group:
+by default each parent with all its clones, or — under `INFER_CLONES`, and only
+when the DAT declares no clones at all — each set of games sharing a title (see
+below). For each group:
 
-1. **Order.** The group is sorted by `sort_games_by_weight`, highest weight
-   first (see below).
+1. **Order.** The group is sorted by clone-list priority first when inferred
+   grouping produced one (lower wins, default 1), then by
+   `sort_games_by_weight`, highest weight first (see below). Inferred groups
+   have no parent to favour, so `PREFER_PARENTS` is switched off for them.
 2. **Discard.** When `DISCARD_RELEASES` or `DISCARD_FLAGS` is set,
    `trim_ignored_games` sends matching games to `Trash`.
 3. **Elect.** For each region of `REGIONS_ONE`, in order, the first game in
@@ -115,6 +136,30 @@ election falls back to the next best owned game, and only when the group has
 no complete game at all does it pick an unowned one. Strict mode follows the
 preferences regardless of ownership, so a missing preferred game is elected
 anyway, stays incomplete, and shows up as wanted instead of being replaced.
+
+### Inferred groups and Retool clone lists
+
+Redump DATs carry no Parent-Clone data, so with `INFER_CLONES` on and no clone
+games in the system, grouping switches from parent links to titles:
+`get_title_and_editions` parses each name as a No-Intro name and keeps the
+title, media and disc tags and any distinct flag, dropping regions, languages,
+versions, release statuses and edition flags — which travel with the game as
+editions rather than separating it. `Game (USA)` and `Game (Europe) (Rev 1)`
+therefore share a group while `Game (USA) (Disc 2)` does not, and a name that
+No-Intro parsing rejects is its own title
+([src/sort_roms.rs](../../src/sort_roms.rs#L854-L906)).
+
+Retool clone lists imported by `import-clone-lists` then override the title
+grouping where titles differ across regions — Wipeout XL and Wipeout 2097 are
+one game. Each `clone_list_titles` row becomes a matcher: a `short` search term
+is parsed like a game name (without regions), a `full` term compares against
+the whole name, a `regex` term matches case-insensitively, and the most
+specific matcher whose conditions (regions, languages, `match_string`) the game
+meets wins, ties going to the earliest row. The winning row moves the game into
+its `group_name` and gives it its `priority`, which sorts ahead of the weights
+within the group
+([src/sort_roms.rs](../../src/sort_roms.rs#L908-L1061)). Without a clone list,
+or where no title matches, plain title grouping applies.
 
 ### The election weights
 
@@ -162,8 +207,13 @@ directory.
 
 ## The discard filter
 
-`trim_ignored_games` partitions games into discarded and kept. For console
-systems it parses each name as a No-Intro name and discards a game when:
+`trim_ignored_games` partitions games into discarded and kept in two passes.
+The first discards any game whose `games.categories` (the DAT's `<category>`
+elements, `|`-joined) contains an entry of `DISCARD_CATEGORIES` — this works on
+arcade systems too, and needs no name parsing
+([src/sort_roms.rs](../../src/sort_roms.rs#L1063-L1087)). The second is
+name-based. For console systems it parses each name as a No-Intro name and
+discards a game when:
 
 - a `Languages` token lists languages and none of them is in `LANGUAGES`
   (games that list no languages are kept);
@@ -173,9 +223,10 @@ systems it parses each name as a No-Intro name and discards a game when:
 For arcade systems only `DISCARD_RELEASES` applies, matched as a substring of
 the game's DAT comment.
 
-Every branch calls the filter unconditionally, and the filter returns early,
-keeping every game, only when `LANGUAGES`, `DISCARD_RELEASES` and
-`DISCARD_FLAGS` are all empty, so each of the three works on its own. The
+Every branch calls the filter unconditionally, and the name-based pass returns
+early, keeping every game, only when `LANGUAGES`, `DISCARD_RELEASES` and
+`DISCARD_FLAGS` are all empty, so each of the four discard lists works on its
+own. The
 naming tokens are described in
 [DAT Providers and Naming Conventions](../integrations/dat-providers-no-intro-redump.md).
 
@@ -245,9 +296,14 @@ on the confirmation prompt. See
   `test_sort_1g1r_playlist` and `test_sort_1g1r_subfolders_alpha` cover groups
   of one, revision ordering, playlists moving with games and alphabetical
   subfolders.
-- `test_sort_discard_*` and `test_trim_ignored` cover the discard filter, and
-  `test_trim_languages_only` pins `LANGUAGES` discarding with no discard list
-  set.
+- `test_sort_1g1r_infer_clones_titles` and
+  `test_sort_1g1r_infer_clones_parent_clone` pin the inferred grouping against
+  its Parent-Clone equivalent, and `test_sort_1g1r_clone_lists` pins the
+  clone-list grouping and priorities.
+- `test_sort_discard_*` and `test_trim_ignored` cover the discard filter,
+  `test_sort_discard_categories` and `test_sort_1g1r_discard_categories` the
+  category pass, and `test_trim_languages_only` pins `LANGUAGES` discarding
+  with no discard list set.
 - `test_all_regions_from_*` and `test_one_region_from_*` pin that command-line
   regions override the settings.
 

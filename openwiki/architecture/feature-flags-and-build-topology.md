@@ -2,7 +2,19 @@
 type: build-topology
 title: Feature Flags and Build Topology
 description: How the mcp, server, use-rustls and use-native-tls cargo features gate modules, the SQLite pool shape and the served transports; how the root workspace plus crates/* (chd-rs and friends as path dependencies with their CLIs behind a `cli` feature), build.rs, Trunk, rust-embed and SKIP_TRUNK compose the CLI, the ten format CLIs, the embedded web UI and the Tauri desktop artifact.
-tags: [cargo-features, cargo-workspace, path-dependencies, build-rs, trunk, rust-embed, skip-trunk, tauri, ci, publishing]
+tags:
+  [
+    cargo-features,
+    cargo-workspace,
+    path-dependencies,
+    build-rs,
+    trunk,
+    rust-embed,
+    skip-trunk,
+    tauri,
+    ci,
+    publishing,
+  ]
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
     resource: repo://.github/workflows/continuous_integration.yml
@@ -18,8 +30,6 @@ sources:
     resource: repo://Cargo.toml
   - id: openwiki-source-1519e62b0bf12b3d41c2e1b8
     resource: repo://crates/chd-rs/Cargo.toml
-  - id: openwiki-source-a057427619dc76389568b31f
-    resource: repo://crates/chd-rs/src/flac.rs
   - id: openwiki-source-8bd2a10a08a7d902fe9f5c52
     resource: repo://crates/gcwii/Cargo.toml
   - id: openwiki-source-fe805238cef5394255c80d46
@@ -80,10 +90,10 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # Feature Flags and Build Topology
@@ -114,7 +124,7 @@ flowchart TD
   TRUNK --> ASSETS["target/assets embedded by rust-embed"]
 ```
 
-*Caption: the four features, what each pulls in, and the one build-script side effect that only `server` triggers.*
+_Caption: the four features, what each pulls in, and the one build-script side effect that only `server` triggers._
 
 `default = ["use-rustls"]` (Cargo.toml). `server` lists `mcp` among its
 dependencies, so **`server` implies `mcp`**: a `--features server` build serves
@@ -275,11 +285,11 @@ rather than a `server`-only one.
 
 `.github/workflows/continuous_integration.yml` sets `SKIP_TRUNK: "true"` for the
 whole workflow, so no cargo invocation runs trunk. Its four jobs run in
-parallel, except that the release job waits for the web UI. The *Web UI* job
+parallel, except that the release job waits for the web UI. The _Web UI_ job
 builds the UI once (`cd frontend && trunk build --release`, with `TRUNK_VERSION`
 pinned to 0.21.14 and the `wasm32-unknown-unknown` target installed) and uploads
-`target/assets` as an artifact. The *Release build and desktop* job downloads it
-into `target/assets` before building. The *Lint and test* job never sees it:
+`target/assets` as an artifact. The _Release build and desktop_ job downloads it
+into `target/assets` before building. The _Lint and test_ job never sees it:
 `build.rs` creates an empty `target/assets`, which is all `rust-embed` needs to
 compile, and no test reads the embedded UI.
 
@@ -300,9 +310,9 @@ Leptos frontend, which declares its own `[workspace]` and so is outside the
 first pass, for the browser target. The fourth lints the Tauri desktop shell,
 also its own workspace; it runs after the release build, because `tauri-build`
 refuses to compile until `desktop/scripts/stage-sidecar.sh` has staged that
-binary as the sidecar. The first two and the tests run in the *Lint and test*
-job, the third in the *Web UI* job and the fourth in the release job, after it
-builds `--release --features server`. A separate *Format* job runs
+binary as the sidecar. The first two and the tests run in the _Lint and test_
+job, the third in the _Web UI_ job and the fourth in the release job, after it
+builds `--release --features server`. A separate _Format_ job runs
 `cargo fmt --check` in all three workspaces. Workspace tests run under
 `cargo llvm-cov --workspace --features oxyromon/server`. Feature-gated tests
 follow the same split: `tests/mcp_stdio.rs` opens with `#![cfg(feature = "mcp")]`
@@ -420,7 +430,7 @@ sidecar as `oxyromon server --address 127.0.0.1 --port <port>`, and polls the
 port with `TcpStream::connect` for up to 30 seconds; `desktop/src/main.rs` then
 opens a `WebviewUrl::External` window pointed at that origin and kills the
 `CommandChild` on `RunEvent::Exit` so no orphaned server keeps the database
-locked. Because the window is served *from* the sidecar, the SPA keeps using
+locked. Because the window is served _from_ the sidecar, the SPA keeps using
 same-origin relative URLs — no CORS, no desktop-specific frontend build, and no
 changes to `server.rs`. `desktop/capabilities/default.json` grants an empty
 permission set for the same reason: the page never calls Tauri IPC.
@@ -443,26 +453,18 @@ flowchart LR
   SIDECAR --> DESK["desktop crate, own workspace"]
 ```
 
-*Caption: how one package plus ten path dependencies and two standalone crates compose the shipped artifacts.*
+_Caption: how one package plus ten path dependencies and two standalone crates compose the shipped artifacts._
 
 ## What blocks publishing
 
-`Cargo.toml` carries a `ponytail` comment recording that the package cannot be
-published as-is, because crates.io rejects git sources. One remains, the only
-git source in `Cargo.lock` (the `nod` git tag that used to be the other went
-with nod itself):
-
-- `[patch.crates-io] rusty_flac = { git = "https://github.com/alucryd/rusty_flac",
-  rev = "563068c…" }` — `chd-rs` asks for `rusty_flac = "0.2.2"`, but it calls
-  `Encoder::set_block_size`, which only the fork's `feat/block-size` branch has
-  so far. The patch names a revision rather than the branch, so a `cargo update`
-  cannot move it when the branch moves. A
-  patch does not travel with a published crate, so `chd-rs` cannot be published
-  until a rusty_flac release carries the method and `chd-rs` requires that
-  version; the patch is then dropped.
-
-`sevenz-rust2`, which an earlier release pinned to a fork revision, is back on the
-registry (`0.24.2`, `features = ["zstd"]`) and no longer blocks anything. Both
+Nothing does, any more. `Cargo.lock` holds no git source: the two that used to
+block a release are both gone. The `[patch.crates-io]` entry that pinned
+`rusty_flac` to a revision of the `alucryd/rusty_flac` fork (`feat/block-size`,
+for `Encoder::set_block_size`, which no crates.io release had) was dropped when
+`chd-rs` moved to `rusty_flac = "0.5.0"` from the registry, which carries the
+method; the `nod` git tag went with nod itself. `sevenz-rust2`, which an earlier
+release also pinned to a fork revision, is back on the registry (`0.24.2`,
+`features = ["zstd"]`). Both
 archive libraries are mandatory dependencies rather than optional features: 0.25.0
 removed the `nod` and `sevenz` features when RVZ/WBFS and 7z/ZIP support stopped
 shelling out to `dolphin-tool`, `wit` and 7-Zip, and RVZ/WBFS then moved from
@@ -489,7 +491,7 @@ flowchart TD
   I -->|"no"| K["binary compiles, first request to root panics"]
 ```
 
-*Caption: build.rs control flow and where each failure mode lands.*
+_Caption: build.rs control flow and where each failure mode lands._
 
 See also [Build and Release](../operations/build-and-release.md),
 [HTTP Server and GraphQL API](../server/http-server-and-graphql-api.md), and

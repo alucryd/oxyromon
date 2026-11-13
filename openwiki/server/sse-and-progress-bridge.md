@@ -48,8 +48,8 @@ sources:
     resource: repo://tests/mcp_stdio.rs
 generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # SSE Events and Progress Bridging

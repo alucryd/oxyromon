@@ -2,7 +2,19 @@
 type: server-surface
 title: HTTP Server, GraphQL API and Uploads
 description: The axum surface built by oxyromon server — one loopback listener serving /graphql, the /events SSE stream, four multipart upload endpoints, /romfiles/{id} downloads, /mcp and the embedded SPA; plus AppState, the DataLoader trio, the read surface (counts, merged per-system settings, the all-built-in dependency report), pool-failure semantics, the server-fetched URL import and graceful shutdown.
-tags: [axum, graphql, async-graphql, dataloader, dependencies, sse, multipart, upload, loopback, shutdown]
+tags:
+  [
+    axum,
+    graphql,
+    async-graphql,
+    dataloader,
+    dependencies,
+    sse,
+    multipart,
+    upload,
+    loopback,
+    shutdown,
+  ]
 sources:
   - id: openwiki-source-36f054f1f38f2197a6af5bca
     resource: repo://build.rs
@@ -54,10 +66,10 @@ sources:
     resource: repo://src/validator.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # HTTP Server, GraphQL API and Uploads
@@ -117,7 +129,7 @@ flowchart TD
   REQ2["GET /"] --> IDX["index.html"]
 ```
 
-*Caption: the fixed route table — API paths first, the embedded bundle as the fallback for everything else.*
+_Caption: the fixed route table — API paths first, the embedded bundle as the fallback for everything else._
 
 Upload routes each install `DefaultBodyLimit::disable()`: a ROM is a disc image,
 and axum's default body limit would reject it before the handler ever ran. The
@@ -158,7 +170,8 @@ Two of those fields are worth understanding rather than treating as lookups:
   ten entries, `sevenz-rust2`, `chd-rs`, `cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`,
   `xdelta-rs`, `wux-rs`, `rvz-rs` and `wbfs-rs`, sorted by name. All are linked-in crates whose `get_version()`
   returns `built-in` and cannot fail. Two add detail about keys: `nsz-rs` returns
-  `built-in, prod.keys not found` when `~/.switch/prod.keys` is absent, and
+  `built-in, no Switch keys imported` when neither the data directory's
+  `switch_keys.txt` nor `~/.switch/prod.keys` is present, and
   `wux-rs` returns `built-in, no Wii U keys imported` until `import-keys` has run.
   `version` is still nullable in the schema, but no entry produces `null` any
   more: `cia-rs` replaced `ctrtool`, the last external binary on the list. The
@@ -236,8 +249,8 @@ This is the invariant that most distinguishes the write path from the read path.
 
 - **Request-path mutations** go through `acquire_connection()`, which maps a
   pool failure onto `async_graphql::Error("Failed to acquire database
-  connection: …")`. A GraphQL error, not a 500 and not a panic.
-- **Spawned actions** acquire *inside* the task, after `{prefix}_started` has
+connection: …")`. A GraphQL error, not a 500 and not a panic.
+- **Spawned actions** acquire _inside_ the task, after `{prefix}_started` has
   already gone out and the task has taken `WRITE_LOCK`. The ordering matters: the client has been told the work
   began, so it must also be told it failed. A failed acquire emits
   `{prefix}_error` and returns; nothing hangs forever waiting for a completion
@@ -305,7 +318,7 @@ sequenceDiagram
   end
 ```
 
-*Caption: a mutation is an acknowledgement, not a result — the outcome only ever arrives over SSE.*
+_Caption: a mutation is an acknowledgement, not a result — the outcome only ever arrives over SSE._
 
 Because the action is asked for from a browser, arguments that would prompt on a
 TTY are pre-answered: `sort_roms` and `purge_roms` append `-y`, `import_rom_source`
@@ -316,7 +329,7 @@ hang the task.
 `purge_system` and `download_dats` predate the helper and inline the same shape,
 including the lock, which they take first. They differ in one respect worth knowing:
 `purge_system` validates the id on the request path, then the spawned task emits
-`purge_started` *after* acquiring, so
+`purge_started` _after_ acquiring, so
 the generic `purge` prefix (not `purge_system`) is what the frontend listens for.
 
 Mutations that only touch settings stay outside `WRITE_LOCK`, so they answer during
@@ -335,7 +348,7 @@ path and requires it to be an existing directory. They are attached with
 `#[graphql(validator(custom = "…"))]`, so a bad value is rejected as an
 input-value error before any resolver body or database write happens.
 
-Semantic pre-checks sit alongside them and are deliberately placed *before* the
+Semantic pre-checks sit alongside them and are deliberately placed _before_ the
 spawn: an unknown `system_id` returns `System {id} not found`, an unsupported
 convert format lists the valid ones, `purgeRoms` with every flag false is refused
 outright, `setPreferFormat` rejects a format the arcade system cannot hold, and
@@ -349,12 +362,12 @@ rather than erroring, and return **202 Accepted** as soon as the job is queued;
 progress and outcome arrive over SSE, never in the HTTP response. They differ in
 how they land the bytes and what they require:
 
-| Route | Fields | Bytes | Extra validation |
-| --- | --- | --- | --- |
-| `/dats` | `file`, `update`, `arcade` | buffered in memory via `field.bytes()`, written to a temp dir inside the task | none; per-result SSE, with `skipped: true` for an already-current DAT |
-| `/roms` | `file` **or** `url`, `system`, `unattended` | streamed chunk-by-chunk to a fresh `TempDir` | `unattended` must be `skip` or `first` (default `first`) |
-| `/patches` | `file`, `rom` (ROM id) | streamed to a `TempDir` | the ROM must exist, else 400 |
-| `/irds` | `file`, `system` (system id) | streamed to a `TempDir` | the system must exist; its **name** is kept for `--system` |
+| Route      | Fields                                      | Bytes                                                                         | Extra validation                                                      |
+| ---------- | ------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `/dats`    | `file`, `update`, `arcade`                  | buffered in memory via `field.bytes()`, written to a temp dir inside the task | none; per-result SSE, with `skipped: true` for an already-current DAT |
+| `/roms`    | `file` **or** `url`, `system`, `unattended` | streamed chunk-by-chunk to a fresh `TempDir`                                  | `unattended` must be `skip` or `first` (default `first`)              |
+| `/patches` | `file`, `rom` (ROM id)                      | streamed to a `TempDir`                                                       | the ROM must exist, else 400                                          |
+| `/irds`    | `file`, `system` (system id)                | streamed to a `TempDir`                                                       | the system must exist; its **name** is kept for `--system`            |
 
 Streaming is the point for the last three: a ROM is a disc image, and buffering
 one only to write it back out is an extra copy of gigabytes. `/dats` is the odd
@@ -370,7 +383,7 @@ makes the feature useful — the file never passes through the client — and it
 also an SSRF surface: the server will reach anything it can reach, including hosts
 on its own private network. The source comment says so twice, and the README
 repeats it: fine on the default loopback bind, think twice before exposing the
-server beyond it. The mitigations that *are* in place are narrow:
+server beyond it. The mitigations that _are_ in place are narrow:
 
 - scheme allow-list: `http://` and `https://` only, rejected before any request.
 - a 30-second connect timeout, so a dead host cannot hang the import.
@@ -381,7 +394,7 @@ server beyond it. The mitigations that *are* in place are narrow:
 Client-chosen names are untrusted in the same way. `safe_filename` keeps only the
 last non-empty, non-`.`/`..` segment split on both separators and falls back to
 `download`; `url_filename` strips query and fragment, strips scheme and authority
-so a path-less URL is not named after its host, percent-decodes, and *then* runs
+so a path-less URL is not named after its host, percent-decodes, and _then_ runs
 the same sanitiser — decoding can itself introduce `%2F` or `..`, and the result
 is joined onto a directory. The unit tests pin `%2E%2E%2F%2E%2E%2Fetc%2Fpasswd`
 down to `passwd`.
@@ -406,7 +419,7 @@ outcomes matter:
 
 The consequence for the UI is that `EventSource` reconnects without replaying, so
 the frontend resets its in-flight flags on every `onopen` rather than leaving a
-menu spinner stuck forever, and clears them on *either* `{prefix}_complete` or
+menu spinner stuck forever, and clears them on _either_ `{prefix}_complete` or
 `{prefix}_error`. Any new action must therefore emit both, and must emit one of
 them on every code path — including the acquire-failure path.
 
@@ -450,16 +463,16 @@ be the slow part.
 
 ## Operational failure modes
 
-| Symptom | Cause and check |
-| --- | --- |
-| `POST /roms` returns 202 and nothing happens | The job was queued and the action failed. Read the `import_rom_error` on `/events` and the server log — pool-acquire and fetch failures both surface there, not in the HTTP status. |
-| Import reports `Only http:// and https:// URLs can be imported` | Scheme allow-list on the `url` field; `file://`, `sftp://` and bare paths are refused by design. |
-| `Download exceeds the 100 GiB limit` | `MAX_ROM_DOWNLOAD_SIZE`, enforced while streaming, not from `Content-Length`. |
-| `GET /romfiles/{id}` returns 404 | The `romfiles` row exists but the file does not under `ROM_DIRECTORY`, or cannot be opened. A *nonexistent* id instead panics inside `find_romfile_by_id`, which is a different bug. |
-| API works, `/` and assets do not | The binary was built without a UI: `SKIP_TRUNK=true` against an empty `target/assets`, or from the published crate where `frontend/` is absent. `serve_index` unwraps `index.html`. |
-| A mutation fails with `Failed to acquire database connection` | Five-connection budget exhausted by long-running spawned actions. The mutation failed cleanly; retry once an action finishes. |
-| A read query fails where a mutation would have errored cleanly | Query resolvers still `unwrap()` on pool acquire — a known asymmetry, not a new bug. |
-| A `PREFER_FORMAT` or directory setting is rejected | `PreferFormatValidator` / `DirectoryValidator` ran before any write; the message lists the valid choices or says `Missing or invalid directory`. |
+| Symptom                                                         | Cause and check                                                                                                                                                                      |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `POST /roms` returns 202 and nothing happens                    | The job was queued and the action failed. Read the `import_rom_error` on `/events` and the server log — pool-acquire and fetch failures both surface there, not in the HTTP status.  |
+| Import reports `Only http:// and https:// URLs can be imported` | Scheme allow-list on the `url` field; `file://`, `sftp://` and bare paths are refused by design.                                                                                     |
+| `Download exceeds the 100 GiB limit`                            | `MAX_ROM_DOWNLOAD_SIZE`, enforced while streaming, not from `Content-Length`.                                                                                                        |
+| `GET /romfiles/{id}` returns 404                                | The `romfiles` row exists but the file does not under `ROM_DIRECTORY`, or cannot be opened. A _nonexistent_ id instead panics inside `find_romfile_by_id`, which is a different bug. |
+| API works, `/` and assets do not                                | The binary was built without a UI: `SKIP_TRUNK=true` against an empty `target/assets`, or from the published crate where `frontend/` is absent. `serve_index` unwraps `index.html`.  |
+| A mutation fails with `Failed to acquire database connection`   | Five-connection budget exhausted by long-running spawned actions. The mutation failed cleanly; retry once an action finishes.                                                        |
+| A read query fails where a mutation would have errored cleanly  | Query resolvers still `unwrap()` on pool acquire — a known asymmetry, not a new bug.                                                                                                 |
+| A `PREFER_FORMAT` or directory setting is rejected              | `PreferFormatValidator` / `DirectoryValidator` ran before any write; the message lists the valid choices or says `Missing or invalid directory`.                                     |
 
 ## Focused tests
 
@@ -485,7 +498,7 @@ unit-testing handlers.
   engines whose version is always `built-in` — and that the list is sorted by
   name), `downloadableSystems`, `systemSettings`, `gameInformation` name
   parsing, `ignored`.
-- `src/validator/` — per-validator unit tests, including that a *file* is not a
+- `src/validator/` — per-validator unit tests, including that a _file_ is not a
   valid directory.
 
 ## Where this connects

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1f3bf59bf8c8b432da35411a83dea1d62e3bf90d6dc431e226e0687fbf48c980",
+  "pageVersion": "sha256:cb5da0dda9b358094bcd17879058ebc5eb1a5f23418cc14aa9fe74b27eae7dbc",
   "claims": [
     {
       "id": "claim_56ecae6ff3f14ff0babfd3201239caab",
@@ -667,10 +667,24 @@
           "version": "repo-lines-v1:sha256:18671c0b7ec8e1e03ebf0d6f3c2bd4cc6ceecc2d889ac6ab2cb22862d6bd4f83:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkOTQxZmQ1YWExOGQ3ODZjNGQzZDc2ODZjOTg3MDIwNmQzMzAxY2Y4OGE1Y2U0Y2E3NDFhOTJkZTkxY2EyMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_758f9f52898a4a81828f83db83cc76e7",
+      "statement": "rvz-rs/tests/roundtrip.rs pins the chunk-size bounds on both sides: refuses_a_bad_chunk_size refuses writing at sizes RVZ disallows, and refuses_a_damaged_rvz rewrites a real RVZ's chunk-size field behind re-hashed headers — zero, a non-power-of-two, and 0x8000_0000 past the reader's 32 MiB ceiling — each of which must error rather than allocate.",
+      "evidence": [
+        {
+          "resource": "repo://crates/rvz-rs/tests/roundtrip.rs#L273-L292",
+          "version": "repo-lines-v1:sha256:7e2456b00684a67fc1cfbb6647dc96014b415a70b4ef4c649b637db012aeb4b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwMWY4M2Y0MjAwMWJiMTlhMmM2YjczOTVhZTZhMGIxYjZkNDAzZmMzZDIzMjRkZDhkMTg0ZWU5NjI5ZmRhNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmOWFkNDYzYmU3MWM1ZjQyMDk0NmFmYmYwN2QwZmU5ZjVmMTFkYTgyZjFlOTQ5MDNjYzMzOTVkOGMxYTBiMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczMzVlNWE0YmRmYzg3NWQwY2Q1YTc5MmQyYWFjOWI1ZDJmYjM3OTgyMDAzZGFmMjZhN2UyMGFiNmE4M2E4NDkifQ"
+        },
+        {
+          "resource": "repo://crates/rvz-rs/tests/roundtrip.rs#L305-L339",
+          "version": "repo-lines-v1:sha256:6fd2f64469ff12840cb7bff5c4d6183652a13c910563a79a0e15f30667d0b189:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNGQxMDk3N2Y4ZTMxMDgzZGU4MjFjZTVjODA4NzQxZjNiN2NlOWU5OTZiMjJjNzUzYTVmNWIyZDZiN2UyMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmOWFkNDYzYmU3MWM1ZjQyMDk0NmFmYmYwN2QwZmU5ZjVmMTFkYTgyZjFlOTQ5MDNjYzMzOTVkOGMxYTBiMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.2",
-    "at": "2026-11-09T21:55:13.223Z"
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-13T20:59:45.363Z"
   }
 }

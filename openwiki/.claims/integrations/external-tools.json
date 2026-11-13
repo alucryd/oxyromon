@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:cb7c841f68ac2d0d9e3e7d37d93bf9880d4899da501f14ac2ef50825b38e51b9",
+  "pageVersion": "sha256:272910eeee8fc67156d18f7a6ded0d7ea881bb038f027c91be8989c0d52b5963",
   "claims": [
     {
       "id": "claim_4574f56cdfe7474ba7de65c5cbfca04a",
       "statement": "util::create_tmp_directory creates its tempfile::TempDir inside config::get_tmp_directory rather than the OS default, so intermediate files, CIA unpacks included, land on the filesystem chosen by the TMP_DIRECTORY setting; the caller holds the TempDir for the whole operation because dropping it deletes the directory.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L642-L654",
+          "resource": "repo://src/config.rs#L645-L657",
           "version": "repo-lines-v1:sha256:fa862ffb21817089aa67c69311722cac8b57b5e89b709946eca9592a34072669:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmN2Y0NDczMTU4MTFlMThiNzcwOWFkOWQ1Y2Q5OTg2MTNmYzgzYTA5NjhmNjI1MTFiY2IxYmU1ZWZjOTllNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmZTEwYzlmZWI5NjQ2NjFhYWJmYTg2NTQ0NDYxMTk5ZWRmYmRjNTY0MmM5NzU2Nzc5Y2RiN2MyYjUwMWViMGIifQ"
         },
         {
-          "resource": "repo://src/import_roms.rs#L1816-L1834",
+          "resource": "repo://src/import_roms.rs#L1834-L1852",
           "version": "repo-lines-v1:sha256:4d75738bcbbe009c741c75ade0007adc501dab8b4ac046ee95536886c2cac80f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxMDdmZTAxYjI5ZjUyOGUyMWU3NjllYjNlZGFjNTVkNmZkNjNhZjBjMzcyM2JkM2I2ZTQ5ZDY3ZGIyYjFiMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwODIyODg0MmQ2MjE3NTRjZTVhNTg4YWUwMmNkNWU2NTM5OTYwMWM5ODc3OGQ5OTY5YzBmZjFhYmQ0YjllNGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjMjJmYzliNjA2M2I3YmE3MWQxN2UyY2RlNzAzODdhMTM2MTUxZDk0MzJhM2FlNjZmOTgwZjhhZGE2OTg3ZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzYzYxNjcyN2QxNGY5NDZlMjVlYjdkMjhiZmMyYjA4MzBiMzY1N2Y1NmUwZWRkMTVlZTUyNmVlNGYxMjA0NTMifQ"
         },
         {
@@ -22,7 +22,7 @@
     },
     {
       "id": "claim_104cc73b81704ef3a56a511482cf3167",
-      "statement": "info.rs (Dependencies section), query.rs (GraphQL dependencies) and mcp/read.rs (build_status, shared by the status tool and the oxyromon://status resource) all report info::dependencies(): sevenz-rust2, chd-rs, cia-rs, nsz-rs, rvz-rs, wbfs-rs, wux-rs, xps-rs, xso-rs and xdelta-rs, every one reporting the literal \"built-in\", with nsz appending \", prod.keys not found\" when the key file is absent and wux appending \", no Wii U keys imported\" when no Wii U keys were imported; none can come back missing.",
+      "statement": "info.rs (Dependencies section), query.rs (GraphQL dependencies) and mcp/read.rs (build_status, shared by the status tool and the oxyromon://status resource) all report info::dependencies(): sevenz-rust2, chd-rs, cia-rs, nsz-rs, rvz-rs, wbfs-rs, wux-rs, xps-rs, xso-rs and xdelta-rs, every one reporting the literal \"built-in\", with nsz appending \", no Switch keys imported\" when neither switch_keys.txt nor ~/.switch/prod.keys is present and wux appending \", no Wii U keys imported\" when no Wii U keys were imported; none can come back missing.",
       "evidence": [
         {
           "resource": "repo://src/info.rs#L22-L52",
@@ -33,8 +33,8 @@
           "version": "repo-lines-v1:sha256:22703651f35a4a6510ec25dd157213979e7658340276d306e824f275869415d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3ODQwYWZmNTZkYjVlNzExNjM5ZmE4ZGM5MjE3YzFiZTA5OTc2MGZiODg1NzVjNmE5YmQzN2Q2MjkxNmMyMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhMzEyNTcwMmUyMjhlMTQ2NGIzMjM4MzhhNGJkNGZhNmNmOGViMjg4YTJmZmY2MmQyYWZhNWZlZTc2NTBmYjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3ZmU4ZDQ4YzZjNzEzMzQ2OTg5MTA2NjIxMDUwZjU0OGE1ZmQ4NmJiZTI2NjJhYmE2NmI1YjQ2ZmVhYzQxMWMifQ"
         },
         {
-          "resource": "repo://src/nsz.rs#L247-L253",
-          "version": "repo-lines-v1:sha256:72ac3ddcb8f79c9a1b39461b126b66685cdd2bee327b0407f8f4428a06557434:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4ZTdkMmU1YzEyNWU2Y2QyNzUxNGIzYjFhMTEyYmJkOTcyOGEzODhkMTU2Y2FmOGMxNDA0MGZlOTdkZTVkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZmZmUwYTQzZWEzYjczNjdhZjc4MTNlZWQ3OTc2MWMwZTI0ODk4NDczZTc2Njg3NTQ1YjBlZDA5YzgyNjJlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjhjZTU0OTI1ZDQ5ZTA2MTUyYzRkODg3OTgyN2Q3MDZiYTU1OTc2NDlmZWQ1YTY3NmFlOTVlZTRkNThhOTE1NyJ9"
+          "resource": "repo://src/nsz.rs#L268-L273",
+          "version": "repo-lines-v1:sha256:f3b0c48b6b42c82d350a1e82ed93c1b898455561f782463f1df1f323cc5236f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjljZGE0YzA1ZDI2ZWRmZTU3NjY1Y2JiY2NkMDdlNWU5MGU5YzMyOGQ3MzYyZDcwYzViZjQ3YzVjZTZmZDAwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQ3NWU5NGE5MDRhYzQ5YjMxNTRkNDY3MmE2NmU4NjI5Yjg2ZGFjNzRlM2UyOTM3YmU2OTI3YWUzZGExMWM1MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjM5ZDQ4YjE1OGU2NmY1ODY0OTdjYTFjMDdmNzFlNjFlODBmZWNmYjI1MDAxMjI1MGQzZTIzYzdmMThkZTZjMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTUyMTYwNGIzNWZjNDBhZjAwY2JhNGVlYTJmZDVlMmMzYWYxODYzYjM5MTE4NWQ3YmY0YmIwOWU3MmQwYzhiMyJ9"
         },
         {
           "resource": "repo://src/query.rs#L233-L242",
@@ -109,7 +109,7 @@
       "statement": "wux-rs replaced no external tool, since oxyromon never ran one for the Wii U; it follows wudd and Cemu, and its tests use a synthetic disc and the independent zarust ZArchive reader.",
       "evidence": [
         {
-          "resource": "repo://README.md#L226-L228",
+          "resource": "repo://README.md#L228-L230",
           "version": "repo-lines-v1:sha256:27be246fc03f06b406113ff4f2b19c37656b866903ce577aef3ef68979799818:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTA3ZjIzNTkxYjI2MTViYTAxNTI1NzdiZjQ0OGMyZTNmNzQ1NWIwYTQwYjg0MzJkYmM0NmM4NDEyNjFjOWI2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjE4YmIwM2YxZDNiNjhhYTFiOTBmMmI2ZjM3YmQyN2JjYzhkNmJjNjY5ZGYxOTk4ODBlMjhlZTM4ZWIxMDg5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWMzYWUyMDI3NDI0NDMxMDZjNzNlM2VlYzdlZDliMDZmMzE5NWIzZTZiMDExZTQzM2Q4ZjE1MmQyNDQwYjUzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTM5MDNiYzU0NmMxYjViMDgxZmI5MDY5YWM1ZmNlMTNlZTUwMTcyNzRiOTUyMWI5YjhiOTBmZjBmNzZlMWI0ZiJ9"
         },
         {
@@ -127,7 +127,7 @@
           "version": "repo-lines-v1:sha256:1d629f15574656f74215cbcf407ec1190f9e61bd6086e90b80e736b1bce05a40:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQwYzM0NDZlNGM4YTA3M2E0MWNmZGM4MzMxMWE4ZDA1ZGZhOGM3ODNhNThkNThjNDcxZjI3YTlhMTM0NzQ4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1YTBlMzZhYTUxNTk0ZjAxMTQwOWVhNGFjMGJmMWRhZmIxNDM3NzEwMjMwNjQ3MjA2MzQwMWQ0MjJiYTE5ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDM3ZGNmNjM1MGYwZTdkODc2YjNiZGY1YTNjMThmM2YzZjQ3ZDI3NzI4MDA3MjVhM2FhOGI4NDhjZWQzNTViMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjBiNzQzMGM4MzRhNDU2NDViYWZiM2ZiMmMyMjg3N2IzN2NiNTY3ZTgwNmEyZTkxN2EzZWQ3YTdjZmY2MzMyNSJ9"
         },
         {
-          "resource": "repo://README.md#L226-L227",
+          "resource": "repo://README.md#L228-L229",
           "version": "repo-lines-v1:sha256:dd87fb18a4a80cc6deb43a07de944ebe26df2079b6cc991bc8055645aa2564f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTA3ZjIzNTkxYjI2MTViYTAxNTI1NzdiZjQ0OGMyZTNmNzQ1NWIwYTQwYjg0MzJkYmM0NmM4NDEyNjFjOWI2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2ZkNjA2OGI4ZmJjYTg1MDY5OWI5MTlhZjJiNDI0MGQzOTAwMWRhYmQwZjk5MzMyZDEwNzE1YmYyZjc4YTkyZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWMzYWUyMDI3NDI0NDMxMDZjNzNlM2VlYzdlZDliMDZmMzE5NWIzZTZiMDExZTQzM2Q4ZjE1MmQyNDQwYjUzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTAzNWExMWU2M2MwMTA3YTQ1NWM1NWYwOTZkMmM4ZGNkNGFjYjAyY2YzZjAwM2E4NDQxMmUyZTEwYjU5Njg0OCJ9"
         },
         {
@@ -142,7 +142,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.2",
-    "at": "2026-11-09T21:55:13.223Z"
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-13T20:59:45.363Z"
   }
 }

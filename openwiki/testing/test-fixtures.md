@@ -34,8 +34,12 @@ sources:
     resource: repo://src/download_dats/test_redump.rs
   - id: openwiki-source-0f48e709a294c84643eef7ef
     resource: repo://src/export_roms/test_wux_with_ticketless_update_to_wua.rs
+  - id: openwiki-source-53841b6d7bd07af06da7ffdd
+    resource: repo://src/import_clone_lists/test_import_clone_lists.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
     resource: repo://src/import_dats.rs
+  - id: openwiki-source-6050befef6bfccbdaf8b9ead
+    resource: repo://src/import_dats/test_dat_categories.rs
   - id: openwiki-source-8485a3ae73bdd8c6923a0bf4
     resource: repo://src/import_dats/test_dat_headered_skipped_header.rs
   - id: openwiki-source-0ad541323389e44d86d51bdc
@@ -84,6 +88,16 @@ sources:
     resource: repo://src/model.rs
   - id: openwiki-source-f83e6ecb072f882047f3b497
     resource: repo://src/rebuild_roms/merged_set.rs
+  - id: openwiki-source-0a9271029eb893aacec54c15
+    resource: repo://src/sort_roms.rs
+  - id: openwiki-source-1ecefd886ee274df1f2a91b3
+    resource: repo://src/sort_roms/test_sort_1g1r_clone_lists.rs
+  - id: openwiki-source-6b7f73133b2465c3121b03a5
+    resource: repo://src/sort_roms/test_sort_1g1r_discard_categories.rs
+  - id: openwiki-source-6fcb49e6463833d943d18daa
+    resource: repo://src/sort_roms/test_sort_1g1r_infer_clones_parent_clone.rs
+  - id: openwiki-source-c188920547914990d564b7b8
+    resource: repo://src/sort_roms/test_sort_1g1r_infer_clones_titles.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
@@ -130,12 +144,17 @@ sources:
     resource: repo://tests/Test%20System%20(20261025)%20(CDN).dat
   - id: openwiki-source-706217a392bda126ca145591
     resource: repo://tests/Test%20System%20(20261025)%20(WUD).dat
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+  - id: openwiki-source-d7c0211012be2f7a796af59b
+    resource: repo://tests/Test%20System%20(20261109)%20(Parent-Clone)%20(Categories).dat
+  - id: openwiki-source-39a2513e5c6c2ab8f2318165
+    resource: repo://tests/Test%20System%20(20261110)%20(Infer%20Clones).dat
+  - id: openwiki-source-6492b1773800677865aa0655
+    resource: repo://tests/Test%20System%20(Clone%20Lists)%20(Redump).json
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
-
 
 # Test Fixtures and End-to-End Suites
 
@@ -206,7 +225,7 @@ flowchart TD
   G --> H["assert database rows and the renamed file under the ROM TempDir"]
 ```
 
-*Caption: the shared setup every fixture-consuming test repeats — scratch directories inside `tests/`, fixtures copied before anything can move them, assertions made against the ROM directory.*
+_Caption: the shared setup every fixture-consuming test repeats — scratch directories inside `tests/`, fixtures copied before anything can move them, assertions made against the ROM directory._
 
 ## DAT naming: system, version date, scenario suffix
 
@@ -223,7 +242,7 @@ suite while "renaming a fixture":
   suffix belongs in `<name>` **only when the scenario needs its own system**.
 - **The `<header><version>`** is the update gate — see the next section.
 
-That yields two naming families. Scenario DATs that are *distinct systems* carry
+That yields two naming families. Scenario DATs that are _distinct systems_ carry
 the suffix in the header too, and the tests assert it: `Test System
 (20200721) (Parent-Clone).dat` → `"Test System (Parent-Clone)"`, `Test System
 (20230105) (Multiple Discs).dat` → `"Test System (Multiple Discs)"`, `Test System
@@ -250,7 +269,7 @@ and `is_update` is a plain string `Ordering` compare on the version: **less**
 prints "Skipping older version" and returns false, **equal** prints "Already up
 to date" and returns false, **greater** updates
 ([src/util.rs](../../src/util.rs#L363-L390)). `--force` bypasses it. This is why
-`Test System (20000000).dat` exists at all: it is a *deliberately ancient*
+`Test System (20000000).dat` exists at all: it is a _deliberately ancient_
 catalog, imported second, used to prove nothing changed
 ([src/import_dats/test_dat_outdated_should_do_nothing.rs](../../src/import_dats/test_dat_outdated_should_do_nothing.rs#L23-L62)).
 Dates are lexicographic, not calendar: any `YYYYMMDD` string works, and a new
@@ -271,7 +290,7 @@ The pairing is exact and unforgiving. Each `<rom>` element declares `name`,
 
 - `name` must equal a file in `tests/` **byte for byte**, including double
   extensions (`Test Game (USA, Europe).rom.zip`, `.iso.7z`) and the `(Track
-  01).bin` spacing. This is what the special-characters scenario probes with its
+01).bin` spacing. This is what the special-characters scenario probes with its
   `-Test Game@ (USA, Europe).rom` entry.
 - `size` and one hash must match the file's bytes, because import matches a file
   by size and hash before it ever looks at a name. `get_hash_algorithm` picks
@@ -306,7 +325,7 @@ flowchart TD
   H -- "no" --> J["no match, or check-roms sends it to Trash"]
 ```
 
-*Caption: a DAT row only works if a fixture file with that exact name exists in `tests/` and its size and hash agree with what the row declares.*
+_Caption: a DAT row only works if a fixture file with that exact name exists in `tests/` and its size and hash agree with what the row declares._
 
 ## Checksums for new fixtures: `tests/compute_sums.sh`
 
@@ -363,9 +382,9 @@ Two techniques, and neither commits a broken ROM:
   matched romfile is orphaned; `Test System (20200723) (Changed Hashes).dat`
   uses the loud `crc="deadbeef"` on `Test Game (USA, Europe).rom`;
   `Test System (20240626) (Multiple Orphan Roms Mismatch).dat` mutates the
-  `(Track 0n).bin` hashes *and* renames the rows away from `(CUE BIN)`.
+  `(Track 0n).bin` hashes _and_ renames the rows away from `(CUE BIN)`.
   Renaming a game while keeping its rom rows — `Test System (20240626) (Multiple
-  Orphan Roms).dat`, `Test System (20200722) (Renamed Game).dat` — orphans the
+Orphan Roms).dat`, `Test System (20200722) (Renamed Game).dat` — orphans the
   same files from the other direction. The ancient `Test System (20000000).dat`
   repeats the same mutations but sits behind the version gate, so nothing in it
   ever takes effect.
@@ -383,19 +402,19 @@ both.
 
 The orphan DATs are not just an import of a bad catalog. Each pairs a DAT-update
 `import_dat` with an explicit romfile count and an explicit trash verdict, and
-the two DATs differ *on purpose*
+the two DATs differ _on purpose_
 ([src/import_dats/test_dat_updated_orphan_chd.rs](../../src/import_dats/test_dat_updated_orphan_chd.rs#L102-L119),
 [src/import_dats/test_dat_updated_orphan_chd_mismatch.rs](../../src/import_dats/test_dat_updated_orphan_chd_mismatch.rs#L103-L120)):
 
-| Fixture imported first | Update DAT | Roms / romfiles after | Trash |
-| --- | --- | --- | --- |
-| `(Multiple Tracks).cue` + `.chd` | `(Multiple Orphan Roms).dat` — game renamed to `(…) (Rev 1)`, rom rows unchanged | 3 / 2 | nothing trashed |
-| `(Multiple Tracks).cue` + `.chd` | `(Multiple Orphan Roms Mismatch).dat` | 3 / 2 | the CUE/BIN romfile is trashed |
-| `Test Game (USA, Europe) (Full).7z` | `(Multiple Orphan Roms).dat` | 3 / 1 | nothing trashed |
-| `Test Game (USA, Europe) (Full).7z` | `(Multiple Orphan Roms Mismatch).dat` | 3 / 1 | the archive is trashed, every rom loses its `romfile_id` |
+| Fixture imported first              | Update DAT                                                                       | Roms / romfiles after | Trash                                                    |
+| ----------------------------------- | -------------------------------------------------------------------------------- | --------------------- | -------------------------------------------------------- |
+| `(Multiple Tracks).cue` + `.chd`    | `(Multiple Orphan Roms).dat` — game renamed to `(…) (Rev 1)`, rom rows unchanged | 3 / 2                 | nothing trashed                                          |
+| `(Multiple Tracks).cue` + `.chd`    | `(Multiple Orphan Roms Mismatch).dat`                                            | 3 / 2                 | the CUE/BIN romfile is trashed                           |
+| `Test Game (USA, Europe) (Full).7z` | `(Multiple Orphan Roms).dat`                                                     | 3 / 1                 | nothing trashed                                          |
+| `Test Game (USA, Europe) (Full).7z` | `(Multiple Orphan Roms Mismatch).dat`                                            | 3 / 1                 | the archive is trashed, every rom loses its `romfile_id` |
 
 The reading: a rename alone leaves the still-matching romfile where it is, and
-only a *checksum* mismatch moves a container to Trash. That is exactly why the
+only a _checksum_ mismatch moves a container to Trash. That is exactly why the
 CHD variant keeps two romfiles — the CUE/BIN pair and the CHD are separate
 romfiles for the same three roms — and why it asserts `!path.contains("/Trash/")`
 for every one of them. A test that only counted roms would pass either way;
@@ -415,16 +434,16 @@ fixture names below are therefore just names: each `.chd` is opened by
 SHA-1, parent SHA-1 and track count straight from the container
 ([src/chd.rs](../../src/chd.rs#L547-L583)).
 
-| Fixture | `ChdType` | Consumed by | What the assertion proves |
-| --- | --- | --- | --- |
-| `Test Game (USA, Europe) (Multiple Tracks).chd` | `Cd` | `import_roms/test_multiple_tracks_chd.rs`, `check_roms/test_multiple_tracks_chd.rs`, `import_dats/test_dat_updated_orphan_chd*.rs`, `convert_roms`/`export_roms` CHD suites | the CD branch hashes **each extracted track** against the DAT's `.cue` + two `(Track 0n).bin` rows, and only imports when every track matches one game ([src/import_roms.rs](../../src/import_roms.rs#L1047-L1145)) |
-| `Test Game (USA, Europe) (Single Track).chd` | `Cd` with one track | `import_roms/test_single_track_chd.rs`, `export_roms/test_single_track_chd_to_iso.rs` | `track_count == 1` takes the unsplit extraction path, so one rom is matched and the CHD is stored as `<game>.chd` ([src/chd.rs](../../src/chd.rs#L418-L467)) |
-| `Test Game (USA, Europe) (ISO).chd` | `Dvd` | `import_roms/test_iso_chd.rs`, `check_roms/test_iso_chd.rs`, the `iso_chd_to_*` convert/export suites | the DVD branch hashes the *extracted* ISO against `Test Game (USA, Europe) (ISO).iso`'s row — `ChdRomfile::get_hash_and_size` extracts into the tmp directory and delegates, so the importer never hashes the CHD itself ([src/chd.rs](../../src/chd.rs#L171-L229)) |
-| `Test Game (USA, Europe) (RDSK).chd` | `Hd` | `import_roms/test_mame_chd.rs`, `import_roms/test_mame_mixed.rs` | the HD branch matches the `<disk sha1=…>` row through the size-0 CHD-SHA1 retry, and an arcade system stores it in a per-game subdirectory ([src/import_roms/test_mame_chd.rs](../../src/import_roms/test_mame_chd.rs#L77-L94)) |
-| `Test Game (USA, Europe) (LD).riff` | the LaserDisc source, not a CHD | `src/chd/test_ld.rs` | `.riff` → `to_chd` → `as_chd` → `to_riff` → `to_chd` again produces a **byte-identical** CHD, in process ([src/chd/test_ld.rs](../../src/chd/test_ld.rs#L1-L50)) — the only consumer of this fixture anywhere in the workspace |
+| Fixture                                         | `ChdType`                       | Consumed by                                                                                                                                                                 | What the assertion proves                                                                                                                                                                                                                                           |
+| ----------------------------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Test Game (USA, Europe) (Multiple Tracks).chd` | `Cd`                            | `import_roms/test_multiple_tracks_chd.rs`, `check_roms/test_multiple_tracks_chd.rs`, `import_dats/test_dat_updated_orphan_chd*.rs`, `convert_roms`/`export_roms` CHD suites | the CD branch hashes **each extracted track** against the DAT's `.cue` + two `(Track 0n).bin` rows, and only imports when every track matches one game ([src/import_roms.rs](../../src/import_roms.rs#L1047-L1145))                                                 |
+| `Test Game (USA, Europe) (Single Track).chd`    | `Cd` with one track             | `import_roms/test_single_track_chd.rs`, `export_roms/test_single_track_chd_to_iso.rs`                                                                                       | `track_count == 1` takes the unsplit extraction path, so one rom is matched and the CHD is stored as `<game>.chd` ([src/chd.rs](../../src/chd.rs#L418-L467))                                                                                                        |
+| `Test Game (USA, Europe) (ISO).chd`             | `Dvd`                           | `import_roms/test_iso_chd.rs`, `check_roms/test_iso_chd.rs`, the `iso_chd_to_*` convert/export suites                                                                       | the DVD branch hashes the _extracted_ ISO against `Test Game (USA, Europe) (ISO).iso`'s row — `ChdRomfile::get_hash_and_size` extracts into the tmp directory and delegates, so the importer never hashes the CHD itself ([src/chd.rs](../../src/chd.rs#L171-L229)) |
+| `Test Game (USA, Europe) (RDSK).chd`            | `Hd`                            | `import_roms/test_mame_chd.rs`, `import_roms/test_mame_mixed.rs`                                                                                                            | the HD branch matches the `<disk sha1=…>` row through the size-0 CHD-SHA1 retry, and an arcade system stores it in a per-game subdirectory ([src/import_roms/test_mame_chd.rs](../../src/import_roms/test_mame_chd.rs#L77-L94))                                     |
+| `Test Game (USA, Europe) (LD).riff`             | the LaserDisc source, not a CHD | `src/chd/test_ld.rs`                                                                                                                                                        | `.riff` → `to_chd` → `as_chd` → `to_riff` → `to_chd` again produces a **byte-identical** CHD, in process ([src/chd/test_ld.rs](../../src/chd/test_ld.rs#L1-L50)) — the only consumer of this fixture anywhere in the workspace                                      |
 
 Two consequences worth internalising. First, the `.chd` fixtures no longer
-require any tool on `PATH` to be *used*: import, check, convert and export all
+require any tool on `PATH` to be _used_: import, check, convert and export all
 run through `chd_rs`, so the fixture corpus is self-sufficient and `chd::get_version()`
 reports the literal string `built-in`
 ([src/chd.rs](../../src/chd.rs#L896-L898)). Second, `crates/chd-rs/tests/cli.rs`
@@ -437,7 +456,7 @@ oracle there
 ([crates/chd-rs/tests/cli.rs](../../crates/chd-rs/tests/cli.rs#L1-L22),
 [crates/chd-rs/tests/cli.rs](../../crates/chd-rs/tests/cli.rs#L95-L143)). Fixing
 a fixture's bytes is therefore a two-sided change: the DAT rows in this
-repository *and* the golden report in the crate.
+repository _and_ the golden report in the crate.
 
 ## The synthetic Wii U fixtures
 
@@ -445,11 +464,11 @@ No real Wii U disc or key can ship, so the Wii U fixtures are synthetic, built w
 the same layout wux-rs's own tests use
 ([Wii U Formats and wux-rs](../concepts/wii-u-formats-and-wux-rs.md)).
 
-| File | Role |
-| --- | --- |
-| `Test Game (USA).wud` | A 1.8 MiB encrypted disc with an update partition, declared by `Test System (20261025) (WUD).dat` under Redump's name, `Test Game (USA).iso` |
-| `Test Game (USA).wux` | The same disc as a WUX, which imports and checks against the WUD's row |
-| `Test Game (USA).keys.txt` | Made-up keys in Cemu's format: the disc key, then a stand-in common key. `src/wux.rs` reads it in place of the data directory's keys under `cfg(test)` |
+| File                        | Role                                                                                                                                                                           |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Test Game (USA).wud`       | A 1.8 MiB encrypted disc with an update partition, declared by `Test System (20261025) (WUD).dat` under Redump's name, `Test Game (USA).iso`                                   |
+| `Test Game (USA).wux`       | The same disc as a WUX, which imports and checks against the WUD's row                                                                                                         |
+| `Test Game (USA).keys.txt`  | Made-up keys in Cemu's format: the disc key, then a stand-in common key. `src/wux.rs` reads it in place of the data directory's keys under `cfg(test)`                         |
 | `Test Game (USA) (Update)/` | An update as a NUS folder under No-Intro's CDN names: `tmd.48`, `cetk.48`, contents `00000010` to `00000012` and `00000012.h3`. Declared by `Test System (20261025) (CDN).dat` |
 
 These drive `import_roms/test_wux.rs` and `test_nus.rs`, `check_roms/test_wux.rs`,
@@ -461,17 +480,41 @@ the WUA tests write one from the WUD first, its update partition in a store. The
 both DATs, so `ToWua` finds the update by title ID; the ticketless case removes
 the `cetk` and checks that the update is left out of the WUA.
 
+## Election fixtures: categories, inferred clones, clone lists
+
+Three later DAT scenarios feed the sorting features rather than the import
+path. `Test System (20261109) (Parent-Clone) (Categories).dat` carries
+per-game `<category>` elements (`Games`, `Applications`, `Demos`,
+`Preproduction`); `import_dats/test_dat_categories.rs` and
+`test_dat_categories_updated.rs` assert the categories land on the game
+(a `\|`-joined string) and survive a DAT update, while
+`sort_roms/test_sort_discard_categories.rs` and
+`test_sort_1g1r_discard_categories.rs` pass `&["Demos"]` as `sort_system`'s
+ignored-category list — what the `DISCARD_CATEGORIES` setting compiles to —
+and check the flagged games drop out of the election. `Test System (20261110)
+(Infer Clones).dat` ships no `<clone>` links at all; with `INFER_CLONES`
+enabled, `sort_roms/test_sort_1g1r_infer_clones_titles.rs` proves games are
+grouped by shared metadata instead, and its `(Infer Clones) (Parent-Clone)
+.dat` companion is the same corpus with explicit clone links, used by
+`test_sort_1g1r_infer_clones_parent_clone.rs` to show the inferred election
+matches the declared one. Finally `Test System (20261111) (Clone Lists).dat`
+pairs with `Test System (Clone Lists) (Redump).json`, a clone-list dump in the
+Retool-derived JSON shape (`description` plus `variants` of `group` / `titles`
+entries with `searchTerm`, `priority`, `filters`); the whole
+`src/import_clone_lists/` suite parses that file, and
+`sort_roms/test_sort_1g1r_clone_lists.rs` consumes the imported priorities.
+
 ## Non-DAT fixtures
 
-| File | Role |
-| --- | --- |
-| `hbmame.xml` | A headerless MAME `-listxml` file with a `build` attribute, one machine with a `nodump` ROM and one device; `import_dats/test_dat_mame_listxml.rs` asserts the system takes its name from the file and its version from the build |
-| `header.xml` | A `clrmamepro` header detector (`NES` magic at offset 10) referenced by `<clrmamepro header="header.xml" />` in the Headered DATs; resolved next to the DAT, else from the embedded `data/` assets ([src/import_dats.rs](../../src/import_dats.rs#L283-L304)) |
-| `profile.xml` | A no-intro profile served by a wiremock `GET /profile.xml` in the DAT-download test ([src/download_dats/test_nointro.rs](../../src/download_dats/test_nointro.rs#L35-L50)) |
-| `Test System (20200721).zip` | The redump datfile payload a mocked `GET /datfile/…` returns ([src/download_dats/test_redump.rs](../../src/download_dats/test_redump.rs#L28-L70)) |
-| `Test System (20210401).zip` | A DAT **nested in a subdirectory** (`Test System/…`), exercising `import-dats` on an archive: the ZIP is unpacked into the tmp directory and every `.dat` in the tree is found ([src/import_dats.rs](../../src/import_dats.rs#L110-L143), [src/import_dats/test_zip_nested.rs](../../src/import_dats/test_zip_nested.rs#L25-L46)) |
-| `Test Game (USA, Europe).ips` / `.bps` / `.xdelta` with `(patched).rom` | The known-answer triple: apply the patch, compare to the committed expected output ([src/xps/test_patch.rs](../../src/xps/test_patch.rs#L38-L45)) |
-| `UP0001-BLUS00001.pkg` + `prfgmHWxGNxsfJ.rap` | The PSN pair declared by `Test System (20230527) (PSN).dat` |
+| File                                                                    | Role                                                                                                                                                                                                                                                                                                                              |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hbmame.xml`                                                            | A headerless MAME `-listxml` file with a `build` attribute, one machine with a `nodump` ROM and one device; `import_dats/test_dat_mame_listxml.rs` asserts the system takes its name from the file and its version from the build                                                                                                 |
+| `header.xml`                                                            | A `clrmamepro` header detector (`NES` magic at offset 10) referenced by `<clrmamepro header="header.xml" />` in the Headered DATs; resolved next to the DAT, else from the embedded `data/` assets ([src/import_dats.rs](../../src/import_dats.rs#L283-L304))                                                                     |
+| `profile.xml`                                                           | A no-intro profile served by a wiremock `GET /profile.xml` in the DAT-download test ([src/download_dats/test_nointro.rs](../../src/download_dats/test_nointro.rs#L35-L50))                                                                                                                                                        |
+| `Test System (20200721).zip`                                            | The redump datfile payload a mocked `GET /datfile/…` returns ([src/download_dats/test_redump.rs](../../src/download_dats/test_redump.rs#L28-L70))                                                                                                                                                                                 |
+| `Test System (20210401).zip`                                            | A DAT **nested in a subdirectory** (`Test System/…`), exercising `import-dats` on an archive: the ZIP is unpacked into the tmp directory and every `.dat` in the tree is found ([src/import_dats.rs](../../src/import_dats.rs#L110-L143), [src/import_dats/test_zip_nested.rs](../../src/import_dats/test_zip_nested.rs#L25-L46)) |
+| `Test Game (USA, Europe).ips` / `.bps` / `.xdelta` with `(patched).rom` | The known-answer triple: apply the patch, compare to the committed expected output ([src/xps/test_patch.rs](../../src/xps/test_patch.rs#L38-L45))                                                                                                                                                                                 |
+| `UP0001-BLUS00001.pkg` + `prfgmHWxGNxsfJ.rap`                           | The PSN pair declared by `Test System (20230527) (PSN).dat`                                                                                                                                                                                                                                                                       |
 
 ## `tests/crates.rs`: the shared CLI shell must not drift
 
@@ -505,7 +548,7 @@ into the root corpus the way `chd-rs`'s tests do.
 ## `tests/mcp_stdio.rs`: driving the real binary over JSON-RPC
 
 This suite has no SDK client. Its header states the reason: raw JSON-RPC against
-the spawned binary means *"the wire format is what a real client will find"*
+the spawned binary means _"the wire format is what a real client will find"_
 ([tests/mcp_stdio.rs](../../tests/mcp_stdio.rs#L1-L10)). It is `#![cfg(feature
 = "mcp")]`, so without the feature it compiles to nothing.
 
@@ -543,7 +586,7 @@ sequenceDiagram
   B-->>T: process exits with a success status
 ```
 
-*Caption: the harness lifecycle — isolated data directory, id-matched newline-delimited JSON-RPC, and a clean EOF-triggered shutdown.*
+_Caption: the harness lifecycle — isolated data directory, id-matched newline-delimited JSON-RPC, and a clean EOF-triggered shutdown._
 
 `close()` drops stdin and asserts `status.success()`: **stdin EOF must terminate
 the server cleanly**. That is the observable half of the
@@ -557,16 +600,16 @@ fails `serde_json::from_str` and the test aborts with "a JSON-RPC message"
 
 The behaviours pinned by the suite:
 
-| Test | Contract |
-| --- | --- |
-| `handshake_exposes_the_full_surface` | `initialize` names the server `oxyromon`; `tools/list` contains every one of the 20 tool names it enumerates; `prompts/list` is exactly `audit_system`, `onboard_system` **in that order**; `resources/list` is exactly `oxyromon://status`, `oxyromon://systems`, `oxyromon://settings` |
-| `status_reports_the_empty_library` | `structuredContent.version` equals `CARGO_PKG_VERSION`, `read_only` false, `systems` 0 |
-| `unknown_ids_are_tool_errors_with_pointers` | `get_system` with an unknown id is a **tool-level** `isError` whose text points at `list_systems` |
-| `import_dats_then_read_the_catalog_back` | Importing `tests/Test System (20200721).dat` through the tool yields one system with `games_total` 6, `search_games "test game"` count 6, `list_games limit 2` returning 2 of 6 |
-| `destructive_tools_need_confirmation` | `purge_roms` and `purge_games` with `confirm` omitted, and `purge_systems` / `purge_irds` with `confirm: false`, error and mention `confirm` |
-| `convert_roms_accepts_any_case` | after a DAT import, `convert_roms` accepts `"zip"` and refuses `"nkit"` with "unknown format" |
-| `setting_validation_mirrors_the_cli` | `PREFER_REGIONS=broad` accepted, `mars` rejected with "valid", an unknown key rejected, and the accepted value read back through `get_settings` |
-| `read_only_hides_and_refuses_the_write_tools` | With `--read-only` the mutating tools are absent from `tools/list` **and** a direct `tools/call` returns a JSON-RPC `error` object, not a tool result |
+| Test                                          | Contract                                                                                                                                                                                                                                                                                 |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `handshake_exposes_the_full_surface`          | `initialize` names the server `oxyromon`; `tools/list` contains every one of the 20 tool names it enumerates; `prompts/list` is exactly `audit_system`, `onboard_system` **in that order**; `resources/list` is exactly `oxyromon://status`, `oxyromon://systems`, `oxyromon://settings` |
+| `status_reports_the_empty_library`            | `structuredContent.version` equals `CARGO_PKG_VERSION`, `read_only` false, `systems` 0                                                                                                                                                                                                   |
+| `unknown_ids_are_tool_errors_with_pointers`   | `get_system` with an unknown id is a **tool-level** `isError` whose text points at `list_systems`                                                                                                                                                                                        |
+| `import_dats_then_read_the_catalog_back`      | Importing `tests/Test System (20200721).dat` through the tool yields one system with `games_total` 6, `search_games "test game"` count 6, `list_games limit 2` returning 2 of 6                                                                                                          |
+| `destructive_tools_need_confirmation`         | `purge_roms` and `purge_games` with `confirm` omitted, and `purge_systems` / `purge_irds` with `confirm: false`, error and mention `confirm`                                                                                                                                             |
+| `convert_roms_accepts_any_case`               | after a DAT import, `convert_roms` accepts `"zip"` and refuses `"nkit"` with "unknown format"                                                                                                                                                                                            |
+| `setting_validation_mirrors_the_cli`          | `PREFER_REGIONS=broad` accepted, `mars` rejected with "valid", an unknown key rejected, and the accepted value read back through `get_settings`                                                                                                                                          |
+| `read_only_hides_and_refuses_the_write_tools` | With `--read-only` the mutating tools are absent from `tools/list` **and** a direct `tools/call` returns a JSON-RPC `error` object, not a tool result                                                                                                                                    |
 
 The read-only distinction matters: hidden routes are rejected at the protocol
 layer (`message["error"]`), while a refused-but-routable call is an `isError`

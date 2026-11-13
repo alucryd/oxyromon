@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2adeaefd1b097cd28b6fd77fde20ebfc6215478795f7582f0015e90bfc682be3",
+  "pageVersion": "sha256:16f6aa9284f916643505a9568022c2a0f0b7ecc13bb4b3978622823698072f13",
   "claims": [
     {
       "id": "claim_b087aba3f1c046f49eec90868ad7d336",
@@ -63,8 +63,8 @@
       "statement": "Because MAME's CHD DATs carry no size and list the CHD's own SHA-1, import_roms retries a failed SHA-1 match of a CHD with its chd_sha1 and size 0.",
       "evidence": [
         {
-          "resource": "repo://src/import_roms.rs#L1471-L1496",
-          "version": "repo-lines-v1:sha256:f2fdb94b4bc50a3b2a330f74f29c7c72dd240889637aca1b5e39bb6d6359c64b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhNmFlN2UzMWZhYTE5YTNjNDEyNmE3NjM3MDBmMjI0ZmYxMjI3M2NkMWFlMzkzYzM5ZjUyNDE5YzBjODMwOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiZTAzZDdiNDMyODhiMzQ3Y2I3MGZlNzgyMTQ4YWYzMDlhMmVlODQ3MDc0OWQ1YWViZGQ1MWRlNWM5YzcyMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1Zjk3MTA4YWYyNWI1MjU4ODdjYWExZDZhNjU0N2ZmZjM4MzJlNTc0MmJhY2Y4OTU2MzAxNzI4NzlkOTk5ZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljZmZlMjE2Mzg4MDVhOTM4MjFkZmU1YWUwZjUyOGQ0ZDZmNTIzN2QwZjA1OGRjYzBhNzJlMTdmYzdkOWJmNmIifQ"
+          "resource": "repo://src/import_roms.rs#L1492-L1517",
+          "version": "repo-lines-v1:sha256:a195cfa6aa7f3161a2615a512f0129c8139d8cd5fc4bb603fa71e3735c9f091d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1YTkyYTYzNTM1NGNmZGFkNjlkNWM4MmNlNjMxMjdiMzhiMDE5NjNlZDdmNDc1OGMxZmJlMGIwYzFkZjg2NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmOTM2Zjk3OWE2MTAwYzQxODE0NTZjOWY0ZmNjY2YyOTFiZWYxZmYzYzYzZTQ1MDE4MmEyMDVhMDk4NGM2ZTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjNjVjZjdkMDcwZDg3ODkyNzNkOWRlZWZjZTg5NjgwMjJiMmQ4MjY4Njg4ZTQwZDQ3ZWFkNzQ1OTEzMmE2Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkOTVhYWU0ZDQxNjczY2YwNDJmNmY2NDIzMGQyYzJmNTlkYzYzZjQzMDNkM2Y5M2FhODZlYjU1OTYzYzBlM2MifQ"
         }
       ]
     },
@@ -226,7 +226,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.2",
-    "at": "2026-11-01T22:28:11.879Z"
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-13T20:59:45.363Z"
   }
 }

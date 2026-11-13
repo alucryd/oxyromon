@@ -2,15 +2,29 @@
 type: concept
 title: "GameCube and Wii formats: rvz-rs, wbfs-rs and the gcwii embedded crate"
 description: How oxyromon reads and writes RVZ and writes WBFS in-process through rvz-rs (a port of Dolphin's RVZ code) and wbfs-rs (a port of wit's WBFS writer), which share GameCube and Wii disc code through the unpublished, symlinked gcwii crate; where the Wii common key is and is not needed, and how the crates are tested against Dolphin and wit.
-tags: [rvz, wbfs, gamecube, wii, rvz-rs, wbfs-rs, gcwii, embedded-crate, keys, format-crates]
+tags:
+  [
+    rvz,
+    wbfs,
+    gamecube,
+    wii,
+    rvz-rs,
+    wbfs-rs,
+    gcwii,
+    embedded-crate,
+    keys,
+    format-crates,
+  ]
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 sources:
   - id: openwiki-source-8bd2a10a08a7d902fe9f5c52
     resource: repo://crates/gcwii/Cargo.toml
   - id: openwiki-source-f50e5202caa6f7dd00b561f3
     resource: repo://crates/gcwii/src/disc.rs
+  - id: openwiki-source-4424d87d619ebad962409702
+    resource: repo://crates/gcwii/src/fst.rs
   - id: openwiki-source-88f5d4d337928122f15afc53
     resource: repo://crates/gcwii/src/keys.rs
   - id: openwiki-source-6d07751cd97432f8cf473fb9
@@ -19,6 +33,8 @@ sources:
     resource: repo://crates/rvz-rs/src/lib.rs
   - id: openwiki-source-6946dbd6c6784b4331bcce82
     resource: repo://crates/rvz-rs/src/reader.rs
+  - id: openwiki-source-73755f08dafedda2cc38ba2c
+    resource: repo://crates/rvz-rs/src/writer.rs
   - id: openwiki-source-80837bf9108ff0f16ae4a8c2
     resource: repo://crates/rvz-rs/tests/interop.rs
   - id: openwiki-source-684e7c23899e93ed2899a7ad
@@ -35,7 +51,7 @@ sources:
     resource: repo://src/wbfs.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 ---
 
 # GameCube and Wii formats: rvz-rs, wbfs-rs and gcwii
@@ -48,13 +64,13 @@ specifics both need — layout, Wii partitions and their encryption, the file
 system, the common keys, which clusters a disc uses — live in a third crate,
 `gcwii`, which is never published and never depended on: it is embedded.
 
-| Piece | Role | Port of |
-| --- | --- | --- |
-| `crates/rvz-rs` | RVZ compression, decompression, an RVZ `Reader`, scrubbing; `rvzrs` CLI | Dolphin's WIA/RVZ code (`WIARVZFileReader`, `LaggedFibonacciGenerator`) |
-| `crates/wbfs-rs` | WBFS creation and extraction; `wbfsrs` CLI | `wit copy --wbfs` |
-| `crates/gcwii` | disc layout, Wii partitions, AES-CBC, FST, keys, scrubbing (`used_clusters`) | Dolphin's `VolumeGC`/`VolumeWii`, `FileSystemGCWii`, `DiscScrubber` |
-| `src/rvz.rs` | `RvzRomfile`, settings mapping, key loading, hashing without an ISO | — |
-| `src/wbfs.rs` | `ToWbfs` for ISO and RVZ romfiles, `RvzSource` | — |
+| Piece            | Role                                                                         | Port of                                                                 |
+| ---------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `crates/rvz-rs`  | RVZ compression, decompression, an RVZ `Reader`, scrubbing; `rvzrs` CLI      | Dolphin's WIA/RVZ code (`WIARVZFileReader`, `LaggedFibonacciGenerator`) |
+| `crates/wbfs-rs` | WBFS creation and extraction; `wbfsrs` CLI                                   | `wit copy --wbfs`                                                       |
+| `crates/gcwii`   | disc layout, Wii partitions, AES-CBC, FST, keys, scrubbing (`used_clusters`) | Dolphin's `VolumeGC`/`VolumeWii`, `FileSystemGCWii`, `DiscScrubber`     |
+| `src/rvz.rs`     | `RvzRomfile`, settings mapping, key loading, hashing without an ISO          | —                                                                       |
+| `src/wbfs.rs`    | `ToWbfs` for ISO and RVZ romfiles, `RvzSource`                               | —                                                                       |
 
 ## rvz-rs
 
@@ -79,6 +95,12 @@ must decrypt its partitions, which needs the Wii common key; nothing ships one.
 Reading an RVZ, or rewriting one, needs none, and neither does a GameCube disc.
 `load_keys` reads a text file of hex keys, a Wii's or a Wii U's `otp.bin`, or a
 BootMii `keys.bin`.
+
+Hostile headers are bounded where they cost memory. `writer::is_valid_chunk_size`
+accepts a power of two up to a group, or a group multiple up to
+`MAX_CHUNK_SIZE` — 16 groups, 32 MiB, well past Dolphin's 2 MiB ceiling — and
+`Reader::open` runs the header's chunk size through that same predicate, so a
+crafted header cannot make the reader allocate gigabytes for one chunk.
 
 ## wbfs-rs
 
@@ -108,7 +130,7 @@ resolves that by being embedded rather than depended on:
 
 - `crates/rvz-rs/src/gcwii` and `crates/wbfs-rs/src/gcwii` are symlinks to
   `../../gcwii/src`, declared as `#[path = "gcwii/lib.rs"] mod gcwii;`. `cargo
-  package` follows the symlink, so each published crate carries a copy.
+package` follows the symlink, so each published crate carries a copy.
 - The shared test fixtures go the same way: each crate's `tests/common` links
   to `crates/gcwii/tests/common`.
 - Within gcwii, paths go through `super::`, never `crate::`, because embedded,
@@ -120,11 +142,16 @@ resolves that by being embedded rather than depended on:
 - gcwii's own manifest is `publish = false`, version `0.0.0`; its dependencies
   (`aes`, `rayon`, `sha1`, `thiserror`) are declared again in each host.
 
-`tests/crates.rs` enforces the arrangement: `embedded_crates_are_symlinked_in`
-checks that every link listed in `EMBEDDED` resolves to gcwii's `src` or
-`tests/common`, and `embedded_crates_never_name_their_root` fails on any
-`crate::` in gcwii's source. A change to gcwii is a change to both hosts, each
-getting a changelog entry and a release.
+The disc parsers bound what crafted images can demand: the FST validator carries
+a `depth` through its recursion and rejects the table past 256 directory levels,
+far beyond any real disc, where a chain of nested directories could otherwise
+nest as deep as the table is long.
+
+- `tests/crates.rs` enforces the arrangement: `embedded_crates_are_symlinked_in`
+  checks that every link listed in `EMBEDDED` resolves to gcwii's `src` or
+  `tests/common`, and `embedded_crates_never_name_their_root` fails on any
+  `crate::` in gcwii's source. A change to gcwii is a change to both hosts, each
+  getting a changelog entry and a release.
 
 ## The oxyromon side
 
@@ -145,7 +172,7 @@ getting a changelog entry and a release.
   where `import-keys` stores the Wii common key along with the Wii U keys, or an
   empty list when the file is missing. Only a Wii disc then fails, and rvz.rs
   turns rvz-rs's `MissingKey` into the hint `A Wii disc needs the Wii common
-  key: run import-keys`.
+key: run import-keys`.
 
 `src/wbfs.rs` implements `ToWbfs` for both disc romfiles. From an ISO it calls
 `wbfs_rs::create` with `load_wii_keys()`. From an RVZ it wraps the
@@ -176,7 +203,7 @@ flowchart LR
   WCF --- DISC
 ```
 
-*Caption: which oxyromon trait reaches which crate entry point, and the shared embedded disc code.*
+_Caption: which oxyromon trait reaches which crate entry point, and the shared embedded disc code._
 
 ## Tests
 
