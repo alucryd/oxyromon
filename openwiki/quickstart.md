@@ -56,10 +56,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # Quickstart & Task Routing
@@ -115,7 +115,7 @@ flowchart LR
   DB -->|"sort-roms"| OUT[("system dir, 1G1R, Trash")]
 ```
 
-*Caption: the DAT → import → sort loop, and the two stores it writes — the SQLite catalog and the ROM directory on disk.*
+_Caption: the DAT → import → sort loop, and the two stores it writes — the SQLite catalog and the ROM directory on disk._
 
 ## Where things live
 
@@ -133,13 +133,13 @@ flowchart LR
 
 ## Repository split
 
-| Path        | What it is                                                                                                                                  |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| root        | The `oxyromon` package: the binary, `build.rs`, `migrations/`, `.sqlx/` offline query data.                                                  |
+| Path        | What it is                                                                                                                                                                                                                                                             |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| root        | The `oxyromon` package: the binary, `build.rs`, `migrations/`, `.sqlx/` offline query data.                                                                                                                                                                            |
 | `crates/`   | Ten format crates (`chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `rvz-rs`, `wbfs-rs`, `wux-rs`, `xdelta-rs`, `xps-rs`, `xso-rs`), workspace members, standalone library + CLI, published independently; plus `gcwii`, embedded into `rvz-rs` and `wbfs-rs`, never published. |
-| `frontend/` | The Leptos SPA. **Not** a workspace member — it declares its own `[workspace]`.                                                              |
-| `desktop/`  | The Tauri shell that spawns `oxyromon server` as a sidecar. Also standalone.                                                                  |
-| `tests/`    | DAT and ROM fixtures plus the four integration targets: `tests/mcp_stdio.rs`, `tests/crates.rs`, `tests/plain_output.rs` and `tests/cli_output.rs`. |
+| `frontend/` | The Leptos SPA. **Not** a workspace member — it declares its own `[workspace]`.                                                                                                                                                                                        |
+| `desktop/`  | The Tauri shell that spawns `oxyromon server` as a sidecar. Also standalone.                                                                                                                                                                                           |
+| `tests/`    | DAT and ROM fixtures plus the four integration targets: `tests/mcp_stdio.rs`, `tests/crates.rs`, `tests/plain_output.rs` and `tests/cli_output.rs`.                                                                                                                    |
 
 `frontend/` and `desktop/` keep their own workspace roots so WebAssembly and webview
 dependencies never enter the native build; `build.rs` runs `trunk build --release` in `frontend/`
@@ -153,17 +153,17 @@ The format crates are workspace members and are depended on by `path` + `version
 `default-features = false` — oxyromon links the library, never the CLI — while each also builds a
 standalone CLI with the same capabilities:
 
-| Crate       | Began as a port of | CLI        | Used by oxyromon for  |
-| ----------- | ------------------ | ---------- | --------------------- |
-| `chd-rs`    | chdman             | `chdrs`    | CHD                   |
-| `cia-rs`    | ctrtool            | `ciars`    | CIA                   |
-| `gdi-rs`    | gdidrop            | `gdirs`    | GDI                   |
-| `nsz-rs`    | nsz                | `nszrs`    | NSZ                   |
-| `xdelta-rs` | xdelta3            | `xdeltars` | XDELTA patches        |
-| `xps-rs`    | Flips              | `xpsrs`    | IPS and BPS patches   |
-| `xso-rs`    | maxcso             | `xsors`    | CSO/ZSO               |
-| `rvz-rs`    | Dolphin's RVZ code | `rvzrs`    | RVZ                   |
-| `wbfs-rs`   | wit                | `wbfsrs`   | WBFS export           |
+| Crate       | Began as a port of | CLI        | Used by oxyromon for              |
+| ----------- | ------------------ | ---------- | --------------------------------- |
+| `chd-rs`    | chdman             | `chdrs`    | CHD                               |
+| `cia-rs`    | ctrtool            | `ciars`    | CIA                               |
+| `gdi-rs`    | gdidrop            | `gdirs`    | GDI                               |
+| `nsz-rs`    | nsz                | `nszrs`    | NSZ                               |
+| `xdelta-rs` | xdelta3            | `xdeltars` | XDELTA patches                    |
+| `xps-rs`    | Flips              | `xpsrs`    | IPS and BPS patches               |
+| `xso-rs`    | maxcso             | `xsors`    | CSO/ZSO                           |
+| `rvz-rs`    | Dolphin's RVZ code | `rvzrs`    | RVZ                               |
+| `wbfs-rs`   | wit                | `wbfsrs`   | WBFS export                       |
 | `wux-rs`    | none (wudd, Cemu)  | `wuxrs`    | Wii U WUD/WUX, WUA and NUS export |
 
 Archives go through `sevenz-rust2` and `zip`. Zstandard, which several crates use, builds its C
@@ -182,7 +182,9 @@ release archives.
 `oxyromon info` is the dependency check: it prints `info::dependencies()`, the list GraphQL and
 MCP report too, from every backend's `get_version()`, and prints
 `<name>: built-in` for every backend, all of which are linked crates, and special-cases two that need keys. A
-missing `prod.keys` shows up as `built-in, prod.keys not found`, since only compressing NCAs needs it. Missing
+missing Switch keys show up as `built-in, no Switch keys imported`, since only compressing NCAs needs
+them; `import-keys` merges the Switch's `prod.keys` and `title.keys` into the data directory's
+`switch_keys.txt`, which is where the NSZ module reads them back. Missing
 Wii U keys show up as `built-in, no Wii U keys imported`; `oxyromon import-keys` stores them in the data
 directory, and only WUA and NUS exports need them. The same command stores the Wii common key,
 from a Wii's or a Wii U's `otp.bin` or BootMii's `keys.bin`, which only compressing a Wii ISO to
@@ -190,49 +192,50 @@ RVZ, or exporting one to WBFS, needs.
 
 ## Task routing
 
-| If the task touches…                                                                                     | Go to                                                                          |
-| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| how a command is wired, startup order, the shared subcommand contract                                     | [CLI Entrypoint and the Subcommand Contract](architecture/cli-entrypoint-and-subcommands.md) |
-| the layered design and where GraphQL/MCP enter                                                            | [System Architecture Overview](architecture/overview.md)                       |
-| schema, row types, migrations, `cargo sqlx prepare`                                                       | [Data Model, SQLite Usage and Migrations](architecture/data-model-and-migrations.md) |
-| `mcp` / `server` / TLS features, `build.rs`, Trunk, `SKIP_TRUNK`                                          | [Feature Flags and Build Topology](architecture/feature-flags-and-build-topology.md) |
-| setting keys, categories, global vs per-system scoping                                                    | [Settings and Configuration Model](architecture/settings-and-configuration.md) |
-| progress bars, `print_*` output, interactive prompts                                                      | [CLI Output, Progress & Prompts](concepts/cli-output-progress-and-prompts.md)  |
-| extension constants, magic-byte matchers                                                                  | [File Type Detection and Extension Constants](concepts/file-type-detection-and-extensions.md) |
-| adding or changing a format module (`archive`, `chd`, `rvz`, `xso`, …)                                    | [Format Modules and Their Crate Backends](concepts/format-modules-and-format-crates.md) |
-| CHD read/write, hunk and codec behavior, parent CHDs, `src/chd.rs` ↔ `crates/chd-rs`                      | [CHD Format and the chd-rs Crate](concepts/chd-format-and-chd-rs.md)           |
-| Wii U WUD/WUX/WUA/NUS, `import-keys`, updates and DLC, `src/wux.rs` ↔ `crates/wux-rs`                     | [Wii U Formats and the wux-rs Crate](concepts/wii-u-formats-and-wux-rs.md)     |
-| GameCube and Wii RVZ/WBFS, the Wii common key, `crates/rvz-rs`, `crates/wbfs-rs`, the embedded `gcwii`    | [GameCube and Wii formats](concepts/gamecube-wii-formats-rvz-wbfs-gcwii.md)    |
-| `CommonRomfile` and its trait system                                                                      | [Romfile Trait System](concepts/romfile-trait-system.md)                       |
-| DAT parsing, header definitions, Redump/No-Intro downloads                                                | [Catalog Ingestion: DATs, Headers and Downloads](workflows/dat-ingestion.md)   |
-| hashing, matching, placement, `PREFER_FORMAT` on import                                                   | [ROM Import Pipeline](workflows/rom-import-pipeline.md)                        |
-| region and 1G1R election, discard filters, subfolder schemes, `GAME_SUBFOLDERS`, `Trash` placement         | [Sorting and the 1G1R Election](workflows/sorting-and-1g1r-election.md)        |
-| `convert-roms` / `export-roms` and the conversion matrix (CHD via in-process chd-rs)                       | [Format Conversion and Export](workflows/format-conversion-and-export.md)      |
-| `check-roms`, the purge family (including purge-games), empty-directory cleanup                           | [Integrity Checking, Purging and Trash](workflows/integrity-check-and-purge.md) |
-| arcade merging strategies and M3U playlists                                                               | [Arcade Rebuilds and M3U Playlists](workflows/arcade-rebuild-and-playlists.md) |
-| PS3 IRD files and JB folders                                                                              | [PS3 IRD Files and JB Folders](workflows/ird-ps3-jbfolders.md)                 |
-| routes, `AppState`, DataLoader, uploads, shutdown                                                         | [HTTP Server, GraphQL API and Uploads](server/http-server-and-graphql-api.md)  |
-| SSE events and how a progress bar becomes a stream                                                        | [SSE Events and Progress Bridging](server/sse-and-progress-bridge.md)          |
-| Leptos components, Web Awesome, the CSS cascade                                                           | [Web UI (Leptos SPA + Web Awesome)](server/web-ui-frontend.md)                 |
-| MCP tools, resources, prompts, `run_action`, read-only mode                                               | [MCP Server: Tools, Resources and Prompts](server/mcp-server.md)               |
-| the Tauri sidecar, port reservation, child cleanup                                                        | [Desktop App (Tauri Sidecar)](server/desktop-tauri-shell.md)                   |
-| DAT provider URLs and No-Intro/TOSEC name tokens                                                          | [DAT Providers and Naming Conventions](integrations/dat-providers-no-intro-redump.md) |
-| the `crates/` format crates, their shared CLI shape, embedded crates and release cadence                   | [Format Crates in crates/](integrations/format-crates.md)                      |
-| which tool each crate replaced, and the reference tools the crate tests use                              | [External Tools](integrations/external-tools.md)                               |
-| helper scripts, cross-compilation, containers, per-crate publishing                                       | [Builds, Distribution and Releases](operations/build-and-release.md)           |
-| CI jobs, `OXYROMON_*` variables, `DATABASE_URL`, TLS/Windows build notes                                  | [CI Pipelines and Runtime Environment](operations/ci-and-environment.md)       |
-| writing or running tests, the `MUTEX`, temp DB/dirs                                                       | [Test Harness and Conventions](testing/testing-conventions.md)                 |
-| fixture corpus, MCP stdio and CLI-parity end-to-end suites                                                | [Test Fixtures and End-to-End Suites](testing/test-fixtures.md)                |
-| known-answer vectors and reference-tool parity/interop in `crates/`                                       | [Format Crate Test Strategy](testing/format-crate-tests.md)                    |
+| If the task touches…                                                                                                                                     | Go to                                                                                                                                                    |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| how a command is wired, startup order, the shared subcommand contract                                                                                    | [CLI Entrypoint and the Subcommand Contract](architecture/cli-entrypoint-and-subcommands.md)                                                             |
+| the layered design and where GraphQL/MCP enter                                                                                                           | [System Architecture Overview](architecture/overview.md)                                                                                                 |
+| schema, row types, migrations, `cargo sqlx prepare`                                                                                                      | [Data Model, SQLite Usage and Migrations](architecture/data-model-and-migrations.md)                                                                     |
+| `mcp` / `server` / TLS features, `build.rs`, Trunk, `SKIP_TRUNK`                                                                                         | [Feature Flags and Build Topology](architecture/feature-flags-and-build-topology.md)                                                                     |
+| setting keys, categories, global vs per-system scoping                                                                                                   | [Settings and Configuration Model](architecture/settings-and-configuration.md)                                                                           |
+| progress bars, `print_*` output, interactive prompts                                                                                                     | [CLI Output, Progress & Prompts](concepts/cli-output-progress-and-prompts.md)                                                                            |
+| extension constants, magic-byte matchers                                                                                                                 | [File Type Detection and Extension Constants](concepts/file-type-detection-and-extensions.md)                                                            |
+| adding or changing a format module (`archive`, `chd`, `rvz`, `xso`, …)                                                                                   | [Format Modules and Their Crate Backends](concepts/format-modules-and-format-crates.md)                                                                  |
+| CHD read/write, hunk and codec behavior, parent CHDs, `src/chd.rs` ↔ `crates/chd-rs`                                                                     | [CHD Format and the chd-rs Crate](concepts/chd-format-and-chd-rs.md)                                                                                     |
+| Wii U WUD/WUX/WUA/NUS, `import-keys`, updates and DLC, `src/wux.rs` ↔ `crates/wux-rs`                                                                    | [Wii U Formats and the wux-rs Crate](concepts/wii-u-formats-and-wux-rs.md)                                                                               |
+| GameCube and Wii RVZ/WBFS, the Wii common key, `crates/rvz-rs`, `crates/wbfs-rs`, the embedded `gcwii`                                                   | [GameCube and Wii formats](concepts/gamecube-wii-formats-rvz-wbfs-gcwii.md)                                                                              |
+| `CommonRomfile` and its trait system                                                                                                                     | [Romfile Trait System](concepts/romfile-trait-system.md)                                                                                                 |
+| DAT parsing, header definitions, Redump/No-Intro downloads                                                                                               | [Catalog Ingestion: DATs, Headers and Downloads](workflows/dat-ingestion.md)                                                                             |
+| `import-clone-lists`, Retool clone lists, `games.categories`                                                                                             | [Catalog Ingestion: DATs, Headers and Downloads](workflows/dat-ingestion.md) and [Sorting and the 1G1R Election](workflows/sorting-and-1g1r-election.md) |
+| hashing, matching, placement, `PREFER_FORMAT` on import                                                                                                  | [ROM Import Pipeline](workflows/rom-import-pipeline.md)                                                                                                  |
+| region and 1G1R election, discard filters (`DISCARD_CATEGORIES`), `INFER_CLONES` title grouping, subfolder schemes, `GAME_SUBFOLDERS`, `Trash` placement | [Sorting and 1G1R Election](workflows/sorting-and-1g1r-election.md)                                                                                      |
+| `convert-roms` / `export-roms` and the conversion matrix (CHD via in-process chd-rs)                                                                     | [Format Conversion and Export](workflows/format-conversion-and-export.md)                                                                                |
+| `check-roms`, the purge family (including purge-games), empty-directory cleanup                                                                          | [Integrity Checking, Purging and Trash](workflows/integrity-check-and-purge.md)                                                                          |
+| arcade merging strategies and M3U playlists                                                                                                              | [Arcade Rebuilds and M3U Playlists](workflows/arcade-rebuild-and-playlists.md)                                                                           |
+| PS3 IRD files and JB folders                                                                                                                             | [PS3 IRD Files and JB Folders](workflows/ird-ps3-jbfolders.md)                                                                                           |
+| routes, `AppState`, DataLoader, uploads, shutdown                                                                                                        | [HTTP Server, GraphQL API and Uploads](server/http-server-and-graphql-api.md)                                                                            |
+| SSE events and how a progress bar becomes a stream                                                                                                       | [SSE Events and Progress Bridging](server/sse-and-progress-bridge.md)                                                                                    |
+| Leptos components, Web Awesome, the CSS cascade                                                                                                          | [Web UI (Leptos SPA + Web Awesome)](server/web-ui-frontend.md)                                                                                           |
+| MCP tools, resources, prompts, `run_action`, read-only mode                                                                                              | [MCP Server: Tools, Resources and Prompts](server/mcp-server.md)                                                                                         |
+| the Tauri sidecar, port reservation, child cleanup                                                                                                       | [Desktop App (Tauri Sidecar)](server/desktop-tauri-shell.md)                                                                                             |
+| DAT provider URLs and No-Intro/TOSEC name tokens                                                                                                         | [DAT Providers and Naming Conventions](integrations/dat-providers-no-intro-redump.md)                                                                    |
+| the `crates/` format crates, their shared CLI shape, embedded crates and release cadence                                                                 | [Format Crates in crates/](integrations/format-crates.md)                                                                                                |
+| which tool each crate replaced, and the reference tools the crate tests use                                                                              | [External Tools](integrations/external-tools.md)                                                                                                         |
+| helper scripts, cross-compilation, containers, per-crate publishing                                                                                      | [Builds, Distribution and Releases](operations/build-and-release.md)                                                                                     |
+| CI jobs, `OXYROMON_*` variables, `DATABASE_URL`, TLS/Windows build notes                                                                                 | [CI Pipelines and Runtime Environment](operations/ci-and-environment.md)                                                                                 |
+| writing or running tests, the `MUTEX`, temp DB/dirs                                                                                                      | [Test Harness and Conventions](testing/testing-conventions.md)                                                                                           |
+| fixture corpus, MCP stdio and CLI-parity end-to-end suites                                                                                               | [Test Fixtures and End-to-End Suites](testing/test-fixtures.md)                                                                                          |
+| known-answer vectors and reference-tool parity/interop in `crates/`                                                                                      | [Format Crate Test Strategy](testing/format-crate-tests.md)                                                                                              |
 
 ## Feature gates
 
-| Feature          | Description                                              | Default |
-| ---------------- | -------------------------------------------------------- | ------- |
-| `mcp`            | the MCP server subcommand (stdio only)                    | Off     |
-| `server`         | the web server subcommand (GraphQL + Leptos SPA)          | Off     |
-| `use-rustls`     | rustls for TLS                                            | On      |
-| `use-native-tls` | system OpenSSL for TLS                                    | Off     |
+| Feature          | Description                                      | Default |
+| ---------------- | ------------------------------------------------ | ------- |
+| `mcp`            | the MCP server subcommand (stdio only)           | Off     |
+| `server`         | the web server subcommand (GraphQL + Leptos SPA) | Off     |
+| `use-rustls`     | rustls for TLS                                   | On      |
+| `use-native-tls` | system OpenSSL for TLS                           | Off     |
 
 Default features are `["use-rustls"]`. `server` implies `mcp` and nests the same MCP handler at
 `/mcp` on its own listener; `mcp` alone builds the stdio server with no web server. The pool
@@ -248,12 +251,12 @@ cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.
 ```
 
 `--features oxyromon/server` is required because a workspace selection spans several packages, so
-a feature must name its package. CI runs four parallel jobs. *Format* runs `cargo fmt --check`
-in the root, `frontend/` and `desktop/` workspaces. *Web UI* builds the UI with trunk, runs clippy
+a feature must name its package. CI runs four parallel jobs. _Format_ runs `cargo fmt --check`
+in the root, `frontend/` and `desktop/` workspaces. _Web UI_ builds the UI with trunk, runs clippy
 on it with `--target wasm32-unknown-unknown --all-targets`, and uploads it as an artifact.
-*Lint and test* runs clippy over the whole workspace with `--all-targets --features
+_Lint and test_ runs clippy over the whole workspace with `--all-targets --features
 oxyromon/server`, again with `--no-default-features --features use-rustls,mcp` so the stdio-only
-MCP build stays covered, then tests under `cargo llvm-cov`. *Release build and desktop* waits for
+MCP build stays covered, then tests under `cargo llvm-cov`. _Release build and desktop_ waits for
 the UI, builds `--release --features server` with it, stages that binary as the desktop sidecar and
 runs clippy from `desktop/`. The reference tools the test job installs (`mame-tools` for
 `chdman`, `xdelta3`, `ffmpeg`) exist only so the crates' parity tests can run; those suites skip

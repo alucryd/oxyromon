@@ -28,8 +28,8 @@ sources:
     resource: repo://src/util.rs
 generated: { by: "claude-code", at: "2026-11-01T22:28:11.879Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-01T22:28:11.879Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # CHD Format and the chd-rs Crate

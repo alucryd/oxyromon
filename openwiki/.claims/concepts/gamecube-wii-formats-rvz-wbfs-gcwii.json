@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f33f6909ee3cb79411a0077f24b6450b638f185a70d48bdbfa1a55f80edd750e",
+  "pageVersion": "sha256:b90c33548bbb270483b0643f87b37342ce6f6e271010485bd93034c91f72c20d",
   "claims": [
     {
       "id": "claim_47a8dfc5e8974db3a31af5cff110af19",
       "statement": "rvz-rs is a port of Dolphin's RVZ code whose files are interchangeable with Dolphin's, byte for byte with Zstandard, bzip2 or no compression; it exposes compress, decompress and a Reader that reads an RVZ as the disc it holds.",
       "evidence": [
         {
-          "resource": "repo://README.md#L233-L235",
+          "resource": "repo://README.md#L235-L237",
           "version": "repo-lines-v1:sha256:421853740241ef47633ee3e4e1db217015165e7c9e19cddb61d94eac00532f7b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjRiNzY5YTg2OWI5NTc2ODJjOTBkMTI1ZTYzMGY5YWYyN2FjZjk4MDljMDZkNmJkNDg4NWQ3OTI3MGUyMDI1MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDQ0MzA4NmY1ZTMxY2VhYTZlMDBhYTA0NDZjMzExZTczNDNmMjU3NTMxNTk5OGIzZTI5ZWI0ZGIwNWFkZGY0NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjFhMzhmNzkzZDk0NzIzZjcxM2UwMDQ2ZGVmYmNhMTg0MTU0MTIyNTI3MTg5MmY5OWZmNDNiMWQzNmU4NzBjMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzYxZmY4NmQ1YjI1OGU4MjVmZWVkMmFkZTU5ZGJiZWVkYjg2NTQwNzdlY2MyOTk1YzI5NDg2YjVmNjEzMTUxMyJ9"
         },
         {
@@ -39,7 +39,7 @@
       "statement": "wbfs-rs writes a WBFS as `wit copy --wbfs` does, storing only 2 MiB blocks holding a used 32 KiB cluster, so a WBFS is scrubbed; oxyromon therefore treats WBFS as an export-only format.",
       "evidence": [
         {
-          "resource": "repo://README.md#L237-L238",
+          "resource": "repo://README.md#L239-L240",
           "version": "repo-lines-v1:sha256:01e765d5b42c27a3cbf530fbcd09b5b1ebf7f80a6b68c5ba764dd5f93b1ef5b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzg1NjE5Yjg3OTU1NzBmMTdiNzE1MzU5YTE1NmU0M2Y0ZmYzNjNmZjgzMGE0NTBjYzZmMDY5MzBmNDgwZWIyOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc3Nzg4MzkyYjJmOGRmYzNjMDE0MTg1N2Y5ZDZjNTA2NWViYWQxZjJhZTNmOTJiMTc0ZWFhOWU3MDZkZmI2OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGFjNmVjNTMzZDMwOGZjYzM2MDM2NTFjNjExMTJkZGJjMTRjMjY1OTRlYjI4YTExM2RiYTIxOTU2ZjYzN2UwZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzlmYWEzYzA1NDBiNTExMWJmOGE1ZDQ0MzZkZWM1ZmRjMzI2YWYxNWMxMzgzZTI3YzBiMmI2OGU0NTBhMWEzNyJ9"
         },
         {
@@ -163,10 +163,38 @@
           "version": "repo-lines-v1:sha256:68608ab73ca2d66168eb34111d2df973db27b4bc3e568897514035534d973b0e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4YWQxNzM0ZjhkYTZmOTNmMWFiYTU0ZDk3N2ZhMzZlNzAzM2QzMTM3NTJkMTY0YTI0NjVjMzcyODVmN2Q5OTViIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1YzIyZmM5YjYwNjNiN2JhNzFkMTdlMmNkZTcwMzg3YTEzNjE1MWQ5NDMyYTNhZTY2Zjk4MGY4YWRhNjk4N2ViIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5MzA3YWJjZjllZWE3NDVkMTgyMTEzNDBmOGUxYjhhZmZmNjMwOTg5OWRlMTE0NmQ3YTNiYTc1NjllNTNkMjhiIn0"
         }
       ]
+    },
+    {
+      "id": "claim_6026015e778642c895e90ba817863ffb",
+      "statement": "rvz-rs bounds chunk sizes at MAX_CHUNK_SIZE, 16 groups (32 MiB): is_valid_chunk_size accepts power-of-two sizes up to a group or group multiples up to the ceiling, and Reader::open validates a header's chunk size through the writer's predicate so a crafted header cannot force a multi-gigabyte per-chunk allocation.",
+      "evidence": [
+        {
+          "resource": "repo://crates/rvz-rs/src/reader.rs#L110-L116",
+          "version": "repo-lines-v1:sha256:9cde53b35d9084493ea4aee5587b5cc441f733f38a6289e7fa37d31b1f61fcf5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODM2MWVlYTAwN2FhYzQ1ZjU0MTk3ZGMzOTBjNDQwMTliODkxOThhNjcwOTc3ZGU0MWVlNDRkODliZmM1YjU2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWIzMmQ0ZjY4NmU1NTU1ZTI0YjUyNDYxZTM1NjQxNzk2NDE5YjVlOWEwNDQyODcwNWI5NTg1YTdkNzE3ZWNhNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzU5ZjI2NjkyZWZlMTMzMjc3NDFmOTM3YmU4MTdmOTM2ODJjZGM3ZTcxZDlkMGYzYjA2MTYwNjJlZTQyODkxZSJ9"
+        },
+        {
+          "resource": "repo://crates/rvz-rs/src/writer.rs#L78-L92",
+          "version": "repo-lines-v1:sha256:1801553489d419b1a725fd438ad52d0f180181bc8478534dbf0afc34db317120:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5OTFlZmQ0NTNiZTdmMTM0MDg4NTYwNTFiOGJmZTExNjdmNTJlN2RkMWZkMjQ5OWEyMWE5ZGY3Mjk0YzI2ODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkYzdlNjNmZDhmNDQ0MjM4Njg3ZDlhNzZmMTlhZmViODNmMjU3MTdhYTY4MjRlMmJjM2E5ZWY5MmIxZjJjMDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_35690e1db8894058a6f51876efe70b86",
+      "statement": "gcwii's FST validator bounds its recursion at 256 directory levels so a crafted chain of nested directories cannot nest as deep as the FST table is long.",
+      "evidence": [
+        {
+          "resource": "repo://crates/gcwii/src/fst.rs#L5-L10",
+          "version": "repo-lines-v1:sha256:9c79723c58b0618c866d5d44673f261c96bc0e6e6c1b82efbdc6a4716b29b67c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTcyZGZmZTZiZTY1ZTk4ODcyM2YzMTg4OWFkOGUwMzYyNGI2ZDQwNmZjYWM5ZWMwYjRjMmYzMjJkYWZkZDE1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjZhZGE4OGZhZjE1MjI5NTcxNThjNDkxYjY1MTg5NmFjOWZhNjRhYzY3MTk0NTIxMjY4OWQ4Mzc5YzQ4N2FlNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmJmNjY3YzEwYmEzYjlmMTZlZjU4M2I4ZjU0OTFmMjAyMTVlYjU0YTg4ODA1ZjMyZWI0ZTQxMzBiN2IzMjI1MiJ9"
+        },
+        {
+          "resource": "repo://crates/gcwii/src/fst.rs#L82-L107",
+          "version": "repo-lines-v1:sha256:c9872aab32c98aed38f8a6f293b9f0ad9b3099a686d78851aa2a775821995396:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1MmMyM2ExNDAyMGU3ZjI1ZjI3MTNkMzg0ZjhhZTRmOGYzZWI5M2I0MjVmNzM1ZGQ4NTZiZmY3ZDljMGY4MGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjJjNDJjZDE5YzZkMDNkODA4YzQ1MjcyMDU1MjgyNWI3ZWExYzViNDkxYjIxODUxMWNhYzc0MTVjZjlkOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5OWJkZWZlZWFjYTYzNDBlMDI5MGRjODZlODg5Yzg5ZDVlMTg5YWE1YmE0NGI1ODViM2I3MDczNGY0YTYyZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlNDhmYjI0YjEzN2ZjZGM1YjNmMTc4NTJmMjNjYThmYTAwYzU3MGZlYmFjM2U1MmEzYTBlZDdiNzQ1NTc2MWEifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.2",
-    "at": "2026-11-09T21:55:13.223Z"
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-13T20:59:45.363Z"
   }
 }

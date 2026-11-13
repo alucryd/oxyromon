@@ -60,6 +60,8 @@ sources:
     resource: repo://src/main.rs
   - id: openwiki-source-b95ec25c5cfc0be350df258c
     resource: repo://src/mcp.rs
+  - id: openwiki-source-d3402490d16a663b822e8a00
+    resource: repo://src/nsz.rs
   - id: openwiki-source-6330834d320d84b814c24c5f
     resource: repo://src/progress.rs
   - id: openwiki-source-db13c01516e9bd04294e339d
@@ -78,8 +80,8 @@ sources:
     resource: repo://tests/mcp_stdio.rs
 generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # CI Pipelines and Runtime Environment

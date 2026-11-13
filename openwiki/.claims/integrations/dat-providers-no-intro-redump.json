@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:33483e1b6a6076a703a9a6167cc5925e060fb25a3e51ff3f813bcd66cf6bb6b5",
+  "pageVersion": "sha256:b578a29e0b98089967bbcd755fc136853885d9f124fb8195d44bb6402a7bdfc7",
   "claims": [
     {
       "id": "claim_efe0fa849f8445de9c6ed9311f3b26ac",
       "statement": "oxyromon supports two networked DAT providers with asymmetric capability: Redump supports both downloading new DATs and refreshing imported ones, while No-Intro supports update-check only because it publishes a summary (profile.xml) but no direct DAT links; `download-dats` without `-u` for No-Intro prints the warning \"Not supported\", and the mutually exclusive `-n/--nointro` / `-r/--redump` flags each require the other to be absent. Automatically downloading No-Intro DATs is still an open item in the README TODO list.",
       "evidence": [
         {
-          "resource": "repo://README.md#L448-L467",
+          "resource": "repo://README.md#L451-L470",
           "version": "repo-lines-v1:sha256:814158f6ef3db216aa0d077e7b19effbc94519cb63449bbaf82b4e01d05be3c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjNjc5M2U5NjcxMjRlMWE5YmI0NzA4ZDUwZjM3Y2FjMzJiN2MxNDRmMDYyMGRkMzczMTZlZGI0MmJmYjM4MGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzZDA4OGQ1YTk3ZWNjZWVmMWJiOGRjMGZlNDIwYTRmZWNlN2E1NWU5MjM5ZjQ5MTlmNTJlZDYzNWVhMmNjZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3M2U3M2FiYjc0NTgwMmMzMzNiODcyNjQ0MzVlMjQ5NDdiNmI3YmYwZjU2ZmUzMDI4ZThmMjBlODljODVmYmEifQ"
         },
         {
@@ -181,11 +181,11 @@
           "version": "repo-lines-v1:sha256:1d48f7d9cfd3c2180167dad9eedb19c95b2767e72a4fbcb0f438fdaded8fe780:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzN2IyY2JkOWRiOThkNTVmNzc5NjU5Mzc5Mzk5MmIxYTQ3NjBhOGFmY2E1NzkzMzMyOTMxY2FlZDU2NmZjZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://src/model.rs#L182-L188",
+          "resource": "repo://src/model.rs#L212-L218",
           "version": "repo-lines-v1:sha256:3f93ac5a0182ef24d9b6602f231e283d6fe52a8c67a4546d28635e63a0b5ab49:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTk2MDIxYmM0ODA5OTdiNTFmZWI4OWRiMDhhOGIzNzZhYTg2MGUxZTY5YWM0YzljZDU5NmQwNzdiODkzMzRkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBmYThiYzZjMDgxNTQxYWZhNjZkZjdhNzc3NjNjZTJlZmQ2MmI1ZGYzZDU5NTVlZjhkNTQyMjZlZTI0MmUzMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWIyZDJlMWQ4ZTk5ZjgyNmI2Y2EzZGE1OTRhZTA0ZjZiZjYwZGRjMWFjZWYwMjg5MDMzYWFjNmU4OWQ0Mzc3MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTUyY2EyNGJiNGFmZWRmZThhZWFlZjUyNjBlN2I5YzAwODViYTk1YmQxYjJjMDBmM2EzMzIzM2RiZGNmY2YwYSJ9"
         },
         {
-          "resource": "repo://src/model.rs#L204-L216",
+          "resource": "repo://src/model.rs#L234-L246",
           "version": "repo-lines-v1:sha256:7a6c50ae85d6e9944818e739e58c57c9855432645d9f34ad2ab3f5f255d75912:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxZTExNTYzNWZjNDY2NDhlNDQ1M2I4MWQ4ZDUyMmFjNjU0OTM5NWE5OWMwYTEwNDMxYWY0ODI4YWFiNmQzNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZmE4YmM2YzA4MTU0MWFmYTY2ZGY3YTc3NzYzY2UyZWZkNjJiNWRmM2Q1OTU1ZWY4ZDU0MjI2ZWUyNDJlMzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVkODRhY2Q3MmQ4ZDljOGRiNDdlY2NlMmJmODMwMDVlZjJmOGMyZGRhNWZlNjQwZTUzOGUzMGI0ZGZlZTE4MmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0MWJiNjkxN2RjZTc0Nzg3ZjQyNGQ3NjM2MmZmNWY0YjU0ZTk5YTczYjVmM2Y1ZTBkYTI5MzhlMjg2ZDljNDcifQ"
         },
         {
@@ -247,8 +247,8 @@
           "version": "repo-lines-v1:sha256:5535eef7918f3e9523182cd065eaf87195cfccb2cedb81398e5fd3c03711f63b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4MWMxNjc3NWU4ZDdlMTY1NmVmYWMxNGU5ODVlYmQ2ZmE5MTI0ZjU0NzlkZjkzYjE3NGNmYTI0ODgzODgxNzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViOWEwOGJjMjlmNmViZWJlOWE1ZjAxOTAzZDk4NDVkYmNiNTg0MmE0NTVmMDdkNWY0MDAyZGFjMzJhNWM2MDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4MzA4NDY2ZDE3OTlhNTI0ZjQ4ZTQ4ZWE4YTM1NDA2ODU5NTZkOTFhNjc1YTVlNTM2MDZkMzFmN2ZhY2NhZjAifQ"
         },
         {
-          "resource": "repo://src/sort_roms.rs#L16-L18",
-          "version": "repo-lines-v1:sha256:4eb1b6d611997d77f2c3e2c800ca3bb59a9322f74240ff06a83ed28b885d739f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzI4NmViODQ4ZGYxYTUwMjZmYTUzYTczNzQxMTY5MDA3ODFhNGU0YWZmZjlmNDFlNjgzNmJiM2U1MmFhZDk0NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTM5NzJhZTgzZTE3ODVhYjNkMzcxYmRmZWUwZGEwOGU5ODE2YWMwYmNmYmYzNDkwOTk3Yjg2MWUwY2U0MThmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGJjNTVmODJjODE3MTYyMDQ5NGRhMzRjNTdkOGQ2MWU4OTA4ZjVlNDBlMDFlMzZiMTkwYzNlZTMyNzU5ODBhZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWY1MmM3ZGNhNzY5ZDMwYzBmMDkwMTQ1YjZkMTA0NTkyNjBmZGY2ODdkOGFmNTlmZTdmMDNjNTk3ZjQ2MzM3NSJ9"
+          "resource": "repo://src/sort_roms.rs#L17-L19",
+          "version": "repo-lines-v1:sha256:7cfa64d0a0ca436373244a6a3a1489c3ad98c18ee45969b75681b90444a9799d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2JiZWY1N2EzMmMwNTA4M2NmZjEwODM2NjQyYTA5ZWRlOTIxOWIzMjMwOWI3YTc2NTYzZWJkNzNiYThhYTE5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTM5NzJhZTgzZTE3ODVhYjNkMzcxYmRmZWUwZGEwOGU5ODE2YWMwYmNmYmYzNDkwOTk3Yjg2MWUwY2U0MThmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQ4ZDMyYjFjNWNmZDNmYTI0Mjk0OTJhNzI2M2VmNTc3MDlhNmE3NmZlNmNkYzM3ZGVkZTUyOTMzZDEwODk3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjVjYjNhZTVmNDdiM2ZjNmFlMzNjNDcwYjk4ZjU4ZGJiNTViMmI5M2YxZmY2MGI5MDI3ZmRjYmM5NWUwOWI3ZSJ9"
         }
       ]
     },
@@ -276,19 +276,19 @@
     },
     {
       "id": "claim_80dc462644264f90972c0969342e7e65",
-      "statement": "Sorting consumes the same tokens for selection and ordering: `trim_ignored_games` discards games whose Languages token has no code in LANGUAGES (filtered by LANGUAGE_REGEX `[A-Z][a-z]` / VARIANT_REGEX `[A-Z]{2}`), whose Release status is in DISCARD_RELEASES, or whose comma-split Flag token matches DISCARD_FLAGS — using comment substrings instead for arcade — while `sort_games_by_weight` scores parents, broad/narrow region counts re-parsed with `Region::try_from_tosec_region`, version comparison, and preferred flags, highest weight first.",
+      "statement": "Sorting consumes the same tokens for selection and ordering: `trim_ignored_games` first discards games whose DAT categories include one of DISCARD_CATEGORIES, then games whose Languages token has no code in LANGUAGES (filtered by LANGUAGE_REGEX `[A-Z][a-z]` / VARIANT_REGEX `[A-Z]{2}`), whose Release status is in DISCARD_RELEASES, or whose comma-split Flag token matches DISCARD_FLAGS — using comment substrings instead for arcade — while `sort_games_by_weight` scores parents, broad/narrow region counts re-parsed with `Region::try_from_tosec_region`, version comparison, and preferred flags, highest weight first.",
       "evidence": [
         {
-          "resource": "repo://src/sort_roms.rs#L28-L29",
-          "version": "repo-lines-v1:sha256:7fecb103c52e4928ac12a1a283b05cc571550807a7bf7dd78abf562a1ed021c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWEyM2VhNjg4OGQ0NzljYmMzMDA4MTBjZTI2N2I0ZGRiMzMwZmMxMzVlNWZkZDc3M2NjMGM0YTFkYTQxZGFlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ3MTAwOWY1YmZhYzMwOGNkOWM1MjY2ZTFiNGUxNDNkYmIxNTRmMDJkZTFhNGM5ZTZiOTBmYjNiZDA1MDQzYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWUzZmQxOGQzZTQ5ZDEyMzE3OTFjYmQ1ZWQ3MjI2ZTE3MjRkMWZkNmY0OTVjMzA2MjIyYWRmODgyYWFkYzZlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDBhZTZmYWJmNmNhODg2YTNjNWMzNjAxOWQxMWI5NDkzNzY3MmQ3ODI2ZTVlZDFlZWY4YTRkMmY5YTliNzUxMCJ9"
+          "resource": "repo://src/sort_roms.rs#L1063-L1172",
+          "version": "repo-lines-v1:sha256:981d78c9e4e8556fab7c11b416c09fcc2beb5e3384ef8d25857abcec6194cf8d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5ZTI1NGU3OTAwOGY1MWM3N2MwZmU2Yjc5YjVlMDgyZDJjYWU2NmY3MjkzZTMzMjZjMjkzMDI2Njc2YjlkY2Y1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlZjE4NDNkZWYxOTZlNjc2NTk5YWY1YTMyNGM0MTJkMTkzMmM1YmJhMDgzM2M0ODVhNDRhMGZhZTU5MzZlMDgyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0NGZlYWRhNDk2ZjBkODZjZDc2MGJlNzYyNzNhMDg4M2NiMDUzMDQyNmE0MzI4YTY4Y2Q5YzhlYzI5NGQ1MTgxIn0"
         },
         {
-          "resource": "repo://src/sort_roms.rs#L721-L804",
-          "version": "repo-lines-v1:sha256:0444a74ef178bf76c5ead1b6aa4fc946807b23bebd1011801d0172627c98da5e:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMjU0ZTc5MDA4ZjUxYzc3YzBmZTZiNzliNWUwODJkMmNhZTY2ZjcyOTNlMzMyNmMyOTMwMjY2NzZiOWRjZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NzdhZjkyOWYyOTgzYTkyZDFmNGVmNmJkMmQwYmQwMWY5OWEwMWUyMzZmODdhZjNkZWI4NjZmYTgwNGQyNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0ZmVhZGE0OTZmMGQ4NmNkNzYwYmU3NjI3M2EwODgzY2IwNTMwNDI2YTQzMjhhNjhjZDljOGVjMjk0ZDUxODEifQ"
-        },
-        {
-          "resource": "repo://src/sort_roms.rs#L821-L941",
+          "resource": "repo://src/sort_roms.rs#L1189-L1309",
           "version": "repo-lines-v1:sha256:53d25cd8e0de226b26f583e6f7166284ac9e73bc671e0140c8b8b5d3ec5adde1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmMzY3MjFiMTkwZDg0ZDQ5YTI3YTM0NzVjMDYwNDJmZWQyYjAxZDhiMDlkYmIzZDFkOTExOTE1YTJiY2Y2ZjkwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0OTA5ZmE4MzQ0ZWY0ODVjYzEwYjBmZTYxNWE1MTU2OGI3MmExMGM0YmQzMDU1ZTA0YTEyOWFhMTY5NTgyYTM4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjNWI4YmJhNGNiNjljNjVhMzJiYTg0YmQ5ZDI3Y2U4ZWE2MmViNTEwMzdkODk1YmNhOWJmYzlhNjFiMGJlNjJiIn0"
+        },
+        {
+          "resource": "repo://src/sort_roms.rs#L28-L29",
+          "version": "repo-lines-v1:sha256:f7f96dd381aa690e30561315f07000fbfa7516fe50718bea6bd87084de32faa3:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWEyM2VhNjg4OGQ0NzljYmMzMDA4MTBjZTI2N2I0ZGRiMzMwZmMxMzVlNWZkZDc3M2NjMGM0YTFkYTQxZGFlOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTNmMTlkMjhmMjZhYmI3OTQwNTA1NjkyM2UxMjIxNTNmMmNmYWQ1MDgxZjg0NTI1ZjI0ZmRlNzJlYTVlOWFkYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2Y5MGMxN2Q4MmJlOGFjZTI0MmZmZDhiZWNhOWUyY2FhNzNjMzk0YzAxNzEzMjE1NzJiNWY0NjUxM2FjNGU2NyJ9"
         }
       ]
     },
@@ -297,19 +297,19 @@
       "statement": "`compare_versions` compares the first `NoIntroVersion` token numerically as (major, minor) parsed to u64 with unparsable or absent parts treated as 0, and a game carrying a version token always outranks one without: `Game (USA) (Rev 2)` beats `Game (USA)` under PREFER_VERSIONS `new` and loses to it under `old`.",
       "evidence": [
         {
-          "resource": "repo://src/sort_roms.rs#L806-L819",
+          "resource": "repo://src/sort_roms.rs#L1174-L1187",
           "version": "repo-lines-v1:sha256:b8f7a10042b60e91a708bb1ca661df51c9ee3d69c190c23ffb550e8b552a8468:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3NzVhZWU4Y2Y2ZmJmZjdmZmVjMDM2ZGQzMjdlYzY0YWI4Y2M1MzVlNDk2OTY0NzZhYjRhNDUwYmQ3NDFmMmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3ZGNjZGZlMzRiMGExODkzZTkzNDY1Yzg2ZDRiZTk1Nzc4NDk3Y2M1ZTA4MTZjZDg3OGYzMjE4MjE0YjA2MWYifQ"
         },
         {
-          "resource": "repo://src/sort_roms.rs#L877-L903",
+          "resource": "repo://src/sort_roms.rs#L1245-L1271",
           "version": "repo-lines-v1:sha256:f206f38f6d33a8b6fc44e62c39cca1bd1241d304dacb943748922f1e6f29f69d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4NTgyOGRkNzMxMjA3ZmQ2YzE5ZDRmM2U3ZmJlNDgyODY4MTQ4MmUyY2Y5NmFkNzg2MThjNWYxNzA3Njg2ZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjZThkMTM3ZmE0NGFjNjY0OGIzYTRhNmY1NmY1MGJhYmE2NzczNDE0NWQwNDc0YTRlNTU1Njk3ZmQyNmJlYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4MjI0ZGVlYjQ3MzQ2NTJlN2QxMzM4OTMwZjJiYzk3NjZhYjQzYmUwZGVmNmQ4NTQ4MGY3ZTM2NjUxNDFkMDUifQ"
         },
         {
-          "resource": "repo://src/sort_roms/test_order_prefer_versions_new_revision_vs_revision.rs#L41-L52",
+          "resource": "repo://src/sort_roms/test_order_prefer_versions_new_revision_vs_revision.rs#L43-L54",
           "version": "repo-lines-v1:sha256:017be5b06735a544c796d6ed98d0ce0d1ecccf4b47a4c3e68865dfe290ae0987:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMzA5ZWMxOWJjZjhlZjRkYWRmZDcxN2YyMzU1Zjg4NjExMTgyNjBhNmE0MmE0ZDAwNWNlMWFmMWQxYzc2YmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZGRlMjNjMmZjYWY1YzMyZWI4M2VmZDU2MWVmZDBiNWI4ZTJhNzAxOTA2ZWU2ODU0NmFkNTA2NTFkZGJiODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3OGQyZDFjZWIxNTNmNDNjMTI4MzliMzJjODlmYzFkZjM2NzcyYjRlNzQ1NDAwMjkzYjZmYmUzMzU0ODdmOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
-          "resource": "repo://src/sort_roms/test_order_prefer_versions_old_revision_vs_vanilla.rs#L41-L52",
+          "resource": "repo://src/sort_roms/test_order_prefer_versions_old_revision_vs_vanilla.rs#L43-L54",
           "version": "repo-lines-v1:sha256:00854b8754991bab888986abda0e81816c7585b5ed1536fd0c56fffe160f3f2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMzA5ZWMxOWJjZjhlZjRkYWRmZDcxN2YyMzU1Zjg4NjExMTgyNjBhNmE0MmE0ZDAwNWNlMWFmMWQxYzc2YmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZGRlMjNjMmZjYWY1YzMyZWI4M2VmZDU2MWVmZDBiNWI4ZTJhNzAxOTA2ZWU2ODU0NmFkNTA2NTFkZGJiODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3OGQyZDFjZWIxNTNmNDNjMTI4MzliMzJjODlmYzFkZjM2NzcyYjRlNzQ1NDAwMjkzYjZmYmUzMzU0ODdmOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         }
       ]
@@ -331,12 +331,8 @@
           "version": "repo-lines-v1:sha256:32d41825687eea70f9da429faab4847a1b308f44a37cf888da68a83640f53f0c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3YTc5NTljZDg5MmM4OGQ2MmMwZWE1NjI3YjViODIyNjcwZThiOTk3YjQ4OTA0ZDliMmE5M2ZhNTViNmYyOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkOTI3ODVkODMzZjBkMTNlZTg4NDU1N2IxMzZjM2MyMzdlODhjMDUxZjZhZDYzODE3MWQzNzk2Y2I2OTllOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://src/model.rs#L188-L202",
-          "version": "repo-lines-v1:sha256:e49c8f70c47572d987747da82a88d5f71f4f3c4c3deeeabfaac5f80b5c64d44e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZmE4YmM2YzA4MTU0MWFmYTY2ZGY3YTc3NzYzY2UyZWZkNjJiNWRmM2Q1OTU1ZWY4ZDU0MjI2ZWUyNDJlMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4Yzc4MGY3Y2MwZjYwMTNlMTA2NGU1NTEwNzczYjkwNzNjNjljYTVhOTk4MzU1MTU4YWU5YWI3MTQwNmFjZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkOTg2ZjYxNDlkYmMxZjYxNGM0MTZkMDlhZjZlNGZhNWMwNzBhOWM2ZjE1ZmY2ZmJmM2U3YzA4ZTMwNTZhMmEifQ"
-        },
-        {
-          "resource": "repo://src/sort_roms.rs#L371-L420",
-          "version": "repo-lines-v1:sha256:927411e01d24d5d655b1787677d5cd7a8104f7dfcc904a8e91e69689d224e478:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiMDJmZGIwMTRjMzM0ODkwNWVmZjQzMTllMGU4NDk0ZjhmYTMxNDM1YThmMjNkYjQ0MTk2MTdmMGJiNDM3ZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2YjQwOWMxYTE2YWY3ZDU0NWQzMzdmYzJkMmQ3ZmFmZThlZWY0MWIzMzIwNWVlNTVkOGVlODY5NGI4ZjY5ODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjODM1OGM4OGI0ODk4MDQ4N2UxMWE4YmYzYzhiOTk2ODE0Mzg3NjZmZTJlMTY0MDk4N2E0Zjg3ZjJmY2Y0MTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmYTE5YjNkMTdhMzA0M2VhOWZmMmEwMDUzNTBhNTY2YThmMmUwN2VkMzcwMmRjNmE5NWY3NjQxOWJlYTVlZDIifQ"
+          "resource": "repo://src/sort_roms.rs#L224-L235",
+          "version": "repo-lines-v1:sha256:f6f806573468dbf96fbbbfba89c5e71c667892c9ed024718fa08c3476030560c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3MmQ5YzVkNjcwYmMwY2M0NjVjYzBiNmI0NmQ4ODUxNjBiOGEwYmEyNWY1MmQ1ZWUxOGY3ZDY1NDAzYjM2ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4NDQyMDg1ZDllYTVhODFhMGRkN2U3YTcwYTcwMTcxYmNjZGNhNDkyZjlkZmEwNDllNzhjNTIyZDI4MGI3YTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5ZDRhOGYyM2Q2Zjg1NjYwZTU5YTRkY2FjODQ4ODVhODg3OTU4YmQ2NGFhYzljMWY5MjllMGZkMmE5MDM0ZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0ODhjMWMzOWFiYmRlNDdlYTEwMjI1MzllNjgzMzE4NDM1ZTYzODlhYjQxN2M5OGYyOTMxNTViYWUxNWUyZGQifQ"
         },
         {
           "resource": "repo://tests/Test%20System%20(20200721)%20(MAME).dat#L1-L20",
@@ -449,7 +445,7 @@
           "version": "repo-lines-v1:sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTc1MjI2M2ZlMWFhNDA1MTRlNjMwMTNiNjY0ZmRhZDI4NmNlNDZjN2Q4ZGU2YWMzNGJkNmVmYWRiNWQ0YzlhNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODcyMzI0OTRmZDNhODUxMzkwNzA5MGUxYWI1NWNlZjUxNDc4ZGYxYTExMDIwYzYwZTU0MmZiYzEwN2MwN2JhYyJ9"
         },
         {
-          "resource": "repo://README.md#L207-L228",
+          "resource": "repo://README.md#L209-L230",
           "version": "repo-lines-v1:sha256:70e0e1ab5928aec08ecfce8ad3f1e54b14e99064843252a6bfb3ee2e9729aa9e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxOGJiMDNmMWQzYjY4YWExYjkwZjJiNmYzN2JkMjdiY2M4ZDZiYzY2OWRmMTk5ODgwZTI4ZWUzOGViMTA4OWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhMDlkODQwMWYyMmRkZWYyODU3ODFiMDY1OTk5OWUyZDNkOWZhODNmNDlhMTAyMGM0M2Y2NzBlMDE0Y2Y0MTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzOTAzYmM1NDZjMWI1YjA4MWZiOTA2OWFjNWZjZTEzZWU1MDE3Mjc0Yjk1MjFiOWI4YjkwZmYwZjc2ZTFiNGYifQ"
         },
         {
@@ -517,10 +513,38 @@
           "version": "repo-lines-v1:sha256:08c691e25444f6baab0bef29eab066d36834341a9dcdc60f732889765e52b244:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1N2ZjYTgyZTVjNGZhYzg4M2VlMjAxMTQ5M2U4MmEzYWNkMDk2NjIxNDNiZjcxNjJhZjBjYzNlNmVhMTc4YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZTcyZDljZjUxNjkzM2ZkNDc3M2M0MmE5NzEwODZlMWRjNGJkYzA2ZjNiOWFiNDEwMzk2MDRmMDUwZGIxYjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGU5MzIxNmJiZjliYjZkMmZjOTA1YzU4YjNjN2QyMzI1NDNjYzU2OTg3OTI5MThhOTM3MThkY2RhMTlhMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0ZGI2MmI0ZTI4ZGQ0YjBhZDE2NjAxYmE4MTZjZmY0ZmFjNTZlNjQ3MjE3MzdiMmFmNzY4YTcxM2ViZjE3ZWMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_dae12fe9d38a4f01b35a84bed1b51d65",
+      "statement": "has_ignored_category discards a game before any name parsing when its games.categories string (the DAT's <category> entries, |-joined at import) contains an entry of DISCARD_CATEGORIES, letting Redump's Demo or Coverdisc games leave the election on metadata their names do not carry.",
+      "evidence": [
+        {
+          "resource": "repo://migrations/20261109000002_add_discard_categories_setting.sql#L1-L2",
+          "version": "repo-lines-v1:sha256:a4e3725bcd93bfec8f743d5a80566fc1af8599796afd364e5c11a253dff121d9:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzZjMmIxOWUyZDAwYmQ2Y2MyNjVjMzBhOTM3YTQ2OGU4MzJkN2JlMjVmYzZiZGQ3OWM3M2QzNTgzNjgxZjZmZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTY2MWJiNGVlMzRkMWVlMzlkYTZiMjUyM2RkMjE0ZjEyNWI2ZmI5ZTcwNjk2ZDEzYTZkOWVmMjRlY2Q3NGFiNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://src/sort_roms.rs#L1063-L1087",
+          "version": "repo-lines-v1:sha256:a0dab0d64b76dcfe2e8ff6cac2be8cec52e7e0e9b244109198ef0ea494f4d4af:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMjU0ZTc5MDA4ZjUxYzc3YzBmZTZiNzliNWUwODJkMmNhZTY2ZjcyOTNlMzMyNmMyOTMwMjY2NzZiOWRjZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmMTg0M2RlZjE5NmU2NzY1OTlhZjVhMzI0YzQxMmQxOTMyYzViYmEwODMzYzQ4NWE0NGEwZmFlNTkzNmUwODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkZDU4Mjg5MDViMWFjYmExNjFiODRlNWJkNmUwNTliMmU5MDQ3ZmU4MGIwYzU0MTAwMGE3MjllYTk4YmNlMzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9e5e071db241427a9da33de54009515b",
+      "statement": "import-clone-lists reads Retool clone-list JSON naming its system, stores one list per system in clone_lists/clone_list_titles (replacing the previous import), and sort-roms reads the titles under INFER_CLONES to group renamed releases and elect by title priority.",
+      "evidence": [
+        {
+          "resource": "repo://src/import_clone_lists.rs#L1-L60",
+          "version": "repo-lines-v1:sha256:0cc7663d5490433fd72f7ed5ad03d0edb6ee47caa5e16eb3b70f7df345acb9f8:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmNmQ0NTA1NDU2MDlmMzg2OTQzZjlmZTQ1MmQwOWVhYWRkMDY0NThjMmJiYzU4ZGQzYWJmZDI2ZDU0YzkwNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyM2EwYzYzMGI0YzQwNGNlMDc0NTQ2ZWIwMGNiYjMxZmU3MDNmMTcwZTU0ZWE5YjNkMTY4MjE3Mjk3MTdjY2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkNjNlM2I1OGYyNDk4MzgwYzJiYjlmZWRjMTUzYzYzM2ZhYTcwNzAyZTFmOWRiMDUwYjNjNTlhYjViYzE1ZDAifQ"
+        },
+        {
+          "resource": "repo://src/sort_roms.rs#L1005-L1012",
+          "version": "repo-lines-v1:sha256:078b0e3044884bab8ef438563ed8eb5adcc0faec57c7e83d59f8dd248dace11c:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmUwY2QzYjhkOWQyMzBhZjFiZjI5ZDcwMWQwY2E1MGMzOTVlMmIwOGI0MDQzMDkwZGYwNzFiYjFiOWExNzYxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGI4MTg1MmQzYTM2ZmJkZTA0MGUzMjBiMjJlZjdhOWQ4OWJlNmE4Nzc2MmU2ZjA4NjZlNmQ5NjQ5ZjIwNjEyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTllNzYzNTVjZjExOTk0ODBjM2Y5OTgzNmIxNDg2Yzg0MWQ4OTFmYWFkOTA0YzYwOGUwOTMwMjJkMzc1N2FlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjU5OWZkNDAxMDMxMTM3MjA4Y2VlNzg2OTg0NjY2MDkxZGNjMTQ0MmRkMDg2NDk0NGZlNDhkOTI4MzU4Njc3MCJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.2",
-    "at": "2026-11-09T21:55:13.223Z"
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-13T20:59:45.363Z"
   }
 }

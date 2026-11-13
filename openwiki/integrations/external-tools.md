@@ -45,12 +45,11 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
-
 
 # External Tools
 
@@ -64,18 +63,18 @@ crate in-process.
 
 ## What replaced each tool
 
-| Former tool | Replacement | Formats |
-| --- | --- | --- |
-| `chdman` | `chd-rs` ([CHD Format and chd-rs](../concepts/chd-format-and-chd-rs.md)) | CHD |
-| `ctrtool` | `cia-rs` | CIA |
-| `maxcso` | `xso-rs` | CSO, ZSO |
-| `nsz` | `nsz-rs` | NSZ |
-| `gdidrop` | `gdi-rs` | GDI export |
-| `flips` | `xps-rs` | IPS, BPS |
-| `xdelta3` | `xdelta-rs` | XDELTA |
-| 7-Zip | `sevenz-rust2` + `zip` | 7Z, ZIP |
-| `dolphin-tool` (later the `nod` crate) | `rvz-rs` | RVZ |
-| `wit` (later the `nod` crate) | `wbfs-rs` | WBFS |
+| Former tool                            | Replacement                                                              | Formats    |
+| -------------------------------------- | ------------------------------------------------------------------------ | ---------- |
+| `chdman`                               | `chd-rs` ([CHD Format and chd-rs](../concepts/chd-format-and-chd-rs.md)) | CHD        |
+| `ctrtool`                              | `cia-rs`                                                                 | CIA        |
+| `maxcso`                               | `xso-rs`                                                                 | CSO, ZSO   |
+| `nsz`                                  | `nsz-rs`                                                                 | NSZ        |
+| `gdidrop`                              | `gdi-rs`                                                                 | GDI export |
+| `flips`                                | `xps-rs`                                                                 | IPS, BPS   |
+| `xdelta3`                              | `xdelta-rs`                                                              | XDELTA     |
+| 7-Zip                                  | `sevenz-rust2` + `zip`                                                   | 7Z, ZIP    |
+| `dolphin-tool` (later the `nod` crate) | `rvz-rs`                                                                 | RVZ        |
+| `wit` (later the `nod` crate)          | `wbfs-rs`                                                                | WBFS       |
 
 `wux-rs` has no row: oxyromon never ran a tool for the Wii U, so the crate follows
 wudd and Cemu rather than replacing a subprocess. Its tests use a synthetic disc and
@@ -100,9 +99,9 @@ wbfs-rs replaced it in turn, and it is no longer a dependency.
   `status` payload all report `info::dependencies()`: `sevenz-rust2`, `chd-rs`,
   `cia-rs`, `nsz-rs`, `rvz-rs`, `wbfs-rs`, `wux-rs`, `xdelta-rs`, `xps-rs` and
   `xso-rs`, and every one reports `built-in`.
-  Two add a note about keys: `nsz-rs` appends `prod.keys not found` when the Switch
-  key file is absent, and `wux-rs` appends `no Wii U keys imported` until
-  `import-keys` has run.
+  Two add a note about keys: `nsz-rs` appends `no Switch keys imported` when
+  neither `switch_keys.txt` nor `~/.switch/prod.keys` is present, and `wux-rs`
+  appends `no Wii U keys imported` until `import-keys` has run.
 - **Temp space still matters.** Intermediate files, CIA unpacks included, go to a
   `TempDir` from `util::create_tmp_directory`, created inside the `TMP_DIRECTORY`
   setting rather than the OS default. The caller holds it for the whole
@@ -114,15 +113,15 @@ The upstream tools survive only as oracles for the format crates' tests. Each
 test resolves its tool, and skips with a message rather than failing when the
 tool is absent, so a contributor without them still gets a green run.
 
-| Crate | Reference | How it is found |
-| --- | --- | --- |
-| `chd-rs` | `chdman`, plus `ffmpeg` for LaserDisc AVIs | `$CHDMAN` / `$FFMPEG`, then `$PATH` |
-| `cia-rs` | `ctrtool` | `$CTRTOOL`, then `$PATH` |
-| `xso-rs` | `maxcso` | `$MAXCSO`, then `$PATH` |
-| `xps-rs` | `flips` | `flips --version` on `$PATH` |
-| `xdelta-rs` | `xdelta3` | `xdelta3 -V` on `$PATH` |
-| `rvz-rs` | `dolphin-tool` | `$DOLPHIN_TOOL`, then `$PATH` |
-| `wbfs-rs` | `wit` | `$WIT`, then `$PATH` |
+| Crate       | Reference                                  | How it is found                     |
+| ----------- | ------------------------------------------ | ----------------------------------- |
+| `chd-rs`    | `chdman`, plus `ffmpeg` for LaserDisc AVIs | `$CHDMAN` / `$FFMPEG`, then `$PATH` |
+| `cia-rs`    | `ctrtool`                                  | `$CTRTOOL`, then `$PATH`            |
+| `xso-rs`    | `maxcso`                                   | `$MAXCSO`, then `$PATH`             |
+| `xps-rs`    | `flips`                                    | `flips --version` on `$PATH`        |
+| `xdelta-rs` | `xdelta3`                                  | `xdelta3 -V` on `$PATH`             |
+| `rvz-rs`    | `dolphin-tool`                             | `$DOLPHIN_TOOL`, then `$PATH`       |
+| `wbfs-rs`   | `wit`                                      | `$WIT`, then `$PATH`                |
 
 CI installs `mame-tools`, `xdelta3` and `ffmpeg` in the lint and test job, after an
 `apt-get update` with retries, and the workflow comments that all three are only

@@ -2,7 +2,8 @@
 type: architecture
 title: System Architecture Overview
 description: The layered shape of oxyromon — a clap entrypoint, one module per subcommand, shared database/model/common/config/util/transcode layers, format modules running every codec in-process over the crates/* format crates, and SQLite — plus how the GraphQL and MCP surfaces enter at the subcommand layer, and why oxyromon no longer needs any external tool.
-tags: [architecture, layers, cli, graphql, mcp, sqlite, workspace, cargo-features]
+tags:
+  [architecture, layers, cli, graphql, mcp, sqlite, workspace, cargo-features]
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -82,10 +83,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # System Architecture Overview
@@ -120,7 +121,7 @@ flowchart TD
   SUB --> PROG["progress.rs output on stderr"]
 ```
 
-*Caption: the layer stack and the three places a request can enter — argv, GraphQL, and MCP — converging on the same subcommand `main()`, with every codec running in-process.*
+_Caption: the layer stack and the three places a request can enter — argv, GraphQL, and MCP — converging on the same subcommand `main()`, with every codec running in-process._
 
 **Entrypoint.** `src/main.rs` is the root package's only binary target. It builds the clap
 `Command` from each module's `subcommand()`, runs the process-wide startup
@@ -128,12 +129,13 @@ flowchart TD
 `MultiProgress`, the data directory, `oxyromon.db`, the pool, the ROM and tmp
 directory defaults), and then dispatches on the matched subcommand name. Batch
 subcommands run inside a block that holds the single pooled connection; `mcp` and
-`server` are dispatched *after* that block and are handed a cloned `SqlitePool`
+`server` are dispatched _after_ that block and are handed a cloned `SqlitePool`
 because they must multiplex requests. See
 [CLI Entrypoint and the Subcommand Contract](cli-entrypoint-and-subcommands.md).
 
 **Subcommand modules.** One module per user-facing action (`import_dats`,
-`import_roms`, `sort_roms`, `convert_roms`, `check_roms`, `export_roms`,
+`import_clone_lists`, `import_roms`, `sort_roms`, `convert_roms`, `check_roms`,
+`export_roms`,
 `rebuild_roms`, `purge_*`, `generate_playlists`, `download_dats`, `config`,
 `info`, `benchmark`), all obeying `pub fn subcommand() -> Command` plus
 `pub async fn main(connection, matches, progress_bar)`. `subcommand()` is a pure
@@ -180,7 +182,8 @@ directly in `archive.rs`, for hashing an RVZ through its `Reader`, and for the
 CHD header read — so the runtime is
 never blocked by a compress or a hash. These modules report `"built-in"` from
 `get_version()`; `nsz.rs` and `wux.rs` add a note when their keys file
-(`prod.keys`, or the Wii U keys `import-keys` stores) is missing, so that is not
+(`prod.keys`, or the Wii U keys, both importable with `import-keys`) is
+missing, so that is not
 first discovered mid-conversion. **No format module spawns a process any more**: the
 last one, `ctrtool.rs`, was replaced by `cia.rs`, whose `parse_cia` and
 `extract_files_from_cia` call `cia_rs::Cia::parse` and `cia_rs::unpack` through
@@ -237,7 +240,7 @@ sequenceDiagram
   M-->>UI: true as soon as the task is handed off
 ```
 
-*Caption: the GraphQL path hands work to the subcommand layer and returns; the outcome arrives asynchronously over `/events`.*
+_Caption: the GraphQL path hands work to the subcommand layer and returns; the outcome arrives asynchronously over `/events`._
 
 Because argv is the interchange format, both hosts push the non-interactive flags
 a human would answer at a prompt — `-y`/`--yes` for `confirm()` on destructive
@@ -252,7 +255,7 @@ servers and the test suite at once.
 Both hold one process-wide `WRITE_LOCK` for the whole action, so web and MCP
 actions run one at a time in the order they started, rather than colliding over
 the same files or surfacing as `SQLITE_BUSY`; settings writes on the web's request
-path stay outside it. The hosts differ only around the shared core: GraphQL actions run *asynchronously*
+path stay outside it. The hosts differ only around the shared core: GraphQL actions run _asynchronously_
 and report only start/complete/error over SSE, while MCP actions run to completion
 inside the request, poll the bar
 roughly twice a second into `notifications/progress`, and race the work against
@@ -263,11 +266,11 @@ appear in `tools/list`. See [MCP Server](../server/mcp-server.md) and
 
 ## Entry surfaces and what they own
 
-| Surface | Entered at | Owns |
-| --- | --- | --- |
-| CLI | `main.rs` clap dispatch, scoped connection | interactive selection, styled terminal output |
-| GraphQL + uploads + SSE | `server.rs` axum router, `query.rs` / `mutation.rs` | schema, DataLoaders, `/events` broadcast, embedded assets |
-| MCP | `mcp.rs` (`oxyromon mcp` stdio, or `/mcp` nested by `server.rs`) | tool/resource/prompt catalog, write lock, progress bridging |
+| Surface                 | Entered at                                                       | Owns                                                        |
+| ----------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------- |
+| CLI                     | `main.rs` clap dispatch, scoped connection                       | interactive selection, styled terminal output               |
+| GraphQL + uploads + SSE | `server.rs` axum router, `query.rs` / `mutation.rs`              | schema, DataLoaders, `/events` broadcast, embedded assets   |
+| MCP                     | `mcp.rs` (`oxyromon mcp` stdio, or `/mcp` nested by `server.rs`) | tool/resource/prompt catalog, write lock, progress bridging |
 
 `server.rs` builds one axum `Router`: `POST /graphql`, `GET /events`, multipart
 `POST /dats`, `/roms`, `/patches`, `/irds`, `GET /romfiles/{id}` for downloads,
@@ -347,6 +350,6 @@ on the `model.rs` types is what turns the same structs into GraphQL
 - **Tests use the same front door.** A test builds a temp database with
   `establish_connection`, points the ROM and tmp settings at `TempDir`s, parses
   argv with the module's `subcommand()`, calls `main(&mut connection, &matches,
-  &ProgressBar::hidden())`, and asserts on database plus filesystem state, with
+&ProgressBar::hidden())`, and asserts on database plus filesystem state, with
   the `cfg(test)`-only `MUTEX` from `config.rs` serializing shared state. There is
   no CLI harness — which is why the subcommand signature must stay host-agnostic.

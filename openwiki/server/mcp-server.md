@@ -2,7 +2,21 @@
 type: server-surface
 title: "MCP Server: Tools, Resources and Prompts"
 description: "The rmcp-based Model Context Protocol server — stdio and Streamable HTTP transports, the nine read and ten mutating tools, the shared run_action path (write lock, pooled connection, progress-notification bridge, cancellation, SSE fan-out), read-only route disabling, confirm gating, resources and prompts."
-tags: [mcp, rmcp, stdio, streamable-http, tools, resources, prompts, write-lock, progress, cancellation, read-only, confirm]
+tags:
+  [
+    mcp,
+    rmcp,
+    stdio,
+    streamable-http,
+    tools,
+    resources,
+    prompts,
+    write-lock,
+    progress,
+    cancellation,
+    read-only,
+    confirm,
+  ]
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
     resource: repo://.github/workflows/continuous_integration.yml
@@ -56,10 +70,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # MCP Server: Tools, Resources and Prompts
@@ -114,7 +128,7 @@ protocol channel — and then blocks in `tokio::select!` on `server.waiting()`
 against `tokio::signal::ctrl_c()` and, on Unix, SIGTERM. Either signal cancels
 the token, which unwinds any in-flight mutating action; dropping the running
 service stops the transport.
-`src/main.rs` runs the long-lived server *outside* the single-connection scope
+`src/main.rs` runs the long-lived server _outside_ the single-connection scope
 used by ordinary subcommands, then `optimize_database(pool)` after it returns.
 
 `mcp_http_service(pool, cancel, sse_tx)` returns rmcp's
@@ -150,7 +164,8 @@ returns the literal `"built-in"`, so none can come back missing or report
 `version: null`; `cia-rs` replaced `ctrtool`, the last optional external program,
 and the tool's description now speaks of format backends rather than external
 tools. Two codecs qualify their answer about keys. `nsz-rs` reports
-`"built-in, prod.keys not found"` when the Switch keys file is absent, since only
+`"built-in, no Switch keys imported"` when neither the data directory's
+`switch_keys.txt` nor `~/.switch/prod.keys` is present, since only
 NSZ compression needs it. `wux-rs` reports `"built-in, no Wii U keys imported"`
 until `import-keys` has run, since only WUA and NUS exports need Wii U keys.
 Neither `import-keys` nor `export-roms` has an MCP tool, so an agent can see the
@@ -167,7 +182,7 @@ actions, `open_world_hint = true` on `download_dats` (it reaches redump.info), a
 `destructive_hint = true` on the four purges, so clients can decide how eagerly
 to auto-invoke each. `convert_roms` is annotated only as non-read-only.
 
-`download_dats` downloads *and imports* each named Redump system, which its
+`download_dats` downloads _and imports_ each named Redump system, which its
 description says, and reports per system rather than per call: it carries on
 past a failed system and returns `DownloadDatsOut`, which lists every system once
 under `imported`, `up_to_date` (a DAT no newer than the imported one, which
@@ -204,13 +219,13 @@ JSON Schema for every tool comes from the parameter structs in
 shape, `Option<T>` gives optionality, and the doc comments are the prose the
 model reads. `Parameters<T>` unpacks them in the signature. Output structs in
 [`src/mcp/output.rs`](../../src/mcp/output.rs) deliberately stay compact —
-snake_case, enum *names* (`"merged"`, `"partial"`, `"romfile"`) instead of the
+snake_case, enum _names_ (`"merged"`, `"partial"`, `"romfile"`) instead of the
 integers stored in SQLite, and no bookkeeping ids a caller cannot use — because
 every field lands in a model's context window.
 
 A `system_id` argument always resolves through the `require_system` method,
 which acquires its own pooled connection and maps the
-number to the system's *name* because that is what the CLI subcommands accept
+number to the system's _name_ because that is what the CLI subcommands accept
 (`-s/--system`); an unknown id returns the tool-level message "system N not
 found; list_systems has the ids".
 
@@ -261,13 +276,13 @@ sequenceDiagram
   end
 ```
 
-*Caption: a mutating tool call — one write-locked connection drives the CLI subcommand while a poller mirrors its progress bar into `notifications/progress`, and the outcome fans out to `/events` when the server is mounted.*
+_Caption: a mutating tool call — one write-locked connection drives the CLI subcommand while a poller mirrors its progress bar into `notifications/progress`, and the outcome fans out to `/events` when the server is mounted._
 
 ## run_action: the shared execution path
 
 Every mutating tool funnels through `OxyromonMcp::run_action` in
 [`src/mcp/actions.rs`](../../src/mcp/actions.rs). It takes the
-process-wide `WRITE_LOCK` *before* acquiring a connection and holds it across the
+process-wide `WRITE_LOCK` _before_ acquiring a connection and holds it across the
 whole action, so writers queue politely instead of surfacing `SQLITE_BUSY` halfway
 through an import or moving the same files at once. `WRITE_LOCK` is a `static` in
 `src/mcp.rs`, so every `/mcp` request shares it, and so do the web server's
@@ -294,7 +309,7 @@ three-way `tokio::select!` between `work`, the per-request `ctx.ct` ("cancelled
 by the client") and the server token (`self.cancel`, "server shutting down"), so
 both a client that hangs up and a process that is stopping unblock the action.
 Afterwards the bar is stopped and cleared, the outcome is logged, and — when an
-`sse_tx` is present *and* an `sse_prefix` was passed — `{prefix}_started`,
+`sse_tx` is present _and_ an `sse_prefix` was passed — `{prefix}_started`,
 `{prefix}_complete` or `{prefix}_error` goes to the SSE broadcast so a browser
 watching `/events` reacts to MCP-triggered work. `import_roms` and `set_setting`
 pass `sse_prefix: None` and therefore emit nothing there.
@@ -318,7 +333,7 @@ model must fill in.
 `purge_systems`, `purge_games` and `purge_irds` gate unconditionally; `purge_roms` gates only
 when `trash` or `foreign` is set, since those delete files, and separately
 refuses a call with none of the four flags set. Refusal is `need_confirm(tool)`:
-a *tool-level* error result explaining that `"<tool>"` is destructive and was
+a _tool-level_ error result explaining that `"<tool>"` is destructive and was
 refused — not a protocol error. Because the subcommands would otherwise prompt on
 a TTY that does not exist, the synthesized argv appends `--yes` (`sort_roms`,
 `purge_roms`) — the only two subcommands the MCP surface reaches that declare a
@@ -343,7 +358,7 @@ Three result channels, chosen deliberately:
   all, built by the one `internal()` helper in `src/mcp.rs` when the cause is
   an internal failure: pool-acquire failures, unknown resource URIs
   (`McpError::resource_not_found`) and resource-payload serialization failures —
-  plus `audit_system` on a nonexistent system. A *tool* result that cannot be
+  plus `audit_system` on a nonexistent system. A _tool_ result that cannot be
   serialized degrades to `tool_error` instead, inside `ok_json`.
 
 The stdio tests assert the distinction: an unknown `system_id` yields

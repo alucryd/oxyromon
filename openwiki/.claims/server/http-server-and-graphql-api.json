@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:94165fe7d96756696626f1e2958c2457322132835bcd39197281ca06283dda4a",
+  "pageVersion": "sha256:c826371e0876b5defcb35e24f735a11b316e8b3c0e38047cc7e7c43ce6995663",
   "claims": [
     {
       "id": "claim_fd03ca433bd84def895a64fd9e443d5f",
@@ -139,7 +139,7 @@
       "statement": "Response payload size is deliberately trimmed: `Game::description` returns `null` when it would only repeat `name` (the raw field is `graphql(skip)`ped), and `games(systemId, offset, limit)` pages a large system via `find_games_by_system_id_paged`, falling back to the unpaged query when `limit` is omitted.",
       "evidence": [
         {
-          "resource": "repo://src/database.rs#L784-L808",
+          "resource": "repo://src/database.rs#L798-L822",
           "version": "repo-lines-v1:sha256:df40c1d49fbb9bd884ae016bf9267a403b2cbf9cab2993faf034c2e797def6a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNDNhZWU5OGRiZTM0NTMzMTg0NjUxYzVhYjZmOThmYTdmZTFhODU3ODU2NzBiN2U3NTgwN2I3MzkyMzE2MzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0YmMwYmYzOWUyMTdlM2UxZTBhZGIyNGFlZTA4MjQ4ODZmOTA2ZDk3NWU4ZTcxOWQzZTU0ZjI0N2Y5YmIxYTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5MjM1ZWZmY2MzNmE4OTQxODVmMDY0YjI3MWQ4ZmM2ODFkZDA1YTY3NmE2YjBjZmU2NTY4YjgzM2QxY2QxZGEifQ"
         },
         {
@@ -323,7 +323,7 @@
       "statement": "`/roms` accepts a `url` field that the **server** fetches, not the browser — so it can reach anything the server can, including its own private network, which the source comments and README flag as acceptable only for the default loopback bind. The in-code mitigations are a http/https scheme allow-list, a 30-second connect timeout, `error_for_status()`, and a 100 GiB cap enforced while streaming (`MAX_ROM_DOWNLOAD_SIZE`).",
       "evidence": [
         {
-          "resource": "repo://README.md#L276-L278",
+          "resource": "repo://README.md#L278-L280",
           "version": "repo-lines-v1:sha256:286ff79601659f8af77afb5401677a51989d7838b4086c0a1cd2450cc8bed573:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODNmMzkyOGYxZDliNjc1ZmQwMDA4MDZjNmZmY2VlZmIzZmYxNGJjNmY3MWNlM2VmYTlhMDczMTZlZmZiMDg0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQyZmVjOWMxNmMyOGZjYzIzZDFiMjliNDExNWEwNGI3NzBiMWIwMmYwODA3OTYzZDc2NGI5NzhjMWFmOGEzOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAzMTVhZmNjZmFlZWMwOGRkYzYxNDUzYjc2M2YwZmZhYmM5OGIyMzdiZjk5MWEzNGFhNTc0M2M2MzExMzg3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmM5NjRjODFhOWM5M2QzZWYzOTBmZDU1NmRiOWE5OTc2NGExYzIwZjQ1MjRmNjk5Y2I0OTg3ZDlmM2JmZjRmYSJ9"
         },
         {
@@ -355,7 +355,7 @@
       "statement": "`download_romfile` reads the `ROM_DIRECTORY` setting, joins the `romfiles.path` row onto it and streams the file out as `application/octet-stream` with an `attachment` disposition; a missing setting or null value is 500, and a file that cannot be opened is 404 — but `find_romfile_by_id` panics for a nonexistent id.",
       "evidence": [
         {
-          "resource": "repo://src/database.rs#L3069-L3082",
+          "resource": "repo://src/database.rs#L3201-L3214",
           "version": "repo-lines-v1:sha256:7917d2c0e4984d1d9fa3fdcc7cb8f19d9eb42f1b8819398ee4a19562313f0986:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiN2FjY2RjMDk0ZjljMjIzZTc0NjgyODJlMTMzZWYzMmY5NDFkZTYzMjEzMjVjZjgzMmRjMTZhNTEzOTc5ZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliMzA2OTRlYzMyYzY5YTI0MzU1YTA1YTAzZDNkY2JjODRjMzM0Y2YzNDQxYmNkYTFiZTA0OTg2NTEwYjMxMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0MDczNGE1Y2Q2ZWNhNTBjNjdiZTNmZTJiNWNhYjdiMDNiMzcyYjYyZGQ4M2E3YzdiYmMyZWQ5YmI0N2VjMWYifQ"
         },
         {
@@ -397,7 +397,7 @@
       "statement": "The server has no authentication or authorisation: `/mcp` is nested on the same listener at the same trust level as `/graphql`, and `mcp_http_service` constructs its handler with `read_only = false`, so the mutating MCP tools are live over HTTP with no bearer token, as the README warns.",
       "evidence": [
         {
-          "resource": "repo://README.md#L276-L278",
+          "resource": "repo://README.md#L278-L280",
           "version": "repo-lines-v1:sha256:286ff79601659f8af77afb5401677a51989d7838b4086c0a1cd2450cc8bed573:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODNmMzkyOGYxZDliNjc1ZmQwMDA4MDZjNmZmY2VlZmIzZmYxNGJjNmY3MWNlM2VmYTlhMDczMTZlZmZiMDg0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQyZmVjOWMxNmMyOGZjYzIzZDFiMjliNDExNWEwNGI3NzBiMWIwMmYwODA3OTYzZDc2NGI5NzhjMWFmOGEzOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAzMTVhZmNjZmFlZWMwOGRkYzYxNDUzYjc2M2YwZmZhYmM5OGIyMzdiZjk5MWEzNGFhNTc0M2M2MzExMzg3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmM5NjRjODFhOWM5M2QzZWYzOTBmZDU1NmRiOWE5OTc2NGExYzIwZjQ1MjRmNjk5Y2I0OTg3ZDlmM2JmZjRmYSJ9"
         },
         {
@@ -429,7 +429,7 @@
           "version": "repo-lines-v1:sha256:1ba062161a891a95a4eb68d3c4002de1788df00015067f07016373a81eecdbc8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViZWZiZmIwMTNiNjJjYjlkYjA3YmY4ZjBhNTM2ODFlNGY0MzgwYzBhMzdhYzljMmU5N2I0MzcxYTYwMDU0NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0NmZmOTZmMjE1MTk5MWRhYmIzZTMzNmU5ZjRkN2ZiN2ViY2U1M2MxMTkwMTdhNjgyNzQwZjY2YWY4MWJlMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjZmQwNTdmNDcwOWZiYzZjZTZjZjQ4OTY3MzhhZGUyOWI5YzdjZjNmNzNhZWE0YzUyNGU2NWViNjM1NmRlYjYifQ"
         },
         {
-          "resource": "repo://src/main.rs#L182-L192",
+          "resource": "repo://src/main.rs#L187-L197",
           "version": "repo-lines-v1:sha256:8e3603c5f67de7c39964516a1cd57fca37626548faf5d3661e550cc9f0e05fae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlYTM0OGUzZmIzOWE5MGJmYzI3NmUxZGMyNDA0YmE2OWM0OGM4Y2FlZjE2MGRiZGQzNTE2ZGMxOTRlNDQzY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNDM5MGEwMmY3NDQwMjc0MTNlYTQ0MjhmMzBmMzM0MmNkYzE2ZTA5M2MwNTllZTA1YWFkYjUwYjY3N2Q2NjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwZjU4N2Q2ZGJiOWY4MGEwYTk1NDMxZWQxZmFjNDMyYWQ1OTI2NDUzNDU2YTlmMTQ5M2MyOGExN2FlMzY5YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5YjNlZDU4MWY5ODVlNTk5Zjk1ZTNlMmU2YTEzZDA1MTVjNzQzMzg1MmEzYjQ2NTFjODI1YTExNGIxOWJmZjEifQ"
         },
         {
@@ -443,7 +443,7 @@
       "statement": "The server tests boot the real `server::main` against a real listener and drive it over HTTP with reqwest, each file on its own port (8000-8003, 8010 mutations, 8011 queries, 8012 uploads) serialised by the test-only `config::MUTEX`; they are timing-based — sleep, then assert through GraphQL — so they cover the queue-and-notify contract, the DataLoader edges and the size aggregates, the status-code contract, and validator rejection surfacing as a GraphQL `errors` array rather than a panic. The query test now pins that `dependencies` lists both `chd-rs` and `sevenz-rust2` (linked-in engines that always report `built-in`) and that the list is sorted by name, rather than expecting a null version for a missing tool.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L647-L664",
+          "resource": "repo://src/config.rs#L650-L667",
           "version": "repo-lines-v1:sha256:53808e5f576822959f1d460cd05a108a293e342af1b30c72a47179e426a13bfb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxN2IwNDE3MjVhOTI5NTQyMjNkZjBjYTY0OTgwY2U4YjE1YmYyMjdmNTAzOTQ3MzljY2JlNmZmZDE1M2YyYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MzVmYWRlYjNhYTZhMDQyOThhM2E1MjEwN2ViZjMxNTdmNWEwYmY4ODEwNzgwMjlkMDg4NTgwN2Y5NmM1NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlYWMyMmZhNTg1NmE5MmVhMGNmNDE1NTQwMGMwNDc2NTBiNzRkNDVmOTlkZTYwODI3ZTk2YTRiNDY1YjM2MjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2YTVmMjgyZTk3OWFmYjVlNGExOTc3YTBiNGEzZWNlMzZjMWZmNjc1Y2Y4YmE2ODFiYTNkY2ExZjNmYjc3YzUifQ"
         },
         {
@@ -466,7 +466,7 @@
     },
     {
       "id": "claim_e18694ccaf6d48fb9b0b0aef6ef82ced",
-      "statement": "`QueryRoot.dependencies` maps info::dependencies() onto Dependency rows: ten format engines sorted by name — `sevenz-rust2`, `chd-rs`, `cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `wux-rs`, `rvz-rs` and `wbfs-rs` — and none can be absent: every module's `get_version()` returns `built-in` and never fails (`nsz-rs` adds `, prod.keys not found` when the Switch key file is missing, and `wux-rs` adds `, no Wii U keys imported` when no Wii U keys were imported), so the nullable `version` field is never null in practice. The same function backs `oxyromon info` and the MCP status tool.",
+      "statement": "`QueryRoot.dependencies` maps info::dependencies() onto Dependency rows: ten format engines sorted by name — `sevenz-rust2`, `chd-rs`, `cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `wux-rs`, `rvz-rs` and `wbfs-rs` — and none can be absent: every module's `get_version()` returns `built-in` and never fails (`nsz-rs` adds `, no Switch keys imported` when neither the data directory's switch_keys.txt nor ~/.switch/prod.keys is present, and `wux-rs` adds `, no Wii U keys imported` when no Wii U keys were imported), so the nullable `version` field is never null in practice. The same function backs `oxyromon info` and the MCP status tool.",
       "evidence": [
         {
           "resource": "repo://src/info.rs#L22-L39",
@@ -478,11 +478,11 @@
         },
         {
           "resource": "repo://src/model.rs#L107-L110",
-          "version": "repo-lines-v1:sha256:16bb19f29bb25186546424aa3719b9296dd55320b4f46d8292d080a22141a561:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ0NmFmM2Y3ZDNmMTE2NTQwOWQ2MTczMTlkMDY0OTllZGI2MzcxYmNmZjk2ZjE4YThhNjYxNDI5YzU5ODJkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzRmYmM3YzVkNmM5YjBjNjhiZTkxZWM3OGM2MmZiYzIwMmVmMzY1MDk3ZWNkZThmMmNkY2UzYWJiN2E5MzE4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmIyOTI5MjAyM2MyNjBlNjA1NDcwYzI4OTUxZTQ4MjExNzdhZDJkMDg2YzZjMGM5YzVmMjAxOTJjYjRkYzhkMyJ9"
+          "version": "repo-lines-v1:sha256:777abfa481c583509c1b2ee0b13cf896c2fbe40b63e6577c9195c46de74e82a6:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ0NmFmM2Y3ZDNmMTE2NTQwOWQ2MTczMTlkMDY0OTllZGI2MzcxYmNmZjk2ZjE4YThhNjYxNDI5YzU5ODJkYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTVhOGYyOWI0MmNlNTUyZmQzYzM3MTM0MGEyZGU1YmYxYmE2NzFiOGFiYmNkODBkYTM4OWVmNDZjMjhmMTMzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDM2MDNlNWM5YzVlMWQxZGJkM2FhYTc5Mzc1NTYzZGQ3NWE2MWMwNjg1ZmU1NjJlMmYzNmNhYTQxYzhlMjY0OSJ9"
         },
         {
-          "resource": "repo://src/nsz.rs#L247-L253",
-          "version": "repo-lines-v1:sha256:72ac3ddcb8f79c9a1b39461b126b66685cdd2bee327b0407f8f4428a06557434:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4ZTdkMmU1YzEyNWU2Y2QyNzUxNGIzYjFhMTEyYmJkOTcyOGEzODhkMTU2Y2FmOGMxNDA0MGZlOTdkZTVkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZmZmUwYTQzZWEzYjczNjdhZjc4MTNlZWQ3OTc2MWMwZTI0ODk4NDczZTc2Njg3NTQ1YjBlZDA5YzgyNjJlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjhjZTU0OTI1ZDQ5ZTA2MTUyYzRkODg3OTgyN2Q3MDZiYTU1OTc2NDlmZWQ1YTY3NmFlOTVlZTRkNThhOTE1NyJ9"
+          "resource": "repo://src/nsz.rs#L268-L273",
+          "version": "repo-lines-v1:sha256:f3b0c48b6b42c82d350a1e82ed93c1b898455561f782463f1df1f323cc5236f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjljZGE0YzA1ZDI2ZWRmZTU3NjY1Y2JiY2NkMDdlNWU5MGU5YzMyOGQ3MzYyZDcwYzViZjQ3YzVjZTZmZDAwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQ3NWU5NGE5MDRhYzQ5YjMxNTRkNDY3MmE2NmU4NjI5Yjg2ZGFjNzRlM2UyOTM3YmU2OTI3YWUzZGExMWM1MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjM5ZDQ4YjE1OGU2NmY1ODY0OTdjYTFjMDdmNzFlNjFlODBmZWNmYjI1MDAxMjI1MGQzZTIzYzdmMThkZTZjMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTUyMTYwNGIzNWZjNDBhZjAwY2JhNGVlYTJmZDVlMmMzYWYxODYzYjM5MTE4NWQ3YmY0YmIwOWU3MmQwYzhiMyJ9"
         },
         {
           "resource": "repo://src/query.rs#L233-L242",
@@ -509,11 +509,11 @@
       "statement": "The read surface has no filtering or search beyond its declared arguments: `systems`, `games(systemId, offset, limit)` and `roms(gameId)` return rows ordered by name with no completion, region or status filter, while `version`, `dependencies` and `gameInformation(gameName)` resolve entirely without the database — `gameInformation` parses a No-Intro name in-process and `downloadableSystems(update)` only filters the built-in Redump catalogue against the systems already imported.",
       "evidence": [
         {
-          "resource": "repo://src/database.rs#L1291-L1308",
+          "resource": "repo://src/database.rs#L1305-L1322",
           "version": "repo-lines-v1:sha256:5740e27941007615ff50900c370c06aeaea8fcf3b724f67d5a13e9544cd9cb5a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxYjIzOTU1ZWMzNTI5YWEzMWI0ZTU4NDg5NTkwN2Y3YzE5NTQyZjYyNzkwZDExMmYwZDI0ZGJiNjg5YTU5M2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzYmQzNjYwNmJlMWZhOWM0MWViNWIwMTgwZGJkMGQ0MDFmM2FjZTIzODQ5NjQxYjQxNGYzOGIwYjA4ZDk0OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiNjk4NTRmMzA1MzJmOTZlNWQ4ZTM5MTliNDI3ZGE2MWU1ZTMyMTNjZmNjMzVjOTUzNGNlYmJjOWVlNzc0N2EifQ"
         },
         {
-          "resource": "repo://src/database.rs#L729-L746",
+          "resource": "repo://src/database.rs#L743-L760",
           "version": "repo-lines-v1:sha256:0d3a57ad778315d30cd00126d91b9170114a3aae91b1698fed3a59c7e73601cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNDFlZGE5MGYxMmU2Mjk5Zjg1MGM5MWMzOTZlMzQ0ODM1NzVlODYyYWVhMDczZGZkZWMwOTY0NzA0MGRkZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1ODdlOTg2NzJiMWVkN2RlN2QxZmE0NzJmZDYzYWYxZTA3ZDU1NTk5ZjU5ZmYwM2NmNjM0M2U5NWMyOThhZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1YmI5YTNjMWVlMGM2ZjQzZDE3NTNhNGQ5OWFhNzdiMjJlMGY1MDZmNTliZWE2OTVlYzEyNDRmNDc2ZTk3MjgifQ"
         },
         {
@@ -578,7 +578,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.2",
-    "at": "2026-11-09T21:55:13.223Z"
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-13T20:59:45.363Z"
   }
 }

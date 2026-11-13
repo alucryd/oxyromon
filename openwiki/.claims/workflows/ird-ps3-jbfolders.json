@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:cde6d278b9623d5f397c067f035665aa48e90408cd01d30e19993c9f121b8ef1",
+  "pageVersion": "sha256:07c6203fafa65326724686ef7111cc024d8ec61b5b573e4baad39445e880f534",
   "claims": [
     {
       "id": "claim_be7e331717cf488b9632566ef15e50ac",
@@ -15,8 +15,8 @@
           "version": "repo-lines-v1:sha256:3761105cda31b00f74e81d28ced54125fb5803c645549a363521b5d7c39132f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZDZkMzM3YWU4MmZjYmM5Njg1MzExZjZiZDdiYTBjZTY5ZTZhNGQyYjE5ODJhNmQwMGIzYTc4Y2Q0YmE2ZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1NzU3YjAxOTQ5ODZhZTYzMzdiZWU1MTM1NmNmN2FhNTZmOGZjNDkyYWNkNjg2YzQ3MzIwMTQ0NDhiYTlkZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwZWZiNmRhNjdlZjA0MTBmMDJmYjhlODEzYjIzNGMxNTdhODcwODFjYTJiNmZmNzM1YWVkMGFkZDJiMzgwMzIifQ"
         },
         {
-          "resource": "repo://src/main.rs#L71-L180",
-          "version": "repo-lines-v1:sha256:5e9cdab0fc650a30c2202f8f2c913cd3e125681886201753b479a70050fab7e7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNTc0NGY1MTRiYjAxOTRlMGFkNDhjNTdmYmY2ZjJlMDhlZGRiZGMwYWE5YjZhMmRmMTA3MGUxZDQ4M2YwNTBmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NTIyYzQyY2QxOWM2ZDAzZDgwOGM0NTI3MjA1NTI4MjViN2VhMWM1YjQ5MWIyMTg1MTFjYWM3NDE1Y2Y5ZDliIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2OTgwN2E2MTI4OWIxOTAwYTRiZmNjMDFkZWVjYjM0OGU1YTZiZTQ2YzY2YjlhOTRjYTFiYzBmNjY3Nzc4MmU3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNDgzYzNjYzUyMGRlMGMzNjVhMTU2NzRiMThjZTdkZDkwZDYwYjhkZDY1NDczM2U5M2NkODllMTRhZTJkNmRmIn0"
+          "resource": "repo://src/main.rs#L72-L185",
+          "version": "repo-lines-v1:sha256:b865468e575d5145340884361f2d921964ad44acb3196e218a107f56dcd8d528:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNTc0NGY1MTRiYjAxOTRlMGFkNDhjNTdmYmY2ZjJlMDhlZGRiZGMwYWE5YjZhMmRmMTA3MGUxZDQ4M2YwNTBmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NTIyYzQyY2QxOWM2ZDAzZDgwOGM0NTI3MjA1NTI4MjViN2VhMWM1YjQ5MWIyMTg1MTFjYWM3NDE1Y2Y5ZDliIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2OTgwN2E2MTI4OWIxOTAwYTRiZmNjMDFkZWVjYjM0OGU1YTZiZTQ2YzY2YjlhOTRjYTFiYzBmNjY3Nzc4MmU3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNDgzYzNjYzUyMGRlMGMzNjVhMTU2NzRiMThjZTdkZDkwZDYwYjhkZDY1NDczM2U5M2NkODllMTRhZTJkNmRmIn0"
         }
       ]
     },
@@ -33,7 +33,7 @@
           "version": "repo-lines-v1:sha256:fbdcbc468abd5aec599c0be43157d5d951567338bc87fe76b051b3b4fc0f289f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg3ZDg2MmFlZGJiYjJiMzkzZDAxNDVlMDlkMmI1YjdjY2NmZTZmNjQ0NjRkZDkwZTc1ZDY4YWIxNGJiZDA5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzIwNTg1N2FmMmJhZjE1NTM4ZmJkZTBlOTgzZDg5ZDU2NTA1NzQwMjA5YzE5Zjc4MmZmMWRjYmVmZTI2ZDVkYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTIyZjE3YjMyNzlkNzg1NDU0ZTcxNTYzNzIwMzg3ZDM0ODI5ODM2OGJkZTk1Y2M3MDM3NjAwYTgyYmUwZjZhOSJ9"
         },
         {
-          "resource": "repo://src/model.rs#L312-L325",
+          "resource": "repo://src/model.rs#L345-L358",
           "version": "repo-lines-v1:sha256:84709771f011615da14bae098195307e848404a34e983976c7a15c5f7404f685:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViMzFjYTg3ZjJmZTNmZWNkMmNkNDI1MzhlYjhiYWUxMzI4Mzk2OTI1ZjU4NzMwNjFiM2M4NjIyMTQxZmZmNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiZmRkZDUyMTlhNDBhNjc5YjRiYmIyMGRiNTY5YWRjZGI1YzlmMDc4MDRhOTAzOWFjMjczMzI0M2VkOTRmMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -43,7 +43,7 @@
       "statement": "An IRD decorates an existing DAT game: candidates come from find_wanted_games_by_system_id (sorting != Ignored). With --system the run is headless — an empty system bails 'import its DAT first' and unattended_game accepts exactly one game whose title_key matches, erroring on zero or several — while interactive mode sorts candidates by jaro_winkler and prompts. A game already flagged jbfolder is skipped unless -f.",
       "evidence": [
         {
-          "resource": "repo://src/database.rs#L748-L766",
+          "resource": "repo://src/database.rs#L762-L780",
           "version": "repo-lines-v1:sha256:6b057c76738ced08c327968d7a5aff5a46dc526b71a235d9065bb43ff0e8d257:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwZDM3MmZhY2RkY2M2ZGViNTM5NjU3NDU2N2ViYjc4N2RkYTZmYTBhMTZlOTIyNTdjNDc3Y2UwZmFhODU5ZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYjVhM2MzMWVlZWI4N2M1OWJmMWVlNWVjNjg4OTQ3ZmIyYjEzMjEzZDNiMzU0YzAyMmYxMzNhNmQ2OGViNjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlNTU0NzZmZjA5YzA1OWE2NjVjMzZhMTljYzY5MzBjZmI1MDJjYzU4YjgyZjA2ZDI4OWQzYTI4MzZjNWU2NjUifQ"
         },
         {
@@ -65,7 +65,7 @@
       "statement": "import_ird enumerates the embedded ISO tree in one scope before any await (Iso9660Filesystem is not Send), bails if the walked file count differs from the IRD's files_count, then upserts one roms row per disc path keyed by name within the game with the summed extent size, the MD5 looked up under the first extent's LBA, parent_id set to the chosen disc ROM and original = false.",
       "evidence": [
         {
-          "resource": "repo://src/database.rs#L1050-L1075",
+          "resource": "repo://src/database.rs#L1064-L1089",
           "version": "repo-lines-v1:sha256:e0ec8b26efb09a3ffdf9481651faf520ee59eb0f21817e99692653c9f4d58fe2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4Y2EzNWE4ZTRmODFiMzUxYTM5NGFkNDU0NWE1N2Q5ZDE4MmViMjg5NGRhYzA5MTJkYWJhZTEwYzdkMWIwYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYWI3MTBkZGY3ODU5ZTU3NTc2NGE5MTNhMDAyYzc0NTg1ZmZhNzAwMTUxMGNiODgxMWRhODNkMmNmNzRiMzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxZTMzMGQ1ZTViY2MzOGQ4ZTYxYjBmZjQ4ODNkM2ZjZmE3NTM0MzgzOThhODM3ZTBkNjI3YWNhZjY1NWJkN2EifQ"
         },
         {
@@ -101,11 +101,11 @@
       "statement": "Completion for jbfolder games uses update_jbfolder_games_completion_by_system_id, which ignores parent roms and any child under PS3_CONTENT/, PS3_EXTRA/ or PS3_UPDATE/, so a JB-folder game counts as complete without those add-on directories; the ordinary completion SQL explicitly filters jbfolder = false, and compute_system_completion only applies the jbfolder SQL on its non-arcade branch, followed by the Wii U multi-version pass.",
       "evidence": [
         {
-          "resource": "repo://src/database.rs#L461-L491",
+          "resource": "repo://src/database.rs#L475-L505",
           "version": "repo-lines-v1:sha256:2475d8db60ea4194395981eec23853e6ccaa90f16b0e0c400f02b6b0b2c59e05:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4YTlhYWUwNjU0NjZiZWUwNmEzMmMwMTE5YzU0YzhmNmRkYWQ2Y2YwZDVhMzhmN2Q4YTBhNjNkYzRiM2EyODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkMThlOWIwY2I3ZTgxNjgwNGE2OWEyOTBhOTYwZmM1YWQ3ZGFhM2UzN2E4YmQzNTU1M2VlMjFiY2I0ZDVkZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhZjkwMmFiNDZjODhiOTFkNzJkMzU2YjRmYmEzMDY2MTRhYzk2YmY3YWNlNTY4ODRmNWQwZTJkMTFhNjRiZDEifQ"
         },
         {
-          "resource": "repo://src/database.rs#L577-L611",
+          "resource": "repo://src/database.rs#L591-L625",
           "version": "repo-lines-v1:sha256:1c6bf8fae68fb1ce455c21e0b14c7159371f008bd09ae45a7deb21681066ee14:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1NzBiZTZjMTRlMGFhMmNmNTEwY2M2MTdmZGMwYTU2YWRkMTRlYmUxNWY4NWEyZmVkZjNmYzE2NzVhOTY1YzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YmVkOTc5YmZhMmEwOWZiY2IxMjdkOGJmOWNiZWExMmE0ODAyM2E5MDQyOWY1YTk5Y2ZjMGM3ODVkNDNjZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlMzcyZDE2YmQ3Zjc1ZWJmOWQzMzIwNDMzZjJhMWQ3Zjg2YzRjMDZjOGQzMmJlZDczMTc5OTA1MmFmMjk1ZTAifQ"
         },
         {
@@ -215,7 +215,7 @@
       "statement": "The files an IRD describes arrive through import-roms: a directory containing PS3_DISC.SFB is routed to import_jbfolder, which identifies the game from the SFB's size and MD5, hashes every other file with MD5 forced (the only hash IRDs provide), matches it against roms sharing the SFB rom's parent, and moves it to <system>/<game name>/<rom name>; without a system, unattended mode warns 'PlayStation 3 folder needs a system, skipping'.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L164-L164",
+          "resource": "repo://src/config.rs#L167-L167",
           "version": "repo-lines-v1:sha256:3263e200d45f683e22cae24777295846272e2640fbb3437cb6a038ba366f5e1c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzI2M2UyMDBkNDVmNjgzZTIyY2FlMjQ3NzcyOTU4NDYyNzJlMjY0MGZiYjM0MzdjYjZhMDM4YmEzNjZmNWUxYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzI2M2UyMDBkNDVmNjgzZTIyY2FlMjQ3NzcyOTU4NDYyNzJlMjY0MGZiYjM0MzdjYjZhMDM4YmEzNjZmNWUxYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmE1MDRlNWJhZjcwMzJmNDE3MTU4YTVjNTJhOWMwMWEyNGNjZDJmNjQ2ZjVmNDAwYTFjNTIyM2U5N2JlYzEyZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Y1NDZkMjdlYjNkYTgwNDgyNTQ5MTY4YjhhZTJjNjBkN2I1NjdmN2NlN2UxOWJjZjRjYTZmNjY1YzdlNGUxOCJ9"
         },
         {
@@ -255,7 +255,7 @@
       "statement": "The IRD/PS3 path has only four focused tests (import_irds/test_ird.rs asserting 208 roms, test_ird_orphan_subfolder.rs asserting Trash plus emptied-subfolder cleanup, purge_irds/test_ird.rs, mimetype/test_ird_matcher.rs); src/iso/iso9660.rs has no unit tests of its own, and the README TODO still asks for tests for IRD and PS3 in general and for PS3 ISO rebuilding, which is unimplemented.",
       "evidence": [
         {
-          "resource": "repo://README.md#L802-L809",
+          "resource": "repo://README.md#L835-L842",
           "version": "repo-lines-v1:sha256:79b5cb9ad94e111179bfd2345cbde503f0a6062721a9fe07306e0b3e57ed349e:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmIzMGEyMmNiN2M3MjYxMDU0YjRkZDY1N2I1ZGIxNDY4MThjM2JkZGNkMTRmOWQyZTBkZmI0ZmQ3ZDliNWNmNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJjN2JhYmEwYjdlZTIwZTA3OTc3ZmUzMTQ5YjU1YmQyYjNmMTRkZmNmODdjMDlhMTE0NjBjMGMzOWQ4NWYzMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWQyYzcwMjA0YjQ2ZmJmODkwMWRhOGZkMjM5ODliNzIwZGNkMTg5NzQ0MTI1MzUxOWQ5MDViZTU3YjY1OWQ5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzU5MTJiMDQxNTBjZDVjMmJhZTliYTRhNmEwNTZkNmQ2N2U4MGJkMTE1YWIyM2U0N2ZhZWQ3ZWIzMGNlMTY1YSJ9"
         },
         {
@@ -298,7 +298,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.2",
-    "at": "2026-11-09T21:55:13.223Z"
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-13T20:59:45.363Z"
   }
 }

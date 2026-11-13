@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6218c2c0b1ceb6fcb8f2721cd7ce1f91d9cabaf57e4bad10db6696383cb95d5b",
+  "pageVersion": "sha256:307d251e1abe84da5a548e7ff8a318dc2e29a714444c254d8cff3dcf8ab2b6c7",
   "claims": [
     {
       "id": "claim_cb1540e6994f491db3adbd31fdb7589f",
@@ -25,7 +25,7 @@
       "statement": "`mcp::main` serves `rmcp::transport::stdio()` and then waits in `tokio::select!` on `server.waiting()` (transport/EOF end) against Ctrl+C and, on Unix, SIGTERM; either signal cancels the token to unwind in-flight mutating actions, and `src/main.rs` runs the server outside the single-connection subcommand scope before `optimize_database`.",
       "evidence": [
         {
-          "resource": "repo://src/main.rs#L182-L192",
+          "resource": "repo://src/main.rs#L187-L197",
           "version": "repo-lines-v1:sha256:8e3603c5f67de7c39964516a1cd57fca37626548faf5d3661e550cc9f0e05fae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlYTM0OGUzZmIzOWE5MGJmYzI3NmUxZGMyNDA0YmE2OWM0OGM4Y2FlZjE2MGRiZGQzNTE2ZGMxOTRlNDQzY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNDM5MGEwMmY3NDQwMjc0MTNlYTQ0MjhmMzBmMzM0MmNkYzE2ZTA5M2MwNTllZTA1YWFkYjUwYjY3N2Q2NjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwZjU4N2Q2ZGJiOWY4MGEwYTk1NDMxZWQxZmFjNDMyYWQ1OTI2NDUzNDU2YTlmMTQ5M2MyOGExN2FlMzY5YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5YjNlZDU4MWY5ODVlNTk5Zjk1ZTNlMmU2YTEzZDA1MTVjNzQzMzg1MmEzYjQ2NTFjODI1YTExNGIxOWJmZjEifQ"
         },
         {
@@ -409,14 +409,14 @@
           "version": "repo-lines-v1:sha256:2ee4fd7563fcff74c6aa4ff18cdca5317d0661ad43c424bb6c21406ad1d93a00:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhMTAwOTZlZjI5ODM2YTY5YjAyNWY2MzdiOWMyMDIzMWM4MmNkN2Q4ZDhmMDQ1MGVmZWM3MmVlNjliZDM3ZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhOWEwN2U4ZmIwMjZhZDY2ZTVlNDI1MWE4NjRlMmU2YTE3NjNkMDQ3NWE3Y2IyZThmNjM5OTEzYWY4N2M5YzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3MWNjYWZjMTg1OTQ4ZjBmMjVmYzE5MDFlZjE4MGNkZGI0ZDM4ZTIwYWUzNGI5M2IxYzY2OGNiZjEyZTUwYmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5OWJmMDBmOGZjNjk2ZDgxMTFkYzc1Y2VlYTY3NGJiMWQ3NDNhNTRkNjVkZGM1ZWNkNDE4NjYxNjk4NDVhZWEifQ"
         },
         {
-          "resource": "repo://src/sort_roms.rs#L90-L97",
+          "resource": "repo://src/sort_roms.rs#L190-L197",
           "version": "repo-lines-v1:sha256:f51179fdb65ce37055c5f6ba76308c4adb6751d38516bcaa53c84bb204c29c84:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmExMDA5NmVmMjk4MzZhNjliMDI1ZjYzN2I5YzIwMjMxYzgyY2Q3ZDhkOGYwNDUwZWZlYzcyZWU2OWJkMzdlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkwOWE1M2E2MThkMDI4ZTFkMzAwMGMwYTdhYmNlZWNiZTVmYjM3ZjRlNTExZWZlNDY2NDNmYWQ2ZTY2ODcyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTQ1ZDgyZThlZjdhNDhlYTFjNTNiYTg4NGQ5YzNkOGIyOTEyNjAwODc0M2NkNzY2NGE0Y2UwZjA2Mzk0Zjk0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDc4NmNmNzNiMzA2ZDI5ZGUyMDc3ODE0MTIwNTU4YTc2MDFjYzljMTc5MWRmYmNiNDkyYmMyN2I5YmY2ZWM2ZSJ9"
         }
       ]
     },
     {
       "id": "claim_8aa19198e4b24f3bbcfacb7577706824",
-      "statement": "The dependency list in the status payload comes from info::dependencies(): ten entries (`sevenz-rust2`, `chd-rs`, `cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `wux-rs`, `rvz-rs`, `wbfs-rs`); every one is a linked crate whose `get_version()` returns `\"built-in\"` and therefore can never be reported missing, and the status tool's description speaks of format backends rather than external tools. `nsz-rs` and `wux-rs` qualify their answer — `\"built-in, prod.keys not found\"` and `\"built-in, no Wii U keys imported\"` — because only NSZ compression and the WUA and NUS exports need keys.",
+      "statement": "The dependency list in the status payload comes from info::dependencies(): ten entries (`sevenz-rust2`, `chd-rs`, `cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `wux-rs`, `rvz-rs`, `wbfs-rs`); every one is a linked crate whose `get_version()` returns `\"built-in\"` and therefore can never be reported missing, and the status tool's description speaks of format backends rather than external tools. `nsz-rs` and `wux-rs` qualify their answer — `\"built-in, no Switch keys imported\"` when neither switch_keys.txt nor ~/.switch/prod.keys is present, and `\"built-in, no Wii U keys imported\"` — because only NSZ compression and the WUA and NUS exports need keys.",
       "evidence": [
         {
           "resource": "repo://src/info.rs#L22-L39",
@@ -427,8 +427,8 @@
           "version": "repo-lines-v1:sha256:0aee16e6e50d25405d5f23bcb3131015720a19c72d46b7d1a8a872016e89cd0c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3ODQwYWZmNTZkYjVlNzExNjM5ZmE4ZGM5MjE3YzFiZTA5OTc2MGZiODg1NzVjNmE5YmQzN2Q2MjkxNmMyMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjM2JhNjc1MWU0Mjg0YTRiOTNmMDhlNWNhMTZiNzlkMjZhMzlmNzAxODE3NDJhNzI3OGZhZGRhNzQ3NDQzYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhMzEyNTcwMmUyMjhlMTQ2NGIzMjM4MzhhNGJkNGZhNmNmOGViMjg4YTJmZmY2MmQyYWZhNWZlZTc2NTBmYjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2ZGFiNjRjZTY0ODA2YmZmYzkzNmQwMzdjN2VlNDUxYWI4YjU3ZTNhZDMwYWE2ZmUzZWU5NDVkYTQ5M2NhNGQifQ"
         },
         {
-          "resource": "repo://src/nsz.rs#L247-L253",
-          "version": "repo-lines-v1:sha256:72ac3ddcb8f79c9a1b39461b126b66685cdd2bee327b0407f8f4428a06557434:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4ZTdkMmU1YzEyNWU2Y2QyNzUxNGIzYjFhMTEyYmJkOTcyOGEzODhkMTU2Y2FmOGMxNDA0MGZlOTdkZTVkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZmZmUwYTQzZWEzYjczNjdhZjc4MTNlZWQ3OTc2MWMwZTI0ODk4NDczZTc2Njg3NTQ1YjBlZDA5YzgyNjJlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjhjZTU0OTI1ZDQ5ZTA2MTUyYzRkODg3OTgyN2Q3MDZiYTU1OTc2NDlmZWQ1YTY3NmFlOTVlZTRkNThhOTE1NyJ9"
+          "resource": "repo://src/nsz.rs#L268-L273",
+          "version": "repo-lines-v1:sha256:f3b0c48b6b42c82d350a1e82ed93c1b898455561f782463f1df1f323cc5236f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjljZGE0YzA1ZDI2ZWRmZTU3NjY1Y2JiY2NkMDdlNWU5MGU5YzMyOGQ3MzYyZDcwYzViZjQ3YzVjZTZmZDAwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQ3NWU5NGE5MDRhYzQ5YjMxNTRkNDY3MmE2NmU4NjI5Yjg2ZGFjNzRlM2UyOTM3YmU2OTI3YWUzZGExMWM1MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjM5ZDQ4YjE1OGU2NmY1ODY0OTdjYTFjMDdmNzFlNjFlODBmZWNmYjI1MDAxMjI1MGQzZTIzYzdmMThkZTZjMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTUyMTYwNGIzNWZjNDBhZjAwY2JhNGVlYTJmZDVlMmMzYWYxODYzYjM5MTE4NWQ3YmY0YmIwOWU3MmQwYzhiMyJ9"
         },
         {
           "resource": "repo://src/wux.rs#L919-L924",
@@ -519,14 +519,14 @@
       "statement": "main excludes the mcp and server subcommands from plain output, so their output helpers keep printing through the progress renderer even when stderr is not a terminal.",
       "evidence": [
         {
-          "resource": "repo://src/main.rs#L113-L118",
+          "resource": "repo://src/main.rs#L115-L120",
           "version": "repo-lines-v1:sha256:01234501c9d74d7cf9fec5c70d63f03a5bfe669ef674d9850e0bd52f6cabadcf:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDk2OGE5MTc5MWM3ZTU2MWI0MDkxMjc5ODUwODJiMDQ4MGUzYzkxZDBmY2RlNWE5MWNhY2RjZmFhNjE3YjRkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWU3NWM3MGQ5NDYzNjI1ZTEwNzlmZDhmYzhlZTYyYWQyZTkyYzQyYmVhYWJmZDg1Yjc4ZDhlMGE0OTc5Yjk0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWNkYzVlMGMxNmIxM2M3MDAzZjc1NzE1YTg5MThmMGY3ZjNkZDllYzYxMGE5ZjhhMGIyNjk1YjI3ZWZkMTk3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTlkNjFlMWViOGEwZTM4N2E2ZDNlNDlkNjg1MjNlMjhlYjRhN2JkZmEwZGIzOGZlZTRiMmY2YWUwMDk4N2Q5MSJ9"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.2",
-    "at": "2026-11-09T21:55:13.223Z"
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-13T20:59:45.363Z"
   }
 }

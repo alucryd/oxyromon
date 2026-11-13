@@ -80,8 +80,8 @@ sources:
   - id: openwiki-source-b48fbff067570f4605920bcc
     resource: repo://tests/Test%20System%20(20261025)%20(CDN%20History).dat
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # Wii U Formats and the wux-rs Crate

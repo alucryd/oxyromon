@@ -2,10 +2,11 @@
 type: architecture
 title: CLI Entrypoint and the Subcommand Contract
 description: How src/main.rs registers clap subcommands, runs global startup (dotenv, OXYROMON_LOG_LEVEL logger bridged to the progress UI, data directory, SQLite pool, ROM/tmp settings), dispatches inside one scoped pooled connection, and hands long-lived servers the pool before optimize_database. Also documents the `info` dependency/statistics report.
-tags: [cli, entrypoint, clap, subcommands, connection-scope, tokio, sqlite, info]
+tags:
+  [cli, entrypoint, clap, subcommands, connection-scope, tokio, sqlite, info]
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -61,7 +62,7 @@ sources:
     resource: repo://src/wbfs.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 ---
 
 # CLI Entrypoint and the Subcommand Contract
@@ -93,7 +94,7 @@ Inside the guard, in order:
    a `.env` file can supply `OXYROMON_LOG_LEVEL`, `OXYROMON_DATA_DIRECTORY`,
    `OXYROMON_ROM_DIRECTORY`, and `OXYROMON_TMP_DIRECTORY`.
 2. An `env_logger` builder from `OXYROMON_LOG_LEVEL`, whose filter level is
-   captured *before* the builder is wrapped: `LogWrapper::new(multi, logger)`
+   captured _before_ the builder is wrapped: `LogWrapper::new(multi, logger)`
    installs the global MultiProgress bridge, and the captured level is then
    re-applied with `log::set_max_level(level)`. Without that re-apply, the
    bridge's own logger would decide verbosity instead of the env var. Bridging
@@ -146,7 +147,7 @@ flowchart TD
   L --> M
 ```
 
-*Caption: the entrypoint's control flow, from argv parsing to the final database optimization.*
+_Caption: the entrypoint's control flow, from argv parsing to the final database optimization._
 
 ## The scoped single-connection trick
 
@@ -178,7 +179,7 @@ derived from that connection inside the module (for example `check_roms` opens
 one transaction for a whole system and moves failing files to the trash within
 it).
 
-Long-lived servers are dispatched *after* the scoped block and take the pool
+Long-lived servers are dispatched _after_ the scoped block and take the pool
 instead of a connection:
 
 ```rust
@@ -229,19 +230,25 @@ only `(connection, progress_bar)`. The server pair breaks the shape
 deliberately: `mcp::main(pool, matches)` and `server::main(pool, matches)` take
 a `SqlitePool` because they must multiplex requests.
 
-The dispatch table in `src/main.rs` covers twenty always-available
+The dispatch table in `src/main.rs` covers twenty-one always-available
 subcommands, in vec order: `info`, `config`, `create-dats`, `import-dats`,
-`download-dats`, `import-irds`, `import-patches`, `import-keys`, `import-roms`,
+`download-dats`, `import-irds`, `import-patches`, `import-keys`,
+`import-clone-lists`, `import-roms`,
 `purge-games`, `purge-irds`, `sort-roms`, `convert-roms`, `export-roms`, `rebuild-roms`,
 `check-roms`, `purge-roms`, `purge-systems`, `generate-playlists`, and
 `benchmark`, plus the feature-gated `mcp` (`--read-only` exposes non-mutating
 tools only) and `server` (`--address`/`--port`). `import-keys` is the one
 subcommand that ignores its connection: it merges key files — Cemu's
 `keys.txt`, a Wii U's or a Wii's `otp.bin`, or BootMii's `keys.bin` — into
-`wiiu_keys.txt` in the data directory, outside the database, so neither GraphQL
-nor MCP can ever return them. Each file is offered to both wux-rs (the Wii U and
-vWii keys) and rvz-rs (the Wii common key), and only when both refuse it does
-the import fail.
+`wiiu_keys.txt` in the data directory, and the Switch's `prod.keys` and
+`title.keys` into `switch_keys.txt` there, outside the database, so neither
+GraphQL nor MCP can ever return them. Each file is offered to both wux-rs (the
+Wii U and vWii keys) and rvz-rs (the Wii common key), and only when both refuse
+it does the file fall to the Switch reader; that reader checks the merged set
+with nsz-rs before storing it, unless it holds nothing but `title.keys` rights
+IDs. `import-clone-lists` is the counterpart for Retool clone lists: it reads
+JSON files naming their system and stores each system's list in the database,
+where `INFER_CLONES` reads it during `sort-roms`.
 
 Selection of work follows a consistent pattern across the batch subcommands:
 
@@ -280,18 +287,18 @@ three surfaces never disagree. It collects each format module's
 `get_version()` under the name of the library backing it and sorts by that
 name, so the display order is independent of push order:
 
-| Reported name | Backing module | Value on a working install |
-| --- | --- | --- |
-| `chd-rs` | `src/chd.rs` | `built-in` |
-| `cia-rs` | `src/cia.rs` | `built-in` |
-| `nsz-rs` | `src/nsz.rs` | `built-in`, or `built-in, prod.keys not found` |
-| `rvz-rs` | `src/rvz.rs` | `built-in` |
-| `sevenz-rust2` | `src/archive.rs` | `built-in` |
-| `wbfs-rs` | `src/wbfs.rs` | `built-in` |
-| `wux-rs` | `src/wux.rs` | `built-in`, or `built-in, no Wii U keys imported` |
-| `xdelta-rs` | `src/xdelta.rs` | `built-in` |
-| `xps-rs` | `src/xps.rs` | `built-in` |
-| `xso-rs` | `src/xso.rs` | `built-in` |
+| Reported name  | Backing module   | Value on a working install                         |
+| -------------- | ---------------- | -------------------------------------------------- |
+| `chd-rs`       | `src/chd.rs`     | `built-in`                                         |
+| `cia-rs`       | `src/cia.rs`     | `built-in`                                         |
+| `nsz-rs`       | `src/nsz.rs`     | `built-in`, or `built-in, no Switch keys imported` |
+| `rvz-rs`       | `src/rvz.rs`     | `built-in`                                         |
+| `sevenz-rust2` | `src/archive.rs` | `built-in`                                         |
+| `wbfs-rs`      | `src/wbfs.rs`    | `built-in`                                         |
+| `wux-rs`       | `src/wux.rs`     | `built-in`, or `built-in, no Wii U keys imported`  |
+| `xdelta-rs`    | `src/xdelta.rs`  | `built-in`                                         |
+| `xps-rs`       | `src/xps.rs`     | `built-in`                                         |
+| `xso-rs`       | `src/xso.rs`     | `built-in`                                         |
 
 Every backend is a linked library now: `ctrtool` went with the in-tree
 `cia-rs` crate, and `dolphin-tool`, `wit` and the `nod` crate with `rvz-rs` and
@@ -301,8 +308,9 @@ present, not which point release it is. The `Err` arm still exists in the loop
 and would print a dim `↪ <name>: not found` through `print_skip`, but no
 `get_version()` returns an error any more, so `info` cannot report a missing
 dependency. `nsz-rs` and `wux-rs` add a second dimension — they never fail, but
-report a missing keys file: `built-in, prod.keys not found` when
-`~/.switch/prod.keys` is absent, and `built-in, no Wii U keys imported` when
+report a missing keys file: `built-in, no Switch keys imported` when neither
+`switch_keys.txt` (written by `import-keys`) nor `~/.switch/prod.keys` is
+present, and `built-in, no Wii U keys imported` when
 `wiiu_keys.txt` is not in the data directory. The missing-keys condition is
 discovered at `info` time instead of mid-compression or mid-export. `rvz-rs`
 says nothing of the Wii common key, which only compressing a Wii ISO needs.
@@ -319,13 +327,13 @@ The canonical checklist:
 1. Create `src/my_command.rs`.
 2. Implement `pub fn subcommand() -> Command` with the subcommand name and args.
 3. Implement `pub async fn main(connection: &mut SqliteConnection, matches:
-   &ArgMatches, progress_bar: &ProgressBar) -> Result<()>`.
+&ArgMatches, progress_bar: &ProgressBar) -> Result<()>`.
 4. Add `mod my_command;` to the module list in `src/main.rs` (inside the
    `#[cfg(feature = ...)]` gate if the command belongs to the server or MCP
    build).
 5. Add `my_command::subcommand()` to the `subcommands` vec.
 6. Add `"my-command" => my_command::main(connection, sub_matches,
-   &progress_bar).await?` to the dispatch match — omitting this step is the
+&progress_bar).await?` to the dispatch match — omitting this step is the
    silent no-op failure mode.
 7. Put tests in `src/my_command/test_*.rs` and wire them with
    `#[cfg(test)] mod test_*;` at the bottom of the module file.

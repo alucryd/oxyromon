@@ -2,7 +2,22 @@
 type: integration
 title: Format Crates in crates/
 description: The ten in-repo format crates (chd-rs, cia-rs, gdi-rs, nsz-rs, rvz-rs, wbfs-rs, wux-rs, xdelta-rs, xps-rs, xso-rs), nine of which replaced oxyromon's external tools, and the embedded gcwii crate — their shared synchronous path-in/path-out entry-point contract with a progress callback, the identical CLI shell enforced by tests/crates.rs, the .part output discipline, error conventions, library-first manifests and per-crate release flow.
-tags: [crates, workspace, chd-rs, gdi-rs, nsz-rs, wux-rs, xdelta-rs, xps-rs, xso-rs, cli, progress, error-handling, releases]
+tags:
+  [
+    crates,
+    workspace,
+    chd-rs,
+    gdi-rs,
+    nsz-rs,
+    wux-rs,
+    xdelta-rs,
+    xps-rs,
+    xso-rs,
+    cli,
+    progress,
+    error-handling,
+    releases,
+  ]
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
     resource: repo://.github/workflows/continuous_integration.yml
@@ -138,10 +153,10 @@ sources:
     resource: repo://src/xps.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # Format Crates in crates/
@@ -156,18 +171,18 @@ path dependencies. The result is that the formats in this table have no runtime
 dependency to install, report `"built-in"` from `get_version()`, and can report
 real byte-level progress instead of a spinner.
 
-| Crate | Began as a port of | CLI | License | oxyromon module |
-| --- | --- | --- | --- | --- |
-| `chd-rs` | chdman | `chdrs` | BSD-3-Clause | `chd` |
-| `cia-rs` | ctrtool (`--plain` unpacking) | `ciars` | MIT (upstream shipped none) | `cia` |
-| `gdi-rs` | gdidrop | `gdirs` | BSD-2-Clause | `gdi` |
-| `nsz-rs` | nsz (nicoboss) | `nszrs` | MIT | `nsz` |
-| `xdelta-rs` | xdelta3 | `xdeltars` | Apache-2.0 | `xdelta` |
-| `xps-rs` | Flips | `xpsrs` | GPL-3.0-or-later | `xps` |
-| `xso-rs` | maxcso | `xsors` | ISC | `xso` |
-| `rvz-rs` | Dolphin's RVZ code (dolphin-tool) | `rvzrs` | GPL-2.0-or-later | `rvz` |
-| `wbfs-rs` | wit (`wit copy --wbfs`) | `wbfsrs` | GPL-2.0-or-later | `wbfs` |
-| `wux-rs` | none; follows wudd and Cemu | `wuxrs` | GPL-3.0-or-later | `wux` |
+| Crate       | Began as a port of                | CLI        | License                     | oxyromon module |
+| ----------- | --------------------------------- | ---------- | --------------------------- | --------------- |
+| `chd-rs`    | chdman                            | `chdrs`    | BSD-3-Clause                | `chd`           |
+| `cia-rs`    | ctrtool (`--plain` unpacking)     | `ciars`    | MIT (upstream shipped none) | `cia`           |
+| `gdi-rs`    | gdidrop                           | `gdirs`    | BSD-2-Clause                | `gdi`           |
+| `nsz-rs`    | nsz (nicoboss)                    | `nszrs`    | MIT                         | `nsz`           |
+| `xdelta-rs` | xdelta3                           | `xdeltars` | Apache-2.0                  | `xdelta`        |
+| `xps-rs`    | Flips                             | `xpsrs`    | GPL-3.0-or-later            | `xps`           |
+| `xso-rs`    | maxcso                            | `xsors`    | ISC                         | `xso`           |
+| `rvz-rs`    | Dolphin's RVZ code (dolphin-tool) | `rvzrs`    | GPL-2.0-or-later            | `rvz`           |
+| `wbfs-rs`   | wit (`wit copy --wbfs`)           | `wbfsrs`   | GPL-2.0-or-later            | `wbfs`          |
+| `wux-rs`    | none; follows wudd and Cemu       | `wuxrs`    | GPL-3.0-or-later            | `wux`           |
 
 An eleventh directory, `crates/gcwii`, is not a format crate: it is the GameCube
 and Wii disc code rvz-rs and wbfs-rs share, embedded into both rather than
@@ -175,7 +190,7 @@ depended on (see [Embedded crates](#embedded-crates) below).
 
 The crates are workspace members (`members = ["crates/*"]`), so they share one
 lockfile, one CI run and one set of conventions; `frontend/` and `desktop/` are
-deliberately *not* members so their wasm and webview dependencies stay out of
+deliberately _not_ members so their wasm and webview dependencies stay out of
 the native build. CHD and CIA joined the set with 0.25: `chdman` and `ctrtool`
 are gone as runtime dependencies and survive only as test-time reference
 binaries, so oxyromon runs no child process for any format
@@ -192,11 +207,12 @@ adapters that call into these crates are covered in
 pure-Rust FLAC codec, with its `libm` feature so encoder decisions do not hang on
 the platform libm), `lzma-rust2`, `flate2` with the `zlib-rs` backend, `zstd`,
 `sha1`, `crc32fast` and `rayon`. It needs no CMake: FLAC used to come from
-`libflac-sys`, which built a vendored libFLAC. chd-rs calls
-`Encoder::set_block_size`, which no rusty_flac release has yet, so the root
-`Cargo.toml` patches `rusty_flac` to a revision of the alucryd/rusty_flac fork's
-`feat/block-size` branch until one does. It names the revision, not the branch,
-so a `cargo update` cannot move it. Its `chdrs` CLI sits behind the same default `cli` feature as the
+`libflac-sys`, which built a vendored libFLAC. chd-rs encodes at MAME's
+per-hunk block sizes through `Encoder::set_block_size`, which
+`rusty_flac = "0.5.0"` from crates.io carries; an earlier revision of this page
+predates it, when the root `Cargo.toml` had to patch `rusty_flac` to a pinned
+revision of the alucryd/rusty_flac fork's `feat/block-size` branch — that
+`[patch.crates-io]` entry is gone. Its `chdrs` CLI sits behind the same default `cli` feature as the
 others, and oxyromon depends on the crate with `default-features = false`, so
 none of the CLI stack is linked into the organizer.
 
@@ -284,7 +300,7 @@ stateDiagram-v2
     Rejected --> [*]
 ```
 
-*Caption: the write lifecycle every format crate shares; nothing at the destination path changes until the whole output is complete.*
+_Caption: the write lifecycle every format crate shares; nothing at the destination path changes until the whole output is complete._
 
 The halves are literally the same code, duplicated per crate:
 `xso-rs` and `wux-rs` factor it into `crate::io::{part, finish}`, plus
@@ -322,17 +338,17 @@ Each crate has one `thiserror` enum named `Error` plus a `Result<T>` alias, and
 the shared variants keep identical `#[error(...)]` strings so a message reads the
 same whichever backend produced it:
 
-| Variant | Text | In |
-| --- | --- | --- |
-| `Io` | `io error: …` | all ten, `#[from] std::io::Error` |
-| `BadMagic { expected, found }` | `bad magic: expected …, found …` | `chd-rs`, `xso-rs`, `nsz-rs`, `rvz-rs`, `wbfs-rs`, `wux-rs`, `xdelta-rs`, `xps-rs` |
-| `Unsupported` | `unsupported format: …` | `chd-rs`, `cia-rs`, `xso-rs`, `nsz-rs`, `rvz-rs`, `wbfs-rs`, `wux-rs`, `xdelta-rs`, `xps-rs` |
-| `Corrupt` | `corrupt data: …` | all ten |
-| `InvalidOption` | `invalid option: …` | `chd-rs`, `xso-rs`, `gdi-rs`, `rvz-rs`, `wbfs-rs`, `xdelta-rs` |
-| `WrongSource` | `wrong source: …` | `xdelta-rs`, `xps-rs` only |
+| Variant                        | Text                             | In                                                                                           |
+| ------------------------------ | -------------------------------- | -------------------------------------------------------------------------------------------- |
+| `Io`                           | `io error: …`                    | all ten, `#[from] std::io::Error`                                                            |
+| `BadMagic { expected, found }` | `bad magic: expected …, found …` | `chd-rs`, `xso-rs`, `nsz-rs`, `rvz-rs`, `wbfs-rs`, `wux-rs`, `xdelta-rs`, `xps-rs`           |
+| `Unsupported`                  | `unsupported format: …`          | `chd-rs`, `cia-rs`, `xso-rs`, `nsz-rs`, `rvz-rs`, `wbfs-rs`, `wux-rs`, `xdelta-rs`, `xps-rs` |
+| `Corrupt`                      | `corrupt data: …`                | all ten                                                                                      |
+| `InvalidOption`                | `invalid option: …`              | `chd-rs`, `xso-rs`, `gdi-rs`, `rvz-rs`, `wbfs-rs`, `xdelta-rs`                               |
+| `WrongSource`                  | `wrong source: …`                | `xdelta-rs`, `xps-rs` only                                                                   |
 
 `WrongSource` exists only in the two patch crates and is the interesting one:
-it means *the patch is fine and this is not its file*. BPS raises it after
+it means _the patch is fine and this is not its file_. BPS raises it after
 checking the patch's own CRC, then the source's size and CRC — with a distinct
 message when the "source" is actually the patch's output already — and xdelta
 raises it when a window's Adler-32 does not match what it rebuilt. Crates add
@@ -343,7 +359,7 @@ whose partitions none of the keys given decrypts — their `Error` is gcwii's,
 re-exported, so the two are distinct types with the same variants; `chd-rs` has only `Compression`
 alongside the shared five; `xso-rs` has nothing beyond them.
 
-Errors are the *only* failure channel — no panics on malformed input. Crafted
+Errors are the _only_ failure channel — no panics on malformed input. Crafted
 inputs are tested explicitly in `nsz-rs/tests/malformed.rs`: an `NCZSECTN`
 section count of `1 << 40`, `i64::MAX` or `-1`, a PFS0 with `u32::MAX` file
 count, or a `u64::MAX` member offset must all fail rather than drive a huge
@@ -382,7 +398,7 @@ flowchart TD
     C -- "inputs exhausted" --> I["ExitCode SUCCESS, or FAILURE if any failed"]
 ```
 
-*Caption: the per-input loop `ui.rs` provides; only the `convert` closure is crate-specific.*
+_Caption: the per-input loop `ui.rs` provides; only the `convert` closure is crate-specific._
 
 What `ui.rs` fixes for every tool: `<cli> [OPTIONS] <INPUT>...` with each input
 converted in the direction its extension implies; `-o DIR` defaulting to next to
@@ -473,7 +489,7 @@ the GameCube and Wii disc code shared by `rvz-rs` and `wbfs-rs`.
 
 - **Symlinked, not depended on.** `crates/<host>/src/gcwii` is a symlink to
   `../../gcwii/src`, declared in the host's `lib.rs` as `#[path =
-  "gcwii/lib.rs"] mod gcwii;`. `cargo package` follows the symlink, so the
+"gcwii/lib.rs"] mod gcwii;`. `cargo package` follows the symlink, so the
   published crate holds a copy. Shared test fixtures go the same way, as
   `tests/common`.
 - **`super::`, never `crate::`,** inside the embedded crate, since embedded, its
@@ -504,7 +520,7 @@ developer mode, or they check out as text files.
   names the `.gdi` descriptor and each track file so the caller can wrap them.
 - **`nsz_rs::pipeline::compress_nsp(input, output, keys, compression, fix_padding, progress)`**
   and **`decompress_nsz(input, output, keys, fix_padding, verify, strict, progress) -> Report`**.
-  Keys arrive as a *loader* (`impl FnOnce() -> Result<Keys>`), invoked only when
+  Keys arrive as a _loader_ (`impl FnOnce() -> Result<Keys>`), invoked only when
   the pipeline actually needs one: compression calls it as it reaches the first
   `.nca` member, decompression only when verifying against a CNMT.
 - **`xdelta_rs::decode(source, patch, output, progress)`** — `source` may be
@@ -512,10 +528,10 @@ developer mode, or they check out as text files.
   exposes the `target_name` a patch records (the CLI uses it for the output name,
   reduced to a bare file name so a recorded path cannot escape the output dir).
 - **`xps_rs::identify(patch) -> Format`** and `apply(source, patch, output, progress)
-  -> Option<Warning>`. `identify` reads five bytes of magic to choose IPS or BPS,
+-> Option<Warning>`. `identify` reads five bytes of magic to choose IPS or BPS,
   and the CLIs call it before opening a progress bar.
 - **`wux_rs::compress` / `decompress`, `to_wua(inputs, output, keys, store,
-  progress)`, `to_nus(input, output, keys, progress)`, `wua_to_nus`,
+progress)`, `to_nus(input, output, keys, progress)`, `wua_to_nus`,
   `wua_to_wux` / `wua_to_wud(input, output, store, keys, progress)`, `disc_info`,
   `store_entries` and `title_id`**, plus `Image` to read a WUD or WUX as one
   stream, `load_keys` for Cemu's `keys.txt` or an `otp.bin`, with `parse_keys` and
@@ -530,10 +546,10 @@ developer mode, or they check out as text files.
   `.update-partitions` store and `DISC_DIR` the `.wud` folder of a lossless WUA. Internal:
   [Wii U Formats and the wux-rs Crate](../concepts/wii-u-formats-and-wux-rs.md).
 - **`xso_rs::compress` / `decompress` / `probe`**, with `Stats { input_size,
-  output_size }` back for reporting a ratio. `probe` reads only the 24-byte
+output_size }` back for reporting a ratio. `probe` reads only the 24-byte
   header.
 - **`rvz_rs::compress` / `decompress`**, `Options { compression, level,
-  chunk_size, scrub }`, `Reader` (`open`, `size`, `read_at`, `title_keys`) for
+chunk_size, scrub }`, `Reader` (`open`, `size`, `read_at`, `title_keys`) for
   reading an RVZ as its disc, and `load_keys` for the Wii common key.
 - **`wbfs_rs::create` / `create_from` / `extract`**, `create_from` taking any
   `Source` so an RVZ's title keys stand in for the common key, and `is_wbfs`.
@@ -566,7 +582,7 @@ the file, since a lazily loaded key can fail far from where the path was given.
 
 ## How these crates are tested
 
-The convention is *agreement with the reference implementation*, not
+The convention is _agreement with the reference implementation_, not
 self-consistency: `tests/interop.rs` in `xso-rs`, `xdelta-rs` and `xps-rs` runs
 the upstream binary (maxcso via `$MAXCSO`/`$PATH`, `xdelta3`, `flips`) and checks
 that each reads the other's output, and that our CSO is byte-identical to

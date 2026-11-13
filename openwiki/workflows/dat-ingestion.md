@@ -2,7 +2,21 @@
 type: workflow
 title: "Catalog Ingestion: DATs, Headers and Downloads"
 description: End-to-end path from a Logiqx DAT (or a dat-o-matic ZIP pack) and from a Redump download to systems, games and roms rows, covering the version gate, -f/-u/-i flags, clrmamepro header definitions with embedded fallbacks, and the on-disk romfile reconciliation an update performs.
-tags: [dat, import-dats, download-dats, create-dats, headers, clrmamepro, rust-embed, parent-clone, orphan-romfiles, trash, ird, patches]
+tags:
+  [
+    dat,
+    import-dats,
+    download-dats,
+    create-dats,
+    headers,
+    clrmamepro,
+    rust-embed,
+    parent-clone,
+    orphan-romfiles,
+    trash,
+    ird,
+    patches,
+  ]
 sources:
   - id: openwiki-source-66de04ab1b5b16fdc2ef21f2
     resource: repo://data/No-Intro_NES.xml
@@ -12,6 +26,10 @@ sources:
     resource: repo://migrations/20210323000005_create_roms.sql
   - id: openwiki-source-c5576c78c033288cb884fd7a
     resource: repo://migrations/20240831111720_create_patches.sql
+  - id: openwiki-source-46456afbc13e4ed1424fffe6
+    resource: repo://migrations/20261109000001_add_categories_to_games.sql
+  - id: openwiki-source-b9d96050860dc0b6e19aed4d
+    resource: repo://migrations/20261111000001_create_clone_lists.sql
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
   - id: openwiki-source-b6706f0791a5270c40cccdb6
@@ -28,6 +46,8 @@ sources:
     resource: repo://src/download_dats.rs
   - id: openwiki-source-904cc3411b962b115194d55e
     resource: repo://src/download_dats/test_redump.rs
+  - id: openwiki-source-b55e47fe678e608c835a7360
+    resource: repo://src/import_clone_lists.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
     resource: repo://src/import_dats.rs
   - id: openwiki-source-2d4a135c93b4a3bee8970761
@@ -94,20 +114,22 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-83177d2c1f345aa579fa2a29
     resource: repo://tests/hbmame.xml
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # Catalog Ingestion: DATs, Headers and Downloads
 
-oxyromon only knows what a ROM *should* be from a catalog. Three subcommands put a
+oxyromon only knows what a ROM _should_ be from a catalog. Three subcommands put a
 catalog in the database — `import-dats` (a DAT or ZIP of DATs on disk),
 `download-dats` (Redump over HTTP) and `create-dats` (your own files) — and two
 more extend it with per-game catalogs: `import-irds` (PS3 JB folders) and
-`import-patches` (BPS/IPS/xdelta against a specific ROM). Everything downstream —
-`import-roms`, `sort-roms`, `check-roms`, the web UI — reads the rows these create.
+`import-patches` (BPS/IPS/xdelta against a specific ROM). A sixth, `import-clone-lists`,
+ingests not a catalog but Retool clone lists: title-equivalence and priority tables
+`sort-roms` consults under `INFER_CLONES`. Everything downstream — `import-roms`,
+`sort-roms`, `check-roms`, the web UI — reads the rows these create.
 
 Provider identities, the Redump system-code catalogue and the naming tokens that
 produce regions are covered in
@@ -117,9 +139,9 @@ a catalog.
 
 ## Entry points
 
-`import-dats`, `download-dats`, `create-dats`, `import-irds` and
-`import-patches` are ordinary clap subcommands registered in
-[`src/main.rs`](../../src/main.rs#L69-L170); each runs on the single CLI
+`import-dats`, `download-dats`, `create-dats`, `import-clone-lists`,
+`import-irds` and `import-patches` are ordinary clap subcommands registered in
+[`src/main.rs`](../../src/main.rs#L72-L185); each runs on the single CLI
 connection inside one scope, so nothing here holds a pool of its own.
 
 `import-dats` takes one or more `<DATS>` arguments plus
@@ -132,7 +154,7 @@ is walked with `WalkDir` to collect every `.dat`, at any depth
 ([src/import_dats.rs](../../src/import_dats.rs#L110-L143),
 [src/util.rs](../../src/util.rs#L201-L205)). A No-Intro dat-o-matic pack — a ZIP
 whose DATs live in per-platform subdirectories — is therefore a single argument.
-Because every ZIP on the command line is extracted into that *same* temporary
+Because every ZIP on the command line is extracted into that _same_ temporary
 directory and re-walked, overlapping packs yield the same path more than once; the
 list is sorted and de-duplicated before the per-DAT loop so such a DAT imports only
 once.
@@ -159,7 +181,7 @@ DATs carry `romof` too, and No-Intro parent/clone DATs carry `cloneof`.
 ## Header definitions and the embedded fallback
 
 Some systems' catalogs describe headerless ROMs while the files on disk carry a
-header, so a DAT can point at a *detector* file:
+header, so a DAT can point at a _detector_ file:
 
 ```rust
 #[derive(RustEmbed)]
@@ -183,7 +205,7 @@ makes a bare No-Intro NES DAT importable without downloading `No-Intro_NES.xml`
 by hand; the README states the rule as "if not provided, oxyromon will use its own
 fallback header definition". Note the asymmetry in failure handling: a sibling
 file that fails to parse and an unknown embedded name both `unwrap`, so a
-*malformed* header definition is a panic, not a warning.
+_malformed_ header definition is a panic, not a warning.
 
 The detector's XML shape matters because it is what later lets a file match:
 `rule/@start_offset` becomes `headers.size` and each `<data>` element becomes a
@@ -229,7 +251,7 @@ The remaining flags gate different things and are checked at different points:
   system moves `20200721` → `20210401` and its catalog shrinks to the new DAT's 3
   games.
 - **`-n/--name` / `-e/--extension`** are refused (`conflicts_with("UPDATE")`)
-  whenever `-u` is present, require a *single* DAT, and `-n` additionally refuses
+  whenever `-u` is present, require a _single_ DAT, and `-n` additionally refuses
   a name that already exists in the database
   ([src/import_dats.rs](../../src/import_dats.rs#L85-L102),
   [src/import_dats.rs](../../src/import_dats.rs#L147-L172)). They write
@@ -238,7 +260,7 @@ The remaining flags gate different things and are checked at different points:
   with more than one ROM or disk, since one extension cannot describe a multi-file
   set ([src/import_dats.rs](../../src/import_dats.rs#L202-L218),
   [`test_dat_custom_name.rs`](../../src/import_dats/test_dat_custom_name.rs)).
-  Both are *replaced*, not merged: re-importing the same DAT with `-f` and no
+  Both are _replaced_, not merged: re-importing the same DAT with `-f` and no
   `--name` clears `custom_name` back to `NULL`
   ([`test_dat_custom_name_revert.rs`](../../src/import_dats/test_dat_custom_name_revert.rs)).
 
@@ -281,7 +303,7 @@ sequenceDiagram
     MAIN->>DB: compute system completion, then commit
 ```
 
-*Figure: a DAT import, from argument to committed catalog and relocated files.*
+_Figure: a DAT import, from argument to committed catalog and relocated files._
 
 Deleting before inserting is deliberate. `delete_old_games` collects every existing
 game whose name is absent from the DAT and returns the `romfile_id`s those games'
@@ -329,6 +351,11 @@ Regions are computed from the game name with `shiratsu-naming`, No-Intro first a
 TOSEC as a fallback; a name the parser rejects is a **per-game** skip with a warning,
 not an import failure ([src/import_dats.rs](../../src/import_dats.rs#L420-L451),
 [`test_regions_world.rs`](../../src/import_dats/test_regions_world.rs)).
+A game's `<category>` elements, by contrast, are stored verbatim: joined with
+`|` into `games.categories`, a column added for the `DISCARD_CATEGORIES` list
+the 1G1R election later consults
+([src/database.rs](../../src/database.rs#L401-L407),
+[`20261109000001_add_categories_to_games.sql`](../../migrations/20261109000001_add_categories_to_games.sql)).
 
 ## Reconciling on-disk romfiles
 
@@ -345,7 +372,7 @@ are settled ([src/import_dats.rs](../../src/import_dats.rs#L880-L935)):
 
 1. delete the `romfiles` row (the path it records may be about to change), then
 2. hand the file back to `import_rom` with a fixed unattended policy
-   (`UnattendedMode::Skip`): it re-hashes, re-matches against the *new* catalog and
+   (`UnattendedMode::Skip`): it re-hashes, re-matches against the _new_ catalog and
    moves to the sorted path it now belongs to; or
 3. if nothing matched, move it into the system's `Trash` directory and record it
    again as a romfile there.
@@ -357,7 +384,7 @@ shields the ROM directory, every system directory and every trash directory
 tests: after a rename, the abandoned `T` subfolder is gone while the system
 directory itself remains
 ([`test_dat_updated_renamed_subfolder.rs`](../../src/import_dats/test_dat_updated_renamed_subfolder.rs));
-and when the system directory is read-only so the subdirectory *cannot* be deleted,
+and when the system directory is read-only so the subdirectory _cannot_ be deleted,
 the failure is demoted to a warning — the moves above already happened and must not
 be undone or abort the import
 ([`test_dat_updated_undeletable_subfolder.rs`](../../src/import_dats/test_dat_updated_undeletable_subfolder.rs)).
@@ -428,7 +455,7 @@ with the IRD's own count, then upserts one child `roms` row per disc file — na
 its path inside the image, hashed with the IRD's MD5, parented to the chosen disc
 ROM — and marks `games.jbfolder = true`
 ([src/import_irds.rs](../../src/import_irds.rs#L368-L459)). When a child's recorded
-size or MD5 changes, its romfile is orphaned and the *same*
+size or MD5 changes, its romfile is orphaned and the _same_
 `reimport_orphan_romfiles` used by DAT updates re-homes or trashes it, so JB-folder
 maintenance obeys the same Trash and empty-directory rules as a DAT revision. An IRD
 needs an existing catalog: `import-irds` picks the game from
@@ -456,6 +483,24 @@ patch ([src/sort_roms.rs](../../src/sort_roms.rs#L243-L246),
 [src/sort_roms.rs](../../src/sort_roms.rs#L683-L704)). Cataloging a patch does not
 apply it — application is not wired up yet.
 
+**Clone lists** are Retool's JSON files. `import_clone_list` deserializes one,
+splits a trailing release group — `(MAME Redump)`, `(No-Intro)`, `(Redump)`,
+`(TOSEC)` — off `description.name` to find the system by name, and skips the
+list when the system's DAT URL names a different release group. The version
+gate mirrors DATs: `description.lastUpdated` equal to the stored version is a
+skip unless `-f`. Each import replaces the system's previous list in one
+transaction — `clone_lists.system_id` is `UNIQUE`, so a system has at most one
+— where `compilations` and filters needing more than a group are skipped, and
+every `titles` and `supersets` entry becomes a `clone_list_titles` row: its
+`searchTerm`, a name type of `short`, `full` or `regex` (an uncompilable regex
+is skipped), and a `priority` defaulting to 1; usable filters are inserted
+ahead of the bare title, each carrying its own `results.group` and priority
+over the title's
+([src/import_clone_lists.rs](../../src/import_clone_lists.rs#L56-L191),
+[`20261111000001_create_clone_lists.sql`](../../migrations/20261111000001_create_clone_lists.sql)).
+The rows only matter when `INFER_CLONES` is on, and the command is CLI-only:
+unlike the DAT importers it has no GraphQL or MCP surface.
+
 ## Server and MCP surfaces
 
 The web upload path does not shell out to the CLI; it calls
@@ -467,7 +512,7 @@ and a typed result the SSE bridge turns into a toast
 [src/server.rs](../../src/server.rs#L1005-L1046)). `ImportDatResult::Skipped` (update
 mode, unknown system) is filtered out of the result vector, while
 `ImportDatResult::UpToDate` surfaces as a `skipped: true` completion — so a version
-gate that produced *no write at all* is still reported to the user. `ImportSummary`
+gate that produced _no write at all_ is still reported to the user. `ImportSummary`
 carries the system name, version and game count for the success case.
 
 The MCP `import_dats` tool takes the opposite route: it rebuilds an argv and calls
@@ -485,10 +530,13 @@ the risk is: ZIP handling (`test_zip_nested`, the two `test_zip_update_*`), head
 (`test_dat_headered`, `..._embedded`, `..._duplicate_clrmamepro`,
 `..._skipped_header`), the version gate (outdated / outdated-forced), arcade shape
 (`test_dat_mame`, `test_dat_mame_chd`, `test_dat_mame_mixed` — the last one checks a
-`<machine>` with both a `<rom>` and a `<disk>`), parent/clone linking, and a large
+`<machine>` with both a `<rom>` and a `<disk>`), parent/clone linking, categories
+(`test_dat_categories`, `test_dat_categories_updated`), and a large
 family of `test_dat_updated_*` files that all follow the same choreography: import a
 DAT, `import_rom` a real file, import a newer DAT, then assert where the file ended
-up and whether the directory it left behind still exists. The fixture DATs live in
+up and whether the directory it left behind still exists. `src/import_clone_lists/`
+follows the same pattern with four scenarios: the happy import, release-group
+splitting, and an unknown system. The fixture DATs live in
 `tests/` and are named by version and variation, e.g.
 `tests/Test System (20200721).dat` and
 `Test System (20200723) (Changed Hashes).dat`.

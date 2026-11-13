@@ -2,7 +2,23 @@
 type: concept
 title: Format Modules and Their Crate Backends
 description: The per-format modules in src/ (archive, chd, cia, rvz, wbfs, iso, gdi, nsz, xso, xdelta, xps, wux, crc32), the wrapper-plus-As*/To* pattern they share, that all run in-process on their format crates, and the archive and disc-image behaviours worth not breaking.
-tags: [formats, crates, archive, 7z, zip, chd, chd-rs, rvz, wbfs, nsz, xso, gdi, patches, progress]
+tags:
+  [
+    formats,
+    crates,
+    archive,
+    7z,
+    zip,
+    chd,
+    chd-rs,
+    rvz,
+    wbfs,
+    nsz,
+    xso,
+    gdi,
+    patches,
+    progress,
+  ]
 sources:
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
@@ -64,10 +80,10 @@ sources:
     resource: repo://src/xps/test_patch.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # Format Modules and Their Crate Backends
@@ -81,26 +97,28 @@ the MCP `status` tool.
 
 ## Module → backend → formats
 
-| Module | Backend | Formats | `get_version()` |
-| --- | --- | --- | --- |
-| `archive` | `sevenz-rust2` + `zip` (in-process) | 7z, ZIP | `"built-in"` |
-| `rvz` | `rvz-rs` (`crates/rvz-rs`) | RVZ | `"built-in"` |
-| `wbfs` | `wbfs-rs` (`crates/wbfs-rs`), reading an RVZ through `rvz-rs` | WBFS (export only) | `"built-in"` |
-| `chd` | `chd-rs` (`crates/chd-rs`) | CHD (CD/DVD/HDD/LD) | `"built-in"` |
-| `xso` | `xso-rs` (`crates/xso-rs`) | CSO, ZSO | `"built-in"` |
-| `nsz` | `nsz-rs` (`crates/nsz-rs`) | NSP, NSZ | `"built-in"`, or `"built-in, prod.keys not found"` |
-| `gdi` | `gdi-rs` (`crates/gdi-rs`) | GDI + track BINs | none |
-| `xdelta` | `xdelta-rs` (`crates/xdelta-rs`) | XDELTA patches | `"built-in"` |
-| `xps` | `xps-rs` (`crates/xps-rs`) | IPS, BPS patches | `"built-in"` |
-| `iso` | in-module Rust, a port of bchunk | CUE/BIN → ISO; vendored ISO 9660 reader | none |
-| `crc32` | `crc32fast` behind `digest` traits | CRC32 hashing primitive | none |
-| `cia` | `cia-rs` (`crates/cia-rs`) | CIA | `"built-in"` |
-| `wux` | `wux-rs` (`crates/wux-rs`) | WUD (as `.wud` or `.iso`), WUX, lossless WUA; exports WUA and NUS folders | `"built-in"`, or `"built-in, no Wii U keys imported"` |
+| Module    | Backend                                                       | Formats                                                                   | `get_version()`                                        |
+| --------- | ------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `archive` | `sevenz-rust2` + `zip` (in-process)                           | 7z, ZIP                                                                   | `"built-in"`                                           |
+| `rvz`     | `rvz-rs` (`crates/rvz-rs`)                                    | RVZ                                                                       | `"built-in"`                                           |
+| `wbfs`    | `wbfs-rs` (`crates/wbfs-rs`), reading an RVZ through `rvz-rs` | WBFS (export only)                                                        | `"built-in"`                                           |
+| `chd`     | `chd-rs` (`crates/chd-rs`)                                    | CHD (CD/DVD/HDD/LD)                                                       | `"built-in"`                                           |
+| `xso`     | `xso-rs` (`crates/xso-rs`)                                    | CSO, ZSO                                                                  | `"built-in"`                                           |
+| `nsz`     | `nsz-rs` (`crates/nsz-rs`)                                    | NSP, NSZ                                                                  | `"built-in"`, or `"built-in, no Switch keys imported"` |
+| `gdi`     | `gdi-rs` (`crates/gdi-rs`)                                    | GDI + track BINs                                                          | none                                                   |
+| `xdelta`  | `xdelta-rs` (`crates/xdelta-rs`)                              | XDELTA patches                                                            | `"built-in"`                                           |
+| `xps`     | `xps-rs` (`crates/xps-rs`)                                    | IPS, BPS patches                                                          | `"built-in"`                                           |
+| `iso`     | in-module Rust, a port of bchunk                              | CUE/BIN → ISO; vendored ISO 9660 reader                                   | none                                                   |
+| `crc32`   | `crc32fast` behind `digest` traits                            | CRC32 hashing primitive                                                   | none                                                   |
+| `cia`     | `cia-rs` (`crates/cia-rs`)                                    | CIA                                                                       | `"built-in"`                                           |
+| `wux`     | `wux-rs` (`crates/wux-rs`)                                    | WUD (as `.wud` or `.iso`), WUX, lossless WUA; exports WUA and NUS folders | `"built-in"`, or `"built-in, no Wii U keys imported"`  |
 
 Every built-in backend returns the literal string `"built-in"` from
 `get_version()` because a linked library has no runtime version to query; the
 function exists only so the dependency table has one uniform shape. `nsz` is the
-exception with content: it appends `prod.keys not found`, since keys are needed
+exception with content: it appends `no Switch keys imported` when neither
+`switch_keys.txt` (written by `import-keys`) nor `~/.switch/prod.keys` is
+present, since keys are needed
 only when compressing an NSP whose members include NCAs, and the warning exists
 so a user does not discover the missing file mid-compression. `wux` does the same
 for Wii U keys: only WUA and NUS conversions need them, so it reports
@@ -133,7 +151,7 @@ crate replaced and which reference tools the crate tests still use.
 
 A format module is a wrapper type over `CommonRomfile` plus a small set of
 trait impls. The naming convention is fixed: `As*` parses a file that already
-exists into the wrapper, `To*` converts *from* another format into it.
+exists into the wrapper, `To*` converts _from_ another format into it.
 
 - `As*` validates and wraps. `as_rvz` checks the extension against
   `RVZ_EXTENSION`; `as_xso` and `as_chd` call `get_mimetype` so the content has
@@ -203,7 +221,7 @@ sequenceDiagram
     BP-->>M: anyhow result, "Conversion task failed" on panic
 ```
 
-*Caption: how a synchronous format crate runs behind the async progress bar.*
+_Caption: how a synchronous format crate runs behind the async progress bar._
 
 No module is subprocess-backed any more; `cia.rs`, the last one, runs
 `cia_rs::Cia::parse` and `cia_rs::unpack` through `run_blocking` like the others.
@@ -247,7 +265,7 @@ flowchart TD
     J -- "one or more" --> L["rename scratch over the archive"]
 ```
 
-*Caption: `archive.rs` copy-on-write rewrite; only a partially pruned solid 7z block is re-encoded.*
+_Caption: `archive.rs` copy-on-write rewrite; only a partially pruned solid 7z block is re-encoded._
 
 Three consequences worth knowing before changing this file:
 
@@ -271,7 +289,7 @@ Three consequences worth knowing before changing this file:
 nowhere else.** The `zip` dependency is built with `deflate` + `zstd` and
 `sevenz-rust2` with `zstd`; `sevenz-rust2` is confined to this module, while
 `zip` also appears in `download_dats.rs` and `import_dats.rs`, where it only ever
-*unpacks* a downloaded DAT archive and never chooses a codec. Since zip 9 an
+_unpacks_ a downloaded DAT archive and never chooses a codec. Since zip 9 an
 entry's name, and each item `file_names()` yields, is a `Result`, because a name
 may not decode. Every production caller propagates that error with `?` and takes an owned
 `String`, so an undecodable ZIP entry name fails the operation instead of
@@ -344,8 +362,9 @@ Compression mapping is the other defensive spot: `RVZ_COMPRESSION_LEVEL` ranges
 1–22, but only Zstandard accepts that range, so `options()` **clamps** rather
 than rejects to the codec's `Compression::levels()` — 1–9 for `bzip2`, `lzma`
 and `lzma2` — keeping an existing configuration working instead of failing the
-conversion. `RVZ_BLOCK_SIZE` is stored in KiB and multiplied by 1024 for
-rvz-rs.
+conversion. `RVZ_BLOCK_SIZE` is stored in KiB, rounded up to the next power of
+two (RVZ only allows power-of-two chunk sizes up to 2 MiB) and multiplied by
+1024 for rvz-rs.
 
 ## `chd.rs`: one module, four CHD personalities
 
@@ -456,10 +475,13 @@ themselves.
 
 ## `nsz.rs`: keys as a lazy loader
 
-`nsz_rs` takes a keys *loader* rather than a key set, and oxyromon exploits that.
-`load_keys` reads `~/.switch/prod.keys` with CRC verification — matching the
-external tool's own sanity check, so a tampered file is rejected instead of
-producing garbage — and is handed to the crate as a function that runs only if
+`nsz_rs` takes a keys _loader_ rather than a key set, and oxyromon exploits that.
+`load_keys` prefers the merged `switch_keys.txt` that `import-keys` stored in
+the data directory — loading its `title.keys` too — and falls back to
+`~/.switch/prod.keys`, including when the imported file holds only `title.keys`
+rights IDs. Keys are CRC-verified — matching the external tool's own sanity
+check, so a tampered file is rejected instead of producing garbage — and the
+loader is handed to the crate as a function that runs only if
 the pipeline needs it. Decompression is unverified and never needs keys;
 compression needs them only for NSPs holding NCAs, so homebrew NSPs need no
 `prod.keys` at all.
@@ -495,7 +517,7 @@ behaviour that is not visible from a format table.
   backend-specific signal: `xps_rs::apply` returns an optional warning that the
   patch still succeeded under, printed as `Patched, but …`.
 - **`crc32.rs`** is not a ROM format at all. It adapts `crc32fast` to the
-  `digest` traits *and* to `std::io::Write`, which is what lets
+  `digest` traits _and_ to `std::io::Write`, which is what lets
   `common::hash_reader` pipe any decoder's output through
   `progress_bar.wrap_write(&mut digest)` for `HashAlgorithm::Crc`. That
   `Write` impl is the reason a disc image can be hashed while it decodes.

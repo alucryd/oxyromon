@@ -18,6 +18,8 @@ sources:
     resource: repo://build.rs
   - id: openwiki-source-8a2e26d4137b8250f68bb869
     resource: repo://build.sh
+  - id: openwiki-source-16e6e7418602542c69565bde
+    resource: repo://Cargo.lock
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
   - id: openwiki-source-ca6cb4b1a14fd7969dfae3ec
@@ -54,10 +56,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # Builds, Distribution and Releases
@@ -88,13 +90,13 @@ crate. `wuxrs` came with Wii U support and replaces no tool.
 
 All five run from the repository root.
 
-| Script | What it builds | Environment it assumes |
-| --- | --- | --- |
-| `build.sh` | `trunk build --release` in `frontend/`, then `cargo build --release --features server` | trunk plus the `wasm32-unknown-unknown` target on `PATH`; it does **not** set `SKIP_TRUNK`, so whenever `build.rs` runs it repeats that same trunk build |
-| `desktop.sh` | `cargo tauri build` in `desktop/` (the `oxyromon-desktop` binary and its installers) | Tauri CLI and the platform's webview development packages; host triple only; exports `NO_STRIP=true`; `beforeBuildCommand` stages the server sidecar first |
-| `dist.sh` | Everything, for the full release matrix, into `dist/`: `oxyromon` and the ten format CLIs for seven targets, then the host's desktop bundles | `cross` with `CROSS_CONTAINER_ENGINE=podman`, trunk, `rcodesign` on the host, `7z`, `tar`/`xz`, `llvm-mingw` at `/opt/llvm-mingw/llvm-mingw-ucrt/bin`, plus a full desktop toolchain for the host |
-| `docker.sh` | `alucryd/oxyromon:<version>` + `:latest` from the Alpine-based `Dockerfile`, then pushes both | `docker` usable via `sudo`, `tomlq` to read `.package.version` out of `Cargo.toml`, and push access to Docker Hub |
-| `test.sh` | Coverage into `lcov.info` (gitignored) over the whole workspace | `cargo-llvm-cov` with `llvm-tools-preview`; one pass, matching CI |
+| Script       | What it builds                                                                                                                               | Environment it assumes                                                                                                                                                                            |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `build.sh`   | `trunk build --release` in `frontend/`, then `cargo build --release --features server`                                                       | trunk plus the `wasm32-unknown-unknown` target on `PATH`; it does **not** set `SKIP_TRUNK`, so whenever `build.rs` runs it repeats that same trunk build                                          |
+| `desktop.sh` | `cargo tauri build` in `desktop/` (the `oxyromon-desktop` binary and its installers)                                                         | Tauri CLI and the platform's webview development packages; host triple only; exports `NO_STRIP=true`; `beforeBuildCommand` stages the server sidecar first                                        |
+| `dist.sh`    | Everything, for the full release matrix, into `dist/`: `oxyromon` and the ten format CLIs for seven targets, then the host's desktop bundles | `cross` with `CROSS_CONTAINER_ENGINE=podman`, trunk, `rcodesign` on the host, `7z`, `tar`/`xz`, `llvm-mingw` at `/opt/llvm-mingw/llvm-mingw-ucrt/bin`, plus a full desktop toolchain for the host |
+| `docker.sh`  | `alucryd/oxyromon:<version>` + `:latest` from the Alpine-based `Dockerfile`, then pushes both                                                | `docker` usable via `sudo`, `tomlq` to read `.package.version` out of `Cargo.toml`, and push access to Docker Hub                                                                                 |
+| `test.sh`    | Coverage into `lcov.info` (gitignored) over the whole workspace                                                                              | `cargo-llvm-cov` with `llvm-tools-preview`; one pass, matching CI                                                                                                                                 |
 
 `test.sh` is now a single line — `cargo llvm-cov --workspace --features
 oxyromon/server --lcov --output-path lcov.info` — which is byte-for-byte the command
@@ -155,7 +157,7 @@ flowchart TD
   CLEAN --> DESK["after all targets: host-only tauri build with NO_STRIP=true, copy deb, rpm and AppImage into dist"]
 ```
 
-*Caption: `dist.sh`'s per-target pipeline, and where signing and archive format diverge.*
+_Caption: `dist.sh`'s per-target pipeline, and where signing and archive format diverge._
 
 Three environment decisions make the matrix tractable:
 
@@ -265,7 +267,7 @@ oxyromon's format, and its own `<crate>-<version>` git tag (for example
 `nsz-rs-0.3.0`). The root's `0.x` tags are a separate series. This creates a hard
 ordering rule: **a format crate must be published before any oxyromon release that
 needs its new version**, because the root declares each dependency with `path`
-*and* `version` (`chd-rs = { path = "crates/chd-rs", version = "0.1.0", … }`), and
+_and_ `version` (`chd-rs = { path = "crates/chd-rs", version = "0.1.0", … }`), and
 `cargo publish` rewrites that into a crates.io version requirement that has to
 resolve. A `cargo publish` of oxyromon against an unpublished crate version fails,
 and the root's `exclude` list keeps `crates/` out of its tarball, so nothing in the
@@ -276,12 +278,10 @@ inside `rvz-rs` and `wbfs-rs`, so a change to it means releasing both.
 
 The `nod` git pin that used to gate publishing is gone with nod itself: rvz-rs
 and wbfs-rs replaced it. `sevenz-rust2` is back to a normal `version = "0.24.2"`
-requirement with the `zstd` feature, so oxyromon's own `[dependencies]` hold no
-git source. `rusty_flac` is git-sourced differently: a
-`[patch.crates-io]` entry in the root manifest supplies its unreleased
-`Encoder::set_block_size`, which `chd-rs` calls. A patch does not reach a published
-crate, so `chd-rs` cannot be published against it until `rusty_flac` releases that
-method. Relatedly, `frontend/` and `desktop/` are
+requirement with the `zstd` feature. `rusty_flac` came last: `chd-rs` calls its
+`Encoder::set_block_size`, which the crates.io release `rusty_flac 0.5.0` now
+carries, so the root manifest's `[patch.crates-io]` git pin is gone too and
+`Cargo.lock` holds no git source at all — nothing blocks a publish. Relatedly, `frontend/` and `desktop/` are
 `publish = false` and declare their own `[workspace]`, and `Cargo.toml` excludes
 `.github/`, `crates/`, `dist/` and `tests/`; cargo also leaves the nested
 `frontend/` package out of the tarball. Installing from crates.io therefore builds
@@ -293,13 +293,12 @@ exactly the case `build.rs` guards with its "build from a git checkout, or set
 flowchart TD
   V["bump version in Cargo.toml, frontend, desktop Cargo.toml, tauri.conf.json"] --> DOC["update README subcommand sections, add CHANGELOG entry under that version"]
   DOC --> FC["publish changed format crates, tag crate-name-version"]
-  FC --> PIN["drop the rusty_flac patch once it releases"]
-  PIN --> PUB["publish oxyromon from the repository root"]
+  FC --> PUB["publish oxyromon from the repository root"]
   PUB --> TAG["tag the root version"]
   TAG --> IMG["docker.sh builds and pushes version and latest tags"]
 ```
 
-*Caption: the release sequence, including the two steps that must happen before oxyromon itself can be published.*
+_Caption: the release sequence, including the two steps that must happen before oxyromon itself can be published._
 
 ## Release bookkeeping
 
@@ -316,24 +315,24 @@ flowchart TD
   Format crates keep their own changelogs in the same shape.
 - **Offline query data must be committed.** `sqlx` verifies queries at compile time,
   so `migrations/` and query changes require `cargo sqlx prepare -- --all-targets --features
-  server` to refresh `.sqlx/`. Without it the build needs a live `DATABASE_URL`,
+server` to refresh `.sqlx/`. Without it the build needs a live `DATABASE_URL`,
   which cross containers and the Docker builds do not have — a query change left
   unprepared breaks the release matrix rather than just the developer's machine.
 - **The pre-release gate is CI, not a release workflow.**
   `.github/workflows/continuous_integration.yml` runs on pushes and pull requests to
   `master` and `develop` with `SKIP_TRUNK: "true"` and a pinned `TRUNK_VERSION` of
-  0.21.14, and runs four jobs. *Format* checks `cargo fmt` in the root,
-  `frontend/` and `desktop/` workspaces. *Web UI* builds the UI once with
+  0.21.14, and runs four jobs. _Format_ checks `cargo fmt` in the root,
+  `frontend/` and `desktop/` workspaces. _Web UI_ builds the UI once with
   trunk, lints it for `wasm32-unknown-unknown`, and uploads it as an artifact
-  that lives one day. *Lint and test* runs clippy with
+  that lives one day. _Lint and test_ runs clippy with
   `--workspace --all-targets --features oxyromon/server` and with
   `--no-default-features --features use-rustls,mcp --all-targets`, existing so
   `mcp`-only builds cannot rot, then workspace coverage with `cargo llvm-cov`,
   uploaded to Codecov. It installs `mame-tools`, `xdelta3` and `ffmpeg` because
   the crates' interop tests compare against chdman and xdelta3, make LaserDisc
-  AVIs with ffmpeg, and skip rather than fail when those are absent. *Release
-  build and desktop* waits for the UI artifact, builds `--release --features
-  server` with it through the sidecar staging script, and lints the desktop
+  AVIs with ffmpeg, and skip rather than fail when those are absent. _Release
+  build and desktop_ waits for the UI artifact, builds `--release --features
+server` with it through the sidecar staging script, and lints the desktop
   shell, with the webkit2gtk and xdo development packages installed.
   Nothing in CI runs `dist.sh`, `docker.sh`
   or `cargo publish`.
@@ -347,7 +346,7 @@ cargo build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p rvz-rs -p wbfs-
 ./docker.sh                                                       # push the image, two tags
 ```
 
-*Caption: the everyday commands, from the cheapest host build to the full release matrix. Note that `-p` takes the crate names while the produced binaries are `chdrs`, `ciars`, `gdirs`, `nszrs`, `xdeltars`, `xpsrs` and `xsors`.*
+_Caption: the everyday commands, from the cheapest host build to the full release matrix. Note that `-p` takes the crate names while the produced binaries are `chdrs`, `ciars`, `gdirs`, `nszrs`, `xdeltars`, `xpsrs` and `xsors`._
 
 See also [Feature Flags and Build Topology](../architecture/feature-flags-and-build-topology.md),
 [Format Crates](../integrations/format-crates.md),

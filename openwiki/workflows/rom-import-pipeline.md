@@ -2,8 +2,22 @@
 type: workflow
 title: ROM Import Pipeline
 description: How import-roms hashes a file, matches it against the DAT catalog, places it on disk and records a romfiles row linked from roms.romfile_id — per-format dispatch, the transaction-per-file boundary, chd-rs backed CHD handling, the Trash path, and the PREFER_FORMAT auto-conversion pass that follows.
-tags: [import-roms, hashing, catalog-matching, romfiles, transactions, trash, prefer-format, chd, archives, jbfolder]
+tags:
+  [
+    import-roms,
+    hashing,
+    catalog-matching,
+    romfiles,
+    transactions,
+    trash,
+    prefer-format,
+    chd,
+    archives,
+    jbfolder,
+  ]
 sources:
+  - id: openwiki-source-ca6cb4b1a14fd7969dfae3ec
+    resource: repo://CHANGELOG.md
   - id: openwiki-source-02628a361dd4faa0f62f87a2
     resource: repo://src/archive.rs
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
@@ -20,6 +34,8 @@ sources:
     resource: repo://src/database.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
     resource: repo://src/import_dats.rs
+  - id: openwiki-source-f7509e92ca643a1db54a74c4
+    resource: repo://src/import_keys.rs
   - id: openwiki-source-9add64e166d8ef19bd58c5af
     resource: repo://src/import_roms.rs
   - id: openwiki-source-d2a3ecfe56b135e9acbf7c81
@@ -86,10 +102,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-05T21:35:44.503Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # ROM Import Pipeline
@@ -153,7 +169,7 @@ earlier pass have already been moved out and are not seen again.
 
 The header is what unlocks headered matching. When `header` is `Some`, hashing
 goes through `get_headered_hash_and_size`, which reads the first `header.size`
-bytes, checks every `rules` row against them, and hashes *without* the header only
+bytes, checks every `rules` row against them, and hashes _without_ the header only
 if all rules match ([src/common.rs](../../src/common.rs#L575-L671)). Systems whose
 DAT declares a header definition therefore only match headered dumps **when named
 with `-s`**; without it the file is hashed whole and, if the DAT is headerless,
@@ -168,7 +184,7 @@ with a parent first (0), CHDs without a parent second (1), everything else last
 (2)** ([src/import_roms.rs](../../src/import_roms.rs#L169-L214)). The parent link
 is read straight out of the CHD header with `parse_chd` — chd-rs, no external
 binary — and it matters because `as_chd` resolves a CHD's `Parent SHA1` by
-scanning *the directory the child sits in*
+scanning _the directory the child sits in_
 ([src/chd.rs](../../src/chd.rs#L584-L650)); importing — and therefore moving
 away — the parent first would strand every child in the batch.
 
@@ -193,7 +209,7 @@ and the single-file mode:
 
 Both the directory walk and its error path keep output on the `progress` helpers,
 which write to stderr; the walk's `Err` arm carries the guard comment that keeps
-this code stdout-silent — under `oxyromon mcp` stdout *is* the JSON-RPC channel, so
+this code stdout-silent — under `oxyromon mcp` stdout _is_ the JSON-RPC channel, so
 a stray `println!` here would corrupt the protocol stream
 ([src/import_roms.rs](../../src/import_roms.rs#L305-L314),
 [src/mcp.rs](../../src/mcp.rs#L1-L20)).
@@ -247,12 +263,12 @@ flowchart TD
     M --> P["return system_ids and game_ids"]
 ```
 
-*Figure: the per-file boundary. Every path out of `import_rom` before the commit leaves the transaction uncommitted; `--as-is` routes every extension to `import_other`.*
+_Figure: the per-file boundary. Every path out of `import_rom` before the commit leaves the transaction uncommitted; `--as-is` routes every extension to `import_other`._
 
 Two cheap guards run first: a zero-byte file is deleted outright, and a file whose
 path is already a `romfiles.path` is skipped unless `--force`
 ([src/import_roms.rs](../../src/import_roms.rs#L425-L446)). The second guard only
-fires once the file is *inside* a ROM directory — `get_relative_path` fails for
+fires once the file is _inside_ a ROM directory — `get_relative_path` fails for
 anything outside it — so re-running an import from a staging directory falls
 through to matching, where the `Duplicate` result handles it.
 
@@ -288,11 +304,11 @@ branch is gone along with the module, and `chd::get_version()` reports `built-in
 
 All eight format handlers funnel into
 [`find_rom_by_size_and_hash`](../../src/import_roms.rs#L2141-L2477), which answers
-one question per hash algorithm: *which catalog roms could this be?*
+one question per hash algorithm: _which catalog roms could this be?_
 
 - **Progressive narrowing.** Three queries in order, stopping at the first that
   returns anything: `name + size + hash + game names`, then `size + hash + game
-  names`, then `size + hash` alone. Each has a system-scoped variant added by
+names`, then `size + hash` alone. Each has a system-scoped variant added by
   `-s`. Game names come from the file stem and, inside an archive, from the entry's
   parent directory; the rom name from the entry name. Every query carries
   `romfile_id IS NULL AND parent_id IS NULL`, so only unclaimed roms compete — and
@@ -308,7 +324,7 @@ one question per hash algorithm: *which catalog roms could this be?*
   the `--trash` decision
   ([src/import_roms.rs](../../src/import_roms.rs#L2363-L2415)).
 - **Ambiguity ladder.** One candidate wins immediately. Otherwise: a candidate
-  whose game was already imported *during this run* (the `game_ids` set threaded
+  whose game was already imported _during this run_ (the `game_ids` set threaded
   through every handler) wins; then, under `--unattended first`, the closest name
   by `jaro_winkler` against the file name wins; then anything unattended that is
   left returns `Skipped` rather than hanging on a prompt nobody will answer. An
@@ -332,18 +348,18 @@ one question per hash algorithm: *which catalog roms could this be?*
 Placement is per-format, and the rule of thumb is: **keep the container when it
 represents exactly one complete game, otherwise take the members out.**
 
-| Case | On disk | Rows |
-| --- | --- | --- |
-| Plain file (`import_other`) | moved to `get_sorted_path(...)` | 1 romfile → 1 rom |
-| Archive = whole game | archive kept intact, entries renamed inside it to the catalog rom names; the container becomes `<game name>.<archive ext>` when it holds several entries, and `<rom name stem>.<archive ext>` when it holds one — unless the system is arcade or the entry is a PS3 `.pkg`/`.pup`/`.rap`, which take `<game name>.<archive ext>` | 1 romfile → *n* roms |
-| Archive = mixed or partial game | each matched member extracted and **copied** to the system directory (arcade and jbfolder games get a `<game>/` subfolder) | 1 romfile per member |
-| CD CHD | unpacked to cue/bin in tmp; only if *every* track matches one game **and** one system is the CHD moved as `<game>.chd` | 1 romfile → 1 rom per track |
-| DVD / HD / LD CHD | hashed by extracting (or reusing the hashes the CHD header publishes), moved as `<rom>.chd`; the HD and LD branches put arcade CHDs under a `<game>/` subfolder | 1 romfile → 1 rom |
-| CIA | contents and the certificate-extended TMD extracted with `cia-rs` for hashing, each named as the DAT names it (content ID in lowercase hex, `tmd.<version>`); whole `.cia` moved as `<game>.cia` | 1 romfile → *n* roms |
-| CSO / ZSO / NSZ / RVZ | container kept, renamed `<rom name>.<ext>` after hashing the decoded image | 1 romfile → 1 rom |
-| WUX | hashed as it decompresses and matched against the DAT's disc row, then moved to the system directory as the rom name with a `.wux` extension | 1 romfile → 1 rom |
-| lossless WUA | hash and size taken from its disc info, matched against the DAT's disc row, its store entries copied into the system's `.update-partitions` store, then moved as the rom name with a `.wua` extension; an entry found nowhere gets a warning that the disc can't be rebuilt | 1 romfile → 1 rom |
-| NUS title folder | each file the DAT lists moved into `<system directory>/<game name>/`; unlisted files such as `title.cert` stay | 1 romfile per file |
+| Case                            | On disk                                                                                                                                                                                                                                                                                                                          | Rows                        |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| Plain file (`import_other`)     | moved to `get_sorted_path(...)`                                                                                                                                                                                                                                                                                                  | 1 romfile → 1 rom           |
+| Archive = whole game            | archive kept intact, entries renamed inside it to the catalog rom names; the container becomes `<game name>.<archive ext>` when it holds several entries, and `<rom name stem>.<archive ext>` when it holds one — unless the system is arcade or the entry is a PS3 `.pkg`/`.pup`/`.rap`, which take `<game name>.<archive ext>` | 1 romfile → _n_ roms        |
+| Archive = mixed or partial game | each matched member extracted and **copied** to the system directory (arcade and jbfolder games get a `<game>/` subfolder)                                                                                                                                                                                                       | 1 romfile per member        |
+| CD CHD                          | unpacked to cue/bin in tmp; only if _every_ track matches one game **and** one system is the CHD moved as `<game>.chd`                                                                                                                                                                                                           | 1 romfile → 1 rom per track |
+| DVD / HD / LD CHD               | hashed by extracting (or reusing the hashes the CHD header publishes), moved as `<rom>.chd`; the HD and LD branches put arcade CHDs under a `<game>/` subfolder                                                                                                                                                                  | 1 romfile → 1 rom           |
+| CIA                             | contents and the certificate-extended TMD extracted with `cia-rs` for hashing, each named as the DAT names it (content ID in lowercase hex, `tmd.<version>`); whole `.cia` moved as `<game>.cia`                                                                                                                                 | 1 romfile → _n_ roms        |
+| CSO / ZSO / NSZ / RVZ           | container kept, renamed `<rom name>.<ext>` after hashing the decoded image                                                                                                                                                                                                                                                       | 1 romfile → 1 rom           |
+| WUX                             | hashed as it decompresses and matched against the DAT's disc row, then moved to the system directory as the rom name with a `.wux` extension                                                                                                                                                                                     | 1 romfile → 1 rom           |
+| lossless WUA                    | hash and size taken from its disc info, matched against the DAT's disc row, its store entries copied into the system's `.update-partitions` store, then moved as the rom name with a `.wua` extension; an entry found nowhere gets a warning that the disc can't be rebuilt                                                      | 1 romfile → 1 rom           |
+| NUS title folder                | each file the DAT lists moved into `<system directory>/<game name>/`; unlisted files such as `title.cert` stay                                                                                                                                                                                                                   | 1 romfile per file          |
 
 Every destination above comes from `get_sorted_path`, so the `GAME_SUBFOLDERS`
 setting also applies at import: under `always`, or under `multiple` for a disc
@@ -352,13 +368,16 @@ after it without its ` (Disc N)` tag.
 
 The archive decision is the interesting one
 ([src/import_roms.rs](../../src/import_roms.rs#L931-L1029)): the archive is kept
-intact only when every entry matched, all matches belong to a single game, *and*
+intact only when every entry matched, all matches belong to a single game, _and_
 the matched set covers every rom of that game
 (`find_roms_by_game_id_no_parents`). Anything short of that falls through to the
 per-member extraction branch, which **copies** the matched members out; the source
 archive is never moved or removed by that branch, and only the extracted members
 get `romfiles` rows (an archive left behind inside a ROM directory is exactly what
-`purge-roms --foreign` reports). Unmatched members stay inside it; only a
+`purge-roms --foreign` reports). When that branch extracts at least one member it
+says so — `Extracted N of M file(s), left "<name>" in place` — so the archive it
+leaves in the source directory is never a surprise
+([src/import_roms.rs](../../src/import_roms.rs#L1308-L1323)). Unmatched members stay inside it; only a
 **single-entry** archive whose sole entry fails all three algorithms is itself
 trashed ([src/import_roms.rs](../../src/import_roms.rs#L918-L928)).
 
@@ -367,7 +386,11 @@ Hashing compressed formats is delegated to the wrapper types in the
 CRC already recorded in the archive's central directory instead of extracting
 ([src/archive.rs](../../src/archive.rs#L194-L215)), `XsoRomfile` and `NszRomfile`
 decompress into a temp directory and delete the result
-([src/xso.rs](../../src/xso.rs#L52-L70), [src/nsz.rs](../../src/nsz.rs#L76-L94)),
+([src/xso.rs](../../src/xso.rs#L52-L70), [src/nsz.rs](../../src/nsz.rs#L76-L94));
+decompressing an NSZ needs the Switch keys, which `import-keys` merges from
+`prod.keys` and `title.keys` into the data directory's `switch_keys.txt`, the
+file `load_keys` prefers over a legacy `~/.switch/prod.keys`
+([src/nsz.rs](../../src/nsz.rs#L42-L75)),
 `RvzRomfile` hashes while decoding with no ISO ever written
 ([src/rvz.rs](../../src/rvz.rs#L44-L67)), and `ChdRomfile` answers SHA1 from the
 hashes chd-rs read out of the CHD header — `sha1` for the logical data and
@@ -376,7 +399,7 @@ when it has neither
 ([src/chd.rs](../../src/chd.rs#L171-L230)). The consequence visible from the
 tests: a `.cso` imports against the catalog entry for the `.iso` (`test_cso`), and
 a `.rvz` against `Test Game (USA).iso` (`test_rvz`) — while `test_rvz_as_is` needs
-a DAT that publishes the RVZ's *own* hash, because `--as-is` hashes the container.
+a DAT that publishes the RVZ's _own_ hash, because `--as-is` hashes the container.
 
 The CHD branch is a single `import_chd` over the four `ChdType`s
 ([src/import_roms.rs](../../src/import_roms.rs#L1032-L1519)). A CD CHD is expanded
@@ -419,7 +442,7 @@ If no algorithm matches, `trash_or_delete_romfile` runs
 - **`-d` / `--delete`** — hard delete, no database row.
 - **`-t` / `--trash`** — moved to `<system or global Trash>/<Valid|Duplicate|Invalid|Skipped>/<stem> [algo:hash].<ext>`,
   with the computed hash baked into the filename so a later manual inspection says
-  *why* it failed. If that path already exists the file is deleted instead, and the
+  _why_ it failed. If that path already exists the file is deleted instead, and the
   trashed file gets its own `romfiles` row.
 
 The Trash root follows the file's system when the match narrowed to one and the
@@ -445,7 +468,7 @@ content. `import_nus` handles it outside `import_rom` with a transaction of its 
 
 - **The TMD finds the game.** A TMD names one title at one version, so it is hashed
   and matched first, in the given system or any. A `Duplicate` prints `Already
-  imported`, and no match prints a warning.
+imported`, and no match prints a warning.
 - **A ticket no DAT lists is kept apart.** Once the TMD matches, as a new
   title or one already imported, `keep_unlisted_ticket` moves the folder's
   ticket to the store of tickets, `<title id>.tik` in a `wiiu_tickets` folder
@@ -477,14 +500,14 @@ that make it different:
 
 - It **requires a system**. The folder names no system of its own, so without `-s`
   the pipeline either prompts (`prompt_for_system_like(connection, None,
-  "%PlayStation 3%")`) or, when unattended, warns and skips.
+"%PlayStation 3%")`) or, when unattended, warns and skips.
 - Matching is **MD5 only**, because IRD catalogs only publish MD5s. The `SFB` file
   identifies the game; each remaining file is looked up by `size + md5 +
-  sfb_rom.parent_id`, disambiguated by filename suffix and then by `jaro_winkler`.
+sfb_rom.parent_id`, disambiguated by filename suffix and then by `jaro_winkler`.
 - Files are moved into `<system directory>/<game name>/<rom name>`, and the source
   directories are pruned while they stay empty.
 - It returns only a `system.id`. Since the auto-conversion pass works from the
-  *game* set, a run whose only imports are jukebox folders converts nothing.
+  _game_ set, a run whose only imports are jukebox folders converts nothing.
 - Trashing and deleting are not implemented here — a `TODO` leaves unmatched
   folders untouched.
 
@@ -524,20 +547,20 @@ newest version as Nintendo's servers deliver it makes the title complete; see
 
 ## Failure modes worth remembering
 
-| Situation | Behaviour |
-| --- | --- |
-| Malformed or homebrew `.cia` during a directory walk | error naming the file printed, file untouched, transaction rolled back, run continues |
-| CHD whose parent sits in the same batch | children import first, so the parent is still there when `as_chd` looks for it |
-| Empty file | deleted immediately, no rows |
-| Path already in `romfiles` | skipped unless `--force` |
-| Ambiguous match, `--unattended skip` | `Skipped`, file left in place |
-| Ambiguous match, "None" picked at the prompt | `Skipped`, file left in place |
-| Ambiguous match, `--unattended first`, no file name to rank | `Skipped` (the `first` heuristic needs a name) |
-| Multi-entry archive with one bad member | bad member stays in the archive, good members extracted |
-| Single-entry archive with no match | trashed or deleted per `-t` / `-d` |
+| Situation                                                             | Behaviour                                                                                          |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Malformed or homebrew `.cia` during a directory walk                  | error naming the file printed, file untouched, transaction rolled back, run continues              |
+| CHD whose parent sits in the same batch                               | children import first, so the parent is still there when `as_chd` looks for it                     |
+| Empty file                                                            | deleted immediately, no rows                                                                       |
+| Path already in `romfiles`                                            | skipped unless `--force`                                                                           |
+| Ambiguous match, `--unattended skip`                                  | `Skipped`, file left in place                                                                      |
+| Ambiguous match, "None" picked at the prompt                          | `Skipped`, file left in place                                                                      |
+| Ambiguous match, `--unattended first`, no file name to rank           | `Skipped` (the `first` heuristic needs a name)                                                     |
+| Multi-entry archive with one bad member                               | bad member stays in the archive, good members extracted                                            |
+| Single-entry archive with no match                                    | trashed or deleted per `-t` / `-d`                                                                 |
 | CD CHD whose tracks do not resolve to exactly one game and one system | import aborted; `CRC mismatch` plus trash/delete, but only when at least one track failed to match |
-| Conversion failure after import | warning only; import stands |
-| Error inside a walked directory | printed, walk continues; a top-level single file fails the run |
+| Conversion failure after import                                       | warning only; import stands                                                                        |
+| Error inside a walked directory                                       | printed, walk continues; a top-level single file fails the run                                     |
 
 ## Focused tests
 
@@ -559,7 +582,7 @@ each is a full given/when/then over a temp database and temp ROM directory:
   `test_mame_mixed` (loose ROM plus RDSK CHD in one system).
 - `test_cso`, `test_zso`, `test_nsz`, `test_rvz`, `test_rvz_as_is`, `test_cia`.
 - `test_per_system_rom_directory` — with a per-system `ROM_DIRECTORY` override, the
-  stored path is relative to that override and the file is *not* present under the
+  stored path is relative to that override and the file is _not_ present under the
   global ROM directory.
 - `test_prefer_format` — the auto-conversion matrix described above.
 

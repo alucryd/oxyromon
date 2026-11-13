@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5aff8abd7e00fd79784e766710be7fa60f39fee58f75d68b98e7c3420075a38c",
+  "pageVersion": "sha256:ccab46de87b87078562c2a462e0f61d1ed37892211f35e7f29d2211da09caf77",
   "claims": [
     {
       "id": "claim_8b2514d79d614acba7dc978bdc048ed8",
@@ -257,7 +257,7 @@
       "statement": "OXYROMON_DATA_DIRECTORY is re-read on every run and never persisted: config::get_data_directory returns it, or dirs::data_dir()/oxyromon, failing when neither exists; main.rs uses that directory for oxyromon.db, creating the directory and file if absent, then opens the pool, whose establish_connection runs the embedded sqlx::migrate!() migrator — so a failing migration breaks every subcommand at startup.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L619-L626",
+          "resource": "repo://src/config.rs#L622-L629",
           "version": "repo-lines-v1:sha256:77a822bf5b4ccce3f8dcf52ccbe0308beb550297fd610558fd61b435774a1a71:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWE5ODUzYzYwMjRmYWE2M2IwOTc5MDYyODNhZTFjNWU5MDkxNzE0Y2ZjZmE5ZmIzN2MyMmIyOTQzZjJiZTk3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTA0NGQ5NmRlOGNkNzg1MTYxNGM3YTliNTA0NGVhYjllOWY1ZmRmMzZjMTgxZjM4MmQwNWZlZDRkZmE1MDE5ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2E3MzVmOGY5NzJjN2E3MzFmNTZkMDUyOWZlYjZlMzJlNTVlNTNhZmFmMzk5YWIzMjdkZjhiZjBmMjA4ZDQ3ZCJ9"
         },
         {
@@ -265,7 +265,7 @@
           "version": "repo-lines-v1:sha256:26eb8aba28178a4ef5cb8b2a1ec1948831926737e3ea372131cc4c06599a7d44:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljYzkwZDUyOWU2MjlmOTBjNDkyODJkOGU3MjQ0MGM4MTAzYWZjNjZlOTg3MTgzODc5Njc2OWRkNWJiYWE2YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwNzEzNGFlMDIyZjBjZTViOWI3ZWQxMGRhOGI1MDc4NTU1ZjJiNjFjMjMzNjQ5MjM4M2ZiODBlMmUyNzUyOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwYTE0Mjc4ZmFlZjY2YTViZmExZDgzNDkyNTg0OGFmNzcyNDgyODI0ZmQ0MGQ1YzQ0YzhiZTNiNzZmNzA1MGQifQ"
         },
         {
-          "resource": "repo://src/main.rs#L129-L136",
+          "resource": "repo://src/main.rs#L131-L138",
           "version": "repo-lines-v1:sha256:fb09b63b701dbe037aa69dccde353a4752f1c3b26977c5fa226a9c0131f5fa18:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGZlMjU0NjA0NDFmYzI4ZTRjM2IxNGVlZmI4ZDc5MjkzNmQ5Njk1MmEwMDdkNjkzNGQzZTMzOTQwYmJlYmMyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE5OWQ4NWU4NTA5N2RjNThkMzA2YWFjMWEwNDc5NzRjYTZhMzE2Y2UzMmQ4OTY5OGJhNjk0MDdhNjQ4MTcyYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDQxNjE4ZDFhMGI3MGRmMDBkNzAzYTczOTNiYjg5ZThmN2U1NDYxMjBjOTNiZjMwNmQ0ZGVmMThhYmJmMjg3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTViODc3ZjY3Mzg3ZmNjMTM2MDEzNGQyMzg5NjJjOWY1Y2M0MDMyYWM1NWM3MDU5ZDdlYTc1NjkxYzI3OWU1NSJ9"
         }
       ]
@@ -275,11 +275,11 @@
       "statement": "OXYROMON_ROM_DIRECTORY and OXYROMON_TMP_DIRECTORY are bootstrap-only: they are consulted inside get_rom_directory/get_tmp_directory only when no ROM_DIRECTORY/TMP_DIRECTORY settings row exists, and the chosen value is immediately written to the database, so on any existing database the row wins and changing the environment variable has no effect; moving a library requires oxyromon config.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L628-L654",
+          "resource": "repo://src/config.rs#L631-L657",
           "version": "repo-lines-v1:sha256:7c310d5f111244b7f89e14968f60891b3fdbd802f747cd986754fd49b0659672:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZmYyOWVjODRkYTEzZDFjZDE2OGViMDc0NWQ2OTBlMDExNDIwMzJiZmExZWI4OGExZjMyNDZiNzE0Zjk2ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlY2UyNTU4YzNkNjRhNmNjZWIzYjcxNjcxNjgzMzA3MWEzMjdhNzI1ZGFkMTI4M2QxY2U0NDQ1ZjI3ZWEzNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmZTEwYzlmZWI5NjQ2NjFhYWJmYTg2NTQ0NDYxMTk5ZWRmYmRjNTY0MmM5NzU2Nzc5Y2RiN2MyYjUwMWViMGIifQ"
         },
         {
-          "resource": "repo://src/main.rs#L138-L140",
+          "resource": "repo://src/main.rs#L140-L142",
           "version": "repo-lines-v1:sha256:328b5c7e04cb449428db5a21baccdd3ea6049fd80e8798c9f8fb51f85d7c4a1b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzkzNjg2ZjY1ZjI3OTIxNjMxMGYzN2JmZmMxZDNhZWU4Y2NkYTliYmFkMjRhYmZmODJlOGZhMWE3MDdhYjE3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNmMTlmMTI2MGJkOGFmOTM2NTAwMmRmYjJjMWYwOGJlODMzMzRiNzU3MDA0Y2VjMjZhMzRjZThhMGZkODhlZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWVmMWFlNDM0YWQ0ZmM5ODYzMjI3YzI1MTc5NjExMzQ2ZjM3ZDQ4MDMyZTJlMTdjYzc2ZDk2OTExZjRhZmQyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzNkMmQ4MDgzMjJiMjEwYjNmZDdkMzc4MTgyMmUyOTBkNjc5NzdlZTE4ZmUxNTk5ZmU2ZjMyZTkyODE3NzlmOCJ9"
         }
       ]
@@ -289,7 +289,7 @@
       "statement": "Stored directory settings are canonicalized on read via get_canonicalized_path, so a configured directory that has been deleted or unmounted yields None and re-triggers the environment/default bootstrap rather than erroring.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L579-L588",
+          "resource": "repo://src/config.rs#L582-L591",
           "version": "repo-lines-v1:sha256:f3d7b30cc973091f0784ec1cec13cf2bcfa81a37862272c65533ad38bdccbf44:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmZDMzMGEyZDNjY2JlMTU5NGE3NzBiOWQyN2RlMjQ5MDk2MWJhODY2YTFjNzNhZTEzMTFiOWU3OTRlOTNlMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4MDE5YjJiZTE1Yjk2NWVjZDRiMDZjODI1NGYzYWViOTU4ODcxZjA5ODI1OGJlNWY5ODdhZDY2MTM0YTVhNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyYWE4ZWVjNjQ4Y2JkNzVmNTBhZGI0NDhiZTU1YmZhZWEwYTVkN2I2ZDQ1ZDI5MGZkM2RkNmFjYmJkZWEyZTgifQ"
         },
         {
@@ -303,7 +303,7 @@
       "statement": "OXYROMON_LOG_LEVEL is consumed by env_logger's Builder::from_env inside the subcommand guard, its filter pushed into log::set_max_level and its logger wrapped in indicatif_log_bridge's LogWrapper over the process-wide MultiProgress; because this init sits inside if let Some((subcommand, ...)), a run with no subcommand loads no .env, installs no logger, opens no database, and exits successfully.",
       "evidence": [
         {
-          "resource": "repo://src/main.rs#L104-L111",
+          "resource": "repo://src/main.rs#L106-L113",
           "version": "repo-lines-v1:sha256:22c539646f02e2eff9ee8bbc09ba93f6d63693bffe72d6af22a57a4cd055bca8:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGIyMzEzMTM5M2Q1NDA4MjQ3MzlhMDc1YmI2MDViMjI5OWU5YTdiMWU3ODQ3ZDYzNGEyM2YzNzAzYzA2ZjllMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjFmOTc2Y2M1MTMwNjU4NWQ5NjhmNzY2NDIzNTY3NDFiZTRiYjZkN2ZhNjdjZDc5OGNkMTM4ZTQyYzA2ZGMxMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDM0MzY5YjcxYTI0MzVkOGZmNDNmNjdlNjkyMzIwZDBkNWM0OTAyNmJmYWEwOTUxZTFiYzBjNmM4NzA2MTgxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjk5MGU5NGM4YzRlNTUzNGRkNjEyM2VhNzllMmJhOTU3N2RjYWVhZDY1OTUyYjk1MTdjMjIxN2VjOTI5M2JhOCJ9"
         },
         {
@@ -321,7 +321,7 @@
           "version": "repo-lines-v1:sha256:bfc70df0a5a52d08512cb68fedf1fbe721908981af7e965f13f9000b8465c576:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjlhYTczY2Y1YmMzMzc3YTdkOTdmMmU4ZDJiYjc3MzE5NTgxNWVmZTIyNWFmN2YxYmU2ZjViOTMwNmJiZTE0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2MxZDJlMzE4MDc2ZmM5YTBjMGUyNzY2YTc2YTQxMGI0YWYwMGFhNmFkYTYzYzE5YzlkMjY2MDc1ZTM1MzMzNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjRjNGM5ZTk0ZDZiYTNmNzViOWY2ODc4YWQ0ODgwZDQ1NDIzY2FlYjliNWM5YmZiYTZlZjhjZDVjNmZiMWYzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTNiNDE0YzVmMTcxOTFhY2UyZTI1MmJkYjRmMzhmM2U4MjQwNDNiZTRhNDUxMjUxMTcwY2VjY2IzOWM0YTBmZSJ9"
         },
         {
-          "resource": "repo://src/main.rs#L104-L107",
+          "resource": "repo://src/main.rs#L106-L109",
           "version": "repo-lines-v1:sha256:2108e6264fe4f6cce8c0b6f8faf05a3aaa57254b4228078a4ab33e5b16cda989:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGIyMzEzMTM5M2Q1NDA4MjQ3MzlhMDc1YmI2MDViMjI5OWU5YTdiMWU3ODQ3ZDYzNGEyM2YzNzAzYzA2ZjllMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjAwN2ZjNDYwMzg0NjY5MDc5MzgzNWEwY2RiNjI5ZmEyNjEyMDRmYzM5YzhmYzUyMWNmMDRkOTQwMWJjNTFjMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDM0MzY5YjcxYTI0MzVkOGZmNDNmNjdlNjkyMzIwZDBkNWM0OTAyNmJmYWEwOTUxZTFiYzBjNmM4NzA2MTgxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2JlYjJkOTY4ZTI4N2JkNzlkN2ZhMDcxYjdiYjZiN2Y3NjZlMDVjMWQ3YjdmNzNhMGZhNDg3ODY1ZjIyYzk5YyJ9"
         }
       ]
@@ -389,7 +389,7 @@
           "version": "repo-lines-v1:sha256:d5bbbeadff5621b875688477cd9fd16d919cc69c09457506d304780dee2fb1eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyMzI1YThlZGYyOGQ0MjUxY2NlMGUwOGExMjk5MjBhZGIyNzIzN2JiNmJlMDliNjJhOGQwY2E0ZjYyMzBiNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkNDUyZDJhZjJjMTUwMTQyMjY3ZjUwYTIzMTk5ZGU1YmEwZjlmZmQ3MjYxNzAyM2M4NmRiMTRlNDRkM2UxNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmM2IyMTZlOGE2MmRiNTc2MmQxODcxMzM4ODBjNjQwMWE1NjZhNDhhMjk1Yjk5NDE4NWY1YWM4YWYyNGFjYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://src/main.rs#L104-L104",
+          "resource": "repo://src/main.rs#L106-L106",
           "version": "repo-lines-v1:sha256:4b23131393d540824739a075bb605b2299e9a7b1e7847d634a23f3703c06f9e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGIyMzEzMTM5M2Q1NDA4MjQ3MzlhMDc1YmI2MDViMjI5OWU5YTdiMWU3ODQ3ZDYzNGEyM2YzNzAzYzA2ZjllMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGIyMzEzMTM5M2Q1NDA4MjQ3MzlhMDc1YmI2MDViMjI5OWU5YTdiMWU3ODQ3ZDYzNGEyM2YzNzAzYzA2ZjllMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDM0MzY5YjcxYTI0MzVkOGZmNDNmNjdlNjkyMzIwZDBkNWM0OTAyNmJmYWEwOTUxZTFiYzBjNmM4NzA2MTgxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzUxMjZkY2U5NjlmMTQ0ZDQ2ODQzNjkwN2VjODc1MjljYmM1NzQwYTQ3ZGQ1YTI1N2Y0ZmU0ZTlkMmU0MTZlNiJ9"
         }
       ]
@@ -445,7 +445,7 @@
       "statement": "The env-var surface is what makes the MCP stdio test hermetic: tests/mcp_stdio.rs spawns the built binary with OXYROMON_DATA_DIRECTORY pointed at a TempDir and OXYROMON_LOG_LEVEL=off, so migrations and catalog writes land in a throwaway database and log output cannot corrupt the JSON-RPC framing read from stdout.",
       "evidence": [
         {
-          "resource": "repo://src/main.rs#L104-L137",
+          "resource": "repo://src/main.rs#L106-L139",
           "version": "repo-lines-v1:sha256:ca87b6071d2598f86212ccfa0eacca5f991cde1ecba434725946bd96dd0360a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMjMxMzEzOTNkNTQwODI0NzM5YTA3NWJiNjA1YjIyOTllOWE3YjFlNzg0N2Q2MzRhMjNmMzcwM2MwNmY5ZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzNDM2OWI3MWEyNDM1ZDhmZjQzZjY3ZTY5MjMyMGQwZDVjNDkwMjZiZmFhMDk1MWUxYmMwYzZjODcwNjE4MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyOGI1YzdlMDRjYjQ0OTQyOGRiNWEyMWJhY2NkZDNlYTYwNDlmZDgwZTg3OThjOWY4ZmI1MWY4NWQ3YzRhMWIifQ"
         },
         {
@@ -520,7 +520,7 @@
     },
     {
       "id": "claim_e71eb1740a0d4caf8daec64439e450e9",
-      "statement": "The repository's CI surface contains exactly two workflow files; AGENTS.md's OpenWiki block refers to a scheduled OpenWiki GitHub Actions workflow that refreshes openwiki/, but no such file exists in .github/workflows, so the wiki refresh cadence is not defined or gated by anything in the current tree.",
+      "statement": "The repository's CI surface contains exactly two workflow files; AGENTS.md's OpenWiki block tells readers to check the maintenance process' configuration and completed runs before relying on automatic updates, but no such scheduled workflow exists in .github/workflows, so the wiki refresh cadence is not defined or gated by anything in the current tree.",
       "evidence": [
         {
           "resource": "repo://.github/workflows/continuous_integration.yml#L1-L155",
@@ -531,8 +531,8 @@
           "version": "repo-lines-v1:sha256:7262b6657d4bd10f86df828d7f58e973aca8d9643cc52fd86019bf7c48c0009a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwYjVhNGQwOWE3YTU1Y2U1YTgxMDFmM2U5NjNiZmIyMWJiZTBhNjU2YThjYzc2ZTZjZWJhMDBjNzU5NjM1NjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MDBkZTFiODIwMWUzYjYxYmI5NGM0YWQ3MWVkM2ZjOTE4NGFhMjBjYjY0NjNlZWVlYzQyZmU5YTQ4NTk4MGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://AGENTS.md#L335-L348",
-          "version": "repo-lines-v1:sha256:db1b26b491c1761e0571874a35b094ce206e904596088364a0ab7d7b2c5360ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ODM2ZWQ3ZTAwNTM3NzVhMGE5NjZjZTg2MTM0YjIzNDdkODUxYTdiMDJmNDgxMmJlYjJjNTlkMWM2OGQ1MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5Zjc4NzE0ODkzYWE3Nzk0MmNlYTFjNGEyZTAyMzFkYmI3ZmEyYTQxYTcwYzgxNDYwYTNjNjc1NjJkYTNhYWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWJjNWJjNGEyMzdmNTc4ZTZhZjRhNDE1ZDA2NDdmOTkxMGIwM2IzNjRlMWUyN2MxZjFkYmFhNzQzZDAzYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://AGENTS.md#L335-L346",
+          "version": "repo-lines-v1:sha256:30f0b6eaa5953158ccb8f973171a6dbd2239bad3efe69667ba60ccf1931bc83c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ODM2ZWQ3ZTAwNTM3NzVhMGE5NjZjZTg2MTM0YjIzNDdkODUxYTdiMDJmNDgxMmJlYjJjNTlkMWM2OGQ1MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZmY4MDhlYmQ5YTBhZGYxN2Y3M2IxMzM1ODk4MzZiOTE1Y2FlM2I5ZWM4OTIwMTNhYzI3Mzc0NDlmMzA3MDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWJjNWJjNGEyMzdmNTc4ZTZhZjRhNDE1ZDA2NDdmOTkxMGIwM2IzNjRlMWUyN2MxZjFkYmFhNzQzZDAzYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwODlkZjkzZjhiYTU3YTRkZGJmZDhmMDEzOTYyYzM5NzhjZTRkYjY4MTk5YzRkYTY2NjY0OWIwOTk2Y2VkYTkifQ"
         }
       ]
     },
@@ -546,17 +546,21 @@
         },
         {
           "resource": "repo://crates/chd-rs/Cargo.toml#L32-L34",
-          "version": "repo-lines-v1:sha256:ce35bb8f4df1c48718a717a4a3165c0e5609fce9f33fdec65936690942b6ba51:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTZkZDA5YTdmMjAwOTUwZjBiYWFlYzRkNTUyZDZkNTZkNDYxYzJhNDM4NjhlNGE4M2I2MzM4NTA5OWQ5OTA2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjM2YjhmZjNmM2Q2MzZmZjc3MzlhMTRlMTJhYTcxNTg5ZTNjOWRmY2E4ZjBlNTI4ZDNjZDcxOGJmNDU1ZGFlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGI5Yjg0NmM0MTY0MTQ1ODUyZDY2OTdiZjNjNjNiNDk0ODJhMjViYWM4MjIwN2NkZDNiOTY2MzFmODcwMTA0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjg4NzA3YWFmNTcxYTYzNzZkN2E3OWY4YmM2MTlmYmFmNmJiYWVkZDVhMzVhODFhMmNiZDEzZWI4MWQxZGY2OCJ9"
+          "version": "repo-lines-v1:sha256:f3fa7ae5101ca8aaab92b0865890e839291b0c0895fc947853b72df0825b0cdf:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTZkZDA5YTdmMjAwOTUwZjBiYWFlYzRkNTUyZDZkNTZkNDYxYzJhNDM4NjhlNGE4M2I2MzM4NTA5OWQ5OTA2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2E0NzM5OTJkOGZjM2JkZGVlYjA3MDM5NGJkYTUxNjNjNmQzZGU1Zjc5NDAxOWYzNTg1MGM2ZDU4ZmUxODllYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGI5Yjg0NmM0MTY0MTQ1ODUyZDY2OTdiZjNjNjNiNDk0ODJhMjViYWM4MjIwN2NkZDNiOTY2MzFmODcwMTA0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjg4NzA3YWFmNTcxYTYzNzZkN2E3OWY4YmM2MTlmYmFmNmJiYWVkZDVhMzVhODFhMmNiZDEzZWI4MWQxZGY2OCJ9"
         }
       ]
     },
     {
       "id": "claim_07cc519390b14c689ce1858aa98b5658",
-      "statement": "The data directory also holds wiiu_keys.txt, written by import-keys and read by the Wii U WUA and NUS exports and by the Wii RVZ and WBFS writers for the Wii common key, all resolving it through config::get_data_directory.",
+      "statement": "The data directory also holds wiiu_keys.txt and switch_keys.txt, written by import-keys; wiiu_keys.txt is read by the Wii U WUA and NUS exports and by the Wii RVZ and WBFS writers for the Wii common key, switch_keys.txt by the Switch formats, all resolving through config::get_data_directory.",
       "evidence": [
         {
-          "resource": "repo://src/import_keys.rs#L19-L43",
-          "version": "repo-lines-v1:sha256:5aeb1e4d55a669584d0987fd283beaceb365a5c7503277ecb161891ddabedaea:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlODZhNzIzMDdmMjdiN2U4ZTczYzI0YzBhYzJhYjIxN2FkZjk1YzA3YThhN2FlZTM2ZTI5Nzk0YTE5ZGM1YTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyNGRhOWRjNzFmYmRiZGUzZTFkMDFmNmJmZTVkNjM3NmM4MGY5MDIyMzA0ODJlMzE1MDZkZDMwZjY0ODA5M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2MTI4NjI1M2Y5YTc1NWEwMDJlNGYxOWZhODI2Y2ZjZDQyYjg1M2MxNWE5OTg0NmJkZGI4YTY1YTVjMGUyMGQifQ"
+          "resource": "repo://src/import_keys.rs#L21-L25",
+          "version": "repo-lines-v1:sha256:518a494c42e255321a14ec125a60820ca73b3ecbde6f5a9ec608b64d120f33a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzY2OWUwNjY0ZGI4OWM4YzNhMjA5NDZiNDdjMTA3YjMwYzQ0ZjgwZTZjOGJlNTkyNjZkNWE0NThlZjBmZTIzOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmU3NWYyNmMyNjc0MmNmZWJiMzhjNDNjYTY1MDc0MGRjNWI5ZTVlNmVkODExNTFlZmNiYjE3NWRmMDRiMTY3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjVmN2UwOTYzZTMwOWZlM2UxMDlhZTc4MWQyYTU1YWY5YTc4YmQ1NGVhZGNiZTRjYmU4NmE1MTA0OTI0OTIxNSJ9"
+        },
+        {
+          "resource": "repo://src/nsz.rs#L42-L50",
+          "version": "repo-lines-v1:sha256:dd26c4ac05791302fad1fea6861f72efc3b14ad9e17b50430bc97b8177bdcce5:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQyMGNlYzg5NzgxZDFhODY5NWU1ZGQ3YzZlYzk0YzY2MTkyMmQ0ZWQzMjFhM2RjMWY5ZTZhNTQyYWFmODAwOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjcwNzljNTU4Y2ZlODFmMDdmOTNmMGJiNTYyZThkMzY0ODA0ZTMyNjI3MzljNGJjZmU1YWUwMGRkZGNlNDAxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDllNjljNTM5OWJkNTVlNmU5NjE3NDQ3ZGRlYzk5ZWI1Y2U5ODc3MTJlOWJmOGY1ZDc1MzRkMTEzYjc2OGQ1NSJ9"
         },
         {
           "resource": "repo://src/rvz.rs#L212-L222",
@@ -637,7 +641,7 @@
       "statement": "When stderr is not a terminal, every subcommand except mcp and server prints its output helpers' lines as plain, uncoloured text straight to stderr, since indicatif hides its bars there.",
       "evidence": [
         {
-          "resource": "repo://src/main.rs#L113-L118",
+          "resource": "repo://src/main.rs#L115-L120",
           "version": "repo-lines-v1:sha256:01234501c9d74d7cf9fec5c70d63f03a5bfe669ef674d9850e0bd52f6cabadcf:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDk2OGE5MTc5MWM3ZTU2MWI0MDkxMjc5ODUwODJiMDQ4MGUzYzkxZDBmY2RlNWE5MWNhY2RjZmFhNjE3YjRkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWU3NWM3MGQ5NDYzNjI1ZTEwNzlmZDhmYzhlZTYyYWQyZTkyYzQyYmVhYWJmZDg1Yjc4ZDhlMGE0OTc5Yjk0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWNkYzVlMGMxNmIxM2M3MDAzZjc1NzE1YTg5MThmMGY3ZjNkZDllYzYxMGE5ZjhhMGIyNjk1YjI3ZWZkMTk3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTlkNjFlMWViOGEwZTM4N2E2ZDNlNDlkNjg1MjNlMjhlYjRhN2JkZmEwZGIzOGZlZTRiMmY2YWUwMDk4N2Q5MSJ9"
         },
         {
@@ -648,7 +652,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.2",
-    "at": "2026-11-09T21:55:13.223Z"
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-13T20:59:45.363Z"
   }
 }

@@ -102,10 +102,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # Settings and Configuration Model
@@ -165,7 +165,7 @@ flowchart TD
   E -.->|"value NULL"| G["shadowed: no value at all, no second fallback"]
 ```
 
-*Caption: `get_setting` resolves the override first and falls back to the global row; a per-system row that exists with a NULL value shadows the global instead of inheriting it.*
+_Caption: `get_setting` resolves the override first and falls back to the global row; a per-system row that exists with a NULL value shadows the global instead of inheriting it._
 
 Writes funnel through one helper, `upsert_setting`: `find_setting_by_key` on the
 exact scope, `update_setting(connection, id, value)` when the scoped row exists,
@@ -174,7 +174,7 @@ exact scope, `update_setting(connection, id, value)` when the scoped row exists,
 a duplicate.
 
 Note the asymmetry the fallback creates. `unset_setting` writes `NULL` into the
-row *for the requested scope* (`find_setting_by_key(connection, key, system_id)`),
+row _for the requested scope_ (`find_setting_by_key(connection, key, system_id)`),
 so a per-system unset of a nullable key leaves a NULL row that `get_setting`
 returns for that system — the global value is not consulted again, and a
 `get_string` caller sees `None` while a `get_bool` caller would panic on the
@@ -189,13 +189,13 @@ that system sees it, not just its overrides.
 
 ## Typed accessors and their failure semantics
 
-| Accessor | Missing row | NULL value | Written by |
-| --- | --- | --- | --- |
-| `get_bool` | panics (`.unwrap()`) | panics | `set_bool` |
-| `get_integer` | panics | `None` | `set_integer` |
-| `get_string` | panics | `None` | `set_string` |
-| `get_list` | `vec![]` | `vec![]` | `add_to_list` / `remove_from_list` / `set_list` |
-| `get_directory` | `None` | panics | `set_directory` |
+| Accessor        | Missing row          | NULL value | Written by                                      |
+| --------------- | -------------------- | ---------- | ----------------------------------------------- |
+| `get_bool`      | panics (`.unwrap()`) | panics     | `set_bool`                                      |
+| `get_integer`   | panics               | `None`     | `set_integer`                                   |
+| `get_string`    | panics               | `None`     | `set_string`                                    |
+| `get_list`      | `vec![]`             | `vec![]`   | `add_to_list` / `remove_from_list` / `set_list` |
+| `get_directory` | `None`               | panics     | `set_directory`                                 |
 
 `get_directory` also returns `None` when the stored path no longer resolves,
 because it canonicalizes on read (`get_canonicalized_path`); `set_directory`
@@ -227,16 +227,16 @@ discard lists) with `system_id = Some(system.id)`, and `convert_roms` /
 
 `config.rs` classifies keys by membership tests, not by per-key metadata:
 
-| Category | Form | Effect |
-| --- | --- | --- |
-| `BOOLEANS` | const slice | `--set` parses a bool; stored `"true"`/`"false"` |
-| `choice_options(key)` | fn returning `Option<&[&str]>` | `--set` accepts only a listed variant |
-| `choice_list_options(key)` | private fn returning `Option<&[&str]>` | `--add` validates each entry |
-| `integer_range(key)` | fn returning `Option<&[usize; 2]>` | `--set` parses and range-checks |
-| `LISTS` | const slice | `--add`/`--remove` only; `--set` refused |
-| `PATHS` | const slice | canonicalize, create, store |
-| `NULLABLES` | const slice | only these keys accept `--unset` |
-| `SORTED_LISTS` | const slice | list order is *preserved*; others are re-sorted on add |
+| Category                   | Form                                   | Effect                                                 |
+| -------------------------- | -------------------------------------- | ------------------------------------------------------ |
+| `BOOLEANS`                 | const slice                            | `--set` parses a bool; stored `"true"`/`"false"`       |
+| `choice_options(key)`      | fn returning `Option<&[&str]>`         | `--set` accepts only a listed variant                  |
+| `choice_list_options(key)` | private fn returning `Option<&[&str]>` | `--add` validates each entry                           |
+| `integer_range(key)`       | fn returning `Option<&[usize; 2]>`     | `--set` parses and range-checks                        |
+| `LISTS`                    | const slice                            | `--add`/`--remove` only; `--set` refused               |
+| `PATHS`                    | const slice                            | canonicalize, create, store                            |
+| `NULLABLES`                | const slice                            | only these keys accept `--unset`                       |
+| `SORTED_LISTS`             | const slice                            | list order is _preserved_; others are re-sorted on add |
 
 `choice_options` and `choice_list_options` are functions precisely because their
 option sets are not local to config: `PREFER_FORMAT` borrows
@@ -259,12 +259,13 @@ enum threaded through `get_hash_and_size` by import and DAT creation.
 
 `SORTED_LISTS` is easy to misread. `add_to_list` sorts the list after inserting
 unless the key is in `SORTED_LISTS`, so membership means "this list's order is
-semantic". It names `REGIONS_ONE`, a region *priority* order, and the four
+semantic". It names `REGIONS_ONE`, a region _priority_ order, and the four
 `CHD_*_COMPRESSION_ALGORITHMS` keys, whose entries are laid out in order into
 the four compression slots of a CHD header, where earlier slots win a tie.
 `NULLABLES` likewise covers every CHD tuning key, hunk sizes and algorithm lists
 for CDs, DVDs, hard disks and LaserDiscs alike, so each can be unset back to the
-writer's automatic choice. Both slices once listed only the CD and DVD keys,
+writer's automatic choice, along with the discard and preference lists —
+`DISCARD_CATEGORIES` included — and `PREFER_FORMAT`. Both slices once listed only the CD and DVD keys,
 which left the hard disk and LaserDisc keys impossible to unset and the hard
 disk codecs alphabetized on `--add`; `src/config/test_chd_settings.rs` now pins
 both behaviours for all four media types.
@@ -281,33 +282,35 @@ Conversely `--set` refuses every `LISTS` key with "Lists can't be set directly".
 A freshly migrated database holds exactly these global rows. "Auto" means the
 row is seeded `NULL` and the consumer picks a value itself.
 
-| Key | Category | Default | Unsettable |
-| --- | --- | --- | --- |
-| `ROM_DIRECTORY` | `PATHS` | `OXYROMON_ROM_DIRECTORY`, else `~/Emulation` | no |
-| `TMP_DIRECTORY` | `PATHS` | `OXYROMON_TMP_DIRECTORY`, else the system temp dir | no |
-| `REGIONS_ALL` | `LISTS` | empty | yes |
-| `REGIONS_ONE` | `LISTS`, `SORTED_LISTS` | empty | yes |
-| `REGIONS_ALL_SUBFOLDERS`, `REGIONS_ONE_SUBFOLDERS` | `choice_options` (`none`, `alpha`) | `none` | no |
-| `REGIONS_ONE_STRICT` | `BOOLEANS` | `false` | no |
-| `GAME_SUBFOLDERS` | `choice_options` (`never`, `multiple`, `always`) | `never` | no |
-| `REGIONS_ALL_ARCADE`, `REGIONS_ONE_ARCADE` | `choice_list_options` (`bios`, `clone`, `parent`) | empty | yes |
-| `PREFER_PARENTS` | `BOOLEANS` | `true` | no |
-| `PREFER_REGIONS` | `choice_options` (`none`, `broad`, `narrow`) | `none` | no |
-| `PREFER_VERSIONS` | `choice_options` (`none`, `new`, `old`) | `new` | no |
-| `PREFER_FLAGS`, `DISCARD_FLAGS`, `DISCARD_RELEASES`, `LANGUAGES` | `LISTS` | empty | yes |
-| `PREFER_FORMAT` | `choice_options` (`convert_roms::ALL_FORMATS`) | unset | yes |
-| `GROUP_SUBSYSTEMS` | `BOOLEANS` | `true` | no |
-| `CHD_PARENTS` | `BOOLEANS` | `false` | no |
-| `CHD_CD/DVD/HD/LD_HUNK_SIZE` | `integer_range` | auto | yes |
-| `CHD_CD/DVD/HD/LD_COMPRESSION_ALGORITHMS` | `choice_list_options`, `SORTED_LISTS` | auto | yes |
-| `RVZ_BLOCK_SIZE` | `integer_range` | `128` | no |
-| `RVZ_COMPRESSION_ALGORITHM` | `choice_options` | `zstd` | no |
-| `RVZ_COMPRESSION_LEVEL` | `integer_range` | `5` | no |
-| `SEVENZIP_COMPRESSION_ALGORITHM` | `choice_options` (`lzma2`, `zstd`) | `lzma2` | no |
-| `SEVENZIP_COMPRESSION_LEVEL`, `SEVENZIP_ZSTD_COMPRESSION_LEVEL` | `integer_range` | `9`, `19` | yes |
-| `SEVENZIP_SOLID_COMPRESSION` | `BOOLEANS` | `false` | no |
-| `ZIP_COMPRESSION_ALGORITHM` | `choice_options` (`deflate`, `zstd`) | `deflate` | no |
-| `ZIP_COMPRESSION_LEVEL`, `ZIP_ZSTD_COMPRESSION_LEVEL` | `integer_range` | `9`, `19` | yes |
+| Key                                                              | Category                                          | Default                                            | Unsettable |
+| ---------------------------------------------------------------- | ------------------------------------------------- | -------------------------------------------------- | ---------- |
+| `ROM_DIRECTORY`                                                  | `PATHS`                                           | `OXYROMON_ROM_DIRECTORY`, else `~/Emulation`       | no         |
+| `TMP_DIRECTORY`                                                  | `PATHS`                                           | `OXYROMON_TMP_DIRECTORY`, else the system temp dir | no         |
+| `REGIONS_ALL`                                                    | `LISTS`                                           | empty                                              | yes        |
+| `REGIONS_ONE`                                                    | `LISTS`, `SORTED_LISTS`                           | empty                                              | yes        |
+| `REGIONS_ALL_SUBFOLDERS`, `REGIONS_ONE_SUBFOLDERS`               | `choice_options` (`none`, `alpha`)                | `none`                                             | no         |
+| `REGIONS_ONE_STRICT`                                             | `BOOLEANS`                                        | `false`                                            | no         |
+| `GAME_SUBFOLDERS`                                                | `choice_options` (`never`, `multiple`, `always`)  | `never`                                            | no         |
+| `INFER_CLONES`                                                   | `BOOLEANS`                                        | `false`                                            | no         |
+| `REGIONS_ALL_ARCADE`, `REGIONS_ONE_ARCADE`                       | `choice_list_options` (`bios`, `clone`, `parent`) | empty                                              | yes        |
+| `PREFER_PARENTS`                                                 | `BOOLEANS`                                        | `true`                                             | no         |
+| `PREFER_REGIONS`                                                 | `choice_options` (`none`, `broad`, `narrow`)      | `none`                                             | no         |
+| `PREFER_VERSIONS`                                                | `choice_options` (`none`, `new`, `old`)           | `new`                                              | no         |
+| `PREFER_FLAGS`, `DISCARD_FLAGS`, `DISCARD_RELEASES`, `LANGUAGES` | `LISTS`                                           | empty                                              | yes        |
+| `DISCARD_CATEGORIES`                                             | `LISTS`                                           | unset                                              | yes        |
+| `PREFER_FORMAT`                                                  | `choice_options` (`convert_roms::ALL_FORMATS`)    | unset                                              | yes        |
+| `GROUP_SUBSYSTEMS`                                               | `BOOLEANS`                                        | `true`                                             | no         |
+| `CHD_PARENTS`                                                    | `BOOLEANS`                                        | `false`                                            | no         |
+| `CHD_CD/DVD/HD/LD_HUNK_SIZE`                                     | `integer_range`                                   | auto                                               | yes        |
+| `CHD_CD/DVD/HD/LD_COMPRESSION_ALGORITHMS`                        | `choice_list_options`, `SORTED_LISTS`             | auto                                               | yes        |
+| `RVZ_BLOCK_SIZE`                                                 | `integer_range`                                   | `128`                                              | no         |
+| `RVZ_COMPRESSION_ALGORITHM`                                      | `choice_options`                                  | `zstd`                                             | no         |
+| `RVZ_COMPRESSION_LEVEL`                                          | `integer_range`                                   | `5`                                                | no         |
+| `SEVENZIP_COMPRESSION_ALGORITHM`                                 | `choice_options` (`lzma2`, `zstd`)                | `lzma2`                                            | no         |
+| `SEVENZIP_COMPRESSION_LEVEL`, `SEVENZIP_ZSTD_COMPRESSION_LEVEL`  | `integer_range`                                   | `9`, `19`                                          | yes        |
+| `SEVENZIP_SOLID_COMPRESSION`                                     | `BOOLEANS`                                        | `false`                                            | no         |
+| `ZIP_COMPRESSION_ALGORITHM`                                      | `choice_options` (`deflate`, `zstd`)              | `deflate`                                          | no         |
+| `ZIP_COMPRESSION_LEVEL`, `ZIP_ZSTD_COMPRESSION_LEVEL`            | `integer_range`                                   | `9`, `19`                                          | yes        |
 
 The region, language, discard and preference keys are consumed by `sort-roms`;
 see [Sorting and the 1G1R Election](../workflows/sorting-and-1g1r-election.md).
@@ -336,7 +339,7 @@ flowchart TD
   F --> H["operation applied with that scope, NULL when no -n"]
 ```
 
-*Caption: one glob can fan out to many systems for edits, while reads always collapse to a single system.*
+_Caption: one glob can fan out to many systems for edits, while reads always collapse to a single system._
 
 Validation results inside `set_setting` are reported, not returned as errors: an
 illegal choice prints `Valid choices: [...]`, an out-of-range integer prints
@@ -383,7 +386,7 @@ of persisting the first-run value (`OXYROMON_ROM_DIRECTORY`, else
 system's scope and fall back to the global helper, so a single system can be
 relocated to another volume — `src/import_roms/test_per_system_rom_directory.rs`
 sets two per-system `ROM_DIRECTORY` values and asserts each system's files land
-under its own root. `server.rs`'s download handler reads the *global*
+under its own root. `server.rs`'s download handler reads the _global_
 `ROM_DIRECTORY` directly and returns 500 when the row is absent.
 
 ## Format tuning keys: declared here, ranges owned elsewhere
@@ -393,12 +396,12 @@ in `choice_options` / `choice_list_options` and, for the integers, in
 `integer_range` — but no range or algorithm vocabulary is defined there. The
 `integer_range` arms point at constants owned by the modules that do the work:
 
-| Key | Range owner |
-| --- | --- |
-| `CHD_CD/DVD/HD/LD_HUNK_SIZE` | `chd::CHD_HUNK_SIZE_RANGE` = 16..1048576 |
-| `RVZ_BLOCK_SIZE` | `rvz::RVZ_BLOCK_SIZE_RANGE` = 32..2048 (KiB) |
-| `RVZ_COMPRESSION_LEVEL` | `rvz::RVZ_COMPRESSION_LEVEL_RANGE` = 1..22 |
-| `SEVENZIP_COMPRESSION_LEVEL`, `ZIP_COMPRESSION_LEVEL` | `archive.rs` `_RANGE` = 1..9 |
+| Key                                                             | Range owner                                     |
+| --------------------------------------------------------------- | ----------------------------------------------- |
+| `CHD_CD/DVD/HD/LD_HUNK_SIZE`                                    | `chd::CHD_HUNK_SIZE_RANGE` = 16..1048576        |
+| `RVZ_BLOCK_SIZE`                                                | `rvz::RVZ_BLOCK_SIZE_RANGE` = 32..2048 (KiB)    |
+| `RVZ_COMPRESSION_LEVEL`                                         | `rvz::RVZ_COMPRESSION_LEVEL_RANGE` = 1..22      |
+| `SEVENZIP_COMPRESSION_LEVEL`, `ZIP_COMPRESSION_LEVEL`           | `archive.rs` `_RANGE` = 1..9                    |
 | `SEVENZIP_ZSTD_COMPRESSION_LEVEL`, `ZIP_ZSTD_COMPRESSION_LEVEL` | `archive::ZSTD_COMPRESSION_LEVEL_RANGE` = 1..22 |
 
 Likewise the algorithm choices are the `VARIANTS` of `ChdCd/Dvd/Hd/LdCompressionAlgorithm`
@@ -407,12 +410,12 @@ Likewise the algorithm choices are the `VARIANTS` of `ChdCd/Dvd/Hd/LdCompression
 key is pinned to the codec list its media type supports, so the four keys are not
 interchangeable vocabularies:
 
-| Key | Enum (`chd.rs`) | Accepted values |
-| --- | --- | --- |
-| `CHD_CD_COMPRESSION_ALGORITHMS` | `ChdCdCompressionAlgorithm` | `none`, `cdfl`, `cdlz`, `cdzl`, `cdzs` |
+| Key                              | Enum (`chd.rs`)              | Accepted values                                |
+| -------------------------------- | ---------------------------- | ---------------------------------------------- |
+| `CHD_CD_COMPRESSION_ALGORITHMS`  | `ChdCdCompressionAlgorithm`  | `none`, `cdfl`, `cdlz`, `cdzl`, `cdzs`         |
 | `CHD_DVD_COMPRESSION_ALGORITHMS` | `ChdDvdCompressionAlgorithm` | `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd` |
-| `CHD_HD_COMPRESSION_ALGORITHMS` | `ChdHdCompressionAlgorithm` | `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd` |
-| `CHD_LD_COMPRESSION_ALGORITHMS` | `ChdLdCompressionAlgorithm` | `none`, `avhu` |
+| `CHD_HD_COMPRESSION_ALGORITHMS`  | `ChdHdCompressionAlgorithm`  | `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd` |
+| `CHD_LD_COMPRESSION_ALGORITHMS`  | `ChdLdCompressionAlgorithm`  | `none`, `avhu`                                 |
 
 These are the codecs the in-tree `chd-rs` writer can actually encode
 (`crates/chd-rs/src/codec.rs`), so an entry `--add` accepts is a codec the writer
@@ -420,7 +423,7 @@ supports for that media type — a CD key never offers the plain `zlib`/`lzma`
 codes and LaserDisc only ever `avhu`.
 Validation therefore cannot drift from what the writers accept, and a format
 module changing its range or its enum changes what `config --set` / `--add` will
-accept. Note that these keys tune an *in-process library call*, not a subprocess:
+accept. Note that these keys tune an _in-process library call_, not a subprocess:
 CHD comes from the in-workspace `chd-rs` crate (`crates/chd-rs`), 7z and ZIP from
 `sevenz-rust2` and `zip`, RVZ from `rvz-rs` and WBFS from `wbfs-rs`, so CHD has **no external
 dependency** and there is no tool-path or tool-version setting anywhere — `PATHS`
@@ -439,8 +442,9 @@ records, so the HD and LD tuning keys and `CHD_PARENTS` itself affect
 (algorithm, level, zstd-level) key triple and produces an `ArchiveCompression`
 that carries the level on the chosen algorithm's own scale. The consumers apply
 the units and per-algorithm limits the setting layer deliberately does not:
-`rvz.rs::options` multiplies `RVZ_BLOCK_SIZE` by 1024 because rvz-rs wants a
-chunk size in bytes, and clamps the level to the chosen codec's own
+`rvz.rs::options` rounds `RVZ_BLOCK_SIZE` up to the next power of two and
+multiplies by 1024 — RVZ only allows power-of-two chunk sizes up to 2 MiB, and
+rvz-rs wants bytes — and clamps the level to the chosen codec's own
 `Compression::levels()` — 1..9 for bzip2/lzma/lzma2, 1..22 for zstd, 0 for none
 (the `integer_range` entry is the union 1..22) — so an existing configuration
 keeps working instead of failing the conversion. There is no scrub setting:
@@ -480,12 +484,12 @@ flowchart TD
   K --> L["chd-rs validate: hunk a multiple of the unit size, each slot a known codec"]
 ```
 
-*Caption: how a CHD tuning row becomes header slots and a hunk size; the defaults and the geometric checks live in the format layer, not in `config.rs`.*
+_Caption: how a CHD tuning row becomes header slots and a hunk size; the defaults and the geometric checks live in the format layer, not in `config.rs`._
 
 Because config's checks are only "is this a member of the enum" and "is this
 inside the byte range", the format layer still owns the rejections that a valid
-configuration can hit. `codecs()` errors with *"At most four CHD compression
-algorithms can be used"* when a key holds more than four entries, chd-rs rejects
+configuration can hit. `codecs()` errors with _"At most four CHD compression
+algorithms can be used"_ when a key holds more than four entries, chd-rs rejects
 a hunk size that is not a multiple of the media's unit size (2448 for a CD frame,
 2048 for a DVD, 512 for a hard disk) even though `CHD_HUNK_SIZE_RANGE` admits it,
 and an explicit `none` in `CHD_LD_COMPRESSION_ALGORITHMS` reaches
@@ -532,7 +536,7 @@ question for any change is whether they reuse config's classification:
   each output entry with the `system_id` it came from. `set_setting` imports
   `BOOLEANS`, `LISTS`, `NULLABLES`, `PATHS`, `choice_options` and `integer_range`
   and re-runs the config validation as actionable tool errors, with one deliberate
-  divergence: a list value is the *complete desired set*, comma-separated, and the
+  divergence: a list value is the _complete desired set_, comma-separated, and the
   tool diffs it against `get_list` and issues `remove_from_list` / `add_to_list`
   per entry instead of a wholesale write.
 - **Web UI** (`frontend/`). `get_raw_settings(system_id)` chooses
@@ -568,7 +572,7 @@ flowchart TD
   K --> L["cargo sqlx prepare then cargo build with the server feature"]
 ```
 
-*Caption: the path from a new key's category to a consumed, exposed setting.*
+_Caption: the path from a new key's category to a consumed, exposed setting._
 
 Concretely:
 
@@ -580,7 +584,7 @@ Concretely:
 2. **Default.** Add a `migrations/<timestamp>_add_<name>_setting.sql` with
    `INSERT OR REPLACE INTO settings ("key", value) VALUES (…)`. Omitting this
    step is how a `get_bool` unwrap later panics. `cargo sqlx prepare --
-   --all-targets --features server` afterwards, per the migration workflow.
+--all-targets --features server` afterwards, per the migration workflow.
 3. **Consume.** Read it with the typed accessor, threading the `system_id` you
    already have so the override/fallback path is exercised; consumers pass
    `Some(system.id)` even for keys that are conceptually global.

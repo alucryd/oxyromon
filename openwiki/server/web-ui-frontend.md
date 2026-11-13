@@ -76,10 +76,10 @@ sources:
     resource: repo://src/query.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
-generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # Web UI (Leptos SPA + Web Awesome)
@@ -103,18 +103,18 @@ Related: [HTTP Server, GraphQL API and Uploads](http-server-and-graphql-api.md),
 
 ## Entrypoints and ownership
 
-| File | Responsibility |
-| --- | --- |
-| `src/main.rs` | installs the panic hook, applies language + theme, `mount_to_body(<App/>)` |
-| `src/app.rs` | provides `AppState`, opens SSE, lays out navbar + page + global modals |
-| `src/state.rs` | the whole reactive model: sources, resources, memos |
-| `src/api.rs` | GraphQL document strings and the typed fetch helpers |
-| `src/model.rs` | serde types mirroring the *requested subset* of the GraphQL schema |
-| `src/sse.rs` | `EventSource("/events")` and every event listener |
-| `src/notify.rs` | notification history + `<wa-toast>` delivery |
-| `src/page.rs` | the three panes, statistics, system and game delete dialogs, toast host |
-| `src/ui.rs` | `Modal`, `DeleteDialog`, `Dropzone`, `ScrollWindow`, `Spacer`, `StatTile`, event-property readers |
-| `src/components/` | navbar, notifications bell, the modal dialogs |
+| File              | Responsibility                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------------- |
+| `src/main.rs`     | installs the panic hook, applies language + theme, `mount_to_body(<App/>)`                        |
+| `src/app.rs`      | provides `AppState`, opens SSE, lays out navbar + page + global modals                            |
+| `src/state.rs`    | the whole reactive model: sources, resources, memos                                               |
+| `src/api.rs`      | GraphQL document strings and the typed fetch helpers                                              |
+| `src/model.rs`    | serde types mirroring the _requested subset_ of the GraphQL schema                                |
+| `src/sse.rs`      | `EventSource("/events")` and every event listener                                                 |
+| `src/notify.rs`   | notification history + `<wa-toast>` delivery                                                      |
+| `src/page.rs`     | the three panes, statistics, system and game delete dialogs, toast host                           |
+| `src/ui.rs`       | `Modal`, `DeleteDialog`, `Dropzone`, `ScrollWindow`, `Spacer`, `StatTile`, event-property readers |
+| `src/components/` | navbar, notifications bell, the modal dialogs                                                     |
 
 ## Build and serve path
 
@@ -128,7 +128,7 @@ flowchart LR
   EMBED --> SERVE["GET / via serve_index plus /path via serve_asset"]
 ```
 
-*Caption: the wasm bundle is a build artifact of the native binary, not a separate deployable.*
+_Caption: the wasm bundle is a build artifact of the native binary, not a separate deployable._
 
 `Trunk.toml` sets `target = "index.html"`, `dist = "../target/assets"` and
 `public_url = "/"`. That output directory is exactly the `#[folder = "target/assets"]`
@@ -190,7 +190,7 @@ flowchart TD
   C["component event handler"] -->|"spawn_local mutation"| Q
 ```
 
-*Caption: the one write path (fetch and mutation results into signals) and the one re-read trigger (SSE completion).*
+_Caption: the one write path (fetch and mutation results into signals) and the one re-read trigger (SSE completion)._
 
 `graphql<T>()` in `api.rs` is the single network primitive: it POSTs
 `{"query", "variables"}` to `/graphql`, deserializes into
@@ -232,7 +232,7 @@ means adding a memo, not another effect that has to remember to fire.
 
 `AppState::new()` must run inside a reactive owner (i.e. from a component) because
 it creates the resources and memos. `Notifier` — just
-`notifications: RwSignal<Vec<Notification>>` — is deliberately a *separate* `Copy`
+`notifications: RwSignal<Vec<Notification>>` — is deliberately a _separate_ `Copy`
 struct that `AppState` holds, because the resource fetchers have to report failures
 while `AppState` is still being constructed around them. `main.rs` runs
 `console_error_panic_hook::set_once()`, `init_language()` and `init_theme()` before
@@ -273,10 +273,10 @@ Two correctness details in the games effect are easy to break:
 
 Leptos 0.8 exposes no public `loading()` on a resource and keeps the previous value
 in flight, so **each fetch drives its own `loading_*` flag**. The `roms` and
-`romfiles` memos read `loading_roms` to return an empty list while a *different*
+`romfiles` memos read `loading_roms` to return an empty list while a _different_
 game is in flight, so the previous selection's rows never linger; `filtered_games`
 deliberately does not blank, since the whole point of streaming is that rows already
-in hand stay on screen. `filtered_games` holds *indices* into `games`, not clones —
+in hand stay on screen. `filtered_games` holds _indices_ into `games`, not clones —
 a system can hold tens of thousands of games and that memo recomputes on every
 keystroke.
 
@@ -288,7 +288,7 @@ empty result (`stream_games`/`fetch_roms` an empty `Vec`, `fetch_sizes`
 
 ## Mutations, busy flags, and SSE
 
-Long-running work is *handed over*, not awaited. `request_action()` fires a
+Long-running work is _handed over_, not awaited. `request_action()` fires a
 mutation, reports a refusal, and returns; the work itself reports over SSE. The
 caller sets a busy flag first, and **the server's terminal event clears it** — not
 the client's `await`. That is what keeps a menu out of reach for as long as the
@@ -317,7 +317,7 @@ sequenceDiagram
   SSE-->>UI: lists refetch, selection kept
 ```
 
-*Caption: the busy flag's lifetime spans the mutation request and the SSE terminal event, which is why a missing terminal event strands a spinner.*
+_Caption: the busy flag's lifetime spans the mutation request and the SSE terminal event, which is why a missing terminal event strands a spinner._
 
 `connect_sse` opens one `EventSource("/events")` for the SPA's lifetime and
 registers three listener kinds per action prefix (`_started` → info notification,
@@ -350,8 +350,8 @@ dialog stays open with the file still selected so the attempt can be retried, an
 only a success clears the input and closes. `ImportRomModal` additionally accepts a
 URL instead of a file — fetched by the server, so the bytes never pass through the
 browser — and treats file and URL as mutually exclusive.
-`ImportDatModal` sends two switches with the file, *Update only* and *Arcade*,
-as the `update` and `arcade` form fields; *Arcade* imports a DAT that lists
+`ImportDatModal` sends two switches with the file, _Update only_ and _Arcade_,
+as the `update` and `arcade` form fields; _Arcade_ imports a DAT that lists
 games instead of machines, such as FBNeo's, as an arcade system.
 
 ## Virtualization and the `ROW_HEIGHT` coupling
@@ -423,20 +423,20 @@ contents onto the page.
 
 Notifications illustrate one more upgrade hazard: Web Awesome's autoloader fetches
 each component the first time its tag appears, and the earliest notifications are
-often load failures raised *during* that fetch — when `<wa-toast>` is in the DOM but
+often load failures raised _during_ that fetch — when `<wa-toast>` is in the DOM but
 has no `create` method yet. `show_toast` awaits
 `customElements.whenDefined("wa-toast")` before calling it, sets `allowHtml: false`
 because these messages carry tool output and error text, and gives info 3 s against
 5 s for everything else. `<wa-toast placement="bottom-end">` is a single app-wide
 element that owns placement, stacking, timing and dismissal; the notification
 history lives separately in `Notifier.notifications` and the transient stack is
-deliberately *not* mirrored in a signal.
+deliberately _not_ mirrored in a signal.
 
 ## Modals: one wrapper, careful placement
 
 Every dialog goes through `ui::Modal`, a thin wrapper over `<wa-dialog>` that gets
 the focus trap, Escape handling and labelling for free. `open` is driven as a
-*property* and the dialog reports its own closing back through `wa-after-hide` —
+_property_ and the dialog reports its own closing back through `wa-after-hide` —
 which is also why that handler needs the `target == currentTarget` guard described
 above. Each dialog keeps its own local `RwSignal`s rather than putting form state in
 `AppState`, and most register an "on open" effect that resets or reloads them, so a
@@ -454,7 +454,12 @@ for what was stored. Note `set_directory` ignores an empty value and
 writing an empty string. The Game Subfolders select offers `never`, `multiple` and
 `always` from `GAME_SUBFOLDERS_CHOICES`, falls back to `never` when no row is
 found, and writes through `set_game_subfolders`, which sends the
-`setGameSubfolders` mutation.
+`setGameSubfolders` mutation. The 1G1R additions follow the generic key-based
+patterns instead of bespoke mutations: `INFER_CLONES` is one more `ToggleField`
+next to Strict 1G1R and Prefer Parents, and `DISCARD_CATEGORIES` one more
+`ListField` beside the discard flags and releases, so both inherit the
+per-system scope, the unset behavior and the settings reload without any new
+GraphQL surface.
 
 The UI keeps its own copies of the server's format lists. `PREFER_FORMAT_CHOICES` in
 `frontend/src/state.rs` feeds the settings `SelectField`, and `FORMATS` in
@@ -583,14 +588,14 @@ returns early without one leaves a menu spinner turning forever.
 ## Verification
 
 Nothing under `frontend/src` is tested. `continuous_integration.yml` builds the
-UI once, in its *Web UI* job: it installs trunk (pinned `TRUNK_VERSION`), runs
+UI once, in its _Web UI_ job: it installs trunk (pinned `TRUNK_VERSION`), runs
 `cd frontend && trunk build --release`, lints the crate with
 `cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets`, and
 uploads `target/assets` as an artifact. Only the release job downloads it, to
 embed it in the release build; `SKIP_TRUNK=true` keeps every cargo invocation
 from running trunk again. The tests run `cargo llvm-cov` over `--workspace`,
 which, for the reason in the first paragraph, excludes this crate, and they
-compile against an empty UI. The *Format* job checks the crate with
+compile against an empty UI. The _Format_ job checks the crate with
 `cargo fmt --check` from `frontend/`.
 So a frontend change is checked by compiling, by those two passes, and by
 whatever the server tests happen to cover on the other side of the boundary. Treat the GraphQL

@@ -2,7 +2,27 @@
 type: workflow
 title: Format Conversion and Export
 description: convert-roms and export-roms over the ORIGINAL/7Z/ZIP/CHD/CSO/ZSO/RVZ/NSZ/WUX/ISO/GDI/WBFS/WUA/NUS matrix — the ConvertOpts entry shared with import-roms auto-conversion, arcade gating and PREFER_FORMAT/--save, the transcode decode ladder, chd-rs driven CHD creation with chdman-compatible codec and hunk defaults, Wii U WUX and lossless WUA conversion, WUA/NUS export with update and DLC bundling, and why GDI, ISO, WBFS and NUS only exist as export targets.
-tags: [convert-roms, export-roms, conversion, chd, chd-rs, rvz, wbfs, gdi, iso, 7z, zip, cso, zso, nsz, recompress, check, chd-parents, prefer-format]
+tags:
+  [
+    convert-roms,
+    export-roms,
+    conversion,
+    chd,
+    chd-rs,
+    rvz,
+    wbfs,
+    gdi,
+    iso,
+    7z,
+    zip,
+    cso,
+    zso,
+    nsz,
+    recompress,
+    check,
+    chd-parents,
+    prefer-format,
+  ]
 sources:
   - id: openwiki-source-ca6cb4b1a14fd7969dfae3ec
     resource: repo://CHANGELOG.md
@@ -14,6 +34,8 @@ sources:
     resource: repo://crates/chd-rs/src/ld.rs
   - id: openwiki-source-84d75d6d1e1e60c51643c99f
     resource: repo://crates/chd-rs/src/writer.rs
+  - id: openwiki-source-73755f08dafedda2cc38ba2c
+    resource: repo://crates/rvz-rs/src/writer.rs
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
   - id: openwiki-source-02628a361dd4faa0f62f87a2
@@ -92,10 +114,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-09T21:55:13.223Z
+  - by: openwiki/0.9.0
+    at: 2026-11-13T20:59:45.363Z
 ---
 
 # Format Conversion and Export
@@ -118,20 +140,20 @@ connection ([src/main.rs](../../src/main.rs#L153-L156)).
 
 ## The conversion matrix
 
-| Format | `convert-roms` | `export-roms` | Source formats accepted |
-| --- | --- | --- | --- |
-| `ORIGINAL` | ✔ | ✔ | 7z/ZIP archives, CHD, CSO, ZSO, NSZ, RVZ, WUX, lossless WUA |
-| `7Z` / `ZIP` | ✔ | ✔ | loose files, CHD, CSO, ZSO, NSZ, RVZ, the other archive type |
-| `CHD` | ✔ | ✔ | ISO, CUE/BIN, CSO, ZSO, RDSK, RIFF, CHD (`--recompress`) |
-| `CSO` / `ZSO` | ✔ | ✔ | ISO, DVD CHD, the opposite XSO type |
-| `RVZ` | ✔ | ✔ | ISO, RVZ (`--recompress`) |
-| `NSZ` | ✔ | ✔ | NSP |
-| `WUX` | ✔ | ✔ | WUD as `.wud` or `.iso` (loose or in a single-file archive), lossless WUA (rebuilt), WUX (export copies it) |
-| `WUA` | ✔ | ✔ | WUD (loose or in a single-file archive), WUX; export also rebuilds a WUA and adds the library's updates and DLC |
-| `ISO` | ✖ | ✔ | ISO (copy), CUE/BIN, CD/DVD CHD |
-| `GDI` | ✖ | ✔ | CUE/BIN (loose or archived), GDI (copy), CD CHD |
-| `WBFS` | ✖ | ✔ | ISO, RVZ |
-| `NUS` | ✖ | ✔ | WUD, WUX, single-WUD archive, lossless WUA |
+| Format        | `convert-roms` | `export-roms` | Source formats accepted                                                                                         |
+| ------------- | -------------- | ------------- | --------------------------------------------------------------------------------------------------------------- |
+| `ORIGINAL`    | ✔              | ✔             | 7z/ZIP archives, CHD, CSO, ZSO, NSZ, RVZ, WUX, lossless WUA                                                     |
+| `7Z` / `ZIP`  | ✔              | ✔             | loose files, CHD, CSO, ZSO, NSZ, RVZ, the other archive type                                                    |
+| `CHD`         | ✔              | ✔             | ISO, CUE/BIN, CSO, ZSO, RDSK, RIFF, CHD (`--recompress`)                                                        |
+| `CSO` / `ZSO` | ✔              | ✔             | ISO, DVD CHD, the opposite XSO type                                                                             |
+| `RVZ`         | ✔              | ✔             | ISO, RVZ (`--recompress`)                                                                                       |
+| `NSZ`         | ✔              | ✔             | NSP                                                                                                             |
+| `WUX`         | ✔              | ✔             | WUD as `.wud` or `.iso` (loose or in a single-file archive), lossless WUA (rebuilt), WUX (export copies it)     |
+| `WUA`         | ✔              | ✔             | WUD (loose or in a single-file archive), WUX; export also rebuilds a WUA and adds the library's updates and DLC |
+| `ISO`         | ✖              | ✔             | ISO (copy), CUE/BIN, CD/DVD CHD                                                                                 |
+| `GDI`         | ✖              | ✔             | CUE/BIN (loose or archived), GDI (copy), CD CHD                                                                 |
+| `WBFS`        | ✖              | ✔             | ISO, RVZ                                                                                                        |
+| `NUS`         | ✖              | ✔             | WUD, WUX, single-WUD archive, lossless WUA                                                                      |
 
 `convert_roms::ALL_FORMATS` is
 `ORIGINAL, 7Z, CHD, CSO, NSZ, RVZ, WUA, WUX, ZIP, ZSO`; `export_roms` keeps its own
@@ -248,14 +270,14 @@ roms a DAT marks as non-original
 Everything is fetched with `Some(system.id)`, so a system override wins over the
 global row ([Settings and Configuration](../architecture/settings-and-configuration.md)):
 
-| Target | Keys |
-| --- | --- |
-| `7Z` | `SEVENZIP_COMPRESSION_ALGORITHM`, `SEVENZIP_COMPRESSION_LEVEL` / `SEVENZIP_ZSTD_COMPRESSION_LEVEL`, `SEVENZIP_SOLID_COMPRESSION` |
-| `ZIP` | `ZIP_COMPRESSION_ALGORITHM`, `ZIP_COMPRESSION_LEVEL` / `ZIP_ZSTD_COMPRESSION_LEVEL` (solid is hard-coded `false`) |
-| `CHD` | `CHD_CD/DVD/HD/LD_COMPRESSION_ALGORITHMS`, `CHD_CD/DVD/HD/LD_HUNK_SIZE`, `CHD_PARENTS` |
-| `RVZ` | `RVZ_COMPRESSION_ALGORITHM`, `RVZ_COMPRESSION_LEVEL`, `RVZ_BLOCK_SIZE` |
-| `CSO`, `ZSO`, `NSZ`, `WUX`, `ORIGINAL` | none |
-| `WUA`, and `NUS` (export only) | none; they read the Wii U keys `import-keys` stored instead |
+| Target                                 | Keys                                                                                                                             |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `7Z`                                   | `SEVENZIP_COMPRESSION_ALGORITHM`, `SEVENZIP_COMPRESSION_LEVEL` / `SEVENZIP_ZSTD_COMPRESSION_LEVEL`, `SEVENZIP_SOLID_COMPRESSION` |
+| `ZIP`                                  | `ZIP_COMPRESSION_ALGORITHM`, `ZIP_COMPRESSION_LEVEL` / `ZIP_ZSTD_COMPRESSION_LEVEL` (solid is hard-coded `false`)                |
+| `CHD`                                  | `CHD_CD/DVD/HD/LD_COMPRESSION_ALGORITHMS`, `CHD_CD/DVD/HD/LD_HUNK_SIZE`, `CHD_PARENTS`                                           |
+| `RVZ`                                  | `RVZ_COMPRESSION_ALGORITHM`, `RVZ_COMPRESSION_LEVEL`, `RVZ_BLOCK_SIZE`                                                           |
+| `CSO`, `ZSO`, `NSZ`, `WUX`, `ORIGINAL` | none                                                                                                                             |
+| `WUA`, and `NUS` (export only)         | none; they read the Wii U keys `import-keys` stored instead                                                                      |
 
 `archive::get_archive_compression` maps an archive type onto its
 (algorithm, zstd-level, level) key triple and returns an `ArchiveCompression`
@@ -265,6 +287,18 @@ carrying the level on that algorithm's own scale, falling back to
 threaded through `ToArchive` but ignored by the writer — entries are added one
 at a time, with a `TODO` to batch a game's files into one solid block
 ([src/archive.rs](../../src/archive.rs#L585-L595)).
+
+The RVZ path turns its three keys into `rvz_rs` writer options directly: the
+level is clamped to the algorithm's own range, and `RVZ_BLOCK_SIZE` — a KiB
+number — becomes a chunk size of `block_size.next_power_of_two() * 1024`
+bytes, since RVZ wants a power of two and the setting's own range tops out at
+2048 KiB
+([src/rvz.rs](../../src/rvz.rs#L22-L22),
+[src/rvz.rs](../../src/rvz.rs#L229-L245)); `rvz-rs` itself caps chunk sizes at
+`MAX_CHUNK_SIZE`, sixteen 2 MiB Wii groups, 32 MiB
+([crates/rvz-rs/src/writer.rs](../../crates/rvz-rs/src/writer.rs#L78-L93)).
+Scrubbing is hard off: the writer options say `scrub: false`, and the old
+`RVZ_SCRUB` setting is gone.
 
 ## One conversion, start to finish
 
@@ -293,7 +327,7 @@ flowchart TD
     K --> L["commit_transaction"]
 ```
 
-*Figure: the shared skeleton of a single `convert-roms` conversion.*
+_Figure: the shared skeleton of a single `convert-roms` conversion._
 
 The pieces of that skeleton, and the invariants they carry:
 
@@ -326,7 +360,7 @@ The pieces of that skeleton, and the invariants they carry:
   corrupt-file handling stays in
   [Integrity Check and Purge](integrity-check-and-purge.md).
 - **The row keeps its identity.** `Persist::update` rewrites `romfiles.path`
-  and `romfiles.size` for the *same* id, so every `roms.romfile_id` continues to
+  and `romfiles.size` for the _same_ id, so every `roms.romfile_id` continues to
   point at the converted file without being touched — except when a multi-file
   game collapses into one archive or one CHD, where the code creates (or
   reuses, via `find_romfile_by_path`) a single row and re-points each rom with
@@ -543,18 +577,18 @@ ROM directory is never written to
 Already-in-format sources are copied rather than re-encoded, which is the
 export-side analogue of the `recompress` rule:
 
-| Source | Export behaviour |
-| --- | --- |
-| ZIP → ZIP, 7z → 7z | `copy_file` of the archive |
-| CHD → CHD | `copy_file` of the CHD |
-| CSO/ZSO → CSO/ZSO | `copy_file`, either subtype to either target |
-| RVZ → RVZ | copy |
-| ISO → ISO | `copy_file` |
-| WUX → WUX | `copy_file`; a WUX has no settings to re-encode with |
-| WUA → WUX | rebuilt from the WUA and its store |
-| NUS title → ORIGINAL | its files copied into a folder named after the game, with the stored ticket added as `title.tik` when it has none and any `.h3` the DAT leaves out rebuilt |
-| GDI set → GDI | GDI file plus every track file copied |
-| multi-track CD CHD → CSO/ZSO | **no file written** |
+| Source                       | Export behaviour                                                                                                                                           |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ZIP → ZIP, 7z → 7z           | `copy_file` of the archive                                                                                                                                 |
+| CHD → CHD                    | `copy_file` of the CHD                                                                                                                                     |
+| CSO/ZSO → CSO/ZSO            | `copy_file`, either subtype to either target                                                                                                               |
+| RVZ → RVZ                    | copy                                                                                                                                                       |
+| ISO → ISO                    | `copy_file`                                                                                                                                                |
+| WUX → WUX                    | `copy_file`; a WUX has no settings to re-encode with                                                                                                       |
+| WUA → WUX                    | rebuilt from the WUA and its store                                                                                                                         |
+| NUS title → ORIGINAL         | its files copied into a folder named after the game, with the stored ticket added as `title.tik` when it has none and any `.h3` the DAT leaves out rebuilt |
+| GDI set → GDI                | GDI file plus every track file copied                                                                                                                      |
+| multi-track CD CHD → CSO/ZSO | **no file written**                                                                                                                                        |
 
 ([src/export_roms.rs](../../src/export_roms.rs#L582-L604),
 [#L926-L955](../../src/export_roms.rs#L926-L955),
@@ -567,7 +601,7 @@ The CD-CHD-to-XSO row is deliberate, not a gap: the same non-DVD `chd_to_iso`
 guard that makes it a no-op in `convert-roms` applies here, and
 `test_multiple_tracks_chd_to_cso_should_do_nothing` /
 `test_multiple_tracks_chd_to_zso_should_do_nothing` assert the destination file
-is *absent* — with no tool-version early return in front of them, as there used
+is _absent_ — with no tool-version early return in front of them, as there used
 to be
 ([src/export_roms.rs](../../src/export_roms.rs#L1016-L1031),
 [test_multiple_tracks_chd_to_cso_should_do_nothing.rs](../../src/export_roms/test_multiple_tracks_chd_to_cso_should_do_nothing.rs#L73-L91),
