@@ -83,7 +83,7 @@
     {
       "path": "tests/*.dat",
       "merge_system_rule": true,
-      "rule": "Test DAT fixture. Check: the header <name> is the file name without its date and extension, as in the other fixtures (`Test System (20200721) (MAME).dat` has `<name>Test System (MAME)</name>`), so imported system names stay predictable; every rom's size and hashes match the fixture file the tests feed it, and a rom with a `merge` attribute matches its parent's by CRC."
+      "rule": "Test DAT fixture. Check: the header <name> is the file name without its date and extension, as in the other fixtures (`Test System (20200721) (MAME).dat` has `<name>Test System (MAME)</name>`), so imported system names stay predictable. A fixture that a test imports into another fixture's system, to update it or to vary it, takes that fixture's header <name> instead (`Test System (20200722) (MAME) (Renamed Game).dat` has `<name>Test System (MAME)</name>`, `Test System (20261025) (CDN Missing H3).dat` has `<name>Test System (CDN)</name>`); report a header <name> that is neither its own file name without date and extension nor another fixture's; every rom's size and hashes match the fixture file the tests feed it, and a rom with a `merge` attribute matches its parent's by CRC."
     },
     {
       "path": "**/*.rs",
