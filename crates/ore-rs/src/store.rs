@@ -760,10 +760,10 @@ impl StoreWriter {
                 whole.push((segment, offset, envelope_len, group, live));
                 continue;
             }
-            // Audio stays FLAC and XA stays XA, whatever data is
+            // Audio stays FLAC, XA XA and video STR, whatever data is
             // compressed with
             let codec = match group.codec {
-                Codec::Flac | Codec::Xa => group.codec,
+                Codec::Flac | Codec::Xa | Codec::Str => group.codec,
                 _ => self.data_codec,
             };
             if self.packer.codec != codec {

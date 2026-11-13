@@ -47,9 +47,11 @@ mod format;
 mod gcwii;
 mod pack;
 mod parity;
+mod range;
 mod reader;
 mod segment;
 mod store;
+mod video;
 mod writer;
 mod xa;
 

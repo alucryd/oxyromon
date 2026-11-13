@@ -57,6 +57,9 @@ pub enum Codec {
     /// XA ADPCM, for CD-ROM XA audio sectors: a group is records of a
     /// sector's subheader and data, coded as `xa.rs` says.
     Xa,
+    /// STR video, for CD-ROM XA video sectors: a group is Form 1 sectors'
+    /// data, coded as `video.rs` says.
+    Str,
 }
 
 impl Codec {
@@ -66,6 +69,7 @@ impl Codec {
             Self::Lzma2 => 8,
             Self::Flac => 6,
             Self::Xa => 9,
+            Self::Str => 10,
         }
     }
 
@@ -75,6 +79,7 @@ impl Codec {
             8 => Ok(Self::Lzma2),
             6 => Ok(Self::Flac),
             9 => Ok(Self::Xa),
+            10 => Ok(Self::Str),
             _ => Err(Error::Unsupported(format!("codec {id}"))),
         }
     }

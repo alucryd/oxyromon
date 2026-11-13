@@ -15,6 +15,9 @@ use lzma_rust2::{Lzma2Options, Lzma2Writer};
 use rayon::prelude::*;
 
 #[allow(dead_code)]
+#[path = "../../../../crates/ore-rs/src/range.rs"]
+mod range;
+#[allow(dead_code)]
 #[path = "../../../../crates/ore-rs/src/xa.rs"]
 mod xa;
 

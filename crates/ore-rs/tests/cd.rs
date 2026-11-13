@@ -24,12 +24,35 @@ fn noise(len: usize, mut state: u64) -> Vec<u8> {
         .collect()
 }
 
+/// A video sector of a still picture, 16x16, 4 sectors a frame: the
+/// first holds the frame, BS v2, six blocks of a DC of 0 and no AC.
+fn still(frame: u32, chunk: u16) -> Vec<u8> {
+    let mut data = vec![0; 2048];
+    data[..4].copy_from_slice(&0x8001_0160u32.to_le_bytes());
+    data[4..6].copy_from_slice(&chunk.to_le_bytes());
+    data[6] = 4;
+    data[8..12].copy_from_slice(&frame.to_le_bytes());
+    data[12] = 20;
+    data[16] = 16;
+    data[18] = 16;
+    if chunk == 0 {
+        data[32..40].copy_from_slice(&[6, 0, 0, 0x38, 1, 0, 2, 0]);
+        let bits = format!("{}0111111111", "000000000010".repeat(6));
+        let bits = format!("{bits:0<96}");
+        for (i, word) in bits.as_bytes().chunks(16).enumerate() {
+            let word = u16::from_str_radix(std::str::from_utf8(word).unwrap(), 2).unwrap();
+            data[40 + i * 2..42 + i * 2].copy_from_slice(&word.to_le_bytes());
+        }
+    }
+    data
+}
+
 /// A data track of every kind of sector a PlayStation disc holds, a file
-/// on it twice.
+/// on it twice, and a still picture as STR video, a group of it.
 fn data_track(seed: u64) -> Vec<u8> {
     let file = noise(100 * 2048, 7);
     let mut track = Vec::new();
-    for i in 0..600u32 {
+    for i in 0..1113u32 {
         let frame = LEAD_IN + i;
         let (kind, subheader, data) = match i {
             100..200 => (Kind::Form1, [0, 0, 8, 0, 0, 0, 8, 0], {
@@ -50,6 +73,11 @@ fn data_track(seed: u64) -> Vec<u8> {
                 [1, 2, 0x64, 1, 1, 2, 0x64, 1],
                 noise(2324, i as u64),
             ),
+            600..1112 => (
+                Kind::Form1,
+                [1, 1, 0x48, 0, 1, 1, 0x48, 0],
+                still((i - 600) / 4, ((i - 600) % 4) as u16),
+            ),
             // Copies that differ, as Alundra 2 has them
             270 => (
                 Kind::Form2NoEdc,
@@ -64,7 +92,7 @@ fn data_track(seed: u64) -> Vec<u8> {
         };
         let mut raw = [0; SECTOR];
         sector::rebuild(kind, frame, &subheader, &data, &mut raw);
-        if i == 599 {
+        if i == 1112 {
             // A mastering terminator: a Mode 2 sector nothing regenerates
             raw[16..].fill(0);
             raw[0x900] = 0x5A;
@@ -226,7 +254,9 @@ fn a_cd_records_each_files_hashes_and_reads_anywhere() {
         (SECTOR * 99 + 7, SECTOR * 3),
         // Form 1 into XA, from one plane into the other
         (SECTOR * 198 + 5, SECTOR * 5),
+        // Data into video
         (SECTOR * 598, SECTOR * 5),
+        (SECTOR * 1110, SECTOR * 5),
         (stream.len() - 9, 9),
     ] {
         let mut buf = vec![0; len];

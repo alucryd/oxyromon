@@ -36,10 +36,11 @@ enum Record {
     Store(u64),
 }
 
-/// What [`Reader::runs`] gives: an area starting, a CD data track's XA
-/// plane starting, or a run.
+/// What [`Reader::runs`] gives: an area starting, a CD data track's video
+/// or XA plane starting, or a run.
 pub(super) enum Event<'a> {
     Area(AreaKind),
+    Video,
     Xa,
     Run(Run<'a>),
 }
@@ -473,17 +474,20 @@ impl Reader {
                 (area.start, area.len, *area.starts.last().unwrap())
             };
             emit(Event::Area(self.areas[area].kind), start)?;
-            let xa = self.areas[area].map.as_ref().map(|map| map.plane_len());
+            let planes = self.areas[area].map.as_ref().map(|map| map.plane_starts());
             for record in 0..self.areas[area].records.len() {
                 let (from, to) = {
                     let starts = &self.areas[area].starts;
                     (starts[record], starts[record + 1])
                 };
-                if xa == Some(from) {
-                    emit(
-                        Event::Xa,
-                        start + (from as u128 * len as u128 / stored as u128) as u64,
-                    )?;
+                if let Some(planes) = planes {
+                    let at = start + (from as u128 * len as u128 / stored as u128) as u64;
+                    if planes[1] == from {
+                        emit(Event::Video, at)?;
+                    }
+                    if planes[2] == from {
+                        emit(Event::Xa, at)?;
+                    }
                 }
                 let length = to - from;
                 let done = start + (to as u128 * len as u128 / stored as u128) as u64;
@@ -648,7 +652,7 @@ impl Reader {
         let end = (within + buf.len() as u64).div_ceil(SECTOR as u64) as usize;
         // The sectors' bytes in each plane, read in one go each
         let ranges = map.ranges(first..end);
-        let mut planes = [Vec::new(), Vec::new()];
+        let mut planes = [Vec::new(), Vec::new(), Vec::new()];
         for (plane, range) in planes.iter_mut().zip(&ranges) {
             plane.resize((range.end - range.start) as usize, 0);
             self.read_stored(area, range.start, plane)?;

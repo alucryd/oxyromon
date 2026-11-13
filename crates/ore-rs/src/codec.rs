@@ -9,6 +9,7 @@ use rusty_flac::{Encoder, FrameDecoder, StreamInfo};
 
 use super::error::{Error, Result};
 use super::format::Codec;
+use super::video;
 use super::xa;
 
 pub const ZSTD_LEVEL: i32 = 19;
@@ -26,16 +27,18 @@ fn window_log(group: usize) -> u32 {
     group.next_power_of_two().max(4096).trailing_zeros()
 }
 
-/// The zstd level that tries whether a group meant for `xa` is XA
-/// ADPCM at all.
+/// The zstd level that tries whether a group meant for `xa` or `str` is
+/// what they model at all.
 const PROBE_LEVEL: i32 = 3;
 
-/// Compress a group with `codec`, or, for `xa`, with Zstandard when a
-/// quick try of it does better: some discs flag data as XA audio. Returns
-/// the codec used.
+/// Compress a group with `codec`, or, for `xa` and `str`, with Zstandard
+/// when a quick try of it does better: some discs flag data as XA audio.
+/// Returns the codec used.
 pub fn compress_best(codec: Codec, data: &[u8], group: usize) -> Result<(Codec, Vec<u8>)> {
     let stored = compress(codec, data, group)?;
-    if codec == Codec::Xa && zstd::bulk::compress(data, PROBE_LEVEL)?.len() < stored.len() {
+    if matches!(codec, Codec::Xa | Codec::Str)
+        && zstd::bulk::compress(data, PROBE_LEVEL)?.len() < stored.len()
+    {
         return Ok((Codec::Zstd, compress(Codec::Zstd, data, group)?));
     }
     Ok((codec, stored))
@@ -57,7 +60,17 @@ pub fn compress(codec: Codec, data: &[u8], group: usize) -> Result<Vec<u8>> {
             Ok(writer.finish()?)
         }
         Codec::Flac => flac_encode(data),
-        Codec::Xa => Ok(xa::encode(data)),
+        Codec::Xa | Codec::Str => {
+            let mut coded = if codec == Codec::Xa {
+                xa::encode(data)
+            } else {
+                video::encode(data)
+            };
+            // A still picture or silence codes to less than the ratio a
+            // reader takes as a bomb: the range decoder ignores the zeros
+            coded.resize(coded.len().max(data.len().div_ceil(1024)), 0);
+            Ok(coded)
+        }
     }
 }
 
@@ -130,6 +143,7 @@ pub fn decompress(codec: Codec, data: &[u8], length: usize) -> Result<Vec<u8>> {
         }
         Codec::Flac => flac_decode(data, length)?,
         Codec::Xa => xa::decode(data, length),
+        Codec::Str => video::decode(data, length),
     };
     if out.len() != length {
         return Err(Error::Corrupt(format!(

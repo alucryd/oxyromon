@@ -67,6 +67,12 @@ ore_rs::decompress(ore, Path::new("out/Game (Europe).cue"), &mut |_| {}).unwrap(
   range coded against what a predictor of the decoded channel expects of
   it, 12.7% under Zstandard, losslessly; a group Zstandard does better on,
   data a disc flags as audio, is stored with Zstandard.
+- **STR video coded as MDEC codes**: each frame of a Form 1 video sector's
+  BS bitstream, v1, v2 or v3, parsed into its codes and range coded
+  against the frame before, the block where it lies and the level at each
+  position, 23.3% under Zstandard; a frame is only coded so when its codes
+  write back to it byte for byte, and every frame of the maintainer's
+  library does.
 - **Audio in FLAC**, in frames of 8 sectors, each chunk of 8 sectors stored
   once: a track another disc holds costs nothing in a store.
 - **Each file's hashes**: every track, the cue sheet and the SBI are
@@ -75,7 +81,8 @@ ore_rs::decompress(ore, Path::new("out/Game (Europe).cue"), &mut |_| {}).unwrap(
   disc, 26-29% in a store
   ([results](../../formats/results/2026-11-13-ps1/README.md)), before XA's
   coder took about 3.4 points more
-  ([results](../../formats/results/2026-11-13-xa/README.md)).
+  ([results](../../formats/results/2026-11-13-xa/README.md)) and video's
+  about 5.7 more ([results](../../formats/results/2026-11-13-str/README.md)).
 
 ## A store
 
@@ -178,7 +185,9 @@ sector PlayStation discs hold, subheader copies that differ and a sector
 nothing generates among them, with two audio tracks and an SBI, and
 round-trips it as its files, alone and through a store, detached,
 attached and purged, its XA sectors through the `xa` codec, which
-`src/xa.rs` also round-trips on arbitrary bytes. On real discs, 11 of the maintainer's PlayStation
+`src/xa.rs` also round-trips on arbitrary bytes, and a still picture's
+video sectors through the `str` codec, which `src/video.rs` also
+round-trips on frames of BS v2 and v3, frames cut short and noise. On real discs, 11 of the maintainer's PlayStation
 library come back with every track and cue sheet matching the Redump DAT
 ([results](../../formats/results/2026-11-13-ps1/README.md#ore-rs)). The
 chunker is checked against
@@ -205,7 +214,9 @@ The CD ECC is MAME's, through oxyROMon's `cd` crate, under BSD-3-Clause.
 FLAC is [rusty_flac](https://crates.io/crates/rusty_flac)'s.
 The XA ADPCM decoder `xa` models is as Martin Korth's
 [psx-spx](https://problemkaputt.de/psxspx-cdrom-xa-audio-adpcm-compression.htm)
-documents it; its range coder is LZMA's.
+documents it; its range coder is LZMA's. The BS bitstream `str` parses
+is as psx-spx and [jPSXdec](https://github.com/m35/jpsxdec) document it,
+its codes MPEG-1's.
 Reed-Solomon coding is
 [reed-solomon-erasure](https://crates.io/crates/reed-solomon-erasure)'s.
 

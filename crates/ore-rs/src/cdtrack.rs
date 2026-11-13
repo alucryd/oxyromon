@@ -2,26 +2,48 @@
 //! and a map of what each sector is, from which the rest is generated.
 //!
 //! The map is a byte a sector, its [`Kind`], with bit 7 set when its
-//! subheader's two copies differ; then, for a sector with a subheader, its
+//! subheader's two copies differ and bit 6 when it is a video sector; then, for a sector with a subheader, its
 //! first copy, and its second when it differs. The map is Zstandard
 //! compressed in the area's metadata, a few KB a disc.
 //!
-//! The stream is two planes: the data of every sector but the XA ADPCM
-//! ones, in order; then the XA ADPCM sectors, in order, each a record of
-//! its subheader and its data, as the `xa` codec takes them.
+//! The stream is three planes: the data of every other sector, in order;
+//! then the data of the STR video sectors, Form 1 sectors of a video
+//! sector header, in order, as the `str` codec takes them; then the XA
+//! ADPCM sectors, in order, each a record of its subheader and its data,
+//! as the `xa` codec takes them.
 
 use std::ops::Range;
 
 use super::cd::sector::{self, Kind, SECTOR};
 use super::error::{Error, Result};
+use super::video;
 use super::xa;
+
+/// The planes of a data track's stream, in their order there.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Plane {
+    Data = 0,
+    /// Form 1 sectors of STR video.
+    Video = 1,
+    /// Form 2 sectors of XA ADPCM.
+    Xa = 2,
+}
 
 /// Whether a sector goes in the XA plane: Form 2, XA ADPCM.
 pub fn is_xa(kind: Kind, subheader: &[u8]) -> bool {
     matches!(kind, Kind::Form2 | Kind::Form2NoEdc) && xa::is_adpcm(subheader)
 }
 
+/// What a plane stores of a sector of `data_len` bytes of data.
+fn record_len(plane: Plane, data_len: usize) -> u64 {
+    match plane {
+        Plane::Data | Plane::Video => data_len as u64,
+        Plane::Xa => xa::RECORD as u64,
+    }
+}
+
 const DIFFERS: u8 = 0x80;
+const VIDEO: u8 = 0x40;
 
 /// The sectors of a data track: what each is, and where its data lies in
 /// the track's stream.
@@ -29,11 +51,10 @@ const DIFFERS: u8 = 0x80;
 pub struct SectorMap {
     kinds: Vec<Kind>,
     subheaders: Vec<[u8; 8]>,
-    /// Where each sector's data starts in the first plane, or would, and
-    /// where the last ends: its length.
-    starts: Vec<u64>,
-    /// How many XA sectors come before each, and in all.
-    xa_before: Vec<u64>,
+    planes: Vec<Plane>,
+    /// Where each sector's record starts in each plane, or would, and
+    /// where the last ends: the planes' lengths.
+    starts: Vec<[u64; 3]>,
 }
 
 /// The map being written, a sector at a time.
@@ -44,19 +65,29 @@ pub struct MapWriter {
 
 impl MapWriter {
     /// Add the raw sector `raw`, `frame` frames from 00:00:00; returns its
-    /// kind, and so which of its bytes are its data.
-    pub fn push(&mut self, raw: &[u8; SECTOR], frame: u32) -> Kind {
+    /// kind, and so which of its bytes are its data, and its plane.
+    pub fn push(&mut self, raw: &[u8; SECTOR], frame: u32) -> (Kind, Plane) {
         let kind = sector::classify(raw, frame);
+        let plane = if kind == Kind::Form1 && video::is_video(&raw[24..]) {
+            Plane::Video
+        } else if is_xa(kind, &raw[16..20]) {
+            Plane::Xa
+        } else {
+            Plane::Data
+        };
         if kind.has_subheader() {
             let differs = raw[16..20] != raw[20..24];
-            self.bytes
-                .push(kind as u8 | if differs { DIFFERS } else { 0 });
+            self.bytes.push(
+                kind as u8
+                    | if differs { DIFFERS } else { 0 }
+                    | if plane == Plane::Video { VIDEO } else { 0 },
+            );
             self.bytes
                 .extend_from_slice(&raw[16..if differs { 24 } else { 20 }]);
         } else {
             self.bytes.push(kind as u8);
         }
-        kind
+        (kind, plane)
     }
 
     /// The map, compressed.
@@ -78,15 +109,19 @@ impl SectorMap {
         let mut map = Self {
             kinds: Vec::with_capacity(sectors as usize),
             subheaders: Vec::with_capacity(sectors as usize),
+            planes: Vec::with_capacity(sectors as usize),
             starts: Vec::with_capacity(sectors as usize + 1),
-            xa_before: Vec::with_capacity(sectors as usize + 1),
         };
         let mut at = 0;
-        let (mut start, mut xa_before) = (0, 0);
+        let mut start = [0; 3];
         while at < bytes.len() {
             let byte = bytes[at];
             at += 1;
-            let kind = Kind::from_u8(byte & !DIFFERS).ok_or_else(|| corrupt("a bad kind"))?;
+            let kind =
+                Kind::from_u8(byte & !(DIFFERS | VIDEO)).ok_or_else(|| corrupt("a bad kind"))?;
+            if byte & VIDEO != 0 && kind != Kind::Form1 {
+                return Err(corrupt("video in a sector not Form 1"));
+            }
             let mut subheader = [0; 8];
             if kind.has_subheader() {
                 let copies = if byte & DIFFERS != 0 { 8 } else { 4 };
@@ -101,51 +136,54 @@ impl SectorMap {
             } else if byte & DIFFERS != 0 {
                 return Err(corrupt("a second copy without a subheader"));
             }
+            let plane = if byte & VIDEO != 0 {
+                Plane::Video
+            } else if is_xa(kind, &subheader) {
+                Plane::Xa
+            } else {
+                Plane::Data
+            };
             map.kinds.push(kind);
             map.subheaders.push(subheader);
+            map.planes.push(plane);
             map.starts.push(start);
-            map.xa_before.push(xa_before);
-            if is_xa(kind, &subheader) {
-                xa_before += 1;
-            } else {
-                start += kind.data_len() as u64;
-            }
+            start[plane as usize] += record_len(plane, kind.data_len());
         }
         map.starts.push(start);
-        map.xa_before.push(xa_before);
         if map.kinds.len() as u64 != sectors {
             return Err(corrupt("not a sector a sector"));
         }
         Ok(map)
     }
 
-    /// The length of the first plane, where the XA plane starts.
-    pub fn plane_len(&self) -> u64 {
-        *self.starts.last().unwrap()
+    /// Where each plane starts in the stream, and where the last ends: the
+    /// stream's length.
+    pub fn plane_starts(&self) -> [u64; 4] {
+        let [data, video, xa] = *self.starts.last().unwrap();
+        [0, data, data + video, data + video + xa]
     }
 
     /// The length of the track's stream.
     pub fn stored_len(&self) -> u64 {
-        self.plane_len() + *self.xa_before.last().unwrap() * xa::RECORD as u64
+        self.plane_starts()[3]
     }
 
-    /// Where the stored bytes of sectors `sectors` lie in the stream: in
-    /// the first plane, and in the XA plane.
-    pub fn ranges(&self, sectors: Range<usize>) -> [Range<u64>; 2] {
-        let xa = |i: usize| self.plane_len() + self.xa_before[i] * xa::RECORD as u64;
-        [
-            self.starts[sectors.start]..self.starts[sectors.end],
-            xa(sectors.start)..xa(sectors.end),
-        ]
+    /// Where the stored bytes of sectors `sectors` lie in the stream, in
+    /// each plane.
+    pub fn ranges(&self, sectors: Range<usize>) -> [Range<u64>; 3] {
+        let base = self.plane_starts();
+        let (from, to) = (self.starts[sectors.start], self.starts[sectors.end]);
+        [0, 1, 2].map(|p| base[p] + from[p]..base[p] + to[p])
     }
 
     /// Where sector `i`'s data lies in the stream, and in which plane.
     pub fn at(&self, i: usize) -> (usize, Range<u64>) {
-        let [plane, xa] = self.ranges(i..i + 1);
-        if xa.is_empty() {
-            (0, plane)
+        let plane = self.planes[i] as usize;
+        let range = self.ranges(i..i + 1)[plane].clone();
+        if self.planes[i] == Plane::Xa {
+            (plane, range.start + 4..range.end)
         } else {
-            (1, xa.start + 4..xa.end)
+            (plane, range)
         }
     }
 
@@ -169,11 +207,15 @@ mod tests {
             (Kind::Form2, [1, 1, 0x64, 1, 1, 1, 0x64, 1]),
             (Kind::Form2NoEdc, [1, 3, 0x64, 1, 1, 1, 0x64, 1]),
             (Kind::Zero, [0; 8]),
+            (Kind::Form1, [0, 0, 8, 0, 0, 0, 8, 0]),
         ]
         .into_iter()
         .enumerate()
         {
-            let data: Vec<u8> = (0..kind.data_len()).map(|b| (b * 7 + i) as u8).collect();
+            let mut data: Vec<u8> = (0..kind.data_len()).map(|b| (b * 7 + i) as u8).collect();
+            if i == 4 {
+                data[..8].copy_from_slice(&[0x60, 1, 1, 0x80, 0, 0, 1, 0]);
+            }
             let mut raw = [0; SECTOR];
             sector::rebuild(kind, LEAD_IN + i as u32, &subheader, &data, &mut raw);
             sectors.push((raw, data));
@@ -183,23 +225,22 @@ mod tests {
         sectors.push((weird, weird.to_vec()));
 
         let mut writer = MapWriter::default();
-        let (mut stream, mut xa_plane) = (Vec::new(), Vec::new());
+        let mut planes = [Vec::new(), Vec::new(), Vec::new()];
         for (i, (raw, data)) in sectors.iter().enumerate() {
-            let kind = writer.push(raw, LEAD_IN + i as u32);
+            let (kind, plane) = writer.push(raw, LEAD_IN + i as u32);
             assert_eq!(&raw[sector::data_range(kind)], &data[..]);
-            if is_xa(kind, &raw[16..20]) {
-                xa_plane.extend_from_slice(&raw[16..20]);
-                xa_plane.extend_from_slice(data);
-            } else {
-                stream.extend_from_slice(data);
+            if plane == Plane::Xa {
+                planes[2].extend_from_slice(&raw[16..20]);
             }
+            planes[plane as usize].extend_from_slice(data);
         }
+        assert_eq!(planes[1].len(), 2048, "the second Form 1 sector is video");
         assert_eq!(
-            xa_plane.len(),
+            planes[2].len(),
             2 * xa::RECORD,
             "the two Form 2 sectors are XA"
         );
-        stream.extend_from_slice(&xa_plane);
+        let stream = planes.concat();
         let map = SectorMap::read(&writer.finish(), sectors.len() as u64).unwrap();
         assert_eq!(map.stored_len(), stream.len() as u64);
         for (i, (raw, _)) in sectors.iter().enumerate() {

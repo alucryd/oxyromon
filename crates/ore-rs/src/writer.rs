@@ -13,7 +13,7 @@ use sha1::{Digest, Sha1};
 use super::cd::cue::{self, Mode};
 use super::cd::sector::{LEAD_IN, SECTOR, data_range};
 use super::cdc;
-use super::cdtrack::{MapWriter, is_xa};
+use super::cdtrack::{MapWriter, Plane};
 use super::codec::{FLAC_LEVEL, LZMA2_PRESET, ZSTD_LEVEL};
 use super::crypto::Key;
 use super::disc::{Iso, PARTITION_DATA_SIZE, Platform, Source, Volume};
@@ -25,6 +25,7 @@ use super::pack::Packer;
 use super::reader::{Event, Reader};
 use super::segment::{BLOCK, Run, Segmenter};
 use super::store::StoreWriter;
+use super::video;
 use super::wii::{
     self, BLOCK_DATA_SIZE, BLOCK_TOTAL_SIZE, BLOCKS_PER_GROUP, BlockData, GROUP_DATA_SIZE,
     GROUP_TOTAL_SIZE, HashBlock,
@@ -362,7 +363,7 @@ impl Encoder {
                 Codec::Zstd => ZSTD_LEVEL as u32,
                 Codec::Lzma2 => LZMA2_PRESET,
                 Codec::Flac => FLAC_LEVEL,
-                Codec::Xa => 0,
+                Codec::Xa | Codec::Str => 0,
             },
             chunker: Chunker {
                 max: cdc::MAX as u64,
@@ -659,6 +660,7 @@ fn rewrite(
                 } else {
                     options.codec
                 })?,
+                Event::Video => encoder.set_codec(Codec::Str)?,
                 Event::Xa => encoder.set_codec(Codec::Xa)?,
                 Event::Run(run) => {
                     encoder.push(run);
@@ -788,8 +790,8 @@ fn encode_cd(
             let mut map = MapWriter::default();
             let mut cutter = Cutter::default();
             let mut plane = Vec::new();
-            // The XA sectors, by number, stored after the rest
-            let mut xa_sectors = Vec::new();
+            // The video and XA sectors, by number, stored after the rest
+            let mut sectors = [Vec::new(), Vec::new(), Vec::new()];
             let mut at = 0;
             while at < len {
                 let length = (len - at).min(buf.len() as u64) as usize;
@@ -809,13 +811,13 @@ fn encode_cd(
                     plane.clear();
                     let sector_at = (at / SECTOR as u64) as u32;
                     for (i, raw) in buf.as_chunks::<SECTOR>().0.iter().enumerate() {
-                        let kind = map.push(raw, frame + sector_at + i as u32);
+                        let (kind, at) = map.push(raw, frame + sector_at + i as u32);
                         let range = data_range(kind);
                         generated += (SECTOR - range.len()) as u64;
-                        if is_xa(kind, &raw[16..20]) {
-                            xa_sectors.push(sector_at + i as u32);
-                        } else {
+                        if at == Plane::Data {
                             plane.extend_from_slice(&raw[range]);
+                        } else {
+                            sectors[at as usize].push(sector_at + i as u32);
                         }
                     }
                     cutter.feed(&plane, &mut |run| encoder.push(run));
@@ -825,9 +827,17 @@ fn encode_cd(
                 at += length as u64;
             }
             cutter.finish(&mut |run| encoder.push(run));
-            if !xa_sectors.is_empty() {
-                encoder.set_codec(Codec::Xa)?;
-                push_xa(&mut encoder, &file, &xa_sectors, &mut buf)?;
+            for (plane, codec) in [(Plane::Video, Codec::Str), (Plane::Xa, Codec::Xa)] {
+                if !sectors[plane as usize].is_empty() {
+                    encoder.set_codec(codec)?;
+                    push_plane(
+                        &mut encoder,
+                        &file,
+                        plane,
+                        &sectors[plane as usize],
+                        &mut buf,
+                    )?;
+                }
             }
             let name = file_name(&track.file);
             let Hashes {
@@ -916,23 +926,49 @@ fn encode_cd(
 
 /// The most XA records in a chunk, 37 KB.
 const XA_CHUNK: usize = 16;
+/// The most video sectors in a chunk, 128 KB, more than a frame.
+const VIDEO_CHUNK: usize = 64;
 
-/// The XA plane of a data track, read again from `file`: the sectors
-/// `sectors`, each a record of its subheader and data, cut into chunks
-/// after any record whose CRC-32C is a multiple of 8, so that a run of
-/// sectors another disc holds is the same chunks there.
-fn push_xa(encoder: &mut Encoder, file: &File, sectors: &[u32], buf: &mut [u8]) -> Result<()> {
+/// The video or XA plane of a data track, read again from `file`: the
+/// sectors `sectors`, each a record, cut into chunks so that a run of
+/// sectors another disc holds is the same chunks there. A video record is
+/// a sector's data, cut before each frame; an XA record is a sector's
+/// subheader and data, cut after any whose CRC-32C is a multiple of 8.
+fn push_plane(
+    encoder: &mut Encoder,
+    file: &File,
+    plane: Plane,
+    sectors: &[u32],
+    buf: &mut [u8],
+) -> Result<()> {
     let window = (buf.len() / SECTOR) as u32;
-    let mut chunk = Vec::with_capacity(XA_CHUNK * xa::RECORD);
+    let (record_len, most) = match plane {
+        Plane::Video => (video::SECTOR, VIDEO_CHUNK),
+        _ => (xa::RECORD, XA_CHUNK),
+    };
+    let mut chunk = Vec::with_capacity(most * record_len);
     for run in sectors.chunk_by(|a, b| a / window == b / window) {
         let first = run[0] / window * window;
         let length = (run.last().unwrap() + 1 - first) as usize * SECTOR;
         io::read_exact_at(file, &mut buf[..length], first as u64 * SECTOR as u64)?;
         for &i in run {
             let raw = &buf[(i - first) as usize * SECTOR..][..SECTOR];
-            let record = [&raw[16..20], &raw[24..24 + xa::RECORD - 4]].concat();
-            chunk.extend_from_slice(&record);
-            if chunk.len() == XA_CHUNK * xa::RECORD || crc32c::crc32c(&record).is_multiple_of(8) {
+            if plane == Plane::Video {
+                let record = &raw[24..24 + record_len];
+                if !chunk.is_empty() && video::starts_frame(record) {
+                    encoder.push(Run::Chunk(&chunk));
+                    chunk.clear();
+                }
+                chunk.extend_from_slice(record);
+            } else {
+                let record = [&raw[16..20], &raw[24..24 + record_len - 4]].concat();
+                chunk.extend_from_slice(&record);
+                if crc32c::crc32c(&record).is_multiple_of(8) {
+                    encoder.push(Run::Chunk(&chunk));
+                    chunk.clear();
+                }
+            }
+            if chunk.len() == most * record_len {
                 encoder.push(Run::Chunk(&chunk));
                 chunk.clear();
             }
