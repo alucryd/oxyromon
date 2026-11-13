@@ -10,7 +10,9 @@ publish = false
 
 [dependencies]
 anyhow = "1.0"
+cd = { path = "../../crates/cd" }
 cdc-chunkers = { version = "0.1", default-features = false }
+chd-rs = { path = "../../crates/chd-rs", default-features = false }
 fastcdc = "5"
 gcwii = { path = "../../crates/gcwii" }
 lzma-rust2 = { workspace = true, features = ["encoder"] }

@@ -183,7 +183,9 @@ not yet used by oxyromon nor shipped by `dist.sh` while the format is a draft. E
 What is specific to a system rather than a format, and shared by several
 format crates, lives in a small crate of its own that is never published:
 `gcwii`, the GameCube and Wii disc specifics shared by `rvz-rs`,
-`wbfs-rs` and `ore-rs`. Each format crate embeds it, so that the crate it publishes holds
+`wbfs-rs` and `ore-rs`, and `cd`, the CD-ROM sector model, EDC and ECC,
+cue sheets and ISO 9660, embedded by `chd-rs`, BSD-3-Clause so every host
+may embed it. Each format crate embeds it, so that the crate it publishes holds
 a copy and stands alone:
 
 - **Symlinked, not depended on.** `crates/<host>/src/<embedded>` is a symlink

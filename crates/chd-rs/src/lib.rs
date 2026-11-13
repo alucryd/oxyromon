@@ -14,11 +14,15 @@
 mod avhuff;
 mod avi;
 mod bitstream;
+// The CD-ROM specifics, shared with ore-rs: `src/cd` is a symlink to the cd
+// crate's source, which publishing copies in
+#[allow(dead_code, unused_imports)]
+#[path = "cd/lib.rs"]
+mod cd;
 mod cdrom;
 mod codec;
 mod container;
 mod crc16;
-mod ecc;
 mod error;
 mod extract;
 mod flac;
@@ -27,6 +31,8 @@ mod ld;
 mod lzma;
 mod vbi;
 mod writer;
+
+use cd::ecc;
 
 pub use cdrom::{FRAME_SIZE as CD_FRAME_SIZE, input_size as cd_input_size};
 pub use container::{Chd, ChdInfo, ChdType, MetadataEntry, VerifyOutcome, fourcc, sha1_hex};

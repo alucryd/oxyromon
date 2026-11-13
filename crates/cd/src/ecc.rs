@@ -5,7 +5,7 @@
 //! byte for byte.
 
 /// Galois field low-byte table (`cdrom_file::ecclow`).
-pub(crate) const ECCLOW: [u8; 256] = [
+pub const ECCLOW: [u8; 256] = [
     0x00, 0x02, 0x04, 0x06, 0x08, 0x0A, 0x0C, 0x0E, 0x10, 0x12, 0x14, 0x16, 0x18, 0x1A, 0x1C, 0x1E,
     0x20, 0x22, 0x24, 0x26, 0x28, 0x2A, 0x2C, 0x2E, 0x30, 0x32, 0x34, 0x36, 0x38, 0x3A, 0x3C, 0x3E,
     0x40, 0x42, 0x44, 0x46, 0x48, 0x4A, 0x4C, 0x4E, 0x50, 0x52, 0x54, 0x56, 0x58, 0x5A, 0x5C, 0x5E,
@@ -25,7 +25,7 @@ pub(crate) const ECCLOW: [u8; 256] = [
 ];
 
 /// Galois field high-byte table (`cdrom_file::ecchigh`).
-pub(crate) const ECCHIGH: [u8; 256] = [
+pub const ECCHIGH: [u8; 256] = [
     0x00, 0xF4, 0xF5, 0x01, 0xF7, 0x03, 0x02, 0xF6, 0xF3, 0x07, 0x06, 0xF2, 0x04, 0xF0, 0xF1, 0x05,
     0xFB, 0x0F, 0x0E, 0xFA, 0x0C, 0xF8, 0xF9, 0x0D, 0x08, 0xFC, 0xFD, 0x09, 0xFF, 0x0B, 0x0A, 0xFE,
     0xEB, 0x1F, 0x1E, 0xEA, 0x1C, 0xE8, 0xE9, 0x1D, 0x18, 0xEC, 0xED, 0x19, 0xEF, 0x1B, 0x1A, 0xEE,
@@ -45,7 +45,7 @@ pub(crate) const ECCHIGH: [u8; 256] = [
 ];
 
 /// Offsets contributing to each ECC P byte, 86 rows of 24 (`cdrom_file::poffsets`).
-pub(crate) const P_OFFSETS: [u16; 2064] = [
+pub const P_OFFSETS: [u16; 2064] = [
     0, 86, 172, 258, 344, 430, 516, 602, 688, 774, 860, 946, 1032, 1118, 1204, 1290, 1376, 1462,
     1548, 1634, 1720, 1806, 1892, 1978, 1, 87, 173, 259, 345, 431, 517, 603, 689, 775, 861, 947,
     1033, 1119, 1205, 1291, 1377, 1463, 1549, 1635, 1721, 1807, 1893, 1979, 2, 88, 174, 260, 346,
@@ -169,7 +169,7 @@ pub(crate) const P_OFFSETS: [u16; 2064] = [
 ];
 
 /// Offsets contributing to each ECC Q byte, 52 rows of 43 (`cdrom_file::qoffsets`).
-pub(crate) const Q_OFFSETS: [u16; 2236] = [
+pub const Q_OFFSETS: [u16; 2236] = [
     0, 88, 176, 264, 352, 440, 528, 616, 704, 792, 880, 968, 1056, 1144, 1232, 1320, 1408, 1496,
     1584, 1672, 1760, 1848, 1936, 2024, 2112, 2200, 52, 140, 228, 316, 404, 492, 580, 668, 756,
     844, 932, 1020, 1108, 1196, 1284, 1372, 1460, 1, 89, 177, 265, 353, 441, 529, 617, 705, 793,
@@ -304,12 +304,12 @@ pub(crate) const Q_OFFSETS: [u16; 2236] = [
     1023, 1111, 1199, 1287, 1375,
 ];
 
-pub(crate) const ECC_P_OFFSET: usize = 0x81c;
-pub(crate) const ECC_P_NUM_BYTES: usize = 86;
-pub(crate) const ECC_Q_OFFSET: usize = ECC_P_OFFSET + 2 * ECC_P_NUM_BYTES;
-pub(crate) const ECC_Q_NUM_BYTES: usize = 52;
-pub(crate) const SYNC_NUM_BYTES: usize = 12;
-pub(crate) const MODE_OFFSET: usize = 0x00f;
+pub const ECC_P_OFFSET: usize = 0x81c;
+pub const ECC_P_NUM_BYTES: usize = 86;
+pub const ECC_Q_OFFSET: usize = ECC_P_OFFSET + 2 * ECC_P_NUM_BYTES;
+pub const ECC_Q_NUM_BYTES: usize = 52;
+pub const SYNC_NUM_BYTES: usize = 12;
+pub const MODE_OFFSET: usize = 0x00f;
 
 fn source_byte(sector: &[u8], offset: usize) -> u8 {
     // in mode 2 always treat these as 0 bytes
@@ -335,9 +335,7 @@ fn compute_bytes(sector: &[u8], row: &[u16]) -> (u8, u8) {
 
 /// Verify the P and Q ECC codes in a 2352-byte sector
 /// (`cdrom_file::ecc_verify`).
-//	exercised by the codec tests, not by the read or write paths
-#[allow(dead_code)]
-pub(crate) fn ecc_verify(sector: &[u8]) -> bool {
+pub fn ecc_verify(sector: &[u8]) -> bool {
     for (byte, row) in P_OFFSETS.as_chunks::<24>().0.iter().enumerate() {
         let (val1, val2) = compute_bytes(sector, row);
         if sector[ECC_P_OFFSET + byte] != val1
@@ -359,7 +357,7 @@ pub(crate) fn ecc_verify(sector: &[u8]) -> bool {
 
 /// Generate the P and Q ECC codes for a 2352-byte sector, overwriting any
 /// existing codes (`cdrom_file::ecc_generate`).
-pub(crate) fn ecc_generate(sector: &mut [u8]) {
+pub fn ecc_generate(sector: &mut [u8]) {
     for (byte, row) in P_OFFSETS.as_chunks::<24>().0.iter().enumerate() {
         let (val1, val2) = compute_bytes(sector, row);
         sector[ECC_P_OFFSET + byte] = val1;
@@ -374,7 +372,7 @@ pub(crate) fn ecc_generate(sector: &mut [u8]) {
 
 /// Erase the ECC P and Q codes to 0 within a 2352-byte sector
 /// (`cdrom_file::ecc_clear`).
-pub(crate) fn ecc_clear(sector: &mut [u8]) {
+pub fn ecc_clear(sector: &mut [u8]) {
     sector[ECC_P_OFFSET..ECC_P_OFFSET + 2 * ECC_P_NUM_BYTES].fill(0);
     sector[ECC_Q_OFFSET..ECC_Q_OFFSET + 2 * ECC_Q_NUM_BYTES].fill(0);
 }
