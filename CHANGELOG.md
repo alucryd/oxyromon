@@ -42,6 +42,7 @@
 - `download-dats` keeps going when a Redump system fails, and fails the run at the end naming each one
 - `download-dats` now fetches Redump DATs from redump.info, with its new systems; existing systems move over and take Redump's new names
 - Merged the web UI's Upload and Download menus into one Import menu
+- `import-roms` now says when it extracts files from an archive holding several games and leaves the archive in the source directory (#237)
 
 ## Fixes
 

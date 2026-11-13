@@ -1275,6 +1275,7 @@ async fn import_archive(
     }
 
     // all other cases
+    let extracted_count = roms_games_systems_archive_romfiles.len();
     for (rom, game, system, archive_romfile) in roms_games_systems_archive_romfiles {
         let original_romfile = archive_romfile
             .to_common(progress_bar, &tmp_directory.path())
@@ -1302,6 +1303,19 @@ async fn import_archive(
             Some(system.id),
         )
         .await?;
+    }
+
+    // the archive itself stays in the source directory, say so
+    if extracted_count > 0 {
+        print_info(
+            progress_bar,
+            &format!(
+                "Extracted {} of {} file(s), left \"{}\" in place",
+                extracted_count,
+                romfiles_count,
+                romfile.path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
     }
 
     Ok((new_system_ids, new_game_ids))
