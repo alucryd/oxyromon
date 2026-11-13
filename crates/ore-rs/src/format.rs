@@ -23,6 +23,8 @@ const REQ_KNOWN: u32 = REQ_VARIABLE_CHUNKS | REQ_LIBRARY | REQ_SOLID_GROUPS;
 pub const INDEX_FLAT: u8 = 0;
 pub const INDEX_LIBRARY: u8 = 2;
 
+pub const MEDIA_CD_2352: u16 = 32;
+pub const MEDIA_CD_MIXED: u16 = 33;
 pub const MEDIA_DVD_2048: u16 = 64;
 
 /// Index record kinds.
@@ -49,6 +51,9 @@ pub enum Codec {
     Zstd,
     /// LZMA2, preset 9, its dictionary the group's size.
     Lzma2,
+    /// FLAC, level 8, for CD audio: a group is its PCM, 16-bit stereo at
+    /// 44.1 kHz, in frames of 4,704 samples, 8 sectors.
+    Flac,
 }
 
 impl Codec {
@@ -56,6 +61,7 @@ impl Codec {
         match self {
             Self::Zstd => 2,
             Self::Lzma2 => 8,
+            Self::Flac => 6,
         }
     }
 
@@ -63,6 +69,7 @@ impl Codec {
         match id {
             2 => Ok(Self::Zstd),
             8 => Ok(Self::Lzma2),
+            6 => Ok(Self::Flac),
             _ => Err(Error::Unsupported(format!("codec {id}"))),
         }
     }
@@ -196,7 +203,7 @@ impl Header {
         if unknown != 0 {
             return Err(Error::Unsupported(format!("required flags {unknown:#x}")));
         }
-        if header.media_class != MEDIA_DVD_2048 {
+        if ![MEDIA_CD_2352, MEDIA_CD_MIXED, MEDIA_DVD_2048].contains(&header.media_class) {
             return Err(Error::Unsupported(format!(
                 "media class {}",
                 header.media_class
@@ -331,6 +338,13 @@ pub struct StoreRef {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Media {
+    /// A CD's cue sheet, as the dump has it.
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "serde_bytes")]
+    pub cue: Option<Vec<u8>>,
+    /// A CD's SBI, its Q-channel sectors that differ from the generated
+    /// ones, as the dump has it.
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "serde_bytes")]
+    pub sbi: Option<Vec<u8>>,
     pub size: u64,
     pub areas: Vec<Area>,
     pub class: u16,
@@ -342,10 +356,20 @@ pub struct Media {
 pub struct Area {
     /// Bytes of disc it covers.
     pub len: u64,
+    /// A CD track's file, as the cue sheet names it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file: Option<String>,
     pub kind: AreaKind,
+    /// A CD track's first sector, in frames from 00:00:00.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frame: Option<u64>,
     pub start: u64,
     /// Index records it takes, in order after the previous area's.
     pub records: u64,
+    /// A CD data track's sectors: their kinds and subheaders, Zstandard
+    /// compressed (see [`super::cdtrack`]).
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "serde_bytes")]
+    pub sectors: Option<Vec<u8>>,
     /// A partition's title key.
     #[serde(default, skip_serializing_if = "Option::is_none", with = "serde_bytes")]
     pub title_key: Option<Vec<u8>>,
@@ -362,6 +386,11 @@ pub enum AreaKind {
     /// A Wii partition's data: stored decrypted and without its hashes,
     /// 31 KiB a 32 KiB block.
     WiiPartition,
+    /// A CD data track: what is left of its sectors once their sync,
+    /// header, EDC and ECC are generated.
+    CdData,
+    /// A CD audio track: its PCM.
+    CdAudio,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

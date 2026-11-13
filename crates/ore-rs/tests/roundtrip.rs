@@ -113,7 +113,7 @@ fn reads_anywhere_and_records_the_disc_hashes() {
     assert!(
         reader
             .identity()
-            .any(|(algo, value)| algo == "sha-1" && value == sha1)
+            .any(|(view, algo, value)| view == "logical" && algo == "sha-1" && value == sha1)
     );
 }
 

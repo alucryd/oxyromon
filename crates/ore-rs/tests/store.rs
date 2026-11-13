@@ -147,7 +147,7 @@ fn a_thin_ore_says_which_store_it_needs() {
     // Its identity is its own, store or not
     let reader = Reader::inspect(&moved).unwrap();
     assert!(reader.store_uuid().is_some());
-    assert!(reader.identity().any(|(algo, _)| algo == "sha-1"));
+    assert!(reader.identity().any(|(_, algo, _)| algo == "sha-1"));
 
     // Beside another store, it says so too
     ore_rs::create_store(
@@ -189,11 +189,11 @@ fn attaching_and_detaching_keep_the_disc() {
     ore_rs::detach(&thin, &detached, &Options::default(), &mut |_| {}).unwrap();
     assert!(Reader::open(&detached).unwrap().store_uuid().is_none());
     check(&detached, &discs[1]);
-    let identity = |ore: &Path| -> Vec<(String, Vec<u8>)> {
+    let identity = |ore: &Path| -> Vec<(String, String, Vec<u8>)> {
         Reader::inspect(ore)
             .unwrap()
             .identity()
-            .map(|(algo, value)| (algo.to_string(), value.to_vec()))
+            .map(|(view, algo, value)| (view.to_string(), algo.to_string(), value.to_vec()))
             .collect()
     };
     assert_eq!(identity(&standalone), identity(&thin));

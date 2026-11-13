@@ -3,11 +3,13 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufWriter, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use rayon::prelude::*;
 
+use super::cd::sector::SECTOR;
+use super::cdtrack::SectorMap;
 use super::crypto::Key;
 use super::error::{Error, Result};
 use super::format::*;
@@ -34,11 +36,21 @@ enum Record {
     Store(u64),
 }
 
+/// What [`Reader::runs`] gives: an area starting, or a run of it.
+pub(super) enum Event<'a> {
+    Area(AreaKind),
+    Run(Run<'a>),
+}
+
 #[derive(Clone)]
 struct AreaIndex {
     start: u64,
     len: u64,
     kind: AreaKind,
+    /// A CD track's first sector, in frames from 00:00:00.
+    frame: u32,
+    /// A CD data track's sectors.
+    map: Option<Arc<SectorMap>>,
     key: Option<Key>,
     exceptions: HashMap<u64, HashBlock>,
     /// Where each record starts in the area's stored stream, and where the
@@ -210,8 +222,23 @@ impl Reader {
                 .start
                 .checked_add(area.len)
                 .ok_or_else(|| corrupt("area too large"))?;
+            if matches!(area.kind, AreaKind::CdData | AreaKind::CdAudio)
+                && (!area.len.is_multiple_of(SECTOR as u64)
+                    || area.frame.is_none_or(|frame| frame > u32::MAX as u64 / 2))
+            {
+                return Err(corrupt("a CD track of partial sectors"));
+            }
+            let map = match (area.kind, &area.sectors) {
+                (AreaKind::CdData, Some(sectors)) => Some(Arc::new(SectorMap::read(
+                    sectors,
+                    area.len / SECTOR as u64,
+                )?)),
+                (AreaKind::CdData, None) => return Err(corrupt("a CD data track without its map")),
+                _ => None,
+            };
             let stored_len = match area.kind {
-                AreaKind::Raw => area.len,
+                AreaKind::Raw | AreaKind::CdAudio => area.len,
+                AreaKind::CdData => map.as_ref().unwrap().data_len(),
                 AreaKind::WiiPartition => {
                     if !area.len.is_multiple_of(BLOCK_TOTAL_SIZE) {
                         return Err(corrupt("a partition of partial blocks"));
@@ -220,7 +247,7 @@ impl Reader {
                 }
             };
             let key = match (area.kind, &area.title_key) {
-                (AreaKind::Raw, _) => None,
+                (AreaKind::Raw | AreaKind::CdData | AreaKind::CdAudio, _) => None,
                 (AreaKind::WiiPartition, Some(key)) => Some(
                     Key::try_from(key.as_slice())
                         .map_err(|_| corrupt("a title key not of 16 bytes"))?,
@@ -292,6 +319,8 @@ impl Reader {
                 start: area.start,
                 len: area.len,
                 kind: area.kind,
+                frame: area.frame.unwrap_or(0) as u32,
+                map,
                 key,
                 exceptions,
                 starts,
@@ -435,12 +464,13 @@ impl Reader {
 
     /// Every record as the run it was written from, in order, with how far
     /// through the disc each ends.
-    pub(super) fn runs(&mut self, emit: &mut dyn FnMut(Run, u64) -> Result<()>) -> Result<()> {
+    pub(super) fn runs(&mut self, emit: &mut dyn FnMut(Event, u64) -> Result<()>) -> Result<()> {
         for area in 0..self.areas.len() {
             let (start, len, stored) = {
                 let area = &self.areas[area];
                 (area.start, area.len, *area.starts.last().unwrap())
             };
+            emit(Event::Area(self.areas[area].kind), start)?;
             for record in 0..self.areas[area].records.len() {
                 let (from, to) = {
                     let starts = &self.areas[area].starts;
@@ -449,13 +479,16 @@ impl Reader {
                 let length = to - from;
                 let done = start + (to as u128 * len as u128 / stored as u128) as u64;
                 match self.areas[area].records[record].clone() {
-                    Record::Zero => emit(Run::Zero(length), done)?,
-                    Record::Padding(seed) => emit(Run::Padding(length, *seed), done)?,
+                    Record::Zero => emit(Event::Run(Run::Zero(length)), done)?,
+                    Record::Padding(seed) => emit(Event::Run(Run::Padding(length, *seed)), done)?,
                     Record::Chunk(id) => {
                         let chunk = self.chunks[id as usize];
                         let group = self.group(chunk.group)?;
                         let at = chunk.offset as usize;
-                        emit(Run::Chunk(&group[at..at + length as usize]), done)?;
+                        emit(
+                            Event::Run(Run::Chunk(&group[at..at + length as usize])),
+                            done,
+                        )?;
                     }
                     Record::Store(id) => {
                         let store = self.store.as_mut().expect("a thin ORE has its store");
@@ -469,7 +502,7 @@ impl Reader {
                                 "chunk {id} of the store does not match its hash"
                             )));
                         }
-                        emit(Run::Chunk(bytes), done)?;
+                        emit(Event::Run(Run::Chunk(bytes)), done)?;
                     }
                 }
             }
@@ -490,14 +523,62 @@ impl Reader {
         self.meta.provenance.params.codec
     }
 
-    /// The disc's hashes, as recorded when it was written: `blake3-256`,
-    /// `sha-1`, `md5` and `crc-32`, each by its name. A claim, which
+    /// The disc's hashes, as recorded when it was written: what each
+    /// covers, its algorithm and its value. A disc image's are `logical`,
+    /// `blake3-256`, `sha-1`, `md5` and `crc-32`; a CD's are each file's,
+    /// by its name, as a DAT lists them: its tracks, its cue sheet and its
+    /// SBI, with the `logical` BLAKE3 of the tracks in order. A claim, which
     /// [`decompress`] checks.
-    pub fn identity(&self) -> impl Iterator<Item = (&str, &[u8])> {
-        self.meta
-            .identity
-            .iter()
-            .map(|identity| (identity.algo.as_str(), identity.value.as_slice()))
+    pub fn identity(&self) -> impl Iterator<Item = (&str, &str, &[u8])> {
+        self.meta.identity.iter().map(|identity| {
+            (
+                identity.view.as_str(),
+                identity.algo.as_str(),
+                identity.value.as_slice(),
+            )
+        })
+    }
+
+    /// Whether it holds a CD, as a cue sheet and its tracks, rather than a
+    /// disc image.
+    pub fn is_cd(&self) -> bool {
+        self.meta.media.cue.is_some()
+    }
+
+    /// The files [`decompress`] writes, given `output`: the disc image, or
+    /// a CD's tracks beside its cue sheet, each with where it lies in the
+    /// logical stream; and the files written whole, a CD's cue sheet and
+    /// SBI.
+    #[allow(clippy::type_complexity)]
+    fn outputs(
+        &self,
+        output: &Path,
+    ) -> Result<(Vec<(PathBuf, u64, u64)>, Vec<(PathBuf, Vec<u8>)>)> {
+        let Some(cue) = &self.meta.media.cue else {
+            return Ok((vec![(output.to_path_buf(), 0, self.size())], Vec::new()));
+        };
+        let dir = output.parent().unwrap_or(Path::new(""));
+        let mut whole = vec![(output.to_path_buf(), cue.clone())];
+        if let Some(sbi) = &self.meta.media.sbi {
+            whole.push((output.with_extension("sbi"), sbi.clone()));
+        }
+        let mut tracks = Vec::new();
+        for area in &self.meta.media.areas {
+            let name = area.file.as_deref().unwrap_or_default();
+            // A track's file lies beside the cue sheet, and nowhere else
+            let plain = Path::new(name)
+                .file_name()
+                .is_some_and(|plain| plain == std::ffi::OsStr::new(name));
+            let path = dir.join(name);
+            if !plain
+                || tracks.iter().any(|(other, _, _)| *other == path)
+                || whole.iter().any(|(other, _)| *other == path)
+            {
+                return Err(Error::Corrupt(format!("a track's file name: {name:?}")));
+            }
+            tracks.push((path, area.start, area.len));
+        }
+        Ok((tracks, whole))
     }
 
     /// Read the disc at `offset`, failing past its end.
@@ -519,7 +600,10 @@ impl Reader {
             let within = offset - area.start;
             let length = buf.len().min((area.len - within) as usize);
             match area.kind {
-                AreaKind::Raw => self.read_stored(index, within, &mut buf[..length])?,
+                AreaKind::Raw | AreaKind::CdAudio => {
+                    self.read_stored(index, within, &mut buf[..length])?
+                }
+                AreaKind::CdData => self.read_sectors(index, within, &mut buf[..length])?,
                 AreaKind::WiiPartition => {
                     let group = within / GROUP_TOTAL_SIZE;
                     if !matches!(&self.wii, Some((a, g, _)) if *a == index && *g == group) {
@@ -537,6 +621,36 @@ impl Reader {
             }
             buf = &mut buf[length..];
             offset += length as u64;
+        }
+        Ok(())
+    }
+
+    /// Read a CD data track at `within`: its sectors' data from the
+    /// track's stream, the rest of them generated.
+    fn read_sectors(&mut self, area: usize, within: u64, buf: &mut [u8]) -> Result<()> {
+        let (map, frame) = {
+            let area = &self.areas[area];
+            (
+                area.map.clone().expect("a CD data track has its map"),
+                area.frame,
+            )
+        };
+        let first = (within / SECTOR as u64) as usize;
+        let end = (within + buf.len() as u64).div_ceil(SECTOR as u64) as usize;
+        let range = map.data_range(first..end);
+        let mut data = vec![0; (range.end - range.start) as usize];
+        self.read_stored(area, range.start, &mut data)?;
+        let mut sector = [0; SECTOR];
+        let mut out = 0;
+        for i in first..end {
+            let at = map.data_range(i..i + 1);
+            let from = (at.start - range.start) as usize..(at.end - range.start) as usize;
+            map.rebuild(i, frame + i as u32, &data[from], &mut sector);
+            // The part of the sector the read covers
+            let start = (within + out as u64 - (i * SECTOR) as u64) as usize;
+            let length = (SECTOR - start).min(buf.len() - out);
+            buf[out..out + length].copy_from_slice(&sector[start..start + length]);
+            out += length;
         }
         Ok(())
     }
@@ -619,7 +733,7 @@ impl Reader {
         let area = &self.areas[area];
         match area.kind {
             AreaKind::Raw => area.start,
-            AreaKind::WiiPartition => 0,
+            AreaKind::WiiPartition | AreaKind::CdData | AreaKind::CdAudio => 0,
         }
     }
 
@@ -634,64 +748,90 @@ impl Reader {
 }
 
 /// Write an ORE out as the disc it holds, checking it against the hash it
-/// was written with.
+/// was written with: a disc image to `output`; a CD to the cue sheet
+/// `output`, its tracks beside it under the names the cue sheet gives
+/// them, and its SBI, if it has one, of the cue sheet's name.
 ///
 /// `progress` is called with the input bytes consumed since the last call.
 pub fn decompress(input: &Path, output: &Path, progress: &mut dyn FnMut(u64)) -> Result<Stats> {
     let input_size = std::fs::metadata(input)?.len();
     // A reader a core, each decoding slices of the disc, written in order
     let first = Reader::open(input)?;
+    let (files, whole) = first.outputs(output)?;
+    let (size, logical_hash) = (first.size(), first.header.logical_hash);
     let mut readers = vec![];
     for _ in 1..rayon::current_num_threads() {
         readers.push(Mutex::new(first.try_clone()?));
     }
     readers.push(Mutex::new(first));
-    let (size, logical_hash) = {
-        let reader = readers[0].lock().unwrap();
-        (reader.size(), reader.header.logical_hash)
-    };
-    let part = io::part(output);
+    let paths: Vec<&Path> = files
+        .iter()
+        .map(|(path, _, _)| path.as_path())
+        .chain(whole.iter().map(|(path, _)| path.as_path()))
+        .collect();
     let result = (|| {
-        let mut file = BufWriter::with_capacity(8 << 20, File::create(&part)?);
         let mut hasher = blake3::Hasher::new();
-        let (mut offset, mut reported) = (0, 0);
-        while offset < size {
-            let slices: Vec<(u64, usize)> = (0..readers.len() as u64)
-                .map(|i| offset + i * SLICE)
-                .take_while(|&at| at < size)
-                .map(|at| (at, SLICE.min(size - at) as usize))
-                .collect();
-            let decoded = slices
-                .par_iter()
-                .map(|&(at, length)| {
-                    let worker = rayon::current_thread_index().unwrap_or(0) % readers.len();
-                    let mut reader = readers[worker].lock().unwrap();
-                    let mut buf = vec![0; length];
-                    reader.read_at(at, &mut buf)?;
-                    Ok(buf)
-                })
-                .collect::<Result<Vec<_>>>()?;
-            for buf in decoded {
-                hasher.update(&buf);
-                file.write_all(&buf)?;
-                offset += buf.len() as u64;
+        let (mut done, mut reported) = (0, 0);
+        for (path, start, len) in &files {
+            let mut file = BufWriter::with_capacity(8 << 20, File::create(io::part(path))?);
+            let (mut offset, end) = (*start, start + len);
+            while offset < end {
+                let slices: Vec<(u64, usize)> = (0..readers.len() as u64)
+                    .map(|i| offset + i * SLICE)
+                    .take_while(|&at| at < end)
+                    .map(|at| (at, SLICE.min(end - at) as usize))
+                    .collect();
+                let decoded = slices
+                    .par_iter()
+                    .map(|&(at, length)| {
+                        let worker = rayon::current_thread_index().unwrap_or(0) % readers.len();
+                        let mut reader = readers[worker].lock().unwrap();
+                        let mut buf = vec![0; length];
+                        reader.read_at(at, &mut buf)?;
+                        Ok(buf)
+                    })
+                    .collect::<Result<Vec<_>>>()?;
+                for buf in decoded {
+                    hasher.update(&buf);
+                    file.write_all(&buf)?;
+                    offset += buf.len() as u64;
+                    done += buf.len() as u64;
+                }
+                // Scale the progress through the disc to the file
+                let consumed = (done as u128 * input_size as u128 / size as u128) as u64;
+                progress(consumed - reported);
+                reported = consumed;
             }
-            // Scale the progress through the disc to the file
-            let consumed = (offset as u128 * input_size as u128 / size as u128) as u64;
-            progress(consumed - reported);
-            reported = consumed;
+            file.into_inner().map_err(|e| e.into_error())?.sync_all()?;
         }
         if *hasher.finalize().as_bytes() != logical_hash {
             return Err(corrupt(
                 "the disc does not match the hash it was written with",
             ));
         }
-        let file = file.into_inner().map_err(|e| e.into_error())?;
-        file.sync_all()?;
+        let mut output_size = size;
+        for (path, bytes) in &whole {
+            let file = File::create(io::part(path))?;
+            (&file).write_all(bytes)?;
+            file.sync_all()?;
+            output_size += bytes.len() as u64;
+        }
         Ok(Stats {
             input_size,
-            output_size: size,
+            output_size,
         })
     })();
-    io::finish(&part, output, result)
+    // Every file into place, or none
+    let result = result.and_then(|stats| {
+        for path in &paths {
+            std::fs::rename(io::part(path), path)?;
+        }
+        Ok(stats)
+    });
+    if result.is_err() {
+        for path in &paths {
+            let _ = std::fs::remove_file(io::part(path));
+        }
+    }
+    result
 }

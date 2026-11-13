@@ -42,6 +42,13 @@ impl Packer {
         }
     }
 
+    /// Compress what comes next with `codec`, once every group so far is
+    /// taken: a group is of one codec.
+    pub fn set_codec(&mut self, codec: Codec) {
+        debug_assert!(self.group.is_empty() && self.closed.is_empty());
+        self.codec = codec;
+    }
+
     /// Add a chunk: which group it lands in, counted from the first
     /// [`Self::take`] has yet to give, and where in it.
     pub fn push(&mut self, bytes: &[u8]) -> (usize, u32) {

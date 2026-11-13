@@ -471,6 +471,8 @@ pub(super) struct StoreWriter {
     // in the index, read in place, when a store grows that large
     ids: HashMap<[u8; 16], u64>,
     packer: Packer,
+    /// What data is compressed with, as audio is FLAC.
+    data_codec: Codec,
     /// The segment being written, the last the index lists.
     file: Option<File>,
     /// Bytes this writer added to the segments.
@@ -495,6 +497,7 @@ impl StoreWriter {
             index,
             ids,
             packer: Packer::new(codec, group_size),
+            data_codec: codec,
             file: None,
             added: 0,
         })
@@ -502,6 +505,21 @@ impl StoreWriter {
 
     pub fn uuid(&self) -> [u8; 16] {
         self.index.uuid
+    }
+
+    /// What the chunks added next are compressed with.
+    pub fn codec(&self) -> Codec {
+        self.packer.codec
+    }
+
+    /// Compress the chunks added next with `codec`, the groups so far
+    /// written first.
+    pub fn set_codec(&mut self, codec: Codec) -> Result<()> {
+        if self.packer.codec != codec {
+            self.write(true)?;
+            self.packer.set_codec(codec);
+        }
+        Ok(())
     }
 
     /// The id of the chunk `bytes`, whose BLAKE3 starts with `digest`,
@@ -741,6 +759,16 @@ impl StoreWriter {
             if live.len() as u64 == group.chunks {
                 whole.push((segment, offset, envelope_len, group, live));
                 continue;
+            }
+            // Audio stays FLAC, whatever data is compressed with
+            let codec = if group.codec == Codec::Flac {
+                Codec::Flac
+            } else {
+                self.data_codec
+            };
+            if self.packer.codec != codec {
+                self.write(true)?;
+                self.packer.set_codec(codec);
             }
             let data = read_group(file, offset, envelope_len, &group)?;
             for id in live {

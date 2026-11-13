@@ -24,7 +24,10 @@ fn every_cli_shares_one_ui() {
 /// Crates embedded rather than published, each symlinked into the source of
 /// the crates using it, by where each symlink sits.
 const EMBEDDED: &[(&str, &[&str])] = &[
-    ("crates/cd", &["crates/chd-rs/src/cd"]),
+    (
+        "crates/cd",
+        &["crates/chd-rs/src/cd", "crates/ore-rs/src/cd"],
+    ),
     (
         "crates/gcwii",
         &[

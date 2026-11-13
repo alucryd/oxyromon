@@ -2938,6 +2938,7 @@ dependencies = [
  "mothcdc",
  "rayon",
  "reed-solomon-erasure",
+ "rusty_flac",
  "serde",
  "serde_bytes",
  "sha1 0.11.0",

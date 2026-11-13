@@ -11,16 +11,18 @@ use ore_rs::{Codec, Options, Profile};
 fn cli() -> Command {
     Command::new("orers")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("ORE compression and decompression: GameCube and Wii ISOs are compressed, OREs decompressed, stores checked and repaired")
+        .about("ORE compression and decompression: GameCube and Wii ISOs and CD cue sheets are compressed, OREs decompressed, stores checked and repaired")
         .after_help(format!(
             "Writing an ORE from a Wii ISO needs the Wii common key among the keys; orers ships none.\n\n\
+             A CD is given as its cue sheet, its tracks a file each; an SBI of the cue sheet's name beside it\n\
+             is kept, and written back beside the cue sheet with the tracks.\n\n\
              A thin ORE finds its store as the nearest .ore-store up from its folder: keep the store in the\n\
              directory above every game using it. An ORE written from another ORE needs -o.\n\n{}",
             ui::AFTER_HELP
         ))
         .arg(
             Arg::new("INPUTS")
-                .help("ISOs to compress, OREs to decompress, stores to check and repair")
+                .help("ISOs and cue sheets to compress, OREs to decompress, stores to check and repair")
                 .required(true)
                 .num_args(1..)
                 .value_parser(value_parser!(PathBuf)),
@@ -115,7 +117,12 @@ fn convert(
             result.map_err(|e| e.to_string())?;
             return Ok(ui::wrote(&output));
         }
-        let output = outputs.claim(ui::output_path(&dir, input, "iso"))?;
+        // A CD comes back as its cue sheet, its tracks beside it
+        let extension = match ore_rs::Reader::inspect(input) {
+            Ok(reader) if reader.is_cd() => "cue",
+            _ => "iso",
+        };
+        let output = outputs.claim(ui::output_path(&dir, input, extension))?;
         let bar = ui::progress_bar(size, "Decompressing", input);
         let result = ore_rs::decompress(input, &output, &mut |n| bar.inc(n));
         bar.finish_and_clear();

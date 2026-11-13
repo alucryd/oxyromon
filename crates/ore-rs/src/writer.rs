@@ -10,8 +10,11 @@ use md5::Md5;
 use rayon::prelude::*;
 use sha1::{Digest, Sha1};
 
+use super::cd::cue::{self, Mode};
+use super::cd::sector::{LEAD_IN, SECTOR, data_range};
 use super::cdc;
-use super::codec::{LZMA2_PRESET, ZSTD_LEVEL};
+use super::cdtrack::MapWriter;
+use super::codec::{FLAC_LEVEL, LZMA2_PRESET, ZSTD_LEVEL};
 use super::crypto::Key;
 use super::disc::{Iso, PARTITION_DATA_SIZE, Platform, Source, Volume};
 use super::error::{Error, Result};
@@ -19,7 +22,7 @@ use super::format::*;
 use super::fst::FileSystem;
 use super::io;
 use super::pack::Packer;
-use super::reader::Reader;
+use super::reader::{Event, Reader};
 use super::segment::{BLOCK, Run, Segmenter};
 use super::store::StoreWriter;
 use super::wii::{
@@ -281,6 +284,23 @@ impl Encoder {
         self.record_max = self.record_max.max(length);
     }
 
+    /// Compress what comes next with `codec`, the groups so far written
+    /// first: a CD's audio tracks are FLAC, its data tracks not.
+    fn set_codec(&mut self, codec: Codec) -> Result<()> {
+        let current = match &self.sink {
+            Sink::Inline { packer, .. } => packer.codec,
+            Sink::Store { writer, .. } => writer.codec(),
+        };
+        if current != codec {
+            self.flush(true)?;
+            match &mut self.sink {
+                Sink::Inline { packer, .. } => packer.set_codec(codec),
+                Sink::Store { writer, .. } => writer.set_codec(codec)?,
+            }
+        }
+        Ok(())
+    }
+
     /// Write the groups filled, once there are enough to keep every core
     /// busy, or with `all` every one.
     fn flush(&mut self, all: bool) -> Result<()> {
@@ -340,6 +360,7 @@ impl Encoder {
             level: match options.codec {
                 Codec::Zstd => ZSTD_LEVEL as u32,
                 Codec::Lzma2 => LZMA2_PRESET,
+                Codec::Flac => FLAC_LEVEL,
             },
             chunker: Chunker {
                 max: cdc::MAX as u64,
@@ -364,7 +385,7 @@ impl Encoder {
         let header = Header {
             flags_required: flags,
             profile: options.profile.id(),
-            media_class: MEDIA_DVD_2048,
+            media_class: meta.media.class,
             index_kind,
             logical_size: meta.media.size,
             chunk_max: self.record_max as u32,
@@ -412,6 +433,14 @@ pub fn compress(
     encode(input, output, options, keys, None, progress)
 }
 
+/// Whether `input` is a cue sheet, by its extension: a CD, whose tracks it
+/// names.
+fn is_cue(input: &Path) -> bool {
+    input
+        .extension()
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("cue"))
+}
+
 /// Like [`compress`], but the disc's chunks go to the store at `store`, and
 /// `output` is a thin ORE naming them there. The store is made with
 /// [`create_store`](super::create_store); a game finds it again as the
@@ -435,6 +464,9 @@ fn encode(
     store: Option<&Path>,
     progress: &mut dyn FnMut(u64),
 ) -> Result<Stats> {
+    if is_cue(input) {
+        return encode_cd(input, output, options, store, progress);
+    }
     let mut iso = Iso::open(input)?;
     let size = iso.size();
     let Some(mut volume) = Volume::new(&mut iso, keys)? else {
@@ -496,13 +528,19 @@ fn encode(
                     }
                     segmenter.finish(&mut |run| encoder.push(run));
                 }
+                AreaKind::CdData | AreaKind::CdAudio => {
+                    unreachable!("a disc image's plan has no CD track")
+                }
             }
             exception_count += exceptions.len() as u64;
             areas.push(Area {
                 len: plan.len,
+                file: None,
                 kind: plan.kind,
+                frame: None,
                 start: plan.start,
                 records: encoder.records - records,
+                sectors: None,
                 title_key: plan.key.map(|key| key.to_vec()),
                 exceptions,
             });
@@ -531,6 +569,8 @@ fn encode(
         };
         let meta = Meta {
             media: Media {
+                cue: None,
+                sbi: None,
                 size,
                 areas,
                 class: MEDIA_DVD_2048,
@@ -610,9 +650,18 @@ fn rewrite(
         let mut encoder = Encoder::new(&part, options, store)?;
         let size = reader.size();
         let mut reported = 0;
-        reader.runs(&mut |run, done| {
-            encoder.push(run);
-            encoder.flush(false)?;
+        reader.runs(&mut |event, done| {
+            match event {
+                Event::Area(kind) => encoder.set_codec(if kind == AreaKind::CdAudio {
+                    Codec::Flac
+                } else {
+                    options.codec
+                })?,
+                Event::Run(run) => {
+                    encoder.push(run);
+                    encoder.flush(false)?;
+                }
+            }
             // Scale the progress through the disc to the file
             let consumed = (done as u128 * input_size as u128 / size as u128) as u64;
             progress(consumed - reported);
@@ -626,6 +675,244 @@ fn rewrite(
         })
     })();
     io::finish(&part, output, result)
+}
+
+/// A CD's audio chunks: 8 sectors, a FLAC frame.
+const AUDIO_CHUNK: usize = 8 * SECTOR;
+/// How many sectors of a CD track are read at a time: a whole number of
+/// audio chunks.
+const CD_WINDOW: usize = 256 * 8;
+
+/// Content-defined chunks of a stream given a piece at a time.
+#[derive(Default)]
+struct Cutter {
+    buf: Vec<u8>,
+}
+
+impl Cutter {
+    fn feed(&mut self, bytes: &[u8], emit: &mut dyn FnMut(Run)) {
+        self.buf.extend_from_slice(bytes);
+        let mut at = 0;
+        while self.buf.len() - at > cdc::MAX {
+            let n = cdc::cut(&self.buf[at..]);
+            emit(Run::Chunk(&self.buf[at..at + n]));
+            at += n;
+        }
+        self.buf.drain(..at);
+    }
+
+    fn finish(&mut self, emit: &mut dyn FnMut(Run)) {
+        let mut at = 0;
+        while at < self.buf.len() {
+            let n = cdc::cut(&self.buf[at..]);
+            emit(Run::Chunk(&self.buf[at..at + n]));
+            at += n;
+        }
+        self.buf.clear();
+    }
+}
+
+/// A file's name, as a cue sheet names it.
+fn file_name(path: &Path) -> String {
+    path.file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned()
+}
+
+/// Write the CD whose cue sheet is `input`, its tracks a file each, as an
+/// ORE: data tracks' sectors split into what is generated and what is
+/// stored, audio tracks' PCM in FLAC. An SBI beside the cue sheet, of the
+/// same name, is kept too.
+fn encode_cd(
+    input: &Path,
+    output: &Path,
+    options: &Options,
+    store: Option<&Path>,
+    progress: &mut dyn FnMut(u64),
+) -> Result<Stats> {
+    let cue_bytes = std::fs::read(input)?;
+    let dir = input.parent().unwrap_or(Path::new(""));
+    let sheet = cue::parse(&String::from_utf8_lossy(&cue_bytes), dir)?;
+    let mut files = HashSet::new();
+    let mut size = 0;
+    for track in &sheet.tracks {
+        if !files.insert(track.file.clone()) {
+            return Err(Error::Unsupported(
+                "a cue sheet with several tracks in one file".into(),
+            ));
+        }
+        let len = std::fs::metadata(&track.file)?.len();
+        if len == 0 || !len.is_multiple_of(SECTOR as u64) {
+            return Err(Error::Corrupt(format!(
+                "{} is not of whole sectors",
+                track.file.display()
+            )));
+        }
+        size += len;
+    }
+    let sbi_path = input.with_extension("sbi");
+    let sbi = match std::fs::read(&sbi_path) {
+        Ok(bytes) if bytes.starts_with(b"SBI\0") => Some(bytes),
+        Ok(_) => {
+            return Err(Error::Corrupt(format!(
+                "{} is not an SBI",
+                sbi_path.display()
+            )));
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+        Err(e) => return Err(e.into()),
+    };
+    let part = io::part(output);
+    let result = (|| {
+        let store = store
+            .map(|dir| StoreWriter::open(dir, options.codec, options.profile.group_size()))
+            .transpose()?;
+        let mut encoder = Encoder::new(&part, options, store)?;
+        let mut logical = blake3::Hasher::new();
+        let mut identity = Vec::new();
+        let mut areas = Vec::new();
+        let (mut frame, mut start, mut generated) = (LEAD_IN, 0, 0);
+        let mut buf = vec![0; CD_WINDOW * SECTOR];
+        for track in &sheet.tracks {
+            frame += track.pregap;
+            let audio = track.mode == Mode::Audio;
+            encoder.set_codec(if audio { Codec::Flac } else { options.codec })?;
+            let file = File::open(&track.file)?;
+            let len = file.metadata()?.len();
+            let records = encoder.records;
+            let mut hashes = Hashes::default();
+            let mut map = MapWriter::default();
+            let mut cutter = Cutter::default();
+            let mut plane = Vec::new();
+            let mut at = 0;
+            while at < len {
+                let length = (len - at).min(buf.len() as u64) as usize;
+                let buf = &mut buf[..length];
+                io::read_exact_at(&file, buf, at)?;
+                hashes.update(buf);
+                logical.update(buf);
+                if audio {
+                    for chunk in buf.chunks(AUDIO_CHUNK) {
+                        if chunk.iter().all(|&b| b == 0) {
+                            encoder.push(Run::Zero(chunk.len() as u64));
+                        } else {
+                            encoder.push(Run::Chunk(chunk));
+                        }
+                    }
+                } else {
+                    plane.clear();
+                    let sector_at = (at / SECTOR as u64) as u32;
+                    for (i, raw) in buf.as_chunks::<SECTOR>().0.iter().enumerate() {
+                        let kind = map.push(raw, frame + sector_at + i as u32);
+                        let range = data_range(kind);
+                        generated += (SECTOR - range.len()) as u64;
+                        plane.extend_from_slice(&raw[range]);
+                    }
+                    cutter.feed(&plane, &mut |run| encoder.push(run));
+                }
+                encoder.flush(false)?;
+                progress(length as u64);
+                at += length as u64;
+            }
+            cutter.finish(&mut |run| encoder.push(run));
+            let name = file_name(&track.file);
+            let Hashes {
+                crc32, md5, sha1, ..
+            } = hashes;
+            identity.extend(file_identity(&name, crc32, md5, sha1));
+            areas.push(Area {
+                len,
+                file: Some(name),
+                kind: if audio {
+                    AreaKind::CdAudio
+                } else {
+                    AreaKind::CdData
+                },
+                frame: Some(frame as u64),
+                start,
+                records: encoder.records - records,
+                sectors: (!audio).then(|| map.finish()),
+                title_key: None,
+                exceptions: Vec::new(),
+            });
+            frame += (len / SECTOR as u64) as u32;
+            start += len;
+        }
+        for (name, bytes) in [
+            (file_name(input), Some(&cue_bytes)),
+            (file_name(&sbi_path), sbi.as_ref()),
+        ] {
+            if let Some(bytes) = bytes {
+                let mut hashes = Hashes::default();
+                hashes.update(bytes);
+                let Hashes {
+                    crc32, md5, sha1, ..
+                } = hashes;
+                identity.extend(file_identity(&name, crc32, md5, sha1));
+            }
+        }
+        let logical_hash: [u8; 32] = logical.finalize().into();
+        identity.insert(
+            0,
+            Identity {
+                algo: "blake3-256".into(),
+                view: "logical".into(),
+                value: logical_hash.to_vec(),
+            },
+        );
+        let audio = areas.iter().any(|area| area.kind == AreaKind::CdAudio);
+        let meta = Meta {
+            media: Media {
+                cue: Some(cue_bytes.clone()),
+                sbi: sbi.clone(),
+                size,
+                areas,
+                class: if audio { MEDIA_CD_MIXED } else { MEDIA_CD_2352 },
+                platform: "cd".into(),
+            },
+            store: None,
+            ledger: vec![
+                step("cd-sectors", Some(generated)),
+                step("zero", Some(encoder.zeros)),
+                step("mincdc-dedup", Some(encoder.deduped)),
+            ],
+            identity,
+            // Filled in as the ORE is finished
+            provenance: Provenance {
+                tool: String::new(),
+                params: Params {
+                    codec: options.codec,
+                    group: 0,
+                    level: 0,
+                    chunker: Chunker {
+                        max: 0,
+                        min: 0,
+                        name: String::new(),
+                    },
+                },
+            },
+        };
+        Ok(Stats {
+            input_size: size,
+            output_size: encoder.finish(meta, options, logical_hash)?,
+        })
+    })();
+    io::finish(&part, output, result)
+}
+
+/// A file's CRC-32, MD5 and SHA-1, as a DAT lists them, by its name.
+fn file_identity(name: &str, crc32: crc32fast::Hasher, md5: Md5, sha1: Sha1) -> [Identity; 3] {
+    let identity = |algo: &str, value: Vec<u8>| Identity {
+        algo: algo.into(),
+        view: name.into(),
+        value,
+    };
+    [
+        identity("sha-1", sha1.finalize().to_vec()),
+        identity("md5", md5.finalize().to_vec()),
+        identity("crc-32", crc32.finalize().to_be_bytes().to_vec()),
+    ]
 }
 
 fn step(id: &str, bytes: Option<u64>) -> Step {

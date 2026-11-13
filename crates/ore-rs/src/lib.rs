@@ -1,5 +1,5 @@
-//! ORE, oxyROMon's ROM enclosure, for GameCube and Wii discs: part of
-//! oxyROMon.
+//! ORE, oxyROMon's ROM enclosure, for GameCube and Wii discs and CDs: part
+//! of oxyROMon.
 //!
 //! An ORE holds a disc as Redump hashes it, and gives it back byte for byte.
 //! Wii partitions are stored decrypted and without their hashes, padding as
@@ -9,6 +9,11 @@
 //! chunks are compressed in groups of 1 or 4 MiB with Zstandard or LZMA2.
 //! The disc's CRC-32, MD5, SHA-1 and BLAKE3 are recorded, so it can be
 //! checked against a DAT without being decoded.
+//!
+//! A CD, given as its cue sheet and a BIN a track, is stored the same way
+//! once each data sector's sync, address, EDC and ECC are taken out to be
+//! generated again, its audio tracks in FLAC; it comes back as those files,
+//! with its SBI if it had one.
 //!
 //! ```no_run
 //! use std::path::Path;
@@ -25,7 +30,13 @@
 //! The format is specified in oxyROMon's `formats/design/01-format-spec.md`,
 //! and its GameCube and Wii profile in `07-gamecube-wii-profile.md`.
 
+// The CD-ROM specifics, shared with chd-rs: `src/cd` is a symlink to the cd
+// crate's source, which publishing copies in
+#[allow(dead_code, unused_imports)]
+#[path = "cd/lib.rs"]
+mod cd;
 mod cdc;
+mod cdtrack;
 mod codec;
 mod format;
 // The GameCube and Wii disc specifics, shared with rvz-rs and wbfs-rs:

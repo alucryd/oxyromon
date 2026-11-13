@@ -3,10 +3,10 @@ name = "ore-rs"
 version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
-description = "ORE, oxyROMon's ROM enclosure: GameCube and Wii discs deduped in content-defined chunks and compressed in groups, bit-exact"
+description = "ORE, oxyROMon's ROM enclosure: GameCube and Wii discs and CDs deduped in content-defined chunks and compressed in groups, bit-exact"
 license = "GPL-3.0-or-later"
 repository.workspace = true
-keywords = ["ore", "gamecube", "wii", "compression", "deduplication"]
+keywords = ["ore", "gamecube", "wii", "playstation", "compression"]
 categories = ["compression", "command-line-utilities"]
 include = ["src/**/*", "tests/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
 
@@ -33,6 +33,7 @@ crc32fast.workspace = true
 lzma-rust2 = { workspace = true, features = ["encoder"] }
 md-5.workspace = true
 reed-solomon-erasure = { version = "6", default-features = false }
+rusty_flac = { version = "0.2.2", default-features = false, features = ["std", "libm"] }
 serde = { version = "1", features = ["derive"] }
 serde_bytes = "0.11"
 zstd.workspace = true

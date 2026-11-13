@@ -1,6 +1,7 @@
 # ore-rs
 
-ORE, oxyROMon's ROM enclosure, for GameCube and Wii discs. Part of
+ORE, oxyROMon's ROM enclosure, for GameCube and Wii discs and CDs,
+PlayStation's first. Part of
 [oxyROMon](https://github.com/alucryd/oxyromon), as a library and the
 `orers` CLI. An ORE gives back the disc that went in, byte for byte, and
 records the disc's hashes, so it checks against a DAT without being decoded.
@@ -39,6 +40,36 @@ where every choice below is measured. In short:
   seed gives it back, and every Wii group is encrypted again and compared
   with the disc before it is stored decrypted. Decompressing checks the disc
   against the BLAKE3 it was written with; every group carries a CRC-32C.
+
+## CDs
+
+A CD is given as its cue sheet, a BIN a track as Redump lists them, and
+comes back as those files, the cue sheet included, with the SBI of a
+LibCrypt disc when one lies beside the cue sheet under its name. The
+PlayStation profile is
+[`08-playstation-profile.md`](../../formats/design/08-playstation-profile.md).
+
+```rust
+use std::path::Path;
+use ore_rs::Options;
+
+let (cue, ore) = (Path::new("Game (Europe).cue"), Path::new("Game (Europe).ore"));
+ore_rs::compress(cue, ore, &Options::default(), &[], &mut |_| {}).unwrap();
+// The cue sheet, its tracks beside it under their names, and the SBI
+ore_rs::decompress(ore, Path::new("out/Game (Europe).cue"), &mut |_| {}).unwrap();
+```
+
+- **Sectors split**: each data sector's sync, address, EDC and ECC are
+  generated rather than stored, a sector that does not fit the standard
+  exactly kept whole; what is left, its subheader and 2048 or 2324 bytes
+  of data, is cut and deduped as a disc image's bytes are.
+- **Audio in FLAC**, in frames of 8 sectors, each chunk of 8 sectors stored
+  once: a track another disc holds costs nothing in a store.
+- **Each file's hashes**: every track, the cue sheet and the SBI are
+  recorded under their names, as a DAT lists them.
+- On the maintainer's PlayStation library, 10-15% smaller than its CHDs a
+  disc, 26-29% in a store
+  ([results](../../formats/results/2026-11-13-ps1/README.md)).
 
 ## A store
 
@@ -88,9 +119,10 @@ partition's title key, so reading one needs no key, nor does a GameCube disc.
 
 ## Scope
 
-- **GameCube and Wii discs, from an ISO.** Anything else is refused.
+- **GameCube and Wii discs, from an ISO; CDs, from a cue sheet whose
+  tracks are a file each**, as Redump lists them. Anything else is refused.
 - **Not yet in the file**: the Merkle tree, parity, the tail index and the
-  `deep` profile of the spec; in a store, a segment's fixity and parity.
+  `deep` profile of the spec, beyond a store's segment parity.
 
 ## CLI
 
@@ -100,6 +132,8 @@ orers game.iso                          # to game.ore, next to it
 orers --keys keys.bin -o out/ *.iso     # Wii discs, to out/
 orers -p archive -c lzma2 game.iso      # smaller, slower to read
 orers game.ore                          # back to game.iso
+orers "Game (Europe).cue"               # a CD, its SBI with it if beside it
+orers -o out/ "Game (Europe).ore"       # back to its cue sheet, tracks and SBI
 orers --store GameCube/.ore-store -o GameCube/ *.iso   # thin OREs, chunks in the store
 orers --detach -o out/ GameCube/game.ore               # a standalone ORE again
 orers GameCube/.ore-store               # check the store, repairing what parity covers
@@ -133,7 +167,14 @@ metadata to check each is caught. `tests/store.rs` writes discs sharing a
 file to a store, checks it is stored once, attaches, detaches and purges,
 damages the index and segments, and repairs them; the parity is checked
 against scattered damage, a burst as long as the parity, a row past it,
-and a segment cut short. The chunker is checked against
+and a segment cut short. `tests/cd.rs` builds a CD of every kind of
+sector PlayStation discs hold, subheader copies that differ and a sector
+nothing generates among them, with two audio tracks and an SBI, and
+round-trips it as its files, alone and through a store, detached,
+attached and purged. On real discs, 11 of the maintainer's PlayStation
+library come back with every track and cue sheet matching the Redump DAT
+([results](../../formats/results/2026-11-13-ps1/README.md#ore-rs)). The
+chunker is checked against
 [mothcdc](https://crates.io/crates/mothcdc)'s MinCDC, which it is a port of.
 
 ```sh
@@ -143,15 +184,18 @@ cargo test -p ore-rs
 ## Source layout
 
 The GameCube and Wii disc specifics live in oxyROMon's unpublished `gcwii`
-crate, shared with rvz-rs and wbfs-rs. `src/gcwii` is a symlink to its
-source, and so is `tests/common` to its synthetic discs; publishing copies
-them in, so this crate stands alone.
+crate, shared with rvz-rs and wbfs-rs, and the CD-ROM ones in its `cd`
+crate, shared with chd-rs. `src/gcwii` and `src/cd` are symlinks to their
+sources, and so is `tests/common` to gcwii's synthetic discs; publishing
+copies them in, so this crate stands alone.
 
 ## Credits
 
 The padding generator and its seed recovery are Dolphin's, by the
 [Dolphin Emulator Project](https://github.com/dolphin-emu/dolphin), through
 gcwii. MinCDC is Orson Peters's [algorithm](https://github.com/orlp/mincdc).
+The CD ECC is MAME's, through oxyROMon's `cd` crate, under BSD-3-Clause.
+FLAC is [rusty_flac](https://crates.io/crates/rusty_flac)'s.
 Reed-Solomon coding is
 [reed-solomon-erasure](https://crates.io/crates/reed-solomon-erasure)'s.
 
