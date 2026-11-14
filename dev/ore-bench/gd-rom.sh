@@ -35,8 +35,15 @@ for chd in "$@"; do
     mkdir -p "$x" "$work/o" "$work/b" "$work/first"
     echo "$name" >&2
     cp -- "$chd" "$x/$name.chd"
-    "$bin/chdrs" -o "$x" "$x/$name.chd" >/dev/null
+    # A clone names its parent only by SHA-1: try its siblings, read in place
+    if ! "$bin/chdrs" -o "$x" "$x/$name.chd" >/dev/null 2>&1; then
+        for parent in "$(dirname -- "$chd")"/*.chd; do
+            [ "$parent" = "$chd" ] && continue
+            "$bin/chdrs" -p "$parent" -o "$x" "$x/$name.chd" >/dev/null 2>&1 && break
+        done
+    fi
     rm -f -- "$x/$name.chd"
+    [ -n "$(ls -- "$x")" ] || { echo "$name: no parent found" >&2; continue; }
     cp -- "$(dirname -- "$chd")/$name.cue" "$x/$name.cue"
 
     files=0
