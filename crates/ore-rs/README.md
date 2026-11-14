@@ -1,7 +1,7 @@
 # ore-rs
 
-ORE, oxyROMon's ROM enclosure, for GameCube and Wii discs and CDs,
-PlayStation's first. Part of
+ORE, oxyROMon's ROM enclosure, for GameCube, Wii and PlayStation 2 discs
+and CDs, PlayStation's first. Part of
 [oxyROMon](https://github.com/alucryd/oxyromon), as a library and the
 `orers` CLI. An ORE gives back the disc that went in, byte for byte, and
 records the disc's hashes, so it checks against a DAT without being decoded.
@@ -131,8 +131,10 @@ partition's title key, so reading one needs no key, nor does a GameCube disc.
 
 ## Scope
 
-- **GameCube and Wii discs, from an ISO; CDs, from a cue sheet whose
-  tracks are a file each**, as Redump lists them. Anything else is refused.
+- **GameCube, Wii and PlayStation 2 discs, from an ISO; CDs, from a cue
+  sheet whose tracks are a file each**, as Redump lists them. An ISO is a
+  PlayStation 2 DVD when its ISO 9660 `SYSTEM.CNF` boots a `BOOT2`
+  executable; anything else is refused.
 - **Not yet in the file**: the Merkle tree, parity, the tail index and the
   `deep` profile of the spec, beyond a store's segment parity.
 

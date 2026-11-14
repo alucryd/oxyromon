@@ -216,7 +216,7 @@ Arcade games stored as archives stay as they are.
 | CHD                     | ✔                | ✔       | ✔      | chd-rs                                                       |
 | CSO, ZSO                | ✔                | ✔       | ✔      | xso-rs                                                       |
 | NSZ                     | ✔                | ✔       | ✔      | nsz-rs                                                       |
-| ORE (GameCube, Wii, CD) | ✔                | ✔       |        | ore-rs                                                       |
+| ORE (GC, Wii, PS2, CD)  | ✔                | ✔       |        | ore-rs                                                       |
 | RVZ                     | ✔                | ✔       | ✔      | rvz-rs                                                       |
 | WBFS                    |                  |         | ✔      | wbfs-rs                                                      |
 | WUX (Wii U)             | ✔                | ✔       | ✔      | wux-rs                                                       |
@@ -243,7 +243,7 @@ WBFS files are those `wit copy --wbfs` writes: only what the disc points to is k
 Exporting an RVZ to WBFS needs no key and decodes no ISO on the way; exporting a Wii ISO needs the Wii common key, as compressing it to RVZ does.
 
 ORE is oxyROMon's own format, a draft: an ORE written now may not open in a later version, so keep your originals, or another format, until it is final.
-An ORE holds a GameCube or Wii disc, or a CD as its cue sheet and tracks, an ORE a disc: the cue sheet is inside it, so a CD is one file, which every ROM of the game points to.
+An ORE holds a GameCube, Wii or PlayStation 2 disc, or a CD as its cue sheet and tracks, an ORE a disc: the cue sheet is inside it, so a CD is one file, which every ROM of the game points to.
 Importing a CD ORE needs every track it holds to match the DAT; when its cue sheet is not the DAT's, import the DAT's, and it goes into the ORE in its place, its metadata alone written again.
 Like RVZ, compressing a Wii ISO needs the Wii common key, and reading an ORE needs none.
 No emulator reads ORE yet.
@@ -663,7 +663,7 @@ Converts ROM files between lossless formats and back to their originals:
 - Any original format to and from 7Z and ZIP.
 - CUE/BIN and ISO to and from CHD, with CHDs restored to their original split CUE/BIN.
 - ISO to and from CSO, ZSO and RVZ.
-- GameCube and Wii ISOs and CUE/BIN to and from ORE, with OREs restored to their cue sheet and tracks.
+- GameCube, Wii and PlayStation 2 ISOs, CUE/BIN and CHD to and from ORE, with OREs restored to their cue sheet and tracks; an ISO of another system is skipped.
 - NSP to and from NSZ.
 - Wii U discs between ISO, WUX and lossless WUA.
 

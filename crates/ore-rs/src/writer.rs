@@ -11,6 +11,7 @@ use rayon::prelude::*;
 use sha1::{Digest, Sha1};
 
 use super::cd::cue::{self, Mode};
+use super::cd::iso9660;
 use super::cd::sector::{LEAD_IN, SECTOR, data_range};
 use super::cdc;
 use super::cdtrack::{MapWriter, Plane};
@@ -436,6 +437,27 @@ pub fn compress(
     encode(input, output, options, keys, None, progress)
 }
 
+/// Whether `iso` is a PlayStation 2 DVD: an ISO 9660 file system whose
+/// `SYSTEM.CNF` boots a `BOOT2` executable.
+fn is_ps2(iso: &mut Iso) -> Result<bool> {
+    let mut read = |lba: u32, sector: &mut [u8; 2048]| {
+        iso.read_at(u64::from(lba) * 2048, sector)
+            .map_err(|error| std::io::Error::other(error.to_string()))
+    };
+    let Ok(entries) = iso9660::entries(&mut read) else {
+        return Ok(false);
+    };
+    let Some(cnf) = entries
+        .iter()
+        .find(|entry| !entry.directory && entry.path.eq_ignore_ascii_case("/SYSTEM.CNF"))
+    else {
+        return Ok(false);
+    };
+    let mut bytes = vec![0; (cnf.size as usize).min(4096)];
+    iso.read_at(u64::from(cnf.lba) * 2048, &mut bytes)?;
+    Ok(String::from_utf8_lossy(&bytes).contains("BOOT2"))
+}
+
 /// Whether `input` is a cue sheet, by its extension: a CD, whose tracks it
 /// names.
 fn is_cue(input: &Path) -> bool {
@@ -472,12 +494,33 @@ fn encode(
     }
     let mut iso = Iso::open(input)?;
     let size = iso.size();
-    let Some(mut volume) = Volume::new(&mut iso, keys)? else {
-        return Err(Error::Unsupported(
-            "neither a GameCube nor a Wii disc".into(),
-        ));
+    // A GameCube or Wii disc is cut by its structure; a PlayStation 2 DVD
+    // is one area, its zeros and the rest
+    let (plans, platform) = match Volume::new(&mut iso, keys)? {
+        Some(mut volume) => {
+            let platform = match volume.platform {
+                Platform::GameCube => "gamecube",
+                Platform::Wii => "wii",
+            };
+            (plan(&mut iso, &mut volume)?, platform)
+        }
+        None if is_ps2(&mut iso)? => (
+            vec![Plan {
+                start: 0,
+                len: size,
+                kind: AreaKind::Raw,
+                file_system: None,
+                key: None,
+            }],
+            "ps2",
+        ),
+        None => {
+            return Err(Error::Unsupported(
+                "neither a GameCube, a Wii nor a PlayStation 2 disc".into(),
+            ));
+        }
     };
-    let plans = plan(&mut iso, &mut volume)?;
+    let padded = platform != "ps2";
     let part = io::part(output);
     let result = (|| {
         let store = store
@@ -493,7 +536,11 @@ fn encode(
             let mut exceptions = Vec::new();
             match plan.kind {
                 AreaKind::Raw => {
-                    let mut segmenter = Segmenter::new(plan.start);
+                    let mut segmenter = if padded {
+                        Segmenter::new(plan.start)
+                    } else {
+                        Segmenter::without_padding(plan.start)
+                    };
                     let mut buf = vec![0; (WINDOW + BLOCK) as usize];
                     let mut at = 0;
                     while at < plan.len {
@@ -556,13 +603,14 @@ fn encode(
             blake3: logical,
         } = hashes;
         let logical_hash: [u8; 32] = logical.finalize().into();
-        let wii = volume.platform == Platform::Wii;
         let mut ledger = Vec::new();
         if areas.iter().any(|area| area.kind == AreaKind::WiiPartition) {
             ledger.push(step("wii-decrypt", None));
             ledger.push(step("wii-hashes", Some(exception_count)));
         }
-        ledger.push(step("gc-wii-filler-prng", Some(encoder.padding)));
+        if padded {
+            ledger.push(step("gc-wii-filler-prng", Some(encoder.padding)));
+        }
         ledger.push(step("zero", Some(encoder.zeros)));
         ledger.push(step("mincdc-dedup", Some(encoder.deduped)));
         let identity = |algo: &str, value: Vec<u8>| Identity {
@@ -577,7 +625,7 @@ fn encode(
                 size,
                 areas,
                 class: MEDIA_DVD_2048,
-                platform: if wii { "wii" } else { "gamecube" }.into(),
+                platform: platform.into(),
             },
             store: None,
             ledger,

@@ -7,7 +7,7 @@ use super::database::*;
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
-use super::ore::{AsOre, OreCompressionAlgorithm, OreProfile, ToOre};
+use super::ore::{AsOre, OreCompressionAlgorithm, OreProfile, OreRomfile, ToOre};
 use super::progress::*;
 use super::prompt::*;
 use super::rvz::{AsRvz, RvzCompressionAlgorithm, ToRvz};
@@ -2764,6 +2764,9 @@ async fn to_ore(
     // partition ISOs
     let (isos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ISO_EXTENSION]);
 
+    // partition CHDs
+    let (chds, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CHD_EXTENSION]);
+
     // partition OREs
     let (ores, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ORE_EXTENSION]);
 
@@ -2788,16 +2791,22 @@ async fn to_ore(
             let decoded =
                 archive_to_common(&mut transaction, progress_bar, rom, romfile, &tmp_directory)
                     .await?;
-            let ore_romfile = decoded
-                .inner
-                .as_iso()?
-                .to_ore(
-                    progress_bar,
-                    &decoded.source.path.parent().unwrap(),
-                    compression_algorithm,
-                    profile,
-                )
-                .await?;
+            let Some(ore_romfile) = skip_unsupported(
+                progress_bar,
+                decoded
+                    .inner
+                    .as_iso()?
+                    .to_ore(
+                        progress_bar,
+                        &decoded.source.path.parent().unwrap(),
+                        compression_algorithm,
+                        profile,
+                    )
+                    .await,
+            )?
+            else {
+                continue;
+            };
             (decoded.source, ore_romfile)
         } else {
             let decoded = archive_to_cue_bin(
@@ -2911,16 +2920,22 @@ async fn to_ore(
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         let decoded = common_as_source(&mut transaction, romfile).await?;
-        let ore_romfile = decoded
-            .inner
-            .as_iso()?
-            .to_ore(
-                progress_bar,
-                &decoded.source.path.parent().unwrap(),
-                compression_algorithm,
-                profile,
-            )
-            .await?;
+        let Some(ore_romfile) = skip_unsupported(
+            progress_bar,
+            decoded
+                .inner
+                .as_iso()?
+                .to_ore(
+                    progress_bar,
+                    &decoded.source.path.parent().unwrap(),
+                    compression_algorithm,
+                    profile,
+                )
+                .await,
+        )?
+        else {
+            continue;
+        };
         if check_and_persist(
             &mut transaction,
             progress_bar,
@@ -2936,6 +2951,131 @@ async fn to_ore(
         {
             commit_transaction(transaction).await;
         }
+    }
+
+    // convert CHDs: a DVD's ISO, or a CD's tracks with the cue sheet beside it
+    for roms in chds.values() {
+        // leave arcade CHDs untouched
+        if roms.iter().any(|rom| rom.disk) {
+            continue;
+        }
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let mut transaction = begin_transaction(connection).await;
+        let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+            .iter()
+            .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
+        let romfile = romfiles_by_id
+            .get(&bin_roms.first().unwrap().romfile_id.unwrap())
+            .unwrap();
+        if !find_romfiles_by_parent_id(&mut transaction, romfile.id)
+            .await
+            .is_empty()
+        {
+            print_skip(progress_bar, "CHD has children, skipping");
+            continue;
+        }
+        let chd_romfile = romfile_as_chd(&mut transaction, romfile).await?;
+        let ore_romfile = match chd_romfile.chd_type {
+            ChdType::Dvd => {
+                let ore_romfile = chd_romfile
+                    .to_iso(progress_bar, &tmp_directory.path())
+                    .await?
+                    .to_ore(
+                        progress_bar,
+                        &chd_romfile.romfile.path.parent().unwrap(),
+                        compression_algorithm,
+                        profile,
+                    )
+                    .await;
+                let Some(ore_romfile) = skip_unsupported(progress_bar, ore_romfile)? else {
+                    continue;
+                };
+                ore_romfile
+            }
+            ChdType::Cd => {
+                let Some(cue_rom) = cue_roms.first() else {
+                    print_skip(progress_bar, "No CUE file, skipping");
+                    continue;
+                };
+                // the DAT's cue sheet, beside the tracks under its names
+                let cue_romfile = romfiles_by_id
+                    .get(&cue_rom.romfile_id.unwrap())
+                    .unwrap()
+                    .as_common(&mut transaction)
+                    .await?;
+                let extracted = chd_romfile
+                    .to_cue_bin(progress_bar, &tmp_directory.path(), None, &bin_roms, true)
+                    .await?;
+                extracted.cue_romfile.delete(progress_bar, true).await?;
+                let mut bin_romfiles = vec![];
+                for (bin_romfile, bin_rom) in extracted.bin_romfiles.into_iter().zip(&bin_roms) {
+                    bin_romfiles.push(
+                        bin_romfile
+                            .rename(
+                                progress_bar,
+                                &tmp_directory.path().join(&bin_rom.name),
+                                true,
+                            )
+                            .await?,
+                    );
+                }
+                let cue_path = tmp_directory.path().join(&cue_rom.name);
+                tokio::fs::copy(&cue_romfile.path, &cue_path).await?;
+                CommonRomfile::from_path(&cue_path)?
+                    .as_cue_bin(bin_romfiles)?
+                    .to_ore(
+                        progress_bar,
+                        &chd_romfile.romfile.path.parent().unwrap(),
+                        compression_algorithm,
+                        profile,
+                    )
+                    .await?
+            }
+            _ => {
+                print_skip(progress_bar, "Unsupported CHD type, skipping");
+                continue;
+            }
+        };
+        let roms: Vec<&Rom> = roms.iter().collect();
+        if check
+            && ore_romfile
+                .check(&mut transaction, progress_bar, &None, &roms)
+                .await
+                .is_err()
+        {
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
+            ore_romfile.romfile.delete(progress_bar, false).await?;
+            continue;
+        }
+        if diff {
+            print_diff(
+                &mut transaction,
+                progress_bar,
+                &roms,
+                &[&chd_romfile.romfile],
+                &[&ore_romfile.romfile],
+            )
+            .await?;
+        }
+        ore_romfile
+            .romfile
+            .update(&mut transaction, progress_bar, romfile.id)
+            .await?;
+        update_romfile_parent(&mut transaction, romfile.id, None).await;
+        // the cue sheet is in the ORE now
+        for cue_rom in cue_roms {
+            let cue_romfile = romfiles_by_id.get(&cue_rom.romfile_id.unwrap()).unwrap();
+            update_rom_romfile(&mut transaction, cue_rom.id, Some(romfile.id)).await;
+            delete_romfile_by_id(&mut transaction, cue_romfile.id).await;
+            cue_romfile
+                .as_common(&mut transaction)
+                .await?
+                .delete(progress_bar, false)
+                .await?;
+        }
+        chd_romfile.romfile.delete(progress_bar, false).await?;
+
+        commit_transaction(transaction).await;
     }
 
     // recompress OREs
@@ -2989,6 +3129,26 @@ async fn to_ore(
     }
 
     Ok(())
+}
+
+/// The ORE written, or `None` for a disc ore-rs does not take, such as an
+/// ISO of another system, which is skipped rather than failing the run.
+fn skip_unsupported(
+    progress_bar: &ProgressBar,
+    result: Result<OreRomfile>,
+) -> Result<Option<OreRomfile>> {
+    match result {
+        Err(error)
+            if matches!(
+                error.downcast_ref::<ore_rs::Error>(),
+                Some(ore_rs::Error::Unsupported(_))
+            ) =>
+        {
+            print_skip(progress_bar, &format!("{error:#}, skipping"));
+            Ok(None)
+        }
+        result => result.map(Some),
+    }
 }
 
 /// Pair a CD's files with the ROMs they are: the cue sheet with the cue's
@@ -3742,6 +3902,8 @@ mod test_iso_chd_to_cso;
 #[cfg(test)]
 mod test_iso_chd_to_iso;
 #[cfg(test)]
+mod test_iso_chd_to_ore_should_skip;
+#[cfg(test)]
 mod test_iso_chd_to_sevenzip_iso;
 #[cfg(test)]
 mod test_iso_chd_to_zso;
@@ -3763,6 +3925,8 @@ mod test_multiple_tracks_chd_to_chd;
 mod test_multiple_tracks_chd_to_cso_should_do_nothing;
 #[cfg(test)]
 mod test_multiple_tracks_chd_to_cue_bin;
+#[cfg(test)]
+mod test_multiple_tracks_chd_to_ore;
 #[cfg(test)]
 mod test_multiple_tracks_chd_to_sevenzip_cue_bin;
 #[cfg(test)]

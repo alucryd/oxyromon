@@ -36,6 +36,8 @@ pub struct Segmenter {
     phase: u64,
     data: Vec<u8>,
     zeros: u64,
+    /// Whether to look for the GameCube and Wii padding generator.
+    padding: bool,
 }
 
 impl Segmenter {
@@ -44,6 +46,16 @@ impl Segmenter {
             phase,
             data: Vec::new(),
             zeros: 0,
+            padding: true,
+        }
+    }
+
+    /// A segmenter for a disc no padding is generated on, which looks for
+    /// none.
+    pub fn without_padding(phase: u64) -> Self {
+        Self {
+            padding: false,
+            ..Self::new(phase)
         }
     }
 
@@ -62,7 +74,13 @@ impl Segmenter {
             let length =
                 ((at + 1).next_multiple_of(BLOCK) - at).min((bytes.len() - position) as u64);
             let block = &bytes[position..position + length as usize];
-            for piece in pieces(block, at, offset + position as u64, file_system) {
+            for piece in pieces(
+                block,
+                at,
+                offset + position as u64,
+                file_system,
+                self.padding,
+            ) {
                 match piece {
                     Piece::Zero(n) => self.zeros += n,
                     Piece::Padding(n, seed) => {
@@ -117,7 +135,13 @@ impl Segmenter {
 /// A block cut into zeros, padding and data, as RVZ cuts it. It lies at `at`
 /// for the generator, and at `area_at` into the area, as the file system's
 /// offsets count.
-fn pieces(block: &[u8], at: u64, area_at: u64, file_system: Option<&FileSystem>) -> Vec<Piece> {
+fn pieces(
+    block: &[u8],
+    at: u64,
+    area_at: u64,
+    file_system: Option<&FileSystem>,
+    padding: bool,
+) -> Vec<Piece> {
     let mut pieces = Vec::new();
     let mut position = 0;
     while position < block.len() {
@@ -128,11 +152,15 @@ fn pieces(block: &[u8], at: u64, area_at: u64, file_system: Option<&FileSystem>)
             continue;
         }
         let mut seed = [0; SEED_SIZE];
-        let found = Lfg::seed(
-            &block[position..],
-            ((at + position as u64) % BLOCK) as usize,
-            &mut seed,
-        );
+        let found = if padding {
+            Lfg::seed(
+                &block[position..],
+                ((at + position as u64) % BLOCK) as usize,
+                &mut seed,
+            )
+        } else {
+            0
+        };
         if found > SEED_BYTES {
             let mut bytes = [0; SEED_BYTES];
             for (out, word) in bytes.chunks_mut(4).zip(seed) {
