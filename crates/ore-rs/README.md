@@ -1,7 +1,8 @@
 # ore-rs
 
-ORE, oxyROMon's ROM enclosure, for GameCube, Wii, PlayStation 2 and PSP discs,
-CDs, PlayStation's first, and Dreamcast GD-ROMs. Part of
+ORE, oxyROMon's ROM enclosure, for GameCube, Wii, PlayStation 2 and PSP
+discs, CDs, PlayStation's first, Dreamcast GD-ROMs, and Game Boy and Game
+Boy Advance ROMs. Part of
 [oxyROMon](https://github.com/alucryd/oxyromon), as a library and the
 `orers` CLI. An ORE gives back the disc that went in, byte for byte, and
 records the disc's hashes, so it checks against a DAT without being decoded.
@@ -148,7 +149,9 @@ partition's title key, so reading one needs no key, nor does a GameCube disc.
   tracks after its `REM HIGH-DENSITY AREA` addressed from sector 45,000. An ISO is a
   PlayStation 2 DVD when its ISO 9660 `SYSTEM.CNF` boots a `BOOT2`
   executable, and a PSP UMD when it holds `UMD_DATA.BIN` or
-  `PSP_GAME/PARAM.SFO`; anything else is refused.
+  `PSP_GAME/PARAM.SFO`; Game Boy, Game Boy Color and Game Boy Advance
+  ROMs, by the Nintendo logo or the header checksum their console checks,
+  each kept with its file name. Anything else is refused.
 - **Not yet in the file**: the Merkle tree, parity, the tail index and the
   `deep` profile of the spec, beyond a store's segment parity.
 
@@ -161,6 +164,7 @@ orers --keys keys.bin -o out/ *.iso     # Wii discs, to out/
 orers -p archive -c lzma2 game.iso      # smaller, slower to read
 orers game.ore                          # back to game.iso
 orers "Game (Europe).cue"               # a CD, its SBI with it if beside it
+orers "Game (USA).gba"                  # a ROM, back as a .gba
 orers -o out/ "Game (Europe).ore"       # back to its cue sheet, tracks and SBI
 orers --store GameCube/.ore-store -o GameCube/ *.iso   # thin OREs, chunks in the store
 orers --detach -o out/ GameCube/game.ore               # a standalone ORE again

@@ -11,7 +11,7 @@ use ore_rs::{Codec, Options, Profile};
 fn cli() -> Command {
     Command::new("orers")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("ORE compression and decompression: GameCube, Wii, PlayStation 2 and PSP ISOs and CD and GD-ROM cue sheets are compressed, OREs decompressed, stores checked and repaired")
+        .about("ORE compression and decompression: GameCube, Wii, PlayStation 2 and PSP ISOs, Game Boy and Game Boy Advance ROMs and CD and GD-ROM cue sheets are compressed, OREs decompressed, stores checked and repaired")
         .after_help(format!(
             "Writing an ORE from a Wii ISO needs the Wii common key among the keys; orers ships none.\n\n\
              A CD is given as its cue sheet, its tracks a file each; an SBI of the cue sheet's name beside it\n\
@@ -117,9 +117,13 @@ fn convert(
             result.map_err(|e| e.to_string())?;
             return Ok(ui::wrote(&output));
         }
-        // A CD comes back as its cue sheet, its tracks beside it
-        let extension = match ore_rs::Reader::inspect(input) {
-            Ok(reader) if reader.is_cd() => "cue",
+        // A CD comes back as its cue sheet, its tracks beside it; a ROM
+        // with the extension it had
+        let reader = ore_rs::Reader::inspect(input).ok();
+        let rom = reader.as_ref().and_then(|reader| reader.file_name());
+        let extension = match (&reader, rom.and_then(|name| Path::new(name).extension())) {
+            (Some(reader), _) if reader.is_cd() => "cue",
+            (_, Some(extension)) => extension.to_str().unwrap_or("iso"),
             _ => "iso",
         };
         let output = outputs.claim(ui::output_path(&dir, input, extension))?;

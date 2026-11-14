@@ -566,6 +566,13 @@ impl Reader {
         })
     }
 
+    /// A cartridge ROM's file name, as it was written from.
+    pub fn file_name(&self) -> Option<&str> {
+        (self.header.media_class == MEDIA_ROM_CARTRIDGE)
+            .then(|| self.meta.media.areas.first()?.file.as_deref())
+            .flatten()
+    }
+
     /// Whether it holds a CD, as a cue sheet and its tracks, rather than a
     /// disc image.
     pub fn is_cd(&self) -> bool {

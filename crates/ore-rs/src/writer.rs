@@ -488,6 +488,37 @@ pub fn compress(
     encode(input, output, options, keys, None, progress)
 }
 
+/// The Nintendo logo a Game Boy's boot ROM checks a cartridge for.
+const GB_LOGO: [u8; 48] = [
+    0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
+    0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E, 0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99,
+    0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E,
+];
+
+/// Which cartridge `iso` is the ROM of, if one, by what its console checks
+/// in its header: a Game Boy's Nintendo logo, `gbc` when it flags Game Boy
+/// Color support; a Game Boy Advance's fixed byte and header checksum.
+fn cartridge_platform(iso: &mut Iso) -> Result<Option<&'static str>> {
+    let size = iso.size();
+    if !(0x150..=64 << 20).contains(&size) {
+        return Ok(None);
+    }
+    let mut header = [0; 0x150];
+    iso.read_at(0, &mut header)?;
+    if header[0x104..0x134] == GB_LOGO {
+        return Ok(Some(if header[0x143] & 0x80 != 0 {
+            "gbc"
+        } else {
+            "gb"
+        }));
+    }
+    let checksum = header[0xA0..0xBD]
+        .iter()
+        .fold(0u8, |sum, &b| sum.wrapping_sub(b))
+        .wrapping_sub(0x19);
+    Ok((header[0xB2] == 0x96 && header[0xBD] == checksum).then_some("gba"))
+}
+
 /// Which of Sony's discs `iso` is, if one: a PlayStation 2 DVD, an ISO
 /// 9660 file system whose `SYSTEM.CNF` boots a `BOOT2` executable, or a
 /// PSP UMD, one holding `UMD_DATA.BIN` or `PSP_GAME/PARAM.SFO`.
@@ -557,28 +588,33 @@ fn encode(
     let mut iso = Iso::open(input)?;
     let size = iso.size();
     // A GameCube or Wii disc is cut by its structure; a PlayStation 2 DVD
-    // is one area, its zeros and the rest
+    // and a cartridge are one area, their zeros and the rest
     let mut hashes = Hashes::default();
-    let (plans, platform) = match Volume::new(&mut iso, keys)? {
-        Some(mut volume) => {
-            let platform = match volume.platform {
-                Platform::GameCube => "gamecube",
-                Platform::Wii => "wii",
-            };
-            (plan(&mut iso, &mut volume)?, platform)
-        }
-        None => match sony_platform(&mut iso)? {
-            Some(platform) => (plan_sony(&mut iso, &mut hashes)?, platform),
-            None => {
-                return Err(Error::Unsupported(
-                    "neither a GameCube, a Wii, a PlayStation 2 nor a PSP disc".into(),
-                ));
+    let cartridge = cartridge_platform(&mut iso)?;
+    let (plans, platform) = match cartridge.map(|platform| (vec![raw(0, size)], platform)) {
+        Some(planned) => planned,
+        None => match Volume::new(&mut iso, keys)? {
+            Some(mut volume) => {
+                let platform = match volume.platform {
+                    Platform::GameCube => "gamecube",
+                    Platform::Wii => "wii",
+                };
+                (plan(&mut iso, &mut volume)?, platform)
             }
+            None => match sony_platform(&mut iso)? {
+                Some(platform) => (plan_sony(&mut iso, &mut hashes)?, platform),
+                None => {
+                    return Err(Error::Unsupported(
+                    "neither a GameCube, a Wii, a PlayStation 2 nor a PSP disc, nor a Game Boy or Game Boy Advance ROM".into(),
+                ));
+                }
+            },
         },
     };
-    // A Sony disc is hashed as it is planned, and has no padding generated
+    // A Sony disc is hashed as it is planned; only Nintendo's discs have
+    // padding generated
     let sony = matches!(platform, "ps2" | "psp");
-    let padded = !sony;
+    let padded = matches!(platform, "gamecube" | "wii");
     let part = io::part(output);
     let result = (|| {
         let store = store
@@ -664,7 +700,8 @@ fn encode(
             exception_count += exceptions.len() as u64;
             areas.push(Area {
                 len: plan.len,
-                file: None,
+                // A ROM comes back under its name
+                file: cartridge.map(|_| file_name(input)),
                 kind: plan.kind,
                 frame: None,
                 start: plan.start,
@@ -704,7 +741,11 @@ fn encode(
                 sbi: None,
                 size,
                 areas,
-                class: MEDIA_DVD_2048,
+                class: if cartridge.is_some() {
+                    MEDIA_ROM_CARTRIDGE
+                } else {
+                    MEDIA_DVD_2048
+                },
                 platform: platform.into(),
             },
             store: None,
