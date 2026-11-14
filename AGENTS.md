@@ -141,7 +141,8 @@ published on its own and keeping its upstream's license — MIT for `cia-rs`, wh
 follows wudd and Cemu instead, under wudd's GPL-3.0+, and ships no key. `ore-rs`
 is oxyROMon's own format, ORE, specified in `formats/design/` (a private
 repository checked out there, ignored by this one), under GPL-3.0+;
-used by oxyromon for GameCube, Wii, PlayStation 2 and PSP discs, CDs and GD-ROMs,
+used by oxyromon for GameCube, Wii, PlayStation 2 and PSP discs, CDs, GD-ROMs
+and Game Boy ROMs,
 an ORE a disc, but its CLI not
 shipped by `dist.sh` while the format is a draft. Every crate follows these, and a new one must too:
 

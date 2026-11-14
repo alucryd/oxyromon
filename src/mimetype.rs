@@ -36,6 +36,8 @@ pub const ZIP_EXTENSION: &str = "zip";
 pub const ZSO_EXTENSION: &str = "zso";
 
 pub static ARCHIVE_EXTENSIONS: [&str; 2] = [SEVENZIP_EXTENSION, ZIP_EXTENSION];
+/// The cartridges' ROMs ORE takes.
+pub static ORE_CARTRIDGE_EXTENSIONS: [&str; 3] = ["gb", "gbc", "gba"];
 pub static PS3_EXTENSIONS: [&str; 3] = [PKG_EXTENSION, PUP_EXTENSION, RAP_EXTENSION];
 
 pub static NON_ORIGINAL_EXTENSIONS: &[&str] = &[

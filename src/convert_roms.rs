@@ -971,6 +971,11 @@ async fn to_archive(
                 .to_cue_bin_files(progress_bar, &tmp_directory.path(), cue_name)
                 .await?;
             files_for_roms(cue_bin_romfile, roms)?
+        } else if ore_romfile.is_rom()? {
+            let rom_romfile = ore_romfile
+                .to_rom(progress_bar, &tmp_directory.path(), &rom.name)
+                .await?;
+            vec![(rom_romfile, rom)]
         } else {
             let iso_romfile = ore_romfile
                 .to_iso(progress_bar, &tmp_directory.path())
@@ -2770,41 +2775,48 @@ async fn to_ore(
     // partition OREs
     let (ores, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ORE_EXTENSION]);
 
+    // partition cartridges' ROMs
+    let (cartridges, others) =
+        partition_games_by_extensions(others, &romfiles_by_id, &ORE_CARTRIDGE_EXTENSIONS);
+
     // drop others
     drop(others);
 
-    // convert archives holding an ISO, or a cue sheet and its tracks
+    // convert archives holding an ISO, a cartridge's ROM, or a cue sheet and
+    // its tracks
     for roms in archives.values() {
         let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
             .iter()
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
-        let iso = roms.len() == 1 && roms.first().unwrap().name.ends_with(ISO_EXTENSION);
+        let single = (roms.len() == 1).then(|| roms.first().unwrap().name.as_str());
+        let iso = single.is_some_and(|name| name.ends_with(ISO_EXTENSION));
+        let cartridge = single.is_some_and(is_cartridge);
         let cd = cue_roms.len() == 1 && !bin_roms.is_empty();
-        if !iso && !cd {
+        if !iso && !cartridge && !cd {
             continue;
         }
         let tmp_directory = create_tmp_directory(connection).await?;
         let mut transaction = begin_transaction(connection).await;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        let (source, ore_romfile) = if iso {
+        let (source, ore_romfile) = if iso || cartridge {
             let decoded =
                 archive_to_common(&mut transaction, progress_bar, rom, romfile, &tmp_directory)
                     .await?;
-            let Some(ore_romfile) = skip_unsupported(
-                progress_bar,
+            let destination = decoded.source.path.parent().unwrap().to_path_buf();
+            let ore_romfile = if iso {
                 decoded
                     .inner
                     .as_iso()?
-                    .to_ore(
-                        progress_bar,
-                        &decoded.source.path.parent().unwrap(),
-                        compression_algorithm,
-                        profile,
-                    )
-                    .await,
-            )?
-            else {
+                    .to_ore(progress_bar, &destination, compression_algorithm, profile)
+                    .await
+            } else {
+                decoded
+                    .inner
+                    .to_ore(progress_bar, &destination, compression_algorithm, profile)
+                    .await
+            };
+            let Some(ore_romfile) = skip_unsupported(progress_bar, ore_romfile)? else {
                 continue;
             };
             (decoded.source, ore_romfile)
@@ -2925,6 +2937,47 @@ async fn to_ore(
             decoded
                 .inner
                 .as_iso()?
+                .to_ore(
+                    progress_bar,
+                    &decoded.source.path.parent().unwrap(),
+                    compression_algorithm,
+                    profile,
+                )
+                .await,
+        )?
+        else {
+            continue;
+        };
+        if check_and_persist(
+            &mut transaction,
+            progress_bar,
+            &[rom],
+            &decoded.source,
+            &ore_romfile,
+            romfile.id,
+            check,
+            diff,
+            false,
+        )
+        .await?
+        {
+            commit_transaction(transaction).await;
+        }
+    }
+
+    // convert cartridges' ROMs
+    for roms in cartridges.values() {
+        if roms.len() != 1 {
+            continue;
+        }
+        let mut transaction = begin_transaction(connection).await;
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let decoded = common_as_source(&mut transaction, romfile).await?;
+        let Some(ore_romfile) = skip_unsupported(
+            progress_bar,
+            decoded
+                .inner
                 .to_ore(
                     progress_bar,
                     &decoded.source.path.parent().unwrap(),
@@ -3098,6 +3151,18 @@ async fn to_ore(
                         profile,
                     )
                     .await?
+            } else if source.is_rom()? {
+                let rom = roms.first().unwrap();
+                source
+                    .to_rom(progress_bar, &tmp_directory.path(), &rom.name)
+                    .await?
+                    .to_ore(
+                        progress_bar,
+                        &tmp_directory.path(),
+                        compression_algorithm,
+                        profile,
+                    )
+                    .await?
             } else {
                 source
                     .to_iso(progress_bar, &tmp_directory.path())
@@ -3129,6 +3194,18 @@ async fn to_ore(
     }
 
     Ok(())
+}
+
+/// Whether `name` is a cartridge's ROM ORE takes, by its extension.
+fn is_cartridge(name: &str) -> bool {
+    std::path::Path::new(name)
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| {
+            ORE_CARTRIDGE_EXTENSIONS
+                .iter()
+                .any(|known| known.eq_ignore_ascii_case(extension))
+        })
 }
 
 /// The ORE written, or `None` for a disc ore-rs does not take, such as an
@@ -3730,13 +3807,20 @@ async fn to_original(
         let ore_romfile = romfile.as_common(&mut transaction).await?.as_ore()?;
         let directory = ore_romfile.romfile.path.parent().unwrap();
         if !ore_romfile.is_cd()? {
-            let iso_romfile = ore_romfile.to_iso(progress_bar, &directory).await?;
+            // a cartridge's ROM under its name, a disc image as an ISO
+            let original = if ore_romfile.is_rom()? {
+                ore_romfile
+                    .to_rom(progress_bar, &directory, &rom.name)
+                    .await?
+            } else {
+                ore_romfile.to_iso(progress_bar, &directory).await?.romfile
+            };
             if check_and_persist(
                 &mut transaction,
                 progress_bar,
                 &[rom],
                 &ore_romfile.romfile,
-                &iso_romfile.romfile,
+                &original,
                 romfile.id,
                 check,
                 false,
@@ -3896,6 +3980,10 @@ mod test_cso_to_sevenzip_iso;
 #[cfg(test)]
 mod test_cso_to_zso;
 #[cfg(test)]
+mod test_gb_ore_to_sevenzip;
+#[cfg(test)]
+mod test_gb_to_ore_to_original;
+#[cfg(test)]
 mod test_iso_chd_to_chd;
 #[cfg(test)]
 mod test_iso_chd_to_cso;
@@ -3967,6 +4055,8 @@ mod test_rvz_to_iso;
 mod test_rvz_to_rvz;
 #[cfg(test)]
 mod test_rvz_to_sevenzip_iso;
+#[cfg(test)]
+mod test_sevenzip_gb_to_ore;
 #[cfg(test)]
 mod test_sevenzip_iso_to_chd;
 #[cfg(test)]

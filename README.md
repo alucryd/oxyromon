@@ -174,7 +174,7 @@ These environment variables change where things go:
 | `CHD_HD_COMPRESSION_ALGORITHMS`   | Up to 4 CHD codecs for hard disks: `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd`                        | auto      |
 | `CHD_LD_HUNK_SIZE`                | CHD hunk size in bytes for LaserDiscs, `16` to `1048576`                                                 | auto      |
 | `CHD_LD_COMPRESSION_ALGORITHMS`   | CHD codecs for LaserDiscs: `none`, `avhu`                                                                | auto      |
-| `ORE_COMPRESSION_ALGORITHM`       | ORE codec: `zstd`, quicker to read, or `lzma2`, smaller                                                  | `zstd`    |
+| `ORE_COMPRESSION_ALGORITHM`       | ORE codec: `auto`, `lzma2` for cartridges and `zstd` for discs; `zstd`, quicker to read; or `lzma2`, smaller                                                  | `auto`    |
 | `ORE_PROFILE`                     | ORE group size: `stream`, 1 MiB, quicker to read, or `archive`, 4 MiB, smaller                           | `stream`  |
 | `RVZ_BLOCK_SIZE`                  | RVZ block size in KiB, `32` to `2048`, rounded up to a power of two                                      | `128`     |
 | `RVZ_COMPRESSION_ALGORITHM`       | RVZ codec: `none`, `zstd`, `bzip2`, `lzma`, `lzma2`                                                      | `zstd`    |
@@ -243,7 +243,7 @@ WBFS files are those `wit copy --wbfs` writes: only what the disc points to is k
 Exporting an RVZ to WBFS needs no key and decodes no ISO on the way; exporting a Wii ISO needs the Wii common key, as compressing it to RVZ does.
 
 ORE is oxyROMon's own format, a draft: an ORE written now may not open in a later version, so keep your originals, or another format, until it is final.
-An ORE holds a GameCube, Wii, PlayStation 2 or PSP disc, or a CD or a Dreamcast GD-ROM as its cue sheet and tracks, an ORE a disc: the cue sheet is inside it, so a CD is one file, which every ROM of the game points to.
+An ORE holds a GameCube, Wii, PlayStation 2 or PSP disc, a Game Boy or Game Boy Advance ROM, or a CD or a Dreamcast GD-ROM as its cue sheet and tracks, an ORE a disc: the cue sheet is inside it, so a CD is one file, which every ROM of the game points to.
 Importing a CD ORE needs every track it holds to match the DAT; when its cue sheet is not the DAT's, import the DAT's, and it goes into the ORE in its place, its metadata alone written again.
 Like RVZ, compressing a Wii ISO needs the Wii common key, and reading an ORE needs none.
 No emulator reads ORE yet.
@@ -664,6 +664,7 @@ Converts ROM files between lossless formats and back to their originals:
 - CUE/BIN and ISO to and from CHD, with CHDs restored to their original split CUE/BIN.
 - ISO to and from CSO, ZSO and RVZ.
 - GameCube, Wii, PlayStation 2 and PSP ISOs, CUE/BIN and CHD to and from ORE, with OREs restored to their cue sheet and tracks; an ISO of another system is skipped.
+- Game Boy, Game Boy Color and Game Boy Advance ROMs, loose or in an archive, to and from ORE, restored under their name; a ROM whose header ORE does not recognise is skipped.
 - NSP to and from NSZ.
 - Wii U discs between ISO, WUX and lossless WUA.
 

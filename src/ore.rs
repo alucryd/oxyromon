@@ -1,8 +1,8 @@
 //! ORE, oxyROMon's own compressed disc image, by way of ore-rs.
 //!
-//! An ORE holds a GameCube or Wii disc, or a CD as its cue sheet and tracks:
-//! a CD's cue sheet is inside it, so the cue's ROM points to the ORE as its
-//! tracks' do. Like RVZ, only writing one from a Wii ISO needs the Wii common
+//! An ORE holds a disc image, a cartridge's ROM under its name, or a CD as
+//! its cue sheet and tracks: a CD's cue sheet is inside it, so the cue's ROM
+//! points to the ORE as its tracks' do. Like RVZ, only writing one from a Wii ISO needs the Wii common
 //! key, which `import-keys` stores; an ORE keeps its title keys, so reading
 //! one needs none.
 
@@ -25,6 +25,9 @@ use tokio::task::spawn_blocking;
 #[derive(Display, PartialEq, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum OreCompressionAlgorithm {
+    /// LZMA2 for a cartridge's ROM, small and read whole, Zstandard for a
+    /// disc, the quicker to read
+    Auto,
     Zstd,
     Lzma2,
 }
@@ -167,6 +170,31 @@ impl OreRomfile {
         Ok(cd_files(&self.romfile.path)?.is_some())
     }
 
+    /// Whether it holds a cartridge's ROM rather than a disc.
+    pub fn is_rom(&self) -> Result<bool> {
+        Ok(Reader::inspect(&self.romfile.path)?.file_name().is_some())
+    }
+
+    /// Write a cartridge's ORE out as its ROM, named `name`.
+    pub async fn to_rom<P: AsRef<Path>>(
+        &self,
+        progress_bar: &ProgressBar,
+        destination_directory: &P,
+        name: &str,
+    ) -> Result<CommonRomfile> {
+        progress_bar.set_message("Extracting ore");
+        print_action(progress_bar, &format!("Extracting \"{}\"", self.romfile));
+        let path = destination_directory.as_ref().join(name);
+        let (input, output) = (self.romfile.path.clone(), path.clone());
+        run_blocking(progress_bar, input.metadata()?.len(), move |progress| {
+            ore_rs::decompress(&input, &output, progress)
+        })
+        .await
+        .with_context(|| format!("Failed to extract \"{}\"", self.romfile.path.display()))?;
+        stop_action(progress_bar);
+        CommonRomfile::from_path(&path)
+    }
+
     /// Write a CD ORE out as its cue sheet, named `cue_name` or as it was
     /// compressed, its tracks, under the names the cue sheet gives them, and
     /// an SBI it holds beside them.
@@ -271,7 +299,30 @@ impl ToOre for IsoRomfile {
     }
 }
 
-/// Compress `source`, an ISO or a cue sheet, into `destination_directory`,
+/// A cartridge's ROM, which ore-rs takes if its header says it is one it
+/// knows.
+impl ToOre for CommonRomfile {
+    async fn to_ore<P: AsRef<Path>>(
+        &self,
+        progress_bar: &ProgressBar,
+        destination_directory: &P,
+        compression_algorithm: &OreCompressionAlgorithm,
+        profile: &OreProfile,
+    ) -> Result<OreRomfile> {
+        let size = self.path.metadata()?.len();
+        compress(
+            progress_bar,
+            &self.path,
+            destination_directory.as_ref(),
+            compression_algorithm,
+            profile,
+            size,
+        )
+        .await
+    }
+}
+
+/// Compress `source`, an ISO, a ROM or a cue sheet, into `destination_directory`,
 /// `size` the input bytes the progress bar counts.
 async fn compress(
     progress_bar: &ProgressBar,
@@ -301,6 +352,7 @@ async fn compress(
             OreProfile::Archive => Profile::Archive,
         },
         codec: match compression_algorithm {
+            OreCompressionAlgorithm::Auto => ore_rs::default_codec(source)?,
             OreCompressionAlgorithm::Zstd => Codec::Zstd,
             OreCompressionAlgorithm::Lzma2 => Codec::Lzma2,
         },

@@ -6,6 +6,8 @@
 - ORE takes Dreamcast GD-ROMs, from their Redump cue sheet or CHD
 - ORE takes PlayStation 2 DVDs too, and converts from CHD: a DVD's ISO, or a CD's tracks with its cue sheet; a disc of another system is skipped rather than failing the run
 - ORE takes PSP UMDs, from their ISO or CHD, as it takes PlayStation 2 DVDs
+- ORE takes Game Boy, Game Boy Color and Game Boy Advance ROMs, loose or in an archive, and gives them back under their name
+- `ORE_COMPRESSION_ALGORITHM` defaults to `auto`: LZMA2 for a cartridge's ROM, where Zstandard loses to 7z, and Zstandard for a disc
 - ORE codes a PlayStation 2 DVD's audio as audio: its `VAGp` streams' SPU ADPCM and its 16-bit PCM, found by their headers, so a disc full of sound no longer loses to its CHD
 - Importing a cue sheet for a game whose tracks are in an ORE puts it in the ORE, in place of the dump's, writing the ORE's metadata alone again
 

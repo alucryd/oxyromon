@@ -3353,6 +3353,8 @@ mod test_cia;
 #[cfg(test)]
 mod test_cso;
 #[cfg(test)]
+mod test_gb_ore;
+#[cfg(test)]
 mod test_iso_chd;
 #[cfg(test)]
 mod test_mame;

@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Test System (Game Boy)</name>
+		<description>Test System (Game Boy)</description>
+		<version>20261114</version>
+		<date>20261114</date>
+		<author>Maxime Gauduin</author>
+	</header>
+	<game name="Test Game (USA, Europe)">
+		<description>Test Game (USA, Europe)</description>
+		<release name="Test Game (USA, Europe)" region="USA" />
+		<rom name="Test Game (USA, Europe).gb" size="32768" crc="f5bf02ce"
+			md5="0f09ff2f88b346516ce4f2e399518708" sha1="bc75108c798b3e9574f17bd4bc642473f28510dd" />
+	</game>
+</datafile>
