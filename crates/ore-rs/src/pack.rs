@@ -42,6 +42,11 @@ impl Packer {
         }
     }
 
+    /// The most bytes a group holds.
+    pub fn group_size(&self) -> usize {
+        self.group_size
+    }
+
     /// Compress what comes next with `codec`, once every group so far is
     /// taken: a group is of one codec.
     pub fn set_codec(&mut self, codec: Codec) {

@@ -170,6 +170,24 @@ fn a_batch_writes_many_roms_to_a_store_as_one_write() {
     }
     assert!(sizes[1] < sizes[0], "{sizes:?}");
 
+    // A compaction packs the ROMs written one at a time together, as the
+    // batch did
+    let single = dir.path().join("single");
+    let compacted = ore_rs::compact(&single.join(".ore-store"), &options, 0.5).unwrap();
+    assert_eq!(compacted.games, 10);
+    let after = dir_size(&single);
+    assert!(
+        after <= sizes[1] * 101 / 100,
+        "{after} against the batch's {}",
+        sizes[1]
+    );
+    for rom in &roms {
+        let back = dir.path().join("back.gb");
+        let ore = single.join(rom.file_name().unwrap()).with_extension("ore");
+        ore_rs::decompress(&ore, &back, &mut |_| {}).unwrap();
+        assert!(std::fs::read(rom).unwrap() == std::fs::read(&back).unwrap());
+    }
+
     // A batch dropped before its commit writes nothing, and the store reads on
     let games = dir.path().join("batch");
     let mut batch = ore_rs::StoreBatch::open(&games.join(".ore-store"), &options).unwrap();

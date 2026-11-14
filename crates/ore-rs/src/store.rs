@@ -472,8 +472,6 @@ pub(super) struct StoreWriter {
     // in the index, read in place, when a store grows that large
     ids: HashMap<[u8; 16], u64>,
     packer: Packer,
-    /// What data is compressed with, as audio is FLAC.
-    data_codec: Codec,
     /// The segment being written, the last the index lists.
     file: Option<File>,
     /// Bytes this writer added to the segments.
@@ -486,8 +484,10 @@ pub(super) struct StoreWriter {
 
 /// The largest last segment a write folds into its own, at most a sixteenth
 /// of a segment: a write a small ROM would otherwise seal a segment and its
-/// parity of its own, and folding more would copy too much each time.
-const FOLD_MAX: u64 = 16 << 20;
+/// parity of its own, and folding more would copy too much each time. At 16
+/// MiB, a Game Boy library written a ROM at a time wrote 14.3 GB for a 158
+/// MB store; a compaction merges the segments of 4 MiB this leaves.
+const FOLD_MAX: u64 = 4 << 20;
 
 impl StoreWriter {
     /// Open the store at `dir`, waiting for any other writer to be done.
@@ -507,7 +507,6 @@ impl StoreWriter {
             index,
             ids,
             packer: Packer::new(codec, group_size),
-            data_codec: codec,
             file: None,
             added: 0,
             fold: true,
@@ -800,6 +799,25 @@ impl StoreWriter {
         if small.len() > 1 {
             dropped.extend(small);
         }
+        // A segment mostly of groups less than half full, several of them,
+        // as games written a write each leave, which compress better packed
+        // together
+        let half = self.packer.group_size() as u64 / 2;
+        let mut partial: HashMap<u32, (u64, u64, u64)> = HashMap::new();
+        for group in &self.index.groups {
+            let (count, bytes, all) = partial.entry(group.segment).or_default();
+            *all += group.group.logical_len;
+            if group.group.logical_len < half {
+                *count += 1;
+                *bytes += group.group.logical_len;
+            }
+        }
+        dropped.extend(
+            partial
+                .iter()
+                .filter(|&(_, &(count, bytes, all))| count > 1 && bytes * 2 >= all)
+                .map(|(&segment, _)| segment),
+        );
         if dropped.is_empty() {
             return Ok(());
         }
@@ -839,16 +857,14 @@ impl StoreWriter {
                     entry.insert(open_segment(&self.dir, &self.index.uuid, segment)?)
                 }
             };
-            if live.len() as u64 == group.chunks {
+            // A group whole and half full or more is copied as it is
+            if live.len() as u64 == group.chunks && group.logical_len >= half {
                 whole.push((segment, offset, envelope_len, group, live));
                 continue;
             }
-            // Audio stays FLAC, XA XA and video STR, whatever data is
-            // compressed with
-            let codec = match group.codec {
-                Codec::Flac | Codec::Xa | Codec::Str => group.codec,
-                _ => self.data_codec,
-            };
+            // Its chunks keep its codec: audio its coder, data what it was
+            // written with
+            let codec = group.codec;
             if self.packer.codec != codec {
                 self.write(true)?;
                 self.packer.set_codec(codec);

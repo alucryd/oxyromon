@@ -130,14 +130,18 @@ ore_rs::compress_to_store(iso, ore, store, &Options::default(), &[], &mut |_| {}
   or none.
 - **[`compact`]** counts again which chunks the games beneath the store use,
   and copies what is left of mostly dead segments into a new one, and of
-  the small segments a write that adds little leaves.
+  the small segments a write that adds little leaves; groups less than half
+  full, as writes of a game each leave, are decoded and packed together
+  again, each chunk in its group's codec.
 - **[`Reader::sizes`]** gives what a game weighs: its own chunks, its share
   of those it shares, and about what it would weigh detached.
 - **A write folds the store's last segment into its own** when that one
-  is 16 MiB or less, copying its groups as they are, each checked against
+  is 4 MiB or less, copying its groups as they are, each checked against
   its CRC first, and drops it once the index no longer lists it: a ROM
   added alone costs its chunks, not a segment and 64 KiB of parity of its
-  own. A last segment that fails is left where its parity can repair it.
+  own. Each write still compresses its chunks in groups of its own, so
+  games added one at a time compress apart until a compaction packs them
+  together. A last segment that fails is left where its parity can repair it.
 - **[`StoreBatch`]** writes many games to a store as one write, their
   chunks sharing its groups too, which a write closes at its end, and
   committed once, when every thin ORE lands: how to add a library.
