@@ -406,8 +406,9 @@ pub fn create_store(dir: &Path, options: &StoreOptions) -> Result<()> {
 
 /// A store being read: its index, shared by every reader of it, and the
 /// groups last decoded.
-// ponytail: readers take no lock, so a purge under one fails its reads
-// (a segment gone) rather than wait for it; a shared lock if that bites
+// ponytail: readers take no lock, so a compaction or a write folding the
+// last segment under one fails its reads (a segment gone) rather than wait
+// for it; a shared lock, or the index loaded again, if that bites
 pub(super) struct StoreReader {
     dir: PathBuf,
     pub index: Arc<Index>,
@@ -477,7 +478,16 @@ pub(super) struct StoreWriter {
     file: Option<File>,
     /// Bytes this writer added to the segments.
     added: u64,
+    /// Whether its first segment starts with the store's last, if small.
+    fold: bool,
+    /// The segment folded into the one being written, gone on commit.
+    folded: Option<u32>,
 }
+
+/// The largest last segment a write folds into its own, at most a sixteenth
+/// of a segment: a write a small ROM would otherwise seal a segment and its
+/// parity of its own, and folding more would copy too much each time.
+const FOLD_MAX: u64 = 16 << 20;
 
 impl StoreWriter {
     /// Open the store at `dir`, waiting for any other writer to be done.
@@ -500,6 +510,8 @@ impl StoreWriter {
             data_codec: codec,
             file: None,
             added: 0,
+            fold: true,
+            folded: None,
         })
     }
 
@@ -579,7 +591,19 @@ impl StoreWriter {
         let full = |len: u64| len + need + Layout::new(len + need, parity).footer_len() > size;
         let len = self.index.segments.last().map_or(0, |segment| segment.len);
         if self.file.is_none() || (len > SEGMENT_HEADER && full(len)) {
+            let fold = if self.file.is_none() && std::mem::take(&mut self.fold) {
+                self.fold_candidate()?
+            } else {
+                None
+            };
             self.new_segment()?;
+            if let Some((number, groups)) = fold {
+                self.fold_in(number, groups)?;
+                // What was folded is sealed as it is if this would not fit
+                if full(self.index.segments.last().unwrap().len) {
+                    self.new_segment()?;
+                }
+            }
         }
         let segment = self.index.segments.last_mut().unwrap();
         let file = self.file.as_mut().unwrap();
@@ -593,6 +617,52 @@ impl StoreWriter {
         });
         segment.len += need;
         self.added += need;
+        Ok(())
+    }
+
+    /// The store's last segment, if small enough to fold, and its groups as
+    /// they lie, each checked against its CRC: a segment that fails is left
+    /// for its parity to repair, never copied where it has none.
+    #[allow(clippy::type_complexity)]
+    fn fold_candidate(&self) -> Result<Option<(u32, Vec<(usize, Vec<u8>)>)>> {
+        let Some(last) = self.index.segments.last() else {
+            return Ok(None);
+        };
+        if self.index.file_len(last) > FOLD_MAX.min(self.index.segment_size / 16) {
+            return Ok(None);
+        }
+        let file = open_segment(&self.dir, &self.index.uuid, last.number)?;
+        let mut groups: Vec<usize> = (0..self.index.groups.len())
+            .filter(|&g| self.index.groups[g].segment == last.number)
+            .collect();
+        groups.sort_unstable_by_key(|&g| self.index.groups[g].offset);
+        let mut raw = Vec::with_capacity(groups.len());
+        for g in groups {
+            let at = &self.index.groups[g];
+            if read_group(&file, at.offset, at.envelope_len(), &at.group).is_err() {
+                return Ok(None);
+            }
+            let mut bytes = vec![0; (at.envelope_len() + at.group.stored_len) as usize];
+            io::read_exact_at(&file, &mut bytes, at.offset)?;
+            raw.push((g, bytes));
+        }
+        Ok(Some((last.number, raw)))
+    }
+
+    /// Copy the groups of segment `number`, as they are, to the start of
+    /// the segment just begun.
+    fn fold_in(&mut self, number: u32, groups: Vec<(usize, Vec<u8>)>) -> Result<()> {
+        let segment = self.index.segments.last_mut().unwrap();
+        let file = self.file.as_mut().unwrap();
+        for (g, bytes) in groups {
+            file.seek(SeekFrom::Start(segment.len))?;
+            file.write_all(&bytes)?;
+            let group = &mut self.index.groups[g];
+            group.segment = segment.number;
+            group.offset = segment.len;
+            segment.len += bytes.len() as u64;
+        }
+        self.folded = Some(number);
         Ok(())
     }
 
@@ -644,7 +714,20 @@ impl StoreWriter {
                 self.index.id_bits
             )));
         }
+        let folded = self.folded.take();
+        if let Some(number) = folded {
+            self.index
+                .segments
+                .retain(|segment| segment.number != number);
+        }
         self.index.save(&self.dir)?;
+        // The index first, so it never lists a segment gone
+        if let Some(number) = folded {
+            match std::fs::remove_file(segment_path(&self.dir, number)) {
+                Err(e) if e.kind() != std::io::ErrorKind::NotFound => return Err(e.into()),
+                _ => {}
+            }
+        }
         Ok(self.added)
     }
 
@@ -681,7 +764,7 @@ impl StoreWriter {
     /// by the bytes of their chunks, and of the small segments if there
     /// are several, into new segments, and drop them from the index. Their
     /// files go once the index is saved.
-    fn compact(&mut self, threshold: f64) -> Result<()> {
+    fn compact_segments(&mut self, threshold: f64) -> Result<()> {
         // Dead and all bytes of chunks, by segment
         let mut bytes: HashMap<u32, (u64, u64)> = HashMap::new();
         for chunk in &self.index.chunks {
@@ -843,9 +926,9 @@ impl StoreWriter {
     }
 }
 
-/// What a purge found and did.
+/// What a compaction found and did.
 #[derive(Debug, Clone, Copy)]
-pub struct Purged {
+pub struct Compacted {
     /// The thin OREs that use the store.
     pub games: u64,
     /// The size of the store's segments, before and after.
@@ -853,25 +936,27 @@ pub struct Purged {
     pub after: u64,
 }
 
-/// Purge the store at `store`: count again which chunks the games beneath
+/// Compact the store at `store`: count again which chunks the games beneath
 /// its parent directory use, then compact the segments of which at least
 /// `threshold`, from 0 to 1, is no game's any more, copying what is left of
 /// them into a new one. Chunks that have to be compressed again are as
 /// `options` say.
 ///
-/// A game that names the store and cannot be read fails the purge, and so
+/// A game that names the store and cannot be read fails the compaction, and so
 /// does one that names a chunk the store lacks.
-pub fn purge(store: &Path, options: &Options, threshold: f64) -> Result<Purged> {
+pub fn compact(store: &Path, options: &Options, threshold: f64) -> Result<Compacted> {
     let mut writer = StoreWriter::open(store, options.codec, options.profile.group_size())?;
+    // It copies the small segments itself
+    writer.fold = false;
     let before = writer.index.size();
     let games = writer.recount()?;
-    writer.compact(threshold)?;
+    writer.compact_segments(threshold)?;
     let after = writer.index.size();
     // The index first, so it never lists a segment gone, then the
     // segments it no longer lists, the store still locked
     writer.commit()?;
     writer.sweep()?;
-    Ok(Purged {
+    Ok(Compacted {
         games,
         before,
         after,

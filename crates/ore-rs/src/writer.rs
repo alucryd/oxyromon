@@ -643,7 +643,7 @@ impl StoreBatch {
     }
 
     /// Write a thin ORE beside `output`, to land there on commit. A game
-    /// that fails leaves its chunks in the store unused, as a purge finds
+    /// that fails leaves its chunks in the store unused, as a compaction finds
     /// them.
     fn add(
         &mut self,

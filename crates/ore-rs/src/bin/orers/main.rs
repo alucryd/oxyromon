@@ -63,9 +63,9 @@ fn cli() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
-            Arg::new("purge")
-                .long("purge")
-                .help("Once a store is checked, purge it of what no game uses")
+            Arg::new("compact")
+                .long("compact")
+                .help("Once a store is checked, compact it, dropping what no game uses")
                 .action(ArgAction::SetTrue),
         )
         .arg(
@@ -94,11 +94,11 @@ fn main() -> ExitCode {
     })
 }
 
-/// How far a store's segment has to be no game's before a purge copies
+/// How far a store's segment has to be no game's before a compaction copies
 /// what is left of it into a new one.
-const PURGE_THRESHOLD: f64 = 0.5;
+const COMPACT_THRESHOLD: f64 = 0.5;
 
-/// Check and repair `input` if it is a store, and purge it with `--purge`; with an ORE, attach it to a store,
+/// Check and repair `input` if it is a store, and compact it with `--compact`; with an ORE, attach it to a store,
 /// detach it, or decompress it; compress anything else.
 fn convert(
     input: &Path,
@@ -188,7 +188,7 @@ fn open<'a>(
     Ok(batch.as_mut().unwrap())
 }
 
-/// Check the store `input`, repairing what its parity covers, then purge
+/// Check the store `input`, repairing what its parity covers, then compact
 /// it if asked to and nothing is lost.
 fn store(input: &Path, matches: &ArgMatches, options: &Options) -> Result<String, String> {
     let checked = ore_rs::check_store(input, true).map_err(|e| e.to_string())?;
@@ -211,11 +211,12 @@ fn store(input: &Path, matches: &ArgMatches, options: &Options) -> Result<String
         checked.repaired,
         checked.damaged
     );
-    if matches.get_flag("purge") {
-        let purged = ore_rs::purge(input, options, PURGE_THRESHOLD).map_err(|e| e.to_string())?;
+    if matches.get_flag("compact") {
+        let compacted =
+            ore_rs::compact(input, options, COMPACT_THRESHOLD).map_err(|e| e.to_string())?;
         message += &format!(
-            "; purged: {} games, {} to {} bytes",
-            purged.games, purged.before, purged.after
+            "; compacted: {} games, {} to {} bytes",
+            compacted.games, compacted.before, compacted.after
         );
     }
     Ok(message)

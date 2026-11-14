@@ -150,7 +150,25 @@ fn a_batch_writes_many_roms_to_a_store_as_one_write() {
         assert!(!ore(&not_a_rom).exists());
         sizes.push(dir_size(&games));
     }
-    assert!(sizes[1] * 3 < sizes[0], "{sizes:?}");
+    // One segment either way, a write folding the last into its own; the
+    // batch the smaller, its groups shared by the ROMs rather than closed a
+    // write
+    for which in ["single", "batch"] {
+        let store = dir.path().join(which).join(".ore-store");
+        let segments = std::fs::read_dir(&store)
+            .unwrap()
+            .filter(|entry| {
+                entry
+                    .as_ref()
+                    .unwrap()
+                    .path()
+                    .extension()
+                    .is_some_and(|e| e == "ores")
+            })
+            .count();
+        assert_eq!(segments, 1, "{which}");
+    }
+    assert!(sizes[1] < sizes[0], "{sizes:?}");
 
     // A batch dropped before its commit writes nothing, and the store reads on
     let games = dir.path().join("batch");

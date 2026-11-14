@@ -306,7 +306,7 @@ fn cds_share_a_store_and_leave_it() {
     // Compacting the store keeps audio as audio
     std::fs::remove_file(&ore_b).unwrap();
     std::fs::remove_file(&again).unwrap();
-    ore_rs::purge(&store, &options, 0.0).unwrap();
+    ore_rs::compact(&store, &options, 0.0).unwrap();
     check(&ore_a, &cue_a);
     assert_eq!(ore_rs::check_store(&store, false).unwrap().lost_groups, 0);
 }

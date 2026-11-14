@@ -86,7 +86,7 @@ pub struct Sizes {
     /// The disc's.
     pub uncompressed: u64,
     /// What only this game uses: what deleting it frees, once the store
-    /// is purged.
+    /// is compacted.
     pub own: u64,
     /// Every chunk it uses divided among the games using it: summed over a
     /// store's games, the store's size.

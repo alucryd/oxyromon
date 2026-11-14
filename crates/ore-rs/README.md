@@ -128,16 +128,20 @@ ore_rs::compress_to_store(iso, ore, store, &Options::default(), &[], &mut |_| {}
   then decodes every group and hashes every chunk, and names the games
   using what is past repair. `StoreOptions` takes 8 parity shards, 3.2%,
   or none.
-- **[`purge`]** counts again which chunks the games beneath the store use,
+- **[`compact`]** counts again which chunks the games beneath the store use,
   and copies what is left of mostly dead segments into a new one, and of
   the small segments a write that adds little leaves.
 - **[`Reader::sizes`]** gives what a game weighs: its own chunks, its share
   of those it shares, and about what it would weigh detached.
+- **A write folds the store's last segment into its own** when that one
+  is 16 MiB or less, copying its groups as they are, each checked against
+  its CRC first, and drops it once the index no longer lists it: a ROM
+  added alone costs its chunks, not a segment and 64 KiB of parity of its
+  own. A last segment that fails is left where its parity can repair it.
 - **[`StoreBatch`]** writes many games to a store as one write, their
-  chunks sharing its groups and segments, committed once at the end, when
-  every thin ORE lands at once: what a library of small ROMs needs, which
-  a write a ROM would give a segment and its parity each. `orers --store`
-  writes all its inputs so.
+  chunks sharing its groups too, which a write closes at its end, and
+  committed once, when every thin ORE lands: how to add a library.
+  `orers --store` writes all its inputs so.
 - One writer at a time: a write waits for another to be done.
 
 ## Keys
@@ -174,7 +178,7 @@ orers -o out/ "Game (Europe).ore"       # back to its cue sheet, tracks and SBI
 orers --store GameCube/.ore-store -o GameCube/ *.iso   # thin OREs, chunks in the store
 orers --detach -o out/ GameCube/game.ore               # a standalone ORE again
 orers GameCube/.ore-store               # check the store, repairing what parity covers
-orers --purge GameCube/.ore-store       # and purge it of what no game uses
+orers --compact GameCube/.ore-store       # and compact it, dropping what no game uses
 ```
 
 | Flag | Meaning |
@@ -184,12 +188,12 @@ orers --purge GameCube/.ore-store       # and purge it of what no game uses
 | `-c CODEC` | `zstd` or `lzma2`; by default `lzma2` for a cartridge's ROM, which Zstandard loses to 7z on, and `zstd` otherwise |
 | `--store DIR` | write ISOs as thin OREs, their chunks in the store `DIR`, made if missing; attach OREs to it; every input as one write, committed after the last |
 | `--detach` | write OREs as standalone OREs |
-| `--purge` | once a store is checked, purge it of what no game uses |
+| `--compact` | once a store is checked, compact it, dropping what no game uses |
 | `--keys FILE` | where the Wii common key is |
 
 An ORE written from an ORE needs `-o`, so it lands beside its input rather
 than over it. A store given as input is checked and repaired, and fails if anything is
-past repair, naming the games it harms. A purge copies what is left of
+past repair, naming the games it harms. A compaction copies what is left of
 segments half dead or more.
 
 Like every oxyROMon tool, `orers` draws oxyROMon's progress bar, reports each
@@ -201,14 +205,14 @@ input on a line of its own, and exits non-zero when any of them failed.
 Wii disc, a hash exception included, through every profile and codec, reads
 at offsets across areas, and flips bytes of a group, the index and the
 metadata to check each is caught. `tests/store.rs` writes discs sharing a
-file to a store, checks it is stored once, attaches, detaches and purges,
+file to a store, checks it is stored once, attaches, detaches and compacts,
 damages the index and segments, and repairs them; the parity is checked
 against scattered damage, a burst as long as the parity, a row past it,
 and a segment cut short. `tests/cd.rs` builds a CD of every kind of
 sector PlayStation discs hold, subheader copies that differ and a sector
 nothing generates among them, with two audio tracks and an SBI, and
 round-trips it as its files, alone and through a store, detached,
-attached and purged, its XA sectors through the `xa` codec, which
+attached and compacted, its XA sectors through the `xa` codec, which
 `src/xa.rs` also round-trips on arbitrary bytes, and a still picture's
 video sectors through the `str` codec, which `src/video.rs` also
 round-trips on frames of BS v2 and v3, Final Fantasy IX's among them,

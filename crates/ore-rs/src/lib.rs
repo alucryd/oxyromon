@@ -65,7 +65,8 @@ pub use format::{Codec, Profile};
 pub use keys::{is_bootmii, load_keys, parse_key_file, parse_keys, parse_otp};
 pub use reader::{Reader, Sizes, decompress};
 pub use store::{
-    Purged, STORE_DIR, StoreChecked, StoreOptions, check_store, create_store, find_store, purge,
+    Compacted, STORE_DIR, StoreChecked, StoreOptions, check_store, compact, create_store,
+    find_store,
 };
 pub use writer::{
     Options, Stats, StoreBatch, attach, compress, compress_to_store, default_codec, detach, is_ore,
