@@ -763,7 +763,7 @@ impl StoreWriter {
     /// by the bytes of their chunks, and of the small segments if there
     /// are several, into new segments, and drop them from the index. Their
     /// files go once the index is saved.
-    fn compact_segments(&mut self, threshold: f64) -> Result<()> {
+    fn compact_segments(&mut self, threshold: f64, recompress: bool) -> Result<()> {
         // Dead and all bytes of chunks, by segment
         let mut bytes: HashMap<u32, (u64, u64)> = HashMap::new();
         for chunk in &self.index.chunks {
@@ -796,8 +796,11 @@ impl StoreWriter {
             })
             .map(|segment| segment.number)
             .collect();
-        if small.len() > 1 {
+        if small.len() > 1 || recompress {
             dropped.extend(small);
+        }
+        if recompress {
+            dropped.extend(self.index.segments.iter().map(|segment| segment.number));
         }
         // A segment mostly of groups less than half full, several of them,
         // as games written a write each leave, which compress better packed
@@ -836,9 +839,6 @@ impl StoreWriter {
             .collect();
         moving.sort_unstable();
         let mut files = HashMap::new();
-        // Groups every chunk of which lives are copied as they are, once
-        // the others' chunks are packed
-        let mut whole = Vec::new();
         for run in moving.chunk_by(|a, b| a.0 == b.0) {
             let at = &self.index.groups[run[0].0 as usize];
             let (segment, offset, envelope_len, group) =
@@ -858,8 +858,18 @@ impl StoreWriter {
                 }
             };
             // A group whole and half full or more is copied as it is
-            if live.len() as u64 == group.chunks && group.logical_len >= half {
-                whole.push((segment, offset, envelope_len, group, live));
+            if live.len() as u64 == group.chunks && group.logical_len >= half && !recompress {
+                // Copied as it is where it lies, the chunks packed before it
+                // written first, so the chunks keep their order for a later
+                // recompression to pack as a batch would
+                self.write(true)?;
+                let mut raw = vec![0; (envelope_len + group.stored_len) as usize];
+                io::read_exact_at(file, &mut raw, offset)?;
+                let (envelope, stored) = raw.split_at(envelope_len as usize);
+                self.append(envelope, stored, group)?;
+                for id in live {
+                    self.index.chunks[id as usize].group = self.index.groups.len() as u32 - 1;
+                }
                 continue;
             }
             // Its chunks keep its codec: audio its coder, data what it was
@@ -878,15 +888,6 @@ impl StoreWriter {
             self.write(false)?;
         }
         self.write(true)?;
-        for (segment, offset, envelope_len, group, live) in whole {
-            let mut raw = vec![0; (envelope_len + group.stored_len) as usize];
-            io::read_exact_at(&files[&segment], &mut raw, offset)?;
-            let (envelope, stored) = raw.split_at(envelope_len as usize);
-            self.append(envelope, stored, group)?;
-            for id in live {
-                self.index.chunks[id as usize].group = self.index.groups.len() as u32 - 1;
-            }
-        }
 
         // The groups left take new numbers; a chunk still in a group
         // dropped is nowhere
@@ -955,18 +956,27 @@ pub struct Compacted {
 /// Compact the store at `store`: count again which chunks the games beneath
 /// its parent directory use, then compact the segments of which at least
 /// `threshold`, from 0 to 1, is no game's any more, copying what is left of
-/// them into a new one. Chunks that have to be compressed again are as
-/// `options` say.
+/// them into a new one, and of segments mostly of groups less than half
+/// full, packing those together again. With `recompress`, every segment is
+/// written again and every group decoded and packed again, in the order
+/// its chunks lie: the smallest the store gets, for a read and a write of
+/// all of it. A chunk compressed again keeps its group's codec; `options`
+/// give the groups' size.
 ///
 /// A game that names the store and cannot be read fails the compaction, and so
 /// does one that names a chunk the store lacks.
-pub fn compact(store: &Path, options: &Options, threshold: f64) -> Result<Compacted> {
+pub fn compact(
+    store: &Path,
+    options: &Options,
+    threshold: f64,
+    recompress: bool,
+) -> Result<Compacted> {
     let mut writer = StoreWriter::open(store, options.codec, options.profile.group_size())?;
     // It copies the small segments itself
     writer.fold = false;
     let before = writer.index.size();
     let games = writer.recount()?;
-    writer.compact_segments(threshold)?;
+    writer.compact_segments(threshold, recompress)?;
     let after = writer.index.size();
     // The index first, so it never lists a segment gone, then the
     // segments it no longer lists, the store still locked

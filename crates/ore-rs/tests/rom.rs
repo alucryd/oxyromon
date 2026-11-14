@@ -173,13 +173,21 @@ fn a_batch_writes_many_roms_to_a_store_as_one_write() {
     // A compaction packs the ROMs written one at a time together, as the
     // batch did
     let single = dir.path().join("single");
-    let compacted = ore_rs::compact(&single.join(".ore-store"), &options, 0.5).unwrap();
+    let compacted = ore_rs::compact(&single.join(".ore-store"), &options, 0.5, false).unwrap();
     assert_eq!(compacted.games, 10);
     let after = dir_size(&single);
     assert!(
         after <= sizes[1] * 101 / 100,
         "{after} against the batch's {}",
         sizes[1]
+    );
+    // Recompressed, every group packed again: no larger
+    let recompressed = ore_rs::compact(&single.join(".ore-store"), &options, 0.5, true).unwrap();
+    assert_eq!(recompressed.games, 10);
+    assert!(
+        dir_size(&single) <= after,
+        "{} against {after}",
+        dir_size(&single)
     );
     for rom in &roms {
         let back = dir.path().join("back.gb");

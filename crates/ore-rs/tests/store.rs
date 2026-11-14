@@ -235,13 +235,13 @@ fn purging_a_game_keeps_the_others() {
 
     // Nothing to compact while both are there, once the small segments
     // each commit leaves are merged
-    let compacted = ore_rs::compact(&library.store, &Options::default(), 0.0).unwrap();
+    let compacted = ore_rs::compact(&library.store, &Options::default(), 0.0, false).unwrap();
     assert_eq!(compacted.games, 2);
     assert!(compacted.after <= compacted.before * 101 / 100);
     let full = compacted.after;
 
     std::fs::remove_file(&a).unwrap();
-    let compacted = ore_rs::compact(&library.store, &Options::default(), 0.0).unwrap();
+    let compacted = ore_rs::compact(&library.store, &Options::default(), 0.0, false).unwrap();
     assert_eq!(compacted.games, 1);
     assert_eq!(compacted.after, library.store_size());
     assert!(
@@ -266,7 +266,7 @@ fn a_game_that_cannot_be_read_stops_a_compaction() {
     bytes[meta + 3] ^= 0x40;
     write(&ore, &bytes);
     let before = library.store_size();
-    assert!(ore_rs::compact(&library.store, &Options::default(), 0.0).is_err());
+    assert!(ore_rs::compact(&library.store, &Options::default(), 0.0, false).is_err());
     assert_eq!(library.store_size(), before);
 }
 

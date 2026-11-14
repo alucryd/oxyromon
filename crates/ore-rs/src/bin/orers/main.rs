@@ -69,6 +69,13 @@ fn cli() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("recompress")
+                .long("recompress")
+                .help("With --compact, decode and pack every group again: the smallest store, for a read and a write of all of it")
+                .requires("compact")
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("keys")
                 .long("keys")
                 .help("Keys file holding the Wii common key: text, a BootMii keys.bin, or an otp.bin")
@@ -212,8 +219,13 @@ fn store(input: &Path, matches: &ArgMatches, options: &Options) -> Result<String
         checked.damaged
     );
     if matches.get_flag("compact") {
-        let compacted =
-            ore_rs::compact(input, options, COMPACT_THRESHOLD).map_err(|e| e.to_string())?;
+        let compacted = ore_rs::compact(
+            input,
+            options,
+            COMPACT_THRESHOLD,
+            matches.get_flag("recompress"),
+        )
+        .map_err(|e| e.to_string())?;
         message += &format!(
             "; compacted: {} games, {} to {} bytes",
             compacted.games, compacted.before, compacted.after

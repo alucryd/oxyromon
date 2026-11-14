@@ -132,7 +132,8 @@ ore_rs::compress_to_store(iso, ore, store, &Options::default(), &[], &mut |_| {}
   and copies what is left of mostly dead segments into a new one, and of
   the small segments a write that adds little leaves; groups less than half
   full, as writes of a game each leave, are decoded and packed together
-  again, each chunk in its group's codec.
+  again, each chunk in its group's codec. With `recompress`, every group
+  is: the smallest the store gets, for a read and a write of all of it.
 - **[`Reader::sizes`]** gives what a game weighs: its own chunks, its share
   of those it shares, and about what it would weigh detached.
 - **A write folds the store's last segment into its own** when that one
@@ -183,6 +184,7 @@ orers --store GameCube/.ore-store -o GameCube/ *.iso   # thin OREs, chunks in th
 orers --detach -o out/ GameCube/game.ore               # a standalone ORE again
 orers GameCube/.ore-store               # check the store, repairing what parity covers
 orers --compact GameCube/.ore-store       # and compact it, dropping what no game uses
+orers --compact --recompress GB/.ore-store  # and pack every group again, the smallest it gets
 ```
 
 | Flag | Meaning |
@@ -193,6 +195,7 @@ orers --compact GameCube/.ore-store       # and compact it, dropping what no gam
 | `--store DIR` | write ISOs as thin OREs, their chunks in the store `DIR`, made if missing; attach OREs to it; every input as one write, committed after the last |
 | `--detach` | write OREs as standalone OREs |
 | `--compact` | once a store is checked, compact it, dropping what no game uses |
+| `--recompress` | with `--compact`, decode and pack every group again: the smallest store, for a read and a write of all of it |
 | `--keys FILE` | where the Wii common key is |
 
 An ORE written from an ORE needs `-o`, so it lands beside its input rather
