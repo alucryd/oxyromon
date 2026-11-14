@@ -85,10 +85,10 @@ struct Plan {
 /// PCM periods, from where the stream's area starts.
 const AUDIO_FIXED: usize = 16 << 10;
 
-/// A PlayStation 2 DVD read once, in order, for its hashes and its audio:
+/// A PlayStation 2 DVD or a PSP UMD read once, in order, for its hashes and its audio:
 /// its areas, the rest in disc order, then the audio, each codec's
 /// together.
-fn plan_ps2(iso: &mut Iso, hashes: &mut Hashes) -> Result<Vec<Plan>> {
+fn plan_sony(iso: &mut Iso, hashes: &mut Hashes) -> Result<Vec<Plan>> {
     let size = iso.size();
     let mut scanner = ps2audio::Scanner::new(size);
     let mut buf = vec![0; WINDOW as usize + ps2audio::LOOKAHEAD];
@@ -488,25 +488,36 @@ pub fn compress(
     encode(input, output, options, keys, None, progress)
 }
 
-/// Whether `iso` is a PlayStation 2 DVD: an ISO 9660 file system whose
-/// `SYSTEM.CNF` boots a `BOOT2` executable.
-fn is_ps2(iso: &mut Iso) -> Result<bool> {
+/// Which of Sony's discs `iso` is, if one: a PlayStation 2 DVD, an ISO
+/// 9660 file system whose `SYSTEM.CNF` boots a `BOOT2` executable, or a
+/// PSP UMD, one holding `UMD_DATA.BIN` or `PSP_GAME/PARAM.SFO`.
+fn sony_platform(iso: &mut Iso) -> Result<Option<&'static str>> {
     let mut read = |lba: u32, sector: &mut [u8; 2048]| {
         iso.read_at(u64::from(lba) * 2048, sector)
             .map_err(|error| std::io::Error::other(error.to_string()))
     };
     let Ok(entries) = iso9660::entries(&mut read) else {
-        return Ok(false);
+        return Ok(None);
     };
-    let Some(cnf) = entries
-        .iter()
-        .find(|entry| !entry.directory && entry.path.eq_ignore_ascii_case("/SYSTEM.CNF"))
-    else {
-        return Ok(false);
+    let file = |path: &str| {
+        entries
+            .iter()
+            .find(|entry| !entry.directory && entry.path.eq_ignore_ascii_case(path))
+    };
+    if file("/UMD_DATA.BIN")
+        .or(file("/PSP_GAME/PARAM.SFO"))
+        .is_some()
+    {
+        return Ok(Some("psp"));
+    }
+    let Some(cnf) = file("/SYSTEM.CNF") else {
+        return Ok(None);
     };
     let mut bytes = vec![0; (cnf.size as usize).min(4096)];
     iso.read_at(u64::from(cnf.lba) * 2048, &mut bytes)?;
-    Ok(String::from_utf8_lossy(&bytes).contains("BOOT2"))
+    Ok(String::from_utf8_lossy(&bytes)
+        .contains("BOOT2")
+        .then_some("ps2"))
 }
 
 /// Whether `input` is a cue sheet, by its extension: a CD, whose tracks it
@@ -556,14 +567,18 @@ fn encode(
             };
             (plan(&mut iso, &mut volume)?, platform)
         }
-        None if is_ps2(&mut iso)? => (plan_ps2(&mut iso, &mut hashes)?, "ps2"),
-        None => {
-            return Err(Error::Unsupported(
-                "neither a GameCube, a Wii nor a PlayStation 2 disc".into(),
-            ));
-        }
+        None => match sony_platform(&mut iso)? {
+            Some(platform) => (plan_sony(&mut iso, &mut hashes)?, platform),
+            None => {
+                return Err(Error::Unsupported(
+                    "neither a GameCube, a Wii, a PlayStation 2 nor a PSP disc".into(),
+                ));
+            }
+        },
     };
-    let padded = platform != "ps2";
+    // A Sony disc is hashed as it is planned, and has no padding generated
+    let sony = matches!(platform, "ps2" | "psp");
+    let padded = !sony;
     let part = io::part(output);
     let result = (|| {
         let store = store
@@ -611,8 +626,7 @@ fn encode(
                         let length = (end.min(plan.len) - at) as usize;
                         let buf = &mut buf[..length];
                         iso.read_at(plan.start + at, buf)?;
-                        // A PlayStation 2 DVD is hashed as it is planned
-                        if platform != "ps2" {
+                        if !sony {
                             hashes.update(buf);
                         }
                         segmenter.feed(buf, at, fs, &mut |run| encoder.push(run));

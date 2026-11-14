@@ -1,7 +1,7 @@
 //! A PlayStation 2 DVD comes back out of an ORE byte for byte, its zeros
 //! and repeated data costing next to nothing, its audio coded as audio,
 //! alone and through a store; an ISO that does not boot a PlayStation 2 is
-//! refused.
+//! refused. A PSP UMD is cut as one.
 
 use std::path::Path;
 
@@ -105,6 +105,11 @@ fn audio_disc(dir: &Path, headed: bool) -> std::path::PathBuf {
 /// A DVD of 2,000 sectors in `dir`: its file system, a `SYSTEM.CNF` holding
 /// `cnf`, noise, a long run of zeros and one block of noise twice.
 fn disc(dir: &Path, cnf: &str) -> std::path::PathBuf {
+    disc_with(dir, b"SYSTEM.CNF;1", cnf)
+}
+
+/// [`disc`], its one file named `name`.
+fn disc_with(dir: &Path, name: &[u8], cnf: &str) -> std::path::PathBuf {
     let mut iso = vec![0; 2000 * SECTOR];
     let pvd = &mut iso[16 * SECTOR..17 * SECTOR];
     pvd[0] = 1;
@@ -112,7 +117,7 @@ fn disc(dir: &Path, cnf: &str) -> std::path::PathBuf {
     pvd[156..190].copy_from_slice(&record(&[0], 18, SECTOR as u32, true));
     let mut root = record(&[0], 18, SECTOR as u32, true);
     root.extend(record(&[1], 18, SECTOR as u32, true));
-    root.extend(record(b"SYSTEM.CNF;1", 19, cnf.len() as u32, false));
+    root.extend(record(name, 19, cnf.len() as u32, false));
     iso[18 * SECTOR..18 * SECTOR + root.len()].copy_from_slice(&root);
     iso[19 * SECTOR..19 * SECTOR + cnf.len()].copy_from_slice(cnf.as_bytes());
     iso[20 * SECTOR..600 * SECTOR].copy_from_slice(&noise(580 * SECTOR, 1));
@@ -193,4 +198,20 @@ fn a_ps2_dvd_codes_its_audio_as_audio_alone_and_in_a_store() {
     }
     // The audio coded as audio takes a tenth less than as bytes
     assert!(sizes[0] < sizes[1] * 9 / 10, "{sizes:?}");
+}
+
+#[test]
+fn a_psp_umd_round_trips_as_a_ps2_dvd_does() {
+    let dir = TempDir::new().unwrap();
+    let iso = disc_with(
+        dir.path(),
+        b"UMD_DATA.BIN;1",
+        "ULUS-10000|0000000000000001|0001|G",
+    );
+    let ore = dir.path().join("game.ore");
+    let stats = ore_rs::compress(&iso, &ore, &Options::default(), &[], &mut |_| {}).unwrap();
+    assert!(stats.output_size < 790 * SECTOR as u64);
+    let back = dir.path().join("back.iso");
+    ore_rs::decompress(&ore, &back, &mut |_| {}).unwrap();
+    assert!(std::fs::read(&iso).unwrap() == std::fs::read(&back).unwrap());
 }

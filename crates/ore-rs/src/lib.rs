@@ -1,5 +1,5 @@
-//! ORE, oxyROMon's ROM enclosure, for GameCube, Wii and PlayStation 2 discs
-//! and CDs: part of oxyROMon.
+//! ORE, oxyROMon's ROM enclosure, for GameCube, Wii, PlayStation 2 and PSP
+//! discs and CDs: part of oxyROMon.
 //!
 //! An ORE holds a disc as Redump hashes it, and gives it back byte for byte.
 //! Wii partitions are stored decrypted and without their hashes, padding as

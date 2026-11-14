@@ -5,6 +5,7 @@
 - Added ORE, oxyROMon's own format, from the new ore-rs crate: import, check and convert GameCube and Wii discs and CUE/BIN to and from ORE, a CD's cue sheet inside its ORE with its tracks, set by `ORE_COMPRESSION_ALGORITHM` (`zstd` or `lzma2`) and `ORE_PROFILE` (`stream` or `archive`); the format is a draft, and an ORE written now may not open in a later version
 - ORE takes Dreamcast GD-ROMs, from their Redump cue sheet or CHD
 - ORE takes PlayStation 2 DVDs too, and converts from CHD: a DVD's ISO, or a CD's tracks with its cue sheet; a disc of another system is skipped rather than failing the run
+- ORE takes PSP UMDs, from their ISO or CHD, as it takes PlayStation 2 DVDs
 - ORE codes a PlayStation 2 DVD's audio as audio: its `VAGp` streams' SPU ADPCM and its 16-bit PCM, found by their headers, so a disc full of sound no longer loses to its CHD
 - Importing a cue sheet for a game whose tracks are in an ORE puts it in the ORE, in place of the dump's, writing the ORE's metadata alone again
 
