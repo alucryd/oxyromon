@@ -168,16 +168,20 @@ struct Split {
 
 fn split(cue: &cue::Cue) -> Result<Split> {
     let mut out = Split::default();
-    let mut frame = LEAD_IN;
-    for track in &cue.tracks {
-        let bytes = fs::read(&track.file)?;
-        frame += track.pregap;
+    // A GD-ROM's high-density area starts at 45,000, as ore-rs counts
+    let lens = cue
+        .tracks
+        .iter()
+        .map(|track| Ok(fs::metadata(&track.file)?.len() / SECTOR as u64))
+        .collect::<Result<Vec<_>>>()?;
+    let starts = cue::starts(cue, LEAD_IN, lens);
+    for (track, &start) in cue.tracks.iter().zip(&starts) {
         if track.mode == Mode::Audio {
-            frame += (bytes.len() / SECTOR) as u32;
             continue;
         }
+        let bytes = fs::read(&track.file)?;
         let mut rebuilt = [0; SECTOR];
-        for raw in bytes.as_chunks::<SECTOR>().0 {
+        for (frame, raw) in (start as u32..).zip(bytes.as_chunks::<SECTOR>().0) {
             let kind = sector::classify(raw, frame);
             out.sectors += 1;
             out.kinds[kind as usize] += 1;
@@ -200,7 +204,6 @@ fn split(cue: &cue::Cue) -> Result<Split> {
             out.kinds_of.push(kind);
             out.data.extend_from_slice(data);
             out.raw.extend_from_slice(raw);
-            frame += 1;
         }
     }
     Ok(out)

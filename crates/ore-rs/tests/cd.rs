@@ -419,3 +419,74 @@ fn a_cue_sheet_for_other_tracks_is_refused() {
         assert!(!output.exists() && !dir.path().join("wrong.ore.part").exists());
     }
 }
+
+/// A Mode 1 track of `sectors`, its data one block over and over, its
+/// sectors addressed from `frame` on.
+fn mode1_track(sectors: u32, frame: u32, seed: u64) -> Vec<u8> {
+    let block = noise(2048, seed);
+    let mut track = Vec::new();
+    for i in 0..sectors {
+        let mut raw = [0; SECTOR];
+        sector::rebuild(Kind::Mode1, frame + i, &[0; 8], &block, &mut raw);
+        track.extend_from_slice(&raw);
+    }
+    track
+}
+
+/// A GD-ROM as Redump lists it, in `dir`: a data and an audio track in its
+/// single-density area, then two in its high-density area, from sector
+/// 45,000. Its cue sheet's path.
+fn gd_rom(dir: &Path, name: &str) -> PathBuf {
+    let tracks = [
+        ("MODE1/2352", mode1_track(300, LEAD_IN, 1), false),
+        ("AUDIO", vec![0; 750 * SECTOR], false),
+        ("MODE1/2352", mode1_track(2000, LEAD_IN + 45_000, 2), true),
+        ("AUDIO", vec![0; 300 * SECTOR], true),
+    ];
+    let mut cue = String::from("REM SINGLE-DENSITY AREA\r\n");
+    for (i, (mode, track, high_density)) in tracks.iter().enumerate() {
+        if *high_density && !tracks[i - 1].2 {
+            cue += "REM HIGH-DENSITY AREA\r\n";
+        }
+        let file = format!("{name} (Track {}).bin", i + 1);
+        std::fs::write(dir.join(&file), track).unwrap();
+        cue += &format!(
+            "FILE \"{file}\" BINARY\r\n  TRACK {:02} {mode}\r\n    INDEX 01 00:00:00\r\n",
+            i + 1
+        );
+    }
+    let path = dir.join(format!("{name}.cue"));
+    std::fs::write(&path, cue).unwrap();
+    path
+}
+
+#[test]
+fn a_gd_rom_generates_its_high_density_sectors_too() {
+    let dir = TempDir::new().unwrap();
+    let cue = gd_rom(dir.path(), "Game (Japan)");
+    let ore = dir.path().join("game.ore");
+    let stats = ore_rs::compress(&cue, &ore, &OPTIONS[0], &[], &mut |_| {}).unwrap();
+    // Each Mode 1 sector's sync, address, EDC and ECC generated, its data
+    // one block
+    assert!(stats.output_size < 64 << 10, "{}", stats.output_size);
+    check(&ore, &cue);
+
+    // Another cue sheet must start the high-density area where this one does
+    let text = std::fs::read_to_string(&cue).unwrap();
+    let wrong = dir.path().join("wrong.cue");
+    std::fs::write(&wrong, text.replace("REM HIGH-DENSITY AREA\r\n", "")).unwrap();
+    assert!(ore_rs::replace_cue(&ore, &dir.path().join("x.ore"), &wrong, &mut |_| {}).is_err());
+    // and read as a CD's, its high-density sectors are kept whole: more
+    // than twice the size, its ECC stored
+    let as_cd = dir.path().join("as-cd.ore");
+    let wrong_stats = ore_rs::compress(&wrong, &as_cd, &OPTIONS[0], &[], &mut |_| {}).unwrap();
+    assert!(
+        wrong_stats.output_size > 2 * stats.output_size,
+        "{} against {}",
+        wrong_stats.output_size,
+        stats.output_size
+    );
+    let renamed = dir.path().join("Game (Japan) (Rev 1).cue");
+    std::fs::write(&renamed, format!("REM a revision\r\n{text}")).unwrap();
+    ore_rs::replace_cue(&ore, &ore, &renamed, &mut |_| {}).unwrap();
+}

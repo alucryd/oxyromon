@@ -25,6 +25,9 @@ pub const INDEX_LIBRARY: u8 = 2;
 
 pub const MEDIA_CD_2352: u16 = 32;
 pub const MEDIA_CD_MIXED: u16 = 33;
+/// A GD-ROM: a CD's single-density area, then its high-density area at
+/// sector 45,000, of 2352-byte sectors as a CD's.
+pub const MEDIA_GD_ROM: u16 = 48;
 pub const MEDIA_DVD_2048: u16 = 64;
 
 /// Index record kinds.
@@ -213,7 +216,9 @@ impl Header {
         if unknown != 0 {
             return Err(Error::Unsupported(format!("required flags {unknown:#x}")));
         }
-        if ![MEDIA_CD_2352, MEDIA_CD_MIXED, MEDIA_DVD_2048].contains(&header.media_class) {
+        if ![MEDIA_CD_2352, MEDIA_CD_MIXED, MEDIA_GD_ROM, MEDIA_DVD_2048]
+            .contains(&header.media_class)
+        {
             return Err(Error::Unsupported(format!(
                 "media class {}",
                 header.media_class

@@ -8,6 +8,13 @@
 //! within the disc and in a store holding every disc before it. A row a
 //! disc on stdout; EXTENSIONS gets a row a disc and file extension.
 //!
+//! `dvd audio SCRATCH STREAMS <CHD>...`: each CHD extracted as above, a CD
+//! of one Mode 2 track too, and the disc scanned at every 16 bytes for audio
+//! headers: Sony's `SShd`, `VAGp` and `RIFF WAVE`. Each PCM stream through
+//! Zstandard and FLAC, its samples as stored and de-interleaved; each
+//! PS-ADPCM stream through Zstandard. A row a disc on stdout; STREAMS gets a
+//! row a stream.
+//!
 //! The library is only ever read: everything written goes to SCRATCH, and
 //! is removed once measured.
 
@@ -253,8 +260,9 @@ fn extension(path: &str) -> String {
     }
 }
 
-/// Copy `chd` into `scratch` and extract its ISO there.
-fn extract(chd: &Path, scratch: &Path) -> Result<PathBuf> {
+/// Copy `chd` into `scratch` and extract its ISO there; a CD of one Mode 2
+/// track too, as its sectors' first 2048 bytes of data, if `cooked`.
+fn extract(chd: &Path, scratch: &Path, cooked: bool) -> Result<PathBuf> {
     let _ = fs::remove_dir_all(scratch);
     fs::create_dir_all(scratch)?;
     let local = scratch.join("disc.chd");
@@ -290,7 +298,27 @@ fn extract(chd: &Path, scratch: &Path) -> Result<PathBuf> {
                 &mut |_| {},
             )?;
             let cue = fs::read_to_string(&files[0])?;
-            if !cue.contains("MODE1/2048") || cue.matches("TRACK").count() != 1 {
+            if cue.matches("TRACK").count() != 1 {
+                bail!("{}: a CD of several tracks, not an ISO", chd.display());
+            }
+            // A CD of one Mode 2 track: its Form 1 sectors' 2048 bytes
+            if cue.contains("MODE2/2352") {
+                if !cooked {
+                    bail!("{}: a CD, not an ISO", chd.display());
+                }
+                let raw = scratch.join("disc.bin");
+                fs::rename(&iso, &raw)?;
+                let input = File::open(&raw)?;
+                let mut output = std::io::BufWriter::new(File::create(&iso)?);
+                let mut sector = vec![0; 2352];
+                let sectors = input.metadata()?.len() / 2352;
+                for i in 0..sectors {
+                    input.read_exact_at(&mut sector, i * 2352)?;
+                    output.write_all(&sector[24..24 + 2048])?;
+                }
+                output.flush()?;
+                fs::remove_file(&raw)?;
+            } else if !cue.contains("MODE1/2048") {
                 bail!("{}: a CD, not an ISO", chd.display());
             }
         }
@@ -345,7 +373,7 @@ fn data(scratch: &Path, extensions: &Path, chds: &[PathBuf]) -> Result<()> {
         let start = Instant::now();
         let name = chd.file_name().unwrap().to_string_lossy().into_owned();
         eprintln!("{name}");
-        let iso = extract(chd, scratch)?;
+        let iso = extract(chd, scratch, false)?;
         let file = File::open(&iso)?;
         let size = file.metadata()?.len();
         let entries =
@@ -439,6 +467,260 @@ fn data(scratch: &Path, extensions: &Path, chds: &[PathBuf]) -> Result<()> {
     Ok(())
 }
 
+/// An audio stream found on a disc: where its samples lie, and how.
+struct Stream {
+    container: &'static str,
+    /// 16-bit PCM rather than PS-ADPCM.
+    pcm: bool,
+    at: u64,
+    len: u64,
+    rate: u32,
+    channels: u32,
+    /// Bytes of one channel before the next's, 0 when samples interleave.
+    interleave: u32,
+}
+
+fn le32(b: &[u8], at: usize) -> u32 {
+    u32::from_le_bytes(b[at..at + 4].try_into().unwrap())
+}
+
+fn be32(b: &[u8], at: usize) -> u32 {
+    u32::from_be_bytes(b[at..at + 4].try_into().unwrap())
+}
+
+/// The stream whose header starts `b`, at `at` on a disc of `size` bytes,
+/// if its header is plausible.
+fn stream(b: &[u8], at: u64, size: u64) -> Option<Stream> {
+    let rate_ok = |rate: u32| (4000..=96000).contains(&rate);
+    let fits = |start: u64, len: u64| len > 0 && start + len <= size;
+    match &b[..4] {
+        // Sony's ADS: SShd, then SSbd and its size
+        b"SShd" if le32(b, 4) == 0x18 && &b[0x20..0x24] == b"SSbd" => {
+            let (format, rate, channels, interleave) =
+                (le32(b, 8), le32(b, 12), le32(b, 16), le32(b, 20));
+            let pcm = match format {
+                1 => true,
+                0x10 => false,
+                _ => return None,
+            };
+            let len = u64::from(le32(b, 0x24));
+            let start = at + 0x28;
+            (rate_ok(rate) && (1..=8).contains(&channels) && fits(start, len)).then_some(Stream {
+                container: "SShd",
+                pcm,
+                at: start,
+                len,
+                rate,
+                channels,
+                interleave: if channels > 1 { interleave } else { 0 },
+            })
+        }
+        // A VAG: mono PS-ADPCM, big endian, its data after 48 bytes
+        b"VAGp" => {
+            let (len, rate) = (u64::from(be32(b, 0x0c)), be32(b, 0x10));
+            let start = at + 0x30;
+            (rate_ok(rate) && len % 16 == 0 && fits(start, len)).then_some(Stream {
+                container: "VAGp",
+                pcm: false,
+                at: start,
+                len,
+                rate,
+                channels: 1,
+                interleave: 0,
+            })
+        }
+        // A WAVE of 16-bit PCM, its fmt chunk first, then its data
+        b"RIFF" if &b[8..16] == b"WAVEfmt " => {
+            let fmt = le32(b, 16) as usize;
+            let (format, channels, rate, bits) = (
+                u16::from_le_bytes([b[20], b[21]]),
+                u32::from(u16::from_le_bytes([b[22], b[23]])),
+                le32(b, 24),
+                u16::from_le_bytes([b[34], b[35]]),
+            );
+            let data = 20 + fmt;
+            if format != 1 || bits != 16 || data + 8 > b.len() || &b[data..data + 4] != b"data" {
+                return None;
+            }
+            let len = u64::from(le32(b, data + 4));
+            let start = at + data as u64 + 8;
+            (rate_ok(rate) && (1..=8).contains(&channels) && fits(start, len)).then_some(Stream {
+                container: "RIFF",
+                pcm: true,
+                at: start,
+                len,
+                rate,
+                channels,
+                interleave: 0,
+            })
+        }
+        _ => None,
+    }
+}
+
+/// Every stream on the disc, a header looked for at every 16 bytes, the
+/// scan skipping past each stream found.
+fn streams(file: &File, size: u64) -> Result<Vec<Stream>> {
+    let mut found = Vec::new();
+    let mut window = vec![0; WINDOW as usize + 4096];
+    let mut at = 0;
+    while at < size {
+        let len = (size - at).min(window.len() as u64) as usize;
+        file.read_exact_at(&mut window[..len], at)?;
+        let mut next = at + WINDOW.min(size - at);
+        let mut i = 0;
+        // A header read whole only before the window's last 4 KiB
+        while i + 64 <= len && (i as u64) < WINDOW {
+            if let Some(found_stream) = stream(&window[i..len], at + i as u64, size) {
+                let end = found_stream.at + found_stream.len;
+                found.push(found_stream);
+                if end > at + WINDOW {
+                    next = end.next_multiple_of(16);
+                    break;
+                }
+                i = (end - at).next_multiple_of(16) as usize;
+                continue;
+            }
+            i += 16;
+        }
+        at = next;
+    }
+    Ok(found)
+}
+
+/// FLAC -8 of 16-bit samples, `channels` of them a frame, as `flac` writes.
+fn flac(samples: &[u8], channels: u32, rate: u32) -> Result<u64> {
+    let mut child = std::process::Command::new("flac")
+        .args([
+            "-8",
+            "-s",
+            "-c",
+            "--force-raw-format",
+            "--endian=little",
+            "--sign=signed",
+            "--bps=16",
+        ])
+        .arg(format!("--channels={channels}"))
+        .arg(format!("--sample-rate={rate}"))
+        .arg("-")
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .context("running flac")?;
+    let mut stdin = child.stdin.take().unwrap();
+    let even = samples.len() / (2 * channels as usize) * (2 * channels as usize);
+    let samples = samples[..even].to_vec();
+    let writer = std::thread::spawn(move || stdin.write_all(&samples));
+    let output = child.wait_with_output()?;
+    writer.join().unwrap()?;
+    if !output.status.success() {
+        bail!("flac failed");
+    }
+    Ok(output.stdout.len() as u64)
+}
+
+/// Interleaved blocks of `interleave` bytes a channel as frames of samples.
+fn deinterleave(data: &[u8], channels: usize, interleave: usize) -> Vec<u8> {
+    let round = channels * interleave;
+    let rounds = data.len() / round;
+    let mut out = Vec::with_capacity(rounds * round);
+    for r in 0..rounds {
+        let base = r * round;
+        for sample in (0..interleave).step_by(2) {
+            for channel in 0..channels {
+                let at = base + channel * interleave + sample;
+                out.extend_from_slice(&data[at..at + 2]);
+            }
+        }
+    }
+    out
+}
+
+fn audio(scratch: &Path, streams_tsv: &Path, chds: &[PathBuf]) -> Result<()> {
+    let mut rows = File::create(streams_tsv)?;
+    writeln!(
+        rows,
+        "disc	container	pcm	offset	bytes	rate	channels	interleave	zstd	flac	flac_deinterleaved"
+    )?;
+    println!(
+        "disc	iso	pcm_streams	pcm_bytes	pcm_zstd	pcm_flac	pcm_flac_deinterleaved	adpcm_streams	adpcm_bytes	adpcm_zstd	seconds"
+    );
+    for chd in chds {
+        let start = Instant::now();
+        let name = chd.file_name().unwrap().to_string_lossy().into_owned();
+        eprintln!("{name}");
+        let iso = extract(chd, scratch, true)?;
+        let file = File::open(&iso)?;
+        let size = file.metadata()?.len();
+        let found = streams(&file, size)?;
+        let measured: Vec<(u64, u64, u64)> = found
+            .par_iter()
+            .map(|stream| -> Result<(u64, u64, u64)> {
+                let mut data = vec![0; stream.len as usize];
+                file.read_exact_at(&mut data, stream.at)?;
+                // Zstandard in 1 MiB groups, as an ORE stores it now
+                let zstd: u64 = data.chunks(MIB).map(|g| Codec::Zstd(MIB).compress(g)).sum();
+                if !stream.pcm || stream.channels > 8 {
+                    return Ok((zstd, 0, 0));
+                }
+                let flac_as_is = flac(&data, stream.channels, stream.rate)?;
+                let flac_de = if stream.interleave > 1 {
+                    flac(
+                        &deinterleave(&data, stream.channels as usize, stream.interleave as usize),
+                        stream.channels,
+                        stream.rate,
+                    )?
+                } else {
+                    flac_as_is
+                };
+                Ok((zstd, flac_as_is, flac_de))
+            })
+            .collect::<Result<_>>()?;
+        let mut totals = [0u64; 8];
+        for (stream, &(zstd, flac_as_is, flac_de)) in found.iter().zip(&measured) {
+            writeln!(
+                rows,
+                "{name}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{zstd}\t{flac_as_is}\t{flac_de}",
+                stream.container,
+                stream.pcm,
+                stream.at,
+                stream.len,
+                stream.rate,
+                stream.channels,
+                stream.interleave
+            )?;
+            if stream.pcm {
+                totals[0] += 1;
+                totals[1] += stream.len;
+                totals[2] += zstd;
+                totals[3] += flac_as_is;
+                totals[4] += flac_de;
+            } else {
+                totals[5] += 1;
+                totals[6] += stream.len;
+                totals[7] += zstd;
+            }
+        }
+        let t = totals;
+        println!(
+            "{name}\t{size}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.0}",
+            t[0],
+            t[1],
+            t[2],
+            t[3],
+            t[4],
+            t[5],
+            t[6],
+            t[7],
+            start.elapsed().as_secs_f64()
+        );
+        std::io::stdout().flush()?;
+        fs::remove_dir_all(scratch)?;
+    }
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
@@ -447,6 +729,11 @@ fn main() -> Result<()> {
             Path::new(&args[2]),
             &args[3..].iter().map(PathBuf::from).collect::<Vec<_>>(),
         ),
-        _ => bail!("usage: dvd data SCRATCH EXTENSIONS <CHD>..."),
+        Some("audio") if args.len() > 3 => audio(
+            Path::new(&args[1]),
+            Path::new(&args[2]),
+            &args[3..].iter().map(PathBuf::from).collect::<Vec<_>>(),
+        ),
+        _ => bail!("usage: dvd data|audio SCRATCH EXTENSIONS|STREAMS <CHD>..."),
     }
 }

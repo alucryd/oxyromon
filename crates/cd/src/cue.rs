@@ -1,5 +1,6 @@
 //! Cue sheets, as Redump writes them: a `FILE` a track, each `TRACK` raw,
-//! 2352 bytes a sector, its `INDEX`es counted from the start of its file.
+//! 2352 bytes a sector, its `INDEX`es counted from the start of its file;
+//! a GD-ROM's tracks after its `REM HIGH-DENSITY AREA` in that area.
 
 use std::io::{Error, ErrorKind, Result};
 use std::path::{Path, PathBuf};
@@ -20,6 +21,34 @@ pub struct Track {
     pub indexes: Vec<(u8, u32)>,
     /// A `PREGAP` the file does not hold, in frames.
     pub pregap: u32,
+    /// In a GD-ROM's high-density area, which starts at sector 45,000.
+    pub high_density: bool,
+}
+
+/// Where a GD-ROM's high-density area starts, in sectors.
+pub const HIGH_DENSITY_AREA: u32 = 45_000;
+
+/// Where each track's file starts on the disc, in frames from 00:00:00:
+/// after `lead_in`, the tracks before, its pregap, and for the first track
+/// of a high-density area that area's start. `sectors` gives each track's
+/// file length in sectors.
+pub fn starts(cue: &Cue, lead_in: u32, sectors: impl IntoIterator<Item = u64>) -> Vec<u64> {
+    let mut frame = u64::from(lead_in);
+    let mut high_density = false;
+    cue.tracks
+        .iter()
+        .zip(sectors)
+        .map(|(track, sectors)| {
+            if track.high_density && !high_density {
+                frame = frame.max(u64::from(lead_in + HIGH_DENSITY_AREA));
+            }
+            high_density = track.high_density;
+            frame += u64::from(track.pregap);
+            let start = frame;
+            frame += sectors;
+            start
+        })
+        .collect()
 }
 
 #[derive(Clone, Debug, Default)]
@@ -42,6 +71,7 @@ pub fn frames(msf: &str) -> Option<u32> {
 pub fn parse(text: &str, dir: &Path) -> Result<Cue> {
     let mut cue = Cue::default();
     let mut file = None;
+    let mut high_density = false;
     for line in text.lines() {
         let line = line.trim();
         let (command, rest) = line.split_once(' ').unwrap_or((line, ""));
@@ -72,6 +102,7 @@ pub fn parse(text: &str, dir: &Path) -> Result<Cue> {
                     file,
                     indexes: Vec::new(),
                     pregap: 0,
+                    high_density,
                 });
             }
             "INDEX" | "PREGAP" => {
@@ -94,6 +125,11 @@ pub fn parse(text: &str, dir: &Path) -> Result<Cue> {
                     track.indexes.push((number, at));
                 }
             }
+            "REM" => match rest.trim() {
+                "HIGH-DENSITY AREA" => high_density = true,
+                "SINGLE-DENSITY AREA" => high_density = false,
+                _ => {}
+            },
             _ => {}
         }
     }
@@ -116,5 +152,25 @@ mod tests {
         assert_eq!(cue.tracks[1].file, Path::new("/d/Game (Track 2).bin"));
         assert_eq!(cue.tracks[1].indexes, [(0, 0), (1, 150)]);
         assert!(parse("TRACK 01 MODE1/2048\n", Path::new("")).is_err());
+    }
+
+    #[test]
+    fn a_gd_rom_starts_its_high_density_area_at_45000() {
+        let text = "REM SINGLE-DENSITY AREA\r\nFILE \"1.bin\" BINARY\r\n  TRACK 01 MODE1/2352\r\n    INDEX 01 00:00:00\r\nFILE \"2.bin\" BINARY\r\n  TRACK 02 AUDIO\r\n    INDEX 00 00:00:00\r\n    INDEX 01 00:02:00\r\nREM HIGH-DENSITY AREA\r\nFILE \"3.bin\" BINARY\r\n  TRACK 03 MODE1/2352\r\n    INDEX 01 00:00:00\r\nFILE \"4.bin\" BINARY\r\n  TRACK 04 AUDIO\r\n    INDEX 01 00:00:00\r\n";
+        let cue = parse(text, Path::new("")).unwrap();
+        let areas: Vec<bool> = cue.tracks.iter().map(|t| t.high_density).collect();
+        assert_eq!(areas, [false, false, true, true]);
+        assert_eq!(
+            starts(&cue, 150, [300, 750, 1000, 50]),
+            [150, 450, 45150, 46150]
+        );
+        // A CD's tracks follow each other, a pregap between them
+        let mut cd = cue.clone();
+        cd.tracks.iter_mut().for_each(|t| t.high_density = false);
+        cd.tracks[1].pregap = 150;
+        assert_eq!(
+            starts(&cd, 150, [300, 750, 1000, 50]),
+            [150, 600, 1350, 2350]
+        );
     }
 }

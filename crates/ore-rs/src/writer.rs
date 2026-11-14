@@ -732,9 +732,12 @@ pub fn replace_cue(
     let cue_name = file_name(cue);
     let sbi_name = file_name(&cue.with_extension("sbi"));
     let mut renames = Vec::new();
-    let mut frame = u64::from(LEAD_IN);
-    for (track, area) in sheet.tracks.iter().zip(&mut meta.media.areas) {
-        frame += u64::from(track.pregap);
+    let starts = cue::starts(
+        &sheet,
+        LEAD_IN,
+        meta.media.areas.iter().map(|area| area.len / SECTOR as u64),
+    );
+    for ((track, area), frame) in sheet.tracks.iter().zip(&mut meta.media.areas).zip(starts) {
         let audio = track.mode == Mode::Audio;
         if audio != (area.kind == AreaKind::CdAudio) || area.frame != Some(frame) {
             return Err(Error::Unsupported(format!(
@@ -742,7 +745,6 @@ pub fn replace_cue(
                 track.number
             )));
         }
-        frame += area.len / SECTOR as u64;
         // A track's file lies beside the cue sheet, a file a track
         let name = file_name(&track.file);
         if track.file.as_os_str() != name.as_str()
@@ -948,10 +950,16 @@ fn encode_cd(
         let mut logical = blake3::Hasher::new();
         let mut identity = Vec::new();
         let mut areas = Vec::new();
-        let (mut frame, mut start, mut generated) = (LEAD_IN, 0, 0);
+        let (mut start, mut generated) = (0, 0);
         let mut buf = vec![0; CD_WINDOW * SECTOR];
-        for track in &sheet.tracks {
-            frame += track.pregap;
+        let lens = sheet
+            .tracks
+            .iter()
+            .map(|track| Ok(std::fs::metadata(&track.file)?.len() / SECTOR as u64))
+            .collect::<Result<Vec<_>>>()?;
+        let starts = cue::starts(&sheet, LEAD_IN, lens);
+        for (track, &frame) in sheet.tracks.iter().zip(&starts) {
+            let frame = frame as u32;
             let audio = track.mode == Mode::Audio;
             encoder.set_codec(if audio { Codec::Flac } else { options.codec })?;
             let file = File::open(&track.file)?;
@@ -1030,7 +1038,6 @@ fn encode_cd(
                 title_key: None,
                 exceptions: Vec::new(),
             });
-            frame += (len / SECTOR as u64) as u32;
             start += len;
         }
         for (name, bytes) in [
@@ -1056,14 +1063,19 @@ fn encode_cd(
             },
         );
         let audio = areas.iter().any(|area| area.kind == AreaKind::CdAudio);
+        let gd_rom = sheet.tracks.iter().any(|track| track.high_density);
         let meta = Meta {
             media: Media {
                 cue: Some(cue_bytes.clone()),
                 sbi: sbi.clone(),
                 size,
                 areas,
-                class: if audio { MEDIA_CD_MIXED } else { MEDIA_CD_2352 },
-                platform: "cd".into(),
+                class: match (gd_rom, audio) {
+                    (true, _) => MEDIA_GD_ROM,
+                    (false, true) => MEDIA_CD_MIXED,
+                    (false, false) => MEDIA_CD_2352,
+                },
+                platform: if gd_rom { "gd-rom" } else { "cd" }.into(),
             },
             store: None,
             ledger: vec![
