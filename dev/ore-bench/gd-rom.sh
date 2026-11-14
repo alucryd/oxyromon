@@ -1,6 +1,8 @@
 #!/bin/sh
-# GD-ROMs through ore-rs end to end. Each CHD is copied out of the library
-# and extracted by chdrs, a BIN a track, the library's cue sheet beside them;
+# GD-ROMs and CDs through ore-rs end to end. Each CHD is copied out of the
+# library and extracted by chdrs, a GD-ROM a BIN a track, a CD's one BIN
+# cut at each track's first index into the BINs the library's cue sheet
+# names, that cue sheet beside them; a CHD with no cue sheet is skipped;
 # every file is checked against the DAT's SHA-1; the disc is compressed by
 # orers in each profile and into one store that every disc before it went
 # into; then the first ORE is decompressed and compared file by file.
@@ -30,6 +32,10 @@ size_of() { stat -c %s -- "$1"; }
 printf 'disc\tchd\ttracks\tbytes\tdat_matches\tdat_files\tz1\tz4\tl4\tstore\tround_trip\n'
 for chd in "$@"; do
     name=$(basename -- "$chd" .chd)
+    if [ ! -f "$(dirname -- "$chd")/$name.cue" ]; then
+        echo "$name: no cue sheet beside it" >&2
+        continue
+    fi
     x="$work/x"
     rm -rf -- "$x" "$work/o" "$work/b"
     mkdir -p "$x" "$work/o" "$work/b" "$work/first"
@@ -44,7 +50,25 @@ for chd in "$@"; do
     fi
     rm -f -- "$x/$name.chd"
     [ -n "$(ls -- "$x")" ] || { echo "$name: no parent found" >&2; continue; }
-    cp -- "$(dirname -- "$chd")/$name.cue" "$x/$name.cue"
+    lib_cue="$(dirname -- "$chd")/$name.cue"
+    # chdrs writes a CD as one BIN: cut it at each track's first index into
+    # the BINs the library's cue sheet names
+    if [ "$(grep -c '^FILE' "$x/$name.cue")" = 1 ] && [ "$(grep -c '^FILE' "$lib_cue")" -gt 1 ]; then
+        single="$x/$(sed -n 's/^FILE "\(.*\)" BINARY.*/\1/p' "$x/$name.cue")"
+        awk '/TRACK/ {t = 1} /INDEX/ && t {split($3, m, ":"); print (m[1] * 60 + m[2]) * 75 + m[3]; t = 0}' \
+            "$x/$name.cue" > "$x/.starts"
+        echo $(($(size_of "$single") / 2352)) >> "$x/.starts"
+        sed -n 's/^FILE "\(.*\)" BINARY.*/\1/p' "$lib_cue" > "$x/.names"
+        i=1
+        while IFS= read -r file; do
+            start=$(sed -n "${i}p" "$x/.starts")
+            end=$(sed -n "$((i + 1))p" "$x/.starts")
+            dd if="$single" of="$x/$file" bs=2352 skip="$start" count=$((end - start)) status=none
+            i=$((i + 1))
+        done < "$x/.names"
+        rm -f -- "$single" "$x/.starts" "$x/.names"
+    fi
+    cp -- "$lib_cue" "$x/$name.cue"
 
     files=0
     matches=0
@@ -58,15 +82,21 @@ for chd in "$@"; do
     done
 
     sizes=""
+    failed=0
     for options in "-p stream -c zstd" "-p archive -c zstd" "-p archive -c lzma2"; do
         rm -f -- "$work/o/$name.ore"
         # shellcheck disable=SC2086
-        "$bin/orers" $options -o "$work/o" "$x/$name.cue" >/dev/null
+        "$bin/orers" $options -o "$work/o" "$x/$name.cue" >/dev/null || { failed=1; break; }
         sizes="$sizes	$(size_of "$work/o/$name.ore")"
         # The first kept under its name, which its cue sheet is written under
         [ "$options" = "-p stream -c zstd" ] && mv -- "$work/o/$name.ore" "$work/first/$name.ore"
     done
 
+    if [ "$failed" = 1 ]; then
+        printf '%s\t%s\t%s\t%s\t%s\t%s\tfailed\n' "$name" "$(size_of "$chd")" "$tracks" "$bytes" "$matches" "$files"
+        rm -f -- "$work/first/$name.ore"
+        continue
+    fi
     "$bin/orers" --store "$work/store/.ore-store" -o "$work/thin" "$x/$name.cue" >/dev/null
     store=$(($(du -sb -- "$work/store" | cut -f1) + $(du -sb -- "$work/thin" | cut -f1)))
 
