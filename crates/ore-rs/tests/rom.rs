@@ -79,3 +79,92 @@ fn a_rom_whose_header_does_not_check_is_refused() {
         assert!(!ore.exists());
     }
 }
+
+fn dir_size(dir: &Path) -> u64 {
+    std::fs::read_dir(dir)
+        .unwrap()
+        .map(|entry| {
+            let entry = entry.unwrap();
+            match entry.metadata().unwrap() {
+                m if m.is_dir() => dir_size(&entry.path()),
+                m => m.len(),
+            }
+        })
+        .sum()
+}
+
+#[test]
+fn a_batch_writes_many_roms_to_a_store_as_one_write() {
+    let dir = TempDir::new().unwrap();
+    // Ten revisions of a ROM, a few bytes apart, and one that is no ROM
+    let mut roms = Vec::new();
+    for revision in 0..10u8 {
+        roms.push(rom(
+            dir.path(),
+            &format!("Game (Rev {revision}).gb"),
+            |rom| {
+                gb(rom);
+                rom[0x8000 + revision as usize * 0x1000] = revision;
+            },
+        ));
+    }
+    let not_a_rom = dir.path().join("not.gb");
+    std::fs::write(&not_a_rom, vec![0x55; 0x8000]).unwrap();
+    let options = Options::default();
+
+    // One write a ROM, then one batch
+    let mut sizes = Vec::new();
+    for batched in [false, true] {
+        let games = dir.path().join(if batched { "batch" } else { "single" });
+        let store = games.join(".ore-store");
+        ore_rs::create_store(&store, &Default::default()).unwrap();
+        let ore = |rom: &Path| games.join(rom.file_name().unwrap()).with_extension("ore");
+        if batched {
+            let mut batch = ore_rs::StoreBatch::open(&store, &options).unwrap();
+            for (i, rom) in roms.iter().enumerate() {
+                batch
+                    .compress(rom, &ore(rom), &options, &[], &mut |_| {})
+                    .unwrap();
+                if i == 4 {
+                    assert!(
+                        batch
+                            .compress(&not_a_rom, &ore(&not_a_rom), &options, &[], &mut |_| {})
+                            .is_err()
+                    );
+                }
+            }
+            // Nothing lands before the commit
+            assert!(!ore(&roms[0]).exists());
+            batch.commit().unwrap();
+        } else {
+            for rom in &roms {
+                ore_rs::compress_to_store(rom, &ore(rom), &store, &options, &[], &mut |_| {})
+                    .unwrap();
+            }
+        }
+        for rom in &roms {
+            let back = dir.path().join("back.gb");
+            ore_rs::decompress(&ore(rom), &back, &mut |_| {}).unwrap();
+            assert!(std::fs::read(rom).unwrap() == std::fs::read(&back).unwrap());
+        }
+        assert!(!ore(&not_a_rom).exists());
+        sizes.push(dir_size(&games));
+    }
+    assert!(sizes[1] * 3 < sizes[0], "{sizes:?}");
+
+    // A batch dropped before its commit writes nothing, and the store reads on
+    let games = dir.path().join("batch");
+    let mut batch = ore_rs::StoreBatch::open(&games.join(".ore-store"), &options).unwrap();
+    let extra = rom(dir.path(), "Extra.gba", gba);
+    batch
+        .compress(&extra, &games.join("Extra.ore"), &options, &[], &mut |_| {})
+        .unwrap();
+    drop(batch);
+    assert!(!games.join("Extra.ore").exists());
+    assert!(
+        ore_rs::check_store(&games.join(".ore-store"), false)
+            .unwrap()
+            .lost_groups
+            == 0
+    );
+}

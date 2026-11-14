@@ -3,7 +3,7 @@
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufWriter, Seek, SeekFrom, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use md5::Md5;
@@ -219,7 +219,7 @@ impl Hashes {
 }
 
 /// Where an encoder's stored chunks go.
-enum Sink {
+enum Sink<'a> {
     /// Into groups in the ORE itself, each chunk once.
     Inline {
         packer: Packer,
@@ -231,7 +231,7 @@ enum Sink {
     },
     /// Into a store, the ORE naming them by their ids there.
     Store {
-        writer: StoreWriter,
+        writer: &'a mut StoreWriter,
         last: u64,
         used: HashSet<u64>,
     },
@@ -239,19 +239,19 @@ enum Sink {
 
 /// An ORE being written: its index records as runs come, its stored chunks
 /// to its sink.
-struct Encoder {
+struct Encoder<'a> {
     file: BufWriter<File>,
     index: Vec<u8>,
     records: u64,
     record_max: u64,
-    sink: Sink,
+    sink: Sink<'a>,
     padding: u64,
     zeros: u64,
     deduped: u64,
 }
 
-impl Encoder {
-    fn new(part: &Path, options: &Options, store: Option<StoreWriter>) -> Result<Self> {
+impl<'a> Encoder<'a> {
+    fn new(part: &Path, options: &Options, store: Option<&'a mut StoreWriter>) -> Result<Self> {
         let mut file = BufWriter::with_capacity(8 << 20, File::create(part)?);
         file.write_all(&[0; HEADER_LEN])?;
         let sink = match store {
@@ -385,7 +385,9 @@ impl Encoder {
     /// Write the index, `meta` and the header, then commit the store the
     /// chunks went to, if any. Returns the ORE's size.
     fn finish(mut self, mut meta: Meta, options: &Options, logical_hash: [u8; 32]) -> Result<u64> {
-        self.flush(true)?;
+        // A store's last group stays open for the next ORE of a batch: its
+        // commit writes it
+        self.flush(matches!(self.sink, Sink::Inline { .. }))?;
         let mut index = std::mem::take(&mut self.index);
         let (flags, index_kind) = match &self.sink {
             Sink::Inline { groups, .. } => {
@@ -460,15 +462,12 @@ impl Encoder {
         file.seek(SeekFrom::Start(0))?;
         file.write_all(&header.write())?;
         file.into_inner().map_err(|e| e.into_error())?.sync_all()?;
-        // The store is committed once the ORE naming its chunks is whole
-        if let Sink::Store {
-            mut writer, used, ..
-        } = self.sink
-        {
+        // The store is committed, by the batch, once the ORE naming its
+        // chunks is whole
+        if let Sink::Store { writer, used, .. } = self.sink {
             for id in used {
                 writer.reference(id);
             }
-            writer.commit()?;
         }
         Ok(meta_offset + meta_bytes.len() as u64)
     }
@@ -485,7 +484,22 @@ pub fn compress(
     keys: &[Key],
     progress: &mut dyn FnMut(u64),
 ) -> Result<Stats> {
-    encode(input, output, options, keys, None, progress)
+    let part = io::part(output);
+    let result = encode(input, &part, options, keys, None, progress);
+    io::finish(&part, output, result)
+}
+
+/// The codec `input` is best written with when nothing says otherwise:
+/// LZMA2 for a cartridge's ROM, small and read whole, which Zstandard
+/// loses to 7z on by 7%; Zstandard for the rest, the quicker to read.
+pub fn default_codec(input: &Path) -> Result<Codec> {
+    if is_cue(input) {
+        return Ok(Codec::Zstd);
+    }
+    Ok(match cartridge_platform(&mut Iso::open(input)?)? {
+        Some(_) => Codec::Lzma2,
+        None => Codec::Zstd,
+    })
 }
 
 /// The Nintendo logo a Game Boy's boot ROM checks a cartridge for.
@@ -571,19 +585,113 @@ pub fn compress_to_store(
     keys: &[Key],
     progress: &mut dyn FnMut(u64),
 ) -> Result<Stats> {
-    encode(input, output, options, keys, Some(store), progress)
+    let mut batch = StoreBatch::open(store, options)?;
+    let stats = batch.compress(input, output, options, keys, progress)?;
+    batch.commit()?;
+    Ok(stats)
+}
+
+/// Games written to one store at once, as one write: their chunks share
+/// its groups and segments, where a write a game would give each its own,
+/// sealed, and a library of small ROMs would pay a segment's parity rows a
+/// ROM. The store holds them, and each thin ORE lands at its output, once
+/// [`StoreBatch::commit`] has run; a batch dropped before leaves the store
+/// as it was and writes none.
+pub struct StoreBatch {
+    writer: StoreWriter,
+    /// Each thin ORE written, and where it goes on commit.
+    parts: Vec<(PathBuf, PathBuf)>,
+}
+
+impl StoreBatch {
+    /// Open the store at `store`, waiting for any other writer to be done:
+    /// one writer at a time, for as long as the batch lives. Its groups are
+    /// of `options`' size; each game's chunks are compressed as its own
+    /// options say.
+    pub fn open(store: &Path, options: &Options) -> Result<Self> {
+        Ok(Self {
+            writer: StoreWriter::open(store, options.codec, options.profile.group_size())?,
+            parts: Vec::new(),
+        })
+    }
+
+    /// [`compress_to_store`] in the batch.
+    pub fn compress(
+        &mut self,
+        input: &Path,
+        output: &Path,
+        options: &Options,
+        keys: &[Key],
+        progress: &mut dyn FnMut(u64),
+    ) -> Result<Stats> {
+        self.add(output, |part, writer| {
+            encode(input, part, options, keys, Some(writer), progress)
+        })
+    }
+
+    /// [`attach`] in the batch.
+    pub fn attach(
+        &mut self,
+        input: &Path,
+        output: &Path,
+        options: &Options,
+        progress: &mut dyn FnMut(u64),
+    ) -> Result<Stats> {
+        self.add(output, |part, writer| {
+            rewrite(input, part, Some(writer), options, progress)
+        })
+    }
+
+    /// Write a thin ORE beside `output`, to land there on commit. A game
+    /// that fails leaves its chunks in the store unused, as a purge finds
+    /// them.
+    fn add(
+        &mut self,
+        output: &Path,
+        write: impl FnOnce(&Path, &mut StoreWriter) -> Result<Stats>,
+    ) -> Result<Stats> {
+        let part = io::part(output);
+        match write(&part, &mut self.writer) {
+            Ok(stats) => {
+                self.parts.push((part, output.to_path_buf()));
+                Ok(stats)
+            }
+            Err(e) => {
+                let _ = std::fs::remove_file(&part);
+                Err(e)
+            }
+        }
+    }
+
+    /// Commit the store, then put each thin ORE in place. Returns the bytes
+    /// the store's segments took.
+    pub fn commit(mut self) -> Result<u64> {
+        let added = self.writer.commit()?;
+        for (part, output) in std::mem::take(&mut self.parts) {
+            std::fs::rename(&part, &output)?;
+        }
+        Ok(added)
+    }
+}
+
+impl Drop for StoreBatch {
+    fn drop(&mut self) {
+        for (part, _) in &self.parts {
+            let _ = std::fs::remove_file(part);
+        }
+    }
 }
 
 fn encode(
     input: &Path,
-    output: &Path,
+    part: &Path,
     options: &Options,
     keys: &[Key],
-    store: Option<&Path>,
+    store: Option<&mut StoreWriter>,
     progress: &mut dyn FnMut(u64),
 ) -> Result<Stats> {
     if is_cue(input) {
-        return encode_cd(input, output, options, store, progress);
+        return encode_cd(input, part, options, store, progress);
     }
     let mut iso = Iso::open(input)?;
     let size = iso.size();
@@ -615,12 +723,8 @@ fn encode(
     // padding generated
     let sony = matches!(platform, "ps2" | "psp");
     let padded = matches!(platform, "gamecube" | "wii");
-    let part = io::part(output);
-    let result = (|| {
-        let store = store
-            .map(|dir| StoreWriter::open(dir, options.codec, options.profile.group_size()))
-            .transpose()?;
-        let mut encoder = Encoder::new(&part, options, store)?;
+    (|| {
+        let mut encoder = Encoder::new(part, options, store)?;
         let mut areas = Vec::new();
         let mut exception_count = 0;
         for plan in &plans {
@@ -775,8 +879,7 @@ fn encode(
             input_size: size,
             output_size: encoder.finish(meta, options, logical_hash)?,
         })
-    })();
-    io::finish(&part, output, result)
+    })()
 }
 
 /// Move the ORE at `input`'s chunks into the store at `store`, writing a
@@ -789,7 +892,10 @@ pub fn attach(
     options: &Options,
     progress: &mut dyn FnMut(u64),
 ) -> Result<Stats> {
-    rewrite(input, output, Some(store), options, progress)
+    let mut batch = StoreBatch::open(store, options)?;
+    let stats = batch.attach(input, output, options, progress)?;
+    batch.commit()?;
+    Ok(stats)
 }
 
 /// Write the ORE at `input`, thin or not, to `output` as a standalone ORE
@@ -801,7 +907,9 @@ pub fn detach(
     options: &Options,
     progress: &mut dyn FnMut(u64),
 ) -> Result<Stats> {
-    rewrite(input, output, None, options, progress)
+    let part = io::part(output);
+    let result = rewrite(input, &part, None, options, progress);
+    io::finish(&part, output, result)
 }
 
 /// Write the CD ORE at `input` to `output` with the cue sheet at `cue` in
@@ -932,19 +1040,15 @@ pub fn replace_cue(
 /// Write an ORE again record for record, its chunks to `store` or inline.
 fn rewrite(
     input: &Path,
-    output: &Path,
-    store: Option<&Path>,
+    part: &Path,
+    store: Option<&mut StoreWriter>,
     options: &Options,
     progress: &mut dyn FnMut(u64),
 ) -> Result<Stats> {
     let input_size = std::fs::metadata(input)?.len();
     let mut reader = Reader::open(input)?;
-    let part = io::part(output);
-    let result = (|| {
-        let store = store
-            .map(|dir| StoreWriter::open(dir, options.codec, options.profile.group_size()))
-            .transpose()?;
-        let mut encoder = Encoder::new(&part, options, store)?;
+    (|| {
+        let mut encoder = Encoder::new(part, options, store)?;
         let size = reader.size();
         let mut reported = 0;
         reader.runs(&mut |event, done| {
@@ -972,8 +1076,7 @@ fn rewrite(
             input_size,
             output_size: encoder.finish(meta, options, logical_hash)?,
         })
-    })();
-    io::finish(&part, output, result)
+    })()
 }
 
 /// A CD's audio chunks: 8 sectors, a FLAC frame.
@@ -1025,9 +1128,9 @@ fn file_name(path: &Path) -> String {
 /// same name, is kept too.
 fn encode_cd(
     input: &Path,
-    output: &Path,
+    part: &Path,
     options: &Options,
-    store: Option<&Path>,
+    store: Option<&mut StoreWriter>,
     progress: &mut dyn FnMut(u64),
 ) -> Result<Stats> {
     let cue_bytes = std::fs::read(input)?;
@@ -1062,12 +1165,8 @@ fn encode_cd(
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
         Err(e) => return Err(e.into()),
     };
-    let part = io::part(output);
-    let result = (|| {
-        let store = store
-            .map(|dir| StoreWriter::open(dir, options.codec, options.profile.group_size()))
-            .transpose()?;
-        let mut encoder = Encoder::new(&part, options, store)?;
+    (|| {
+        let mut encoder = Encoder::new(part, options, store)?;
         let mut logical = blake3::Hasher::new();
         let mut identity = Vec::new();
         let mut areas = Vec::new();
@@ -1225,8 +1324,7 @@ fn encode_cd(
             input_size: size,
             output_size: encoder.finish(meta, options, logical_hash)?,
         })
-    })();
-    io::finish(&part, output, result)
+    })()
 }
 
 /// The most XA records in a chunk, 37 KB.

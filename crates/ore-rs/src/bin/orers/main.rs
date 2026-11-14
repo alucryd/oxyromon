@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use clap::{Arg, ArgAction, ArgMatches, Command, value_parser};
-use ore_rs::{Codec, Options, Profile};
+use ore_rs::{Codec, Options, Profile, StoreBatch};
 
 fn cli() -> Command {
     Command::new("orers")
@@ -46,9 +46,8 @@ fn cli() -> Command {
             Arg::new("compression")
                 .short('c')
                 .long("compression")
-                .help("zstd: the quicker to read; lzma2: the smaller")
-                .value_parser(["zstd", "lzma2"])
-                .default_value("zstd"),
+                .help("zstd: the quicker to read; lzma2: the smaller [default: lzma2 for cartridge ROMs, zstd otherwise]")
+                .value_parser(["zstd", "lzma2"]),
         )
         .arg(
             Arg::new("store")
@@ -78,7 +77,21 @@ fn cli() -> Command {
 }
 
 fn main() -> ExitCode {
-    ui::run(cli(), convert)
+    // Every input given with --store goes to it as one write, committed
+    // after the last
+    let mut batch = None;
+    ui::run(cli(), |input, matches, outputs| {
+        let result = convert(input, matches, outputs, &mut batch);
+        let last = matches.get_many::<PathBuf>("INPUTS").unwrap().next_back();
+        match batch.take() {
+            Some(done) if last.is_some_and(|last| last == input) => {
+                done.commit()
+                    .map_err(|e| format!("committing the store: {e}"))?;
+            }
+            pending => batch = pending,
+        }
+        result
+    })
 }
 
 /// How far a store's segment has to be no game's before a purge copies
@@ -91,8 +104,9 @@ fn convert(
     input: &Path,
     matches: &ArgMatches,
     outputs: &mut ui::Outputs,
+    batch: &mut Option<StoreBatch>,
 ) -> Result<String, String> {
-    let options = options(matches);
+    let options = options(matches, input);
     if input.is_dir() {
         return store(input, matches, &options);
     }
@@ -110,7 +124,10 @@ fn convert(
             let output = outputs.claim(ui::output_path(&dir, input, "ore"))?;
             let bar = ui::progress_bar(size, "Rewriting", input);
             let result = match store {
-                Some(store) => ore_rs::attach(input, &output, store, &options, &mut |n| bar.inc(n)),
+                Some(store) => {
+                    open(batch, store, &options)?
+                        .attach(input, &output, &options, &mut |n| bar.inc(n))
+                }
                 None => ore_rs::detach(input, &output, &options, &mut |n| bar.inc(n)),
             };
             bar.finish_and_clear();
@@ -142,7 +159,8 @@ fn convert(
     let bar = ui::progress_bar(size, "Compressing", input);
     let result = match store {
         Some(store) => {
-            ore_rs::compress_to_store(input, &output, store, &options, &keys, &mut |n| bar.inc(n))
+            open(batch, store, &options)?
+                .compress(input, &output, &options, &keys, &mut |n| bar.inc(n))
         }
         None => ore_rs::compress(input, &output, &options, &keys, &mut |n| bar.inc(n)),
     };
@@ -154,6 +172,20 @@ fn convert(
         ui::wrote(&output),
         stats.ratio_percent()
     ))
+}
+
+/// The batch writing to `store`, opened by the first input to need it.
+fn open<'a>(
+    batch: &'a mut Option<StoreBatch>,
+    store: &Path,
+    options: &Options,
+) -> Result<&'a mut StoreBatch, String> {
+    if batch.is_none() {
+        *batch = Some(
+            StoreBatch::open(store, options).map_err(|e| format!("{}: {e}", store.display()))?,
+        );
+    }
+    Ok(batch.as_mut().unwrap())
 }
 
 /// Check the store `input`, repairing what its parity covers, then purge
@@ -189,15 +221,17 @@ fn store(input: &Path, matches: &ArgMatches, options: &Options) -> Result<String
     Ok(message)
 }
 
-fn options(matches: &ArgMatches) -> Options {
+fn options(matches: &ArgMatches, input: &Path) -> Options {
     Options {
         profile: match matches.get_one::<String>("profile").unwrap().as_str() {
             "archive" => Profile::Archive,
             _ => Profile::Stream,
         },
-        codec: match matches.get_one::<String>("compression").unwrap().as_str() {
-            "lzma2" => Codec::Lzma2,
-            _ => Codec::Zstd,
+        codec: match matches.get_one::<String>("compression").map(String::as_str) {
+            Some("lzma2") => Codec::Lzma2,
+            Some(_) => Codec::Zstd,
+            // An input it cannot read fails on its own, as it is converted
+            None => ore_rs::default_codec(input).unwrap_or(Codec::Zstd),
         },
     }
 }
@@ -218,7 +252,8 @@ mod tests {
             .unwrap();
         assert_eq!(matches.get_many::<PathBuf>("INPUTS").unwrap().count(), 2);
         assert_eq!(matches.get_one::<String>("profile").unwrap(), "stream");
-        assert_eq!(matches.get_one::<String>("compression").unwrap(), "zstd");
+        // The codec is each input's own unless given
+        assert!(matches.get_one::<String>("compression").is_none());
     }
 
     #[test]

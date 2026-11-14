@@ -133,6 +133,11 @@ ore_rs::compress_to_store(iso, ore, store, &Options::default(), &[], &mut |_| {}
   the small segments a write that adds little leaves.
 - **[`Reader::sizes`]** gives what a game weighs: its own chunks, its share
   of those it shares, and about what it would weigh detached.
+- **[`StoreBatch`]** writes many games to a store as one write, their
+  chunks sharing its groups and segments, committed once at the end, when
+  every thin ORE lands at once: what a library of small ROMs needs, which
+  a write a ROM would give a segment and its parity each. `orers --store`
+  writes all its inputs so.
 - One writer at a time: a write waits for another to be done.
 
 ## Keys
@@ -176,8 +181,8 @@ orers --purge GameCube/.ore-store       # and purge it of what no game uses
 | --- | --- |
 | `-o DIR` | output directory (default: next to each input) |
 | `-p PROFILE` | `stream` (default): 1 MiB groups; `archive`: 4 MiB groups |
-| `-c CODEC` | `zstd` (default) or `lzma2` |
-| `--store DIR` | write ISOs as thin OREs, their chunks in the store `DIR`, made if missing; attach OREs to it |
+| `-c CODEC` | `zstd` or `lzma2`; by default `lzma2` for a cartridge's ROM, which Zstandard loses to 7z on, and `zstd` otherwise |
+| `--store DIR` | write ISOs as thin OREs, their chunks in the store `DIR`, made if missing; attach OREs to it; every input as one write, committed after the last |
 | `--detach` | write OREs as standalone OREs |
 | `--purge` | once a store is checked, purge it of what no game uses |
 | `--keys FILE` | where the Wii common key is |
