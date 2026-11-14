@@ -23,6 +23,7 @@ use super::format::*;
 use super::fst::FileSystem;
 use super::io;
 use super::pack::Packer;
+use super::ps2audio;
 use super::reader::{Event, Reader};
 use super::segment::{BLOCK, Run, Segmenter};
 use super::store::StoreWriter;
@@ -75,6 +76,52 @@ struct Plan {
     kind: AreaKind,
     file_system: Option<Arc<FileSystem>>,
     key: Option<Key>,
+    /// Its chunks' codec, when not the ORE's: a PlayStation 2 DVD's audio,
+    /// cut in fixed chunks.
+    codec: Option<Codec>,
+}
+
+/// A PlayStation 2 DVD's audio chunks: a whole number of SPU blocks and of
+/// PCM periods, from where the stream's area starts.
+const AUDIO_FIXED: usize = 16 << 10;
+
+/// A PlayStation 2 DVD read once, in order, for its hashes and its audio:
+/// its areas, the rest in disc order, then the audio, each codec's
+/// together.
+fn plan_ps2(iso: &mut Iso, hashes: &mut Hashes) -> Result<Vec<Plan>> {
+    let size = iso.size();
+    let mut scanner = ps2audio::Scanner::new(size);
+    let mut buf = vec![0; WINDOW as usize + ps2audio::LOOKAHEAD];
+    let mut at = 0;
+    while at < size {
+        let length = (size - at).min(buf.len() as u64) as usize;
+        iso.read_at(at, &mut buf[..length])?;
+        let scan = (size - at).min(WINDOW) as usize;
+        rayon::join(
+            || hashes.update(&buf[..scan]),
+            || scanner.feed(&buf[..length], at, scan),
+        );
+        at += WINDOW;
+    }
+    let audio = scanner.finish();
+    let mut plans = Vec::new();
+    let mut at = 0;
+    for stream in &audio {
+        if stream.start > at {
+            plans.push(raw(at, stream.start - at));
+        }
+        at = stream.start + stream.len;
+    }
+    if size > at || plans.is_empty() && audio.is_empty() {
+        plans.push(raw(at, size - at));
+    }
+    let mut audio = audio;
+    audio.sort_by_key(|stream| (stream.codec.id(), stream.start));
+    plans.extend(audio.into_iter().map(|stream| Plan {
+        codec: Some(stream.codec),
+        ..raw(stream.start, stream.len)
+    }));
+    Ok(plans)
 }
 
 /// The disc cut into areas: a GameCube disc whole; a Wii disc's partitions'
@@ -88,6 +135,7 @@ fn plan(iso: &mut Iso, volume: &mut Volume) -> Result<Vec<Plan>> {
             kind: AreaKind::Raw,
             file_system: volume.file_system(iso, None)?,
             key: None,
+            codec: None,
         }]);
     }
     let mut plans = Vec::new();
@@ -118,6 +166,7 @@ fn plan(iso: &mut Iso, volume: &mut Volume) -> Result<Vec<Plan>> {
                 kind: AreaKind::WiiPartition,
                 file_system: volume.file_system(iso, Some(partition))?,
                 key: Some(key),
+                codec: None,
             });
             at = data_start + data_size;
         }
@@ -135,6 +184,7 @@ fn raw(start: u64, len: u64) -> Plan {
         kind: AreaKind::Raw,
         file_system: None,
         key: None,
+        codec: None,
     }
 }
 
@@ -364,7 +414,8 @@ impl Encoder {
                 Codec::Zstd => ZSTD_LEVEL as u32,
                 Codec::Lzma2 => LZMA2_PRESET,
                 Codec::Flac => FLAC_LEVEL,
-                Codec::Xa | Codec::Str => 0,
+                Codec::Xa | Codec::Str | Codec::Vag => 0,
+                Codec::Pcm => FLAC_LEVEL,
             },
             chunker: Chunker {
                 max: cdc::MAX as u64,
@@ -496,6 +547,7 @@ fn encode(
     let size = iso.size();
     // A GameCube or Wii disc is cut by its structure; a PlayStation 2 DVD
     // is one area, its zeros and the rest
+    let mut hashes = Hashes::default();
     let (plans, platform) = match Volume::new(&mut iso, keys)? {
         Some(mut volume) => {
             let platform = match volume.platform {
@@ -504,16 +556,7 @@ fn encode(
             };
             (plan(&mut iso, &mut volume)?, platform)
         }
-        None if is_ps2(&mut iso)? => (
-            vec![Plan {
-                start: 0,
-                len: size,
-                kind: AreaKind::Raw,
-                file_system: None,
-                key: None,
-            }],
-            "ps2",
-        ),
+        None if is_ps2(&mut iso)? => (plan_ps2(&mut iso, &mut hashes)?, "ps2"),
         None => {
             return Err(Error::Unsupported(
                 "neither a GameCube, a Wii nor a PlayStation 2 disc".into(),
@@ -527,14 +570,33 @@ fn encode(
             .map(|dir| StoreWriter::open(dir, options.codec, options.profile.group_size()))
             .transpose()?;
         let mut encoder = Encoder::new(&part, options, store)?;
-        let mut hashes = Hashes::default();
         let mut areas = Vec::new();
         let mut exception_count = 0;
         for plan in &plans {
             let records = encoder.records;
             let fs = plan.file_system.as_deref();
             let mut exceptions = Vec::new();
+            encoder.set_codec(plan.codec.unwrap_or(options.codec))?;
             match plan.kind {
+                AreaKind::Raw if plan.codec.is_some() => {
+                    let mut buf = vec![0; WINDOW as usize];
+                    let mut at = 0;
+                    while at < plan.len {
+                        let length = (plan.len - at).min(WINDOW) as usize;
+                        let buf = &mut buf[..length];
+                        iso.read_at(plan.start + at, buf)?;
+                        for chunk in buf.chunks(AUDIO_FIXED) {
+                            if chunk.iter().all(|&b| b == 0) {
+                                encoder.push(Run::Zero(chunk.len() as u64));
+                            } else {
+                                encoder.push(Run::Chunk(chunk));
+                            }
+                        }
+                        encoder.flush(false)?;
+                        progress(length as u64);
+                        at += length as u64;
+                    }
+                }
                 AreaKind::Raw => {
                     let mut segmenter = if padded {
                         Segmenter::new(plan.start)
@@ -549,7 +611,10 @@ fn encode(
                         let length = (end.min(plan.len) - at) as usize;
                         let buf = &mut buf[..length];
                         iso.read_at(plan.start + at, buf)?;
-                        hashes.update(buf);
+                        // A PlayStation 2 DVD is hashed as it is planned
+                        if platform != "ps2" {
+                            hashes.update(buf);
+                        }
                         segmenter.feed(buf, at, fs, &mut |run| encoder.push(run));
                         encoder.flush(false)?;
                         progress(length as u64);
@@ -592,6 +657,7 @@ fn encode(
                 records: encoder.records - records,
                 sectors: None,
                 title_key: plan.key.map(|key| key.to_vec()),
+                codec: plan.codec,
                 exceptions,
             });
         }
@@ -828,10 +894,10 @@ fn rewrite(
         let mut reported = 0;
         reader.runs(&mut |event, done| {
             match event {
-                Event::Area(kind) => encoder.set_codec(if kind == AreaKind::CdAudio {
-                    Codec::Flac
-                } else {
-                    options.codec
+                Event::Area(kind, codec) => encoder.set_codec(match codec {
+                    Some(codec) => codec,
+                    None if kind == AreaKind::CdAudio => Codec::Flac,
+                    None => options.codec,
                 })?,
                 Event::Video => encoder.set_codec(Codec::Str)?,
                 Event::Xa => encoder.set_codec(Codec::Xa)?,
@@ -1036,6 +1102,7 @@ fn encode_cd(
                 records: encoder.records - records,
                 sectors: (!audio).then(|| map.finish()),
                 title_key: None,
+                codec: None,
                 exceptions: Vec::new(),
             });
             start += len;

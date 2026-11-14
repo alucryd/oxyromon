@@ -9,6 +9,7 @@ use rusty_flac::{Encoder, FrameDecoder, StreamInfo};
 
 use super::error::{Error, Result};
 use super::format::Codec;
+use super::vag;
 use super::video;
 use super::xa;
 
@@ -31,12 +32,13 @@ fn window_log(group: usize) -> u32 {
 /// what they model at all.
 const PROBE_LEVEL: i32 = 3;
 
-/// Compress a group with `codec`, or, for `xa` and `str`, with Zstandard
-/// when a quick try of it does better: some discs flag data as XA audio.
+/// Compress a group with `codec`, or, for a codec of one kind of data,
+/// with Zstandard when a quick try of it does better: some discs flag data
+/// as XA audio, and a header can lie.
 /// Returns the codec used.
 pub fn compress_best(codec: Codec, data: &[u8], group: usize) -> Result<(Codec, Vec<u8>)> {
     let stored = compress(codec, data, group)?;
-    if matches!(codec, Codec::Xa | Codec::Str)
+    if matches!(codec, Codec::Xa | Codec::Str | Codec::Vag | Codec::Pcm)
         && zstd::bulk::compress(data, PROBE_LEVEL)?.len() < stored.len()
     {
         return Ok((Codec::Zstd, compress(Codec::Zstd, data, group)?));
@@ -82,15 +84,17 @@ fn compress_unpadded(codec: Codec, data: &[u8], group: usize) -> Result<Vec<u8>>
         Codec::Flac => flac_encode(data),
         Codec::Xa => Ok(xa::encode(data)),
         Codec::Str => Ok(video::encode(data)),
+        Codec::Vag => Ok(vag::encode(data)),
+        Codec::Pcm => pcm_encode(data),
     }
 }
 
-fn flac_info() -> StreamInfo {
+fn flac_info(channels: u32) -> StreamInfo {
     StreamInfo {
         min_block_size: FLAC_BLOCK,
         max_block_size: FLAC_BLOCK,
         sample_rate: 44_100,
-        channels: 2,
+        channels,
         bits_per_sample: 16,
         ..StreamInfo::default()
     }
@@ -103,17 +107,27 @@ fn flac_encode(data: &[u8]) -> Result<Vec<u8>> {
             "FLAC takes whole stereo samples".into(),
         ));
     }
-    let failed = |e: rusty_flac::EncodeError| Error::Corrupt(format!("FLAC: {e}"));
-    let mut encoder = Encoder::new(44_100, 2, 16).map_err(failed)?;
-    encoder.set_compression_level(FLAC_LEVEL);
-    encoder.set_block_size(FLAC_BLOCK).map_err(failed)?;
-    let samples: Vec<i32> = data
-        .as_chunks::<2>()
+    flac_frames(&samples(data), 2)
+}
+
+fn samples(data: &[u8]) -> Vec<i32> {
+    data.as_chunks::<2>()
         .0
         .iter()
         .map(|&sample| i16::from_le_bytes(sample) as i32)
-        .collect();
-    encoder.push_interleaved(&samples).map_err(failed)?;
+        .collect()
+}
+
+/// Samples, `channels` of them interleaved, as FLAC frames alone.
+fn flac_frames(samples: &[i32], channels: u32) -> Result<Vec<u8>> {
+    if samples.is_empty() {
+        return Ok(Vec::new());
+    }
+    let failed = |e: rusty_flac::EncodeError| Error::Corrupt(format!("FLAC: {e}"));
+    let mut encoder = Encoder::new(44_100, channels, 16).map_err(failed)?;
+    encoder.set_compression_level(FLAC_LEVEL);
+    encoder.set_block_size(FLAC_BLOCK).map_err(failed)?;
+    encoder.push_interleaved(samples).map_err(failed)?;
     let mut stream = encoder.finish();
     if stream.len() < FLAC_CONTAINER || !stream.starts_with(b"fLaC") {
         return Err(Error::Corrupt("FLAC: an unexpected stream".into()));
@@ -122,12 +136,14 @@ fn flac_encode(data: &[u8]) -> Result<Vec<u8>> {
     Ok(stream)
 }
 
-fn flac_decode(data: &[u8], length: usize) -> Result<Vec<u8>> {
+/// `count` samples of `channels` interleaved out of FLAC frames, and the
+/// bytes of frames they took.
+fn flac_samples(data: &[u8], channels: u32, count: usize) -> Result<(Vec<i16>, usize)> {
     let corrupt = |e| Error::Corrupt(format!("FLAC: {e}"));
-    let mut decoder = FrameDecoder::new(flac_info()).map_err(corrupt)?;
-    let mut samples: Vec<i16> = Vec::with_capacity(length / 2);
+    let mut decoder = FrameDecoder::new(flac_info(channels)).map_err(corrupt)?;
+    let mut samples: Vec<i16> = Vec::with_capacity(count);
     let mut at = 0;
-    while samples.len() < length / 2 && at < data.len() {
+    while samples.len() < count && at < data.len() {
         let (_, used) = decoder
             .decode_frame_interleaved(&data[at..], &mut samples)
             .map_err(corrupt)?;
@@ -136,10 +152,86 @@ fn flac_decode(data: &[u8], length: usize) -> Result<Vec<u8>> {
         }
         at += used;
     }
+    Ok((samples, at))
+}
+
+fn flac_decode(data: &[u8], length: usize) -> Result<Vec<u8>> {
+    let (samples, _) = flac_samples(data, 2, length / 2)?;
     Ok(samples
         .iter()
         .flat_map(|sample| sample.to_le_bytes())
         .collect())
+}
+
+/// How a `pcm` group's 16-bit little-endian samples lie, by its first
+/// byte: their channels, and the bytes of each channel before the next's.
+const PCM_LAYOUTS: [(u32, usize); 3] = [(1, 2), (2, 2), (2, 512)];
+/// How much of a group picks its layout.
+const PCM_PROBE: usize = 256 << 10;
+
+/// A layout's samples, interleaved a sample at a time, and the bytes past
+/// its last whole period, which are left as they are.
+fn pcm_samples(data: &[u8], (channels, interleave): (u32, usize)) -> (Vec<i32>, usize) {
+    let period = channels as usize * interleave;
+    let whole = data.len() / period * period;
+    let samples = samples(&data[..whole]);
+    if interleave == 2 {
+        return (samples, whole);
+    }
+    let per = interleave / 2;
+    let mut out = Vec::with_capacity(samples.len());
+    for block in samples.chunks(per * channels as usize) {
+        for i in 0..per {
+            out.extend((0..channels as usize).map(|c| block[c * per + i]));
+        }
+    }
+    (out, whole)
+}
+
+/// 16-bit PCM, as its layout, its samples' FLAC frames, then the bytes
+/// past them: the layout whose FLAC is smallest on the group's start.
+fn pcm_encode(data: &[u8]) -> Result<Vec<u8>> {
+    let probe = &data[..data.len().min(PCM_PROBE)];
+    let mut best = (usize::MAX, 0);
+    for (i, &layout) in PCM_LAYOUTS.iter().enumerate() {
+        let (samples, whole) = pcm_samples(probe, layout);
+        let size = flac_frames(&samples, layout.0)?.len() + probe.len() - whole;
+        best = best.min((size, i));
+    }
+    let layout = PCM_LAYOUTS[best.1];
+    let (samples, whole) = pcm_samples(data, layout);
+    let mut out = vec![best.1 as u8];
+    out.extend(flac_frames(&samples, layout.0)?);
+    out.extend_from_slice(&data[whole..]);
+    Ok(out)
+}
+
+fn pcm_decode(data: &[u8], length: usize) -> Result<Vec<u8>> {
+    let corrupt = || Error::Corrupt("a pcm group's layout".into());
+    let &(channels, interleave) = PCM_LAYOUTS
+        .get(*data.first().ok_or_else(corrupt)? as usize)
+        .ok_or_else(corrupt)?;
+    let period = channels as usize * interleave;
+    let whole = length / period * period;
+    let (samples, used) = flac_samples(&data[1..], channels, whole / 2)?;
+    if samples.len() != whole / 2 {
+        return Err(Error::Corrupt("a pcm group's samples cut short".into()));
+    }
+    let mut out = Vec::with_capacity(length);
+    let per = interleave / 2;
+    for block in samples.chunks(per * channels as usize) {
+        for c in 0..channels as usize {
+            for i in 0..per {
+                out.extend_from_slice(&block[i * channels as usize + c].to_le_bytes());
+            }
+        }
+    }
+    // Past the tail, what padding the group took to its floor
+    let tail = data[1 + used..]
+        .get(..length - whole)
+        .ok_or_else(|| Error::Corrupt("a pcm group's tail cut short".into()))?;
+    out.extend_from_slice(tail);
+    Ok(out)
 }
 
 pub fn decompress(codec: Codec, data: &[u8], length: usize) -> Result<Vec<u8>> {
@@ -155,6 +247,8 @@ pub fn decompress(codec: Codec, data: &[u8], length: usize) -> Result<Vec<u8>> {
         Codec::Flac => flac_decode(data, length)?,
         Codec::Xa => xa::decode(data, length),
         Codec::Str => video::decode(data, length),
+        Codec::Vag => vag::decode(data, length),
+        Codec::Pcm => pcm_decode(data, length)?,
     };
     if out.len() != length {
         return Err(Error::Corrupt(format!(
@@ -179,12 +273,15 @@ mod tests {
             Codec::Flac,
             Codec::Xa,
             Codec::Str,
+            Codec::Vag,
+            Codec::Pcm,
         ] {
             // xa and str code it a byte at a time: tests/cd.rs's still
             // picture takes str under
             let unpadded = compress_unpadded(codec, &data, data.len()).unwrap();
             assert!(
-                matches!(codec, Codec::Xa | Codec::Str) || unpadded.len() < data.len() / 1024,
+                matches!(codec, Codec::Xa | Codec::Str | Codec::Vag)
+                    || unpadded.len() < data.len() / 1024,
                 "{codec:?} pads"
             );
             let stored = compress(codec, &data, data.len()).unwrap();

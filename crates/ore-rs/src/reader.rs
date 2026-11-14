@@ -39,7 +39,8 @@ enum Record {
 /// What [`Reader::runs`] gives: an area starting, a CD data track's video
 /// or XA plane starting, or a run.
 pub(super) enum Event<'a> {
-    Area(AreaKind),
+    /// Its kind, and the codec it takes when not the ORE's.
+    Area(AreaKind, Option<Codec>),
     Video,
     Xa,
     Run(Run<'a>),
@@ -100,7 +101,10 @@ pub struct Reader {
     file_size: u64,
     pub(super) header: Header,
     pub(super) meta: Meta,
+    /// In the order their records come.
     areas: Vec<AreaIndex>,
+    /// The areas' indexes, in disc order.
+    by_start: Vec<usize>,
     chunks: Vec<ChunkAt>,
     groups: Vec<GroupAt>,
     cache: Cache,
@@ -211,13 +215,16 @@ impl Reader {
         }
         let mut last_id = 0u64;
 
-        // Records, area by area, the areas tiling the disc
+        // Records, area by area, the areas, once sorted, tiling the disc
         let mut cursor = Cursor::new(&index);
         let mut areas = Vec::new();
         let mut stored_lens: Vec<u32> = Vec::new();
         let mut records_seen = 0u64;
+        let mut by_start: Vec<usize> = (0..meta.media.areas.len()).collect();
+        by_start.sort_by_key(|&i| meta.media.areas[i].start);
         let mut at = 0u64;
-        for area in &meta.media.areas {
+        for &i in &by_start {
+            let area = &meta.media.areas[i];
             if area.start != at || area.len == 0 {
                 return Err(corrupt("areas do not tile the disc"));
             }
@@ -225,6 +232,8 @@ impl Reader {
                 .start
                 .checked_add(area.len)
                 .ok_or_else(|| corrupt("area too large"))?;
+        }
+        for area in &meta.media.areas {
             if matches!(area.kind, AreaKind::CdData | AreaKind::CdAudio)
                 && (!area.len.is_multiple_of(SECTOR as u64)
                     || area.frame.is_none_or(|frame| frame > u32::MAX as u64 / 2))
@@ -389,6 +398,7 @@ impl Reader {
             header,
             meta,
             areas,
+            by_start,
             chunks,
             groups,
             cache: Cache::default(),
@@ -405,6 +415,7 @@ impl Reader {
             header: self.header.clone(),
             meta: self.meta.clone(),
             areas: self.areas.clone(),
+            by_start: self.by_start.clone(),
             chunks: self.chunks.clone(),
             groups: self.groups.clone(),
             cache: Cache::default(),
@@ -465,15 +476,17 @@ impl Reader {
         }
     }
 
-    /// Every record as the run it was written from, in order, with how far
-    /// through the disc each ends.
+    /// Every record as the run it was written from, in order, with how many
+    /// bytes of disc are done once it is.
     pub(super) fn runs(&mut self, emit: &mut dyn FnMut(Event, u64) -> Result<()>) -> Result<()> {
+        let mut start = 0;
         for area in 0..self.areas.len() {
-            let (start, len, stored) = {
+            let (len, stored) = {
                 let area = &self.areas[area];
-                (area.start, area.len, *area.starts.last().unwrap())
+                (area.len, *area.starts.last().unwrap())
             };
-            emit(Event::Area(self.areas[area].kind), start)?;
+            let codec = self.meta.media.areas[area].codec;
+            emit(Event::Area(self.areas[area].kind, codec), start)?;
             let planes = self.areas[area].map.as_ref().map(|map| map.plane_starts());
             for record in 0..self.areas[area].records.len() {
                 let (from, to) = {
@@ -519,6 +532,7 @@ impl Reader {
                     }
                 }
             }
+            start += len;
         }
         Ok(())
     }
@@ -606,9 +620,9 @@ impl Reader {
             )));
         }
         while !buf.is_empty() {
-            let index = self
-                .areas
-                .partition_point(|area| area.start + area.len <= offset);
+            let index = self.by_start[self
+                .by_start
+                .partition_point(|&i| self.areas[i].start + self.areas[i].len <= offset)];
             let area = &self.areas[index];
             let within = offset - area.start;
             let length = buf.len().min((area.len - within) as usize);

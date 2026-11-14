@@ -63,6 +63,13 @@ pub enum Codec {
     /// STR video, for CD-ROM XA video sectors: a group is video sectors'
     /// data, coded as `video.rs` says.
     Str,
+    /// SPU ADPCM, for PlayStation 2 `VAGp` audio: a group is 16-byte
+    /// blocks, coded as `vag.rs` says.
+    Vag,
+    /// 16-bit PCM, for PlayStation 2 audio: a group is its samples, mono,
+    /// stereo, or stereo interleaved 512 bytes a channel, de-interleaved
+    /// into FLAC frames.
+    Pcm,
 }
 
 impl Codec {
@@ -73,6 +80,8 @@ impl Codec {
             Self::Flac => 6,
             Self::Xa => 9,
             Self::Str => 10,
+            Self::Vag => 11,
+            Self::Pcm => 12,
         }
     }
 
@@ -83,6 +92,8 @@ impl Codec {
             6 => Ok(Self::Flac),
             9 => Ok(Self::Xa),
             10 => Ok(Self::Str),
+            11 => Ok(Self::Vag),
+            12 => Ok(Self::Pcm),
             _ => Err(Error::Unsupported(format!("codec {id}"))),
         }
     }
@@ -366,7 +377,8 @@ pub struct Media {
     pub platform: String,
 }
 
-/// A stretch of the disc, in disc order, the areas tiling it.
+/// A stretch of the disc, the areas tiling it, listed in the order their
+/// records come: a PlayStation 2 DVD's audio after the rest.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Area {
     /// Bytes of disc it covers.
@@ -381,6 +393,10 @@ pub struct Area {
     pub start: u64,
     /// Index records it takes, in order after the previous area's.
     pub records: u64,
+    /// The codec its chunks' groups take, when not the ORE's own: a
+    /// PlayStation 2 DVD's audio streams.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub codec: Option<Codec>,
     /// A CD data track's sectors: their kinds and subheaders, Zstandard
     /// compressed (see [`super::cdtrack`]).
     #[serde(default, skip_serializing_if = "Option::is_none", with = "serde_bytes")]

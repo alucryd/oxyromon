@@ -49,7 +49,7 @@ const K0: [i32; 4] = [0, 60, 115, 98];
 const K1: [i32; 4] = [0, 0, -52, -55];
 
 /// The predictor's own samples, and the other channel's about this one.
-const ORDER: usize = 8;
+pub(super) const ORDER: usize = 8;
 const CROSS: usize = 3;
 const INPUTS: usize = ORDER + CROSS;
 /// The LMS step, 0.1 in 16 bits, and the least energy it is normalised by.
@@ -58,21 +58,21 @@ const ENERGY_MIN: i64 = 1 << 20;
 const WEIGHT_MAX: i64 = 1 << 20;
 /// The nibble's context: where the predictor puts it, in half steps, and
 /// how far off it has lately been.
-const EXPECTED: usize = 32;
-const CONFIDENCE: usize = 6;
+pub(super) const EXPECTED: usize = 32;
+pub(super) const CONFIDENCE: usize = 6;
 
 /// A channel of a stream being decoded: XA's state and the predictor's.
 #[derive(Clone)]
-struct Channel {
-    old: i32,
-    older: i32,
+pub(super) struct Channel {
+    pub(super) old: i32,
+    pub(super) older: i32,
     last_param: u8,
     /// The last samples, newest first, then the other channel's.
     inputs: [i32; INPUTS],
     /// In 16 bits.
     weights: [i64; INPUTS],
     /// How far off the predictor has been, in 256ths of a step, smoothed.
-    error: i64,
+    pub(super) error: i64,
 }
 
 impl Default for Channel {
@@ -89,7 +89,7 @@ impl Default for Channel {
 }
 
 impl Channel {
-    fn predict(&self) -> i64 {
+    pub(super) fn predict(&self) -> i64 {
         let dot: i64 = self
             .inputs
             .iter()
@@ -101,7 +101,7 @@ impl Channel {
 
     /// Learn from `sample`, which the predictor put at `predicted`, and
     /// take it into the history.
-    fn push(&mut self, sample: i32, predicted: i64) {
+    pub(super) fn push(&mut self, sample: i32, predicted: i64) {
         let energy = self
             .inputs
             .iter()

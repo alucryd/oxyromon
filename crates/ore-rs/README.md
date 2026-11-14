@@ -84,7 +84,11 @@ their length, with no file system read: its games keep their data in a few
 large files, or outside any, and cutting at files finds nothing more. On
 the maintainer's 52 DVDs, 4-9% smaller than their CHDs a disc and 16-20% in
 a store, where an International version or an undub adds a twentieth to a
-half of its original. A PlayStation 2 CD is a PlayStation CD, 5-9% under
+half of its original. Its audio, found by its `VAGp`, `SShd` and `RIFF
+WAVE` headers, is stored apart: SPU ADPCM through `vag`, each 4-bit sample
+coded as `xa` codes XA's, 12-14% under Zstandard, and 16-bit PCM through
+`pcm`, de-interleaved into FLAC, which turns *Armored Core 2*, 14% over its
+CHD, to 8.5% under. A PlayStation 2 CD is a PlayStation CD, 5-9% under
 its CHD.
 
 ## A store
