@@ -635,6 +635,129 @@ pub fn detach(
     rewrite(input, output, None, options, progress)
 }
 
+/// Write the CD ORE at `input` to `output` with the cue sheet at `cue` in
+/// place of its own, its metadata alone written again: its tracks, their
+/// hashes and its chunks, inline or in a store, stay as they are. The cue
+/// sheet's name and its tracks' are `cue`'s, and an SBI it holds follows the
+/// cue sheet's name.
+///
+/// `cue` must describe the same tracks, audio and data as they were, at the
+/// same frames, so its `PREGAP`s too; its `INDEX`es, data tracks' modes and
+/// anything else it says may differ. `progress` is called with the input
+/// bytes consumed since the last call.
+pub fn replace_cue(
+    input: &Path,
+    output: &Path,
+    cue: &Path,
+    progress: &mut dyn FnMut(u64),
+) -> Result<Stats> {
+    let file = File::open(input)?;
+    let input_size = file.metadata()?.len();
+    let mut bytes = [0; HEADER_LEN];
+    io::read_exact_at(&file, &mut bytes, 0)?;
+    let mut header = Header::read(&bytes)?;
+    // The metadata is written last, so all before it is kept as it is
+    if u64::from(header.meta_len) > META_MAX
+        || header.meta_offset.checked_add(u64::from(header.meta_len)) != Some(input_size)
+    {
+        return Err(Error::Corrupt("metadata not at the end of the file".into()));
+    }
+    let mut meta_bytes = vec![0; header.meta_len as usize];
+    io::read_exact_at(&file, &mut meta_bytes, header.meta_offset)?;
+    if crc32c::crc32c(&meta_bytes) != header.meta_crc {
+        return Err(Error::Corrupt("metadata checksum".into()));
+    }
+    let mut meta: Meta = from_cbor(&meta_bytes)?;
+    if meta.media.cue.is_none() {
+        return Err(Error::Unsupported("a cue sheet for a disc image".into()));
+    }
+
+    let cue_bytes = std::fs::read(cue)?;
+    let sheet = cue::parse(&String::from_utf8_lossy(&cue_bytes), Path::new(""))?;
+    if sheet.tracks.len() != meta.media.areas.len() {
+        return Err(Error::Unsupported(format!(
+            "a cue sheet of {} tracks for {}",
+            sheet.tracks.len(),
+            meta.media.areas.len()
+        )));
+    }
+    let cue_name = file_name(cue);
+    let sbi_name = file_name(&cue.with_extension("sbi"));
+    let mut renames = Vec::new();
+    let mut frame = u64::from(LEAD_IN);
+    for (track, area) in sheet.tracks.iter().zip(&mut meta.media.areas) {
+        frame += u64::from(track.pregap);
+        let audio = track.mode == Mode::Audio;
+        if audio != (area.kind == AreaKind::CdAudio) || area.frame != Some(frame) {
+            return Err(Error::Unsupported(format!(
+                "a cue sheet whose track {} is not the ORE's",
+                track.number
+            )));
+        }
+        frame += area.len / SECTOR as u64;
+        // A track's file lies beside the cue sheet, a file a track
+        let name = file_name(&track.file);
+        if track.file.as_os_str() != name.as_str()
+            || name == cue_name
+            || name == sbi_name
+            || renames.iter().any(|(_, other)| *other == name)
+        {
+            return Err(Error::Corrupt(format!("a track's file name: {name:?}")));
+        }
+        renames.push((area.file.replace(name.clone()).unwrap_or_default(), name));
+    }
+
+    // The tracks' hashes under their new names, the old cue sheet's for the
+    // new one's, before the SBI's
+    let mut identity = Vec::new();
+    let mut sbi = Vec::new();
+    for mut entry in std::mem::take(&mut meta.identity) {
+        if entry.view == "logical" {
+            identity.push(entry);
+        } else if let Some((_, name)) = renames.iter().find(|(old, _)| *old == entry.view) {
+            entry.view = name.clone();
+            identity.push(entry);
+        } else if entry.view.to_lowercase().ends_with(".sbi") {
+            entry.view = sbi_name.clone();
+            sbi.push(entry);
+        }
+    }
+    let mut hashes = Hashes::default();
+    hashes.update(&cue_bytes);
+    let Hashes {
+        crc32, md5, sha1, ..
+    } = hashes;
+    identity.extend(file_identity(&cue_name, crc32, md5, sha1));
+    identity.extend(sbi);
+    meta.identity = identity;
+    meta.media.cue = Some(cue_bytes);
+
+    let meta_bytes = to_cbor(&meta);
+    header.meta_len = u32::try_from(meta_bytes.len())
+        .ok()
+        .filter(|&len| u64::from(len) <= META_MAX)
+        .ok_or_else(|| Error::Unsupported("metadata past its bound".into()))?;
+    header.meta_crc = crc32c::crc32c(&meta_bytes);
+    let part = io::part(output);
+    let result = (|| {
+        let mut out = File::create(&part)?;
+        std::io::copy(
+            &mut std::io::Read::take(&file, header.meta_offset),
+            &mut out,
+        )?;
+        out.write_all(&meta_bytes)?;
+        out.seek(SeekFrom::Start(0))?;
+        out.write_all(&header.write())?;
+        out.sync_all()?;
+        progress(input_size);
+        Ok(Stats {
+            input_size,
+            output_size: header.meta_offset + meta_bytes.len() as u64,
+        })
+    })();
+    io::finish(&part, output, result)
+}
+
 /// Write an ORE again record for record, its chunks to `store` or inline.
 fn rewrite(
     input: &Path,

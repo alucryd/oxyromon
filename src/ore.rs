@@ -209,6 +209,37 @@ impl OreRomfile {
     }
 }
 
+impl OreRomfile {
+    /// Put the cue sheet at `cue` in this CD ORE in place of its own, under
+    /// `name`, writing its metadata alone again: the cue sheet must describe
+    /// the tracks it holds.
+    pub async fn replace_cue(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        cue: &Path,
+        name: &str,
+    ) -> Result<()> {
+        // ore-rs names the cue sheet after its file
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let named = tmp_directory.path().join(name);
+        tokio::fs::copy(cue, &named).await?;
+
+        print_action(
+            progress_bar,
+            &format!("Writing \"{}\" into \"{}\"", name, self.romfile),
+        );
+        let input = self.romfile.path.clone();
+        run_blocking(progress_bar, input.metadata()?.len(), move |progress| {
+            ore_rs::replace_cue(&input, &input, &named, progress)
+        })
+        .await
+        .with_context(|| format!("Failed to write \"{}\" into \"{}\"", name, self.romfile))?;
+        stop_action(progress_bar);
+        Ok(())
+    }
+}
+
 pub trait ToOre {
     async fn to_ore<P: AsRef<Path>>(
         &self,

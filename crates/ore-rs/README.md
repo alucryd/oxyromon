@@ -104,6 +104,10 @@ ore_rs::compress_to_store(iso, ore, store, &Options::default(), &[], &mut |_| {}
   `StoreOptions` says otherwise, and chunk ids are 32 bits unless it says 64.
 - **[`attach`] and [`detach`]** move a game into a store and out of it,
   its disc, hashes and metadata as they were.
+- **[`replace_cue`]** puts another cue sheet in a CD ORE, as when Redump
+  revises one, writing its metadata alone again: the new one must give the
+  same tracks, audio and data as they were, at the same frames, and names
+  the cue sheet and its tracks.
 - **Parity**: each segment is sealed with Reed-Solomon parity, RS(255,239)
   by default, 6.9% with its CRCs. [`check_store`] checks every segment
   and rebuilds what is damaged from it, a burst of 16 shards or bad

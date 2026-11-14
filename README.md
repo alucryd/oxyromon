@@ -244,7 +244,7 @@ Exporting an RVZ to WBFS needs no key and decodes no ISO on the way; exporting a
 
 ORE is oxyROMon's own format, a draft: an ORE written now may not open in a later version, so keep your originals, or another format, until it is final.
 An ORE holds a GameCube or Wii disc, or a CD as its cue sheet and tracks, an ORE a disc: the cue sheet is inside it, so a CD is one file, which every ROM of the game points to.
-Importing a CD ORE needs every file it holds, its cue sheet included, to match the DAT.
+Importing a CD ORE needs every track it holds to match the DAT; when its cue sheet is not the DAT's, import the DAT's, and it goes into the ORE in its place, its metadata alone written again.
 Like RVZ, compressing a Wii ISO needs the Wii common key, and reading an ORE needs none.
 No emulator reads ORE yet.
 

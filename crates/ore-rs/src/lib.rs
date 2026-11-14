@@ -65,4 +65,6 @@ pub use reader::{Reader, Sizes, decompress};
 pub use store::{
     Purged, STORE_DIR, StoreChecked, StoreOptions, check_store, create_store, find_store, purge,
 };
-pub use writer::{Options, Stats, attach, compress, compress_to_store, detach, is_ore};
+pub use writer::{
+    Options, Stats, attach, compress, compress_to_store, detach, is_ore, replace_cue,
+};

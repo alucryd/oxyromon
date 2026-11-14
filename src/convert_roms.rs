@@ -3597,6 +3597,13 @@ async fn to_original(
         let cue_bin_romfile = ore_romfile
             .to_cue_bin_files(progress_bar, &directory, cue_name)
             .await?;
+        // a cue sheet unlike the DAT's, which no ROM points to, goes
+        if cue_name.is_none() {
+            cue_bin_romfile
+                .cue_romfile
+                .delete(progress_bar, false)
+                .await?;
+        }
         let files = files_for_roms(cue_bin_romfile, roms)?;
         if check {
             let mut error = false;

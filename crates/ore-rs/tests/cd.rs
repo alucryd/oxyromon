@@ -331,3 +331,91 @@ fn a_cue_sheet_naming_one_file_for_two_tracks_is_refused() {
     .unwrap_err();
     assert!(matches!(error, ore_rs::Error::Unsupported(_)), "{error}");
 }
+
+/// `cue`'s text with every `from` in it `to`.
+fn retitle(cue: &Path, from: &str, to: &str) -> String {
+    std::fs::read_to_string(cue).unwrap().replace(from, to)
+}
+
+#[test]
+fn a_cd_takes_another_cue_sheet_its_chunks_untouched() {
+    let dir = TempDir::new().unwrap();
+    let cue = disc(dir.path(), "Game (Europe)", 1, true);
+    let ore = dir.path().join("game.ore");
+    ore_rs::compress(&cue, &ore, &OPTIONS[0], &[], &mut |_| {}).unwrap();
+
+    // Renamed, its tracks too, its first track MODE1, its INDEX 00s gone
+    let new = TempDir::new().unwrap();
+    let text = retitle(&cue, "Game (Europe)", "Game (Europe) (Rev 1)")
+        .replace("MODE2/2352", "MODE1/2352")
+        .replace("    INDEX 00 00:00:00\r\n", "");
+    let new_cue = new.path().join("Game (Europe) (Rev 1).cue");
+    std::fs::write(&new_cue, format!("REM a Redump revision\r\n{text}")).unwrap();
+    for (name, bytes) in files(&cue) {
+        let name = name.replace("Game (Europe)", "Game (Europe) (Rev 1)");
+        if !name.ends_with(".cue") {
+            std::fs::write(new.path().join(name), bytes).unwrap();
+        }
+    }
+
+    let renamed = dir.path().join("renamed.ore");
+    let mut consumed = 0;
+    let stats = ore_rs::replace_cue(&ore, &renamed, &new_cue, &mut |n| consumed += n).unwrap();
+    assert_eq!(consumed, std::fs::metadata(&ore).unwrap().len());
+    assert_eq!(
+        stats.output_size,
+        std::fs::metadata(&renamed).unwrap().len()
+    );
+
+    // Everything before the metadata is the ORE's as it was
+    let (before, after) = (
+        std::fs::read(&ore).unwrap(),
+        std::fs::read(&renamed).unwrap(),
+    );
+    assert_eq!(before[192..4096], after[192..4096]);
+    check(&renamed, &new_cue);
+    let reader = Reader::open(&renamed).unwrap();
+    let sha1 = Sha1::digest(std::fs::read(&new_cue).unwrap());
+    assert!(reader.identity().any(|(view, algo, value)| {
+        view == "Game (Europe) (Rev 1).cue" && algo == "sha-1" && value == sha1.as_slice()
+    }));
+    assert!(
+        !reader
+            .identity()
+            .any(|(view, _, _)| view.starts_with("Game (Europe)."))
+    );
+
+    // and over itself, as a library rewrites it in place
+    ore_rs::replace_cue(&renamed, &renamed, &new_cue, &mut |_| {}).unwrap();
+    check(&renamed, &new_cue);
+}
+
+#[test]
+fn a_cue_sheet_for_other_tracks_is_refused() {
+    let dir = TempDir::new().unwrap();
+    let cue = disc(dir.path(), "Game (Europe)", 1, false);
+    let ore = dir.path().join("game.ore");
+    ore_rs::compress(&cue, &ore, &OPTIONS[0], &[], &mut |_| {}).unwrap();
+    let text = std::fs::read_to_string(&cue).unwrap();
+    let three = "FILE \"Game (Europe) (Track 3).bin\"";
+    for wrong in [
+        // a pregap shifts every sector after it
+        text.replacen(
+            "  TRACK 02 AUDIO\r\n",
+            "  TRACK 02 AUDIO\r\n    PREGAP 00:02:00\r\n",
+            1,
+        ),
+        // an audio track as data
+        text.replacen("TRACK 02 AUDIO", "TRACK 02 MODE2/2352", 1),
+        // a track fewer
+        text[..text.find(three).unwrap()].to_string(),
+        // two tracks in one file
+        text.replace("(Track 3)", "(Track 2)"),
+    ] {
+        let wrong_cue = dir.path().join("wrong.cue");
+        std::fs::write(&wrong_cue, wrong).unwrap();
+        let output = dir.path().join("wrong.ore");
+        assert!(ore_rs::replace_cue(&ore, &output, &wrong_cue, &mut |_| {}).is_err());
+        assert!(!output.exists() && !dir.path().join("wrong.ore.part").exists());
+    }
+}
