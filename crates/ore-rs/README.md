@@ -79,6 +79,14 @@ ore_rs::decompress(ore, Path::new("out/Game (Europe).cue"), &mut |_| {}).unwrap(
   disc, 26-29% in a store, before XA's coder took about 3.4 points more and
   video's about 6.3 more.
 
+A PlayStation 2 DVD is cut as a disc image is, its runs of zeros stored as
+their length, with no file system read: its games keep their data in a few
+large files, or outside any, and cutting at files finds nothing more. On
+the maintainer's 52 DVDs, 4-9% smaller than their CHDs a disc and 16-20% in
+a store, where an International version or an undub adds a twentieth to a
+half of its original. A PlayStation 2 CD is a PlayStation CD, 5-9% under
+its CHD.
+
 ## A store
 
 A library's discs share much: regional versions, second discs. A store,
