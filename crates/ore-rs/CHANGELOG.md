@@ -38,6 +38,8 @@
 
 ## Fixes
 
+- A header longer than 192 bytes is read, what follows them skipped, as the spec has it, so a later version growing the header leaves this one able to read its files; and an ORE of a later layout, `ORE2` on, is refused as one, not as a file of another kind
 - A cue sheet naming a track not beside it, in a directory below or by way of one, is refused, as `replace_cue` refuses it: the cue sheet is kept as it is and its tracks written beside it, so the set written back would not have read
 - A CD track's sector map is decoded as far as it goes and sized by what it holds, no longer allocating for the sectors its ORE claims, so a crafted ORE no longer asks for terabytes
+
 

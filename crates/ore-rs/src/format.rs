@@ -194,6 +194,14 @@ impl Header {
     }
 
     pub fn read(bytes: &[u8; HEADER_LEN]) -> Result<Self> {
+        // A layout this build does not know changes the magic's digit;
+        // additions to this one raise spec_version, which it reads
+        if bytes[0..3] == MAGIC[0..3] && bytes[3].is_ascii_digit() && bytes[3] > MAGIC[3] {
+            return Err(Error::Unsupported(format!(
+                "an ORE of layout {}, newer than this build reads",
+                bytes[3] as char
+            )));
+        }
         if bytes[0..4] != MAGIC {
             return Err(Error::BadMagic {
                 expected: "ORE1".into(),
@@ -203,7 +211,9 @@ impl Header {
         let u16_at = |at: usize| u16::from_be_bytes(bytes[at..at + 2].try_into().unwrap());
         let u32_at = |at: usize| u32::from_be_bytes(bytes[at..at + 4].try_into().unwrap());
         let u64_at = |at: usize| u64::from_be_bytes(bytes[at..at + 8].try_into().unwrap());
-        if u16_at(6) as usize != HEADER_LEN {
+        // A later header may be longer, its regions found by their offsets
+        // all the same: what follows these 192 bytes is skipped
+        if (u16_at(6) as usize) < HEADER_LEN {
             return Err(Error::Unsupported(format!("header of {} bytes", u16_at(6))));
         }
         let header = Self {
