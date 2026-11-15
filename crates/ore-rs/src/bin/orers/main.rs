@@ -69,6 +69,12 @@ fn cli() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("parity")
+                .long("parity")
+                .help("Parity shards a store's segment gets against its 239 data shards, 0 for none: a store made with it, or one set to it, its segments sealed otherwise written again by --compact [default: 16 for a store made]")
+                .value_parser(value_parser!(u8).range(0..=16)),
+        )
+        .arg(
             Arg::new("compact")
                 .long("compact")
                 .help("Once a store is checked, compact it, dropping what no game uses")
@@ -126,11 +132,8 @@ fn convert(
     let size = std::fs::metadata(input).map_err(|e| e.to_string())?.len();
     let dir = ui::output_dir(input, matches)?;
     let store = matches.get_one::<PathBuf>("store");
-    if let Some(store) = store
-        && !store.exists()
-    {
-        ore_rs::create_store(store, &ore_rs::StoreOptions::default())
-            .map_err(|e| format!("{}: {e}", store.display()))?;
+    if let Some(store) = store {
+        set_up_store(store, matches)?;
     }
     if ore_rs::is_ore(input).map_err(|e| e.to_string())? {
         if store.is_some() || matches.get_flag("detach") {
@@ -201,9 +204,30 @@ fn open<'a>(
     Ok(batch.as_mut().unwrap())
 }
 
+/// Make the store `store` if missing, with the parity asked for, or set an
+/// existing one's to it.
+fn set_up_store(store: &Path, matches: &ArgMatches) -> Result<(), String> {
+    let parity = matches.get_one::<u8>("parity").copied();
+    let result = if !store.exists() {
+        let mut options = ore_rs::StoreOptions::default();
+        if let Some(parity) = parity {
+            options.parity = parity;
+        }
+        ore_rs::create_store(store, &options)
+    } else if let Some(parity) = parity {
+        ore_rs::set_parity(store, parity).map(|_| ())
+    } else {
+        Ok(())
+    };
+    result.map_err(|e| format!("{}: {e}", store.display()))
+}
+
 /// Check the store `input`, repairing what its parity covers, then compact
 /// it if asked to and nothing is lost.
 fn store(input: &Path, matches: &ArgMatches, options: &Options) -> Result<String, String> {
+    if let Some(&parity) = matches.get_one::<u8>("parity") {
+        ore_rs::set_parity(input, parity).map_err(|e| format!("{}: {e}", input.display()))?;
+    }
     let checked = ore_rs::check_store(input, true).map_err(|e| e.to_string())?;
     if checked.lost_groups > 0 {
         let games: Vec<String> = checked

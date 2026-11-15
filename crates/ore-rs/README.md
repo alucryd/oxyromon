@@ -203,6 +203,7 @@ orers --compact --recompress GB/.ore-store  # and pack every group again, the sm
 | `--platform NAME` | the cartridge the inputs are ROMs of, taken whole, their headers not checked: `32x`, `a2600`, `a5200`, `a7800`, `colecovision`, `dsi`, `gb`, `gba`, `gbc`, `gg`, `jaguar`, `lynx`, `md`, `n64`, `nds`, `nes`, `ngp`, `ngpc`, `odyssey2`, `pce`, `pokemini`, `satellaview`, `sg1000`, `sgx`, `sms`, `snes`, `sufami`, `vb`, `ws`, `wsc` (default: recognised by their headers) |
 | `--store DIR` | write ISOs as thin OREs, their chunks in the store `DIR`, made if missing; attach OREs to it; every input as one write, committed after the last |
 | `--detach` | write OREs as standalone OREs |
+| `--parity N` | parity shards a store's segment gets, 0 to 16 against its 239 data shards: a store made with it, or an existing one set to it, its segments sealed otherwise written again by `--compact` (default: 16 for a store made) |
 | `--compact` | once a store is checked, compact it, dropping what no game uses |
 | `--recompress` | with `--compact`, decode and pack every group again: the smallest store, for a read and a write of all of it |
 | `--keys FILE` | where the Wii common key is |

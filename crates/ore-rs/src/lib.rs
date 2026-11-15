@@ -66,7 +66,7 @@ pub use keys::{is_bootmii, load_keys, parse_key_file, parse_keys, parse_otp};
 pub use reader::{Reader, Sizes, decompress};
 pub use store::{
     Compacted, STORE_DIR, StoreChecked, StoreOptions, check_store, compact, create_store,
-    find_store,
+    find_store, set_parity,
 };
 pub use writer::{
     CARTRIDGE_PLATFORMS, Options, Stats, StoreBatch, attach, cartridge_header_matches, compress,

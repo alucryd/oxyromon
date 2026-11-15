@@ -40,6 +40,34 @@ pub enum OreProfile {
     Archive,
 }
 
+/// Parity shards a store's segment gets against its 239 data shards: 16
+/// adds 6.7% and rebuilds up to 16 damaged blocks in a row of 255, 0 adds
+/// nothing and rebuilds nothing.
+pub const ORE_STORE_PARITY_RANGE: [usize; 2] = [0, 16];
+
+/// The system's `ORE_STORE_PARITY`.
+pub async fn store_parity(connection: &mut SqliteConnection, system_id: i64) -> u8 {
+    get_integer(connection, "ORE_STORE_PARITY", Some(system_id))
+        .await
+        .map_or(16, |parity| parity.min(16) as u8)
+}
+
+/// Make the store at `store` with `parity` if missing, or set an existing
+/// one's: a segment sealed from now on takes it, and the next compaction
+/// seals those sealed otherwise again.
+fn prepare_store(store: &Path, parity: u8) -> ore_rs::Result<()> {
+    if store.is_dir() {
+        return ore_rs::set_parity(store, parity).map(|_| ());
+    }
+    ore_rs::create_store(
+        store,
+        &StoreOptions {
+            parity,
+            ..StoreOptions::default()
+        },
+    )
+}
+
 /// How OREs go into a system's store: a run's at once, which writes the
 /// least, or a game's at a time, each committed with its game.
 #[derive(Display, PartialEq, EnumString, VariantNames)]
@@ -523,6 +551,7 @@ impl ToOre for CueBinRomfile {
 /// run that fails before leaves the originals and the database as they were.
 pub struct StoreSink {
     store: PathBuf,
+    parity: u8,
     pub per_game: bool,
     batch: Option<StoreBatch>,
 }
@@ -542,6 +571,7 @@ impl StoreSink {
             == OreStoreBatch::Game;
         Ok(Some(Self {
             store: system_store(connection, system).await?,
+            parity: store_parity(connection, system.id).await,
             per_game,
             batch: None,
         }))
@@ -556,15 +586,13 @@ impl StoreSink {
         keys: Vec<ore_rs::Key>,
         size: u64,
     ) -> Result<()> {
-        let (store, batch) = (self.store.clone(), self.batch.take());
+        let (store, parity, batch) = (self.store.clone(), self.parity, self.batch.take());
         let (input, output) = (input.to_path_buf(), output.to_path_buf());
         let (batch, result) = run_blocking(progress_bar, size, move |progress| {
             let mut batch = match batch {
                 Some(batch) => batch,
                 None => {
-                    if !store.is_dir() {
-                        ore_rs::create_store(&store, &StoreOptions::default())?;
-                    }
+                    prepare_store(&store, parity)?;
                     StoreBatch::open(&store, &options)?
                 }
             };
@@ -735,9 +763,9 @@ pub async fn sync_store(
     }
 
     let store = system_store(connection, system).await?;
-    if store_on && !store.is_dir() {
-        ore_rs::create_store(&store, &StoreOptions::default())
-            .with_context(|| format!("Failed to create \"{}\"", store.display()))?;
+    if store_on {
+        prepare_store(&store, store_parity(connection, system.id).await)
+            .with_context(|| format!("Failed to set up \"{}\"", store.display()))?;
     }
     print_action(
         progress_bar,
@@ -819,11 +847,13 @@ pub async fn check_store(progress_bar: &ProgressBar, store: &Path) -> Result<()>
 }
 
 /// Compact a system's store: drop what no game beneath it uses any more,
-/// and pack small groups together.
+/// pack small groups together, and seal again with `parity` the segments
+/// sealed with other parity.
 pub async fn compact_store(
     progress_bar: &ProgressBar,
     store: &Path,
     profile: &OreProfile,
+    parity: u8,
 ) -> Result<()> {
     print_action(progress_bar, &format!("Compacting \"{}\"", store.display()));
     let options = Options {
@@ -836,6 +866,7 @@ pub async fn compact_store(
     let path = store.to_path_buf();
     // How dead a segment has to be before its live chunks move, as orers
     let compacted = run_blocking(progress_bar, 0, move |_| {
+        ore_rs::set_parity(&path, parity)?;
         ore_rs::compact(&path, &options, 0.5, false)
     })
     .await

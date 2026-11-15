@@ -3,7 +3,7 @@ use super::config::*;
 use super::database::*;
 use super::mimetype::WUA_EXTENSION;
 use super::model::Romfile;
-use super::ore::{OreProfile, compact_store, system_store};
+use super::ore::{OreProfile, compact_store, store_parity, system_store};
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
@@ -105,7 +105,8 @@ async fn compact_stores(
                     .unwrap(),
             )
             .unwrap();
-            compact_store(progress_bar, &store, &profile).await?;
+            let parity = store_parity(connection, system.id).await;
+            compact_store(progress_bar, &store, &profile, parity).await?;
         }
     }
     Ok(())

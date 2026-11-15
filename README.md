@@ -178,6 +178,7 @@ These environment variables change where things go:
 | `ORE_PROFILE`                     | ORE group size: `stream`, 1 MiB, quicker to read, or `archive`, 4 MiB, smaller                           | `stream`  |
 | `ORE_STORE`                       | Keep a system's OREs' chunks in one store, `.ore-store` in its directory, each game a thin ORE           | `false`   |
 | `ORE_STORE_BATCH`                 | How OREs go into the store: `run`, all of a conversion at once, or `game`, each committed alone          | `run`     |
+| `ORE_STORE_PARITY`                | Parity shards a store's segment gets against its 239 data shards, 0 to 16: 16 adds 6.7%, 8 3.2%, 0 nothing; a change applies to existing segments at the next `purge-roms` | `16`      |
 | `RVZ_BLOCK_SIZE`                  | RVZ block size in KiB, `32` to `2048`, rounded up to a power of two                                      | `128`     |
 | `RVZ_COMPRESSION_ALGORITHM`       | RVZ codec: `none`, `zstd`, `bzip2`, `lzma`, `lzma2`                                                      | `zstd`    |
 | `RVZ_COMPRESSION_LEVEL`           | RVZ level, `1` to `22` for zstd and `1` to `9` otherwise                                                 | `5`       |

@@ -348,3 +348,57 @@ fn a_rom_named_a_cartridges_is_taken_whole_without_a_header() {
         assert!(!ore.exists());
     }
 }
+
+#[test]
+fn a_stores_parity_is_changed_and_its_segments_sealed_again_by_a_compaction() {
+    let dir = TempDir::new().unwrap();
+    let games = dir.path().join("games");
+    let store = games.join(".ore-store");
+    ore_rs::create_store(&store, &Default::default()).unwrap();
+    let options = Options::default();
+    let mut roms = Vec::new();
+    let mut batch = ore_rs::StoreBatch::open(&store, &options).unwrap();
+    for revision in 0..4u8 {
+        let input = rom(dir.path(), &format!("Game (Rev {revision}).gb"), |rom| {
+            gb(rom);
+            rom[0x8000 + revision as usize * 0x1000] = revision;
+        });
+        let ore = games.join(input.file_name().unwrap()).with_extension("ore");
+        batch
+            .compress(&input, &ore, &options, &[], &mut |_| {})
+            .unwrap();
+        roms.push((input, ore));
+    }
+    batch.commit().unwrap();
+    let with_parity = dir_size(&store);
+
+    // No parity: the next compaction seals every segment again without it
+    assert!(ore_rs::set_parity(&store, 0).unwrap());
+    assert!(!ore_rs::set_parity(&store, 0).unwrap());
+    assert_eq!(dir_size(&store), with_parity);
+    ore_rs::compact(&store, &options, 0.5, false).unwrap();
+    let without = dir_size(&store);
+    assert!(without < with_parity, "{without} against {with_parity}");
+
+    // Then 8 shards, which a damaged byte is repaired from
+    ore_rs::set_parity(&store, 8).unwrap();
+    ore_rs::compact(&store, &options, 0.5, false).unwrap();
+    let eight = dir_size(&store);
+    assert!(without < eight && eight < with_parity, "{eight}");
+    let segment = std::fs::read_dir(&store)
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .find(|path| path.extension().is_some_and(|e| e == "ores"))
+        .unwrap();
+    let mut bytes = std::fs::read(&segment).unwrap();
+    bytes[200] ^= 0xFF;
+    std::fs::write(&segment, bytes).unwrap();
+    let checked = ore_rs::check_store(&store, true).unwrap();
+    assert!(checked.repaired > 0 && checked.lost_groups == 0);
+    for (input, ore) in &roms {
+        let back = dir.path().join("back.gb");
+        ore_rs::decompress(ore, &back, &mut |_| {}).unwrap();
+        assert!(std::fs::read(input).unwrap() == std::fs::read(&back).unwrap());
+    }
+    assert!(ore_rs::set_parity(&store, 17).is_err());
+}

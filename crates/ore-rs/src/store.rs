@@ -29,10 +29,13 @@ const LOCK: &str = "store.lock";
 
 const INDEX_MAGIC: [u8; 4] = *b"ORSI";
 const SEGMENT_MAGIC: [u8; 4] = *b"ORSS";
-const VERSION: u16 = 1;
+/// The index's version: 2 records each segment's parity, 1 one for all.
+const VERSION: u16 = 2;
+/// A segment's header's version, unchanged by the index's.
+const SEGMENT_VERSION: u16 = 1;
 const INDEX_HEADER: usize = 56;
 const SEGMENT_HEADER: u64 = 32;
-const SEGMENT_RECORD: usize = 12;
+const SEGMENT_RECORD: usize = 13;
 const GROUP_RECORD: usize = 21;
 const CHUNK_RECORD: usize = 32;
 /// The group of a chunk no segment holds any more.
@@ -68,6 +71,8 @@ pub(super) struct Segment {
     pub number: u32,
     /// What its parity covers: its header and groups.
     pub len: u64,
+    /// Its parity shards, the store's when it was sealed.
+    pub parity: u8,
 }
 
 pub(super) struct StoreGroup {
@@ -100,6 +105,7 @@ pub(super) struct Chunk {
 pub(super) struct Index {
     pub uuid: [u8; 16],
     id_bits: u8,
+    /// Parity shards a segment sealed from now on is given.
     parity: u8,
     segment_size: u64,
     next_segment: u32,
@@ -133,6 +139,7 @@ impl Index {
         for segment in &self.segments {
             out.extend_from_slice(&segment.number.to_be_bytes());
             out.extend_from_slice(&segment.len.to_be_bytes());
+            out.push(segment.parity);
         }
         for group in &self.groups {
             out.extend_from_slice(&group.segment.to_be_bytes());
@@ -169,9 +176,11 @@ impl Index {
         }
         let mut cursor = Cursor::new(&body[4..]);
         let version = u16::from_be_bytes(cursor.be()?);
-        if version != VERSION {
+        if !matches!(version, 1 | VERSION) {
             return Err(Error::Unsupported(format!("store version {version}")));
         }
+        // Version 1 gave every segment the store's parity
+        let segment_record = if version == 1 { 12 } else { SEGMENT_RECORD };
         let id_bits = cursor.u8()?;
         let parity = cursor.u8()?;
         if parity > 16 {
@@ -184,7 +193,7 @@ impl Index {
         let group_count = u64::from_be_bytes(cursor.be()?);
         let chunk_count = u64::from_be_bytes(cursor.be()?);
         let expected = INDEX_HEADER as u128
-            + segment_count as u128 * SEGMENT_RECORD as u128
+            + segment_count as u128 * segment_record as u128
             + group_count as u128 * GROUP_RECORD as u128
             + chunk_count as u128 * CHUNK_RECORD as u128;
         if body.len() as u128 != expected {
@@ -202,7 +211,11 @@ impl Index {
             let segment = Segment {
                 number: u32::from_be_bytes(cursor.be()?),
                 len: u64::from_be_bytes(cursor.be()?),
+                parity: if version == 1 { parity } else { cursor.u8()? },
             };
+            if segment.parity > 16 {
+                return Err(corrupt("more than 16 parity shards"));
+            }
             if segment.number >= next_segment || lens.insert(segment.number, segment.len).is_some()
             {
                 return Err(corrupt("a segment's number"));
@@ -308,7 +321,7 @@ impl Index {
 
     /// The size of a segment's file, sealed.
     fn file_len(&self, segment: &Segment) -> u64 {
-        segment.len + Layout::new(segment.len, self.parity).footer_len()
+        segment.len + Layout::new(segment.len, segment.parity).footer_len()
     }
 
     fn size(&self) -> u64 {
@@ -326,7 +339,7 @@ fn segment_path(dir: &Path, number: u32) -> PathBuf {
 fn segment_header(uuid: &[u8; 16], number: u32) -> [u8; SEGMENT_HEADER as usize] {
     let mut out = [0; SEGMENT_HEADER as usize];
     out[0..4].copy_from_slice(&SEGMENT_MAGIC);
-    out[4..6].copy_from_slice(&VERSION.to_be_bytes());
+    out[4..6].copy_from_slice(&SEGMENT_VERSION.to_be_bytes());
     out[8..12].copy_from_slice(&number.to_be_bytes());
     out[16..32].copy_from_slice(uuid);
     out
@@ -700,6 +713,7 @@ impl StoreWriter {
         self.index.segments.push(Segment {
             number,
             len: SEGMENT_HEADER,
+            parity: self.index.parity,
         });
         self.file = Some(file);
         self.added += SEGMENT_HEADER;
@@ -710,9 +724,9 @@ impl StoreWriter {
     fn seal(&mut self) -> Result<()> {
         if let Some(file) = self.file.take() {
             let segment = self.index.segments.last().unwrap();
-            parity::seal(&file, segment.len, self.index.parity)?;
+            parity::seal(&file, segment.len, segment.parity)?;
             file.sync_all()?;
-            self.added += Layout::new(segment.len, self.index.parity).footer_len();
+            self.added += Layout::new(segment.len, segment.parity).footer_len();
         }
         Ok(())
     }
@@ -819,6 +833,14 @@ impl StoreWriter {
         if recompress {
             dropped.extend(self.index.segments.iter().map(|segment| segment.number));
         }
+        // A segment sealed with other parity than the store's now
+        dropped.extend(
+            self.index
+                .segments
+                .iter()
+                .filter(|segment| segment.parity != self.index.parity)
+                .map(|segment| segment.number),
+        );
         // A segment mostly of groups less than half full, several of them,
         // as games written a write each leave, which compress better packed
         // together
@@ -1006,6 +1028,23 @@ pub fn compact(
     })
 }
 
+/// Set the parity shards the store at `store` gives a segment, from 0 to
+/// 16, as [`StoreOptions::parity`]: a segment sealed from now on takes it,
+/// and [`compact`] writes those sealed with other parity again, copying
+/// their groups as they are. Whether it changed.
+pub fn set_parity(store: &Path, parity: u8) -> Result<bool> {
+    if parity > 16 {
+        return Err(Error::InvalidOption("parity of 16 shards at most".into()));
+    }
+    let mut writer = StoreWriter::open(store, Codec::Zstd, 1 << 20)?;
+    if writer.index.parity == parity {
+        return Ok(false);
+    }
+    writer.index.parity = parity;
+    writer.commit()?;
+    Ok(true)
+}
+
 /// Call `f` with every thin ORE of the store `uuid` at `store` and the
 /// chunks it uses, from beneath the store's parent directory, which is
 /// where a game finds its store from. A game that cannot be read fails.
@@ -1086,8 +1125,8 @@ pub fn check_store(store: &Path, repair: bool) -> Result<StoreChecked> {
             lost.extend(groups().map(|(number, _)| number));
             continue;
         };
-        if index.parity > 0 {
-            let found = parity::check(&file, &Layout::new(segment.len, index.parity), repair)?;
+        if segment.parity > 0 {
+            let found = parity::check(&file, &Layout::new(segment.len, segment.parity), repair)?;
             checked.damaged += found.damaged;
             checked.repaired += found.repaired;
             for (number, group) in groups() {

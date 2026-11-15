@@ -9,6 +9,7 @@
 - ORE takes Game Boy, Game Boy Color, Game Boy Advance, DS, N64 and Mega Drive ROMs, loose or in an archive, and gives them back under their name
 - ORE takes every ROM of 30 cartridge systems, known by their DAT's name, NES, SNES, PC Engine, Master System and Atari's among them, headerless or not, BIOSes included; a Game Boy, Game Boy Advance, DS, N64 or Mega Drive ROM whose header disagrees is taken with a warning
 - With `ORE_STORE` on, ISOs and cartridge ROMs are written straight into the store, compressed once rather than twice, each game checked and persisted once its batch is committed
+- `ORE_STORE_PARITY` sets how much parity an ORE store keeps, from 0 to 16 shards against 239, 16 by default; a store already written is sealed again with it as `purge-roms` compacts it
 - `export-roms` exports OREs, thin ones read through their store: as their original files, in 7Z or ZIP, as an ISO or a CHD, and with the new `ORE` format as standalone OREs, a thin one detached
 - ORE stores, opt-in a system with `ORE_STORE`: `convert-roms --format ORE` attaches a system's OREs to `.ore-store` in its directory, each game a thin ORE, as one batch a run or, with `ORE_STORE_BATCH` at `game`, one a game, and detaches them again when it is off; `check-roms` checks and repairs the store, `purge-roms` compacts it, and `purge-roms --foreign` and `import-roms` leave its files alone
 - `ORE_COMPRESSION_ALGORITHM` defaults to `auto`: LZMA2 for a cartridge's ROM, where Zstandard loses to 7z, and Zstandard for a disc
