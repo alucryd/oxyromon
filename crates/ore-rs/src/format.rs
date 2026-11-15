@@ -141,6 +141,9 @@ impl Profile {
 /// The fixed header, at offset 0.
 #[derive(Debug, Default, Clone)]
 pub struct Header {
+    /// What a read header declares, the first group following it; a
+    /// written one is [`HEADER_LEN`]
+    pub header_len: u16,
     pub flags_required: u32,
     pub flags_optional: u32,
     pub profile: u8,
@@ -211,12 +214,13 @@ impl Header {
         let u16_at = |at: usize| u16::from_be_bytes(bytes[at..at + 2].try_into().unwrap());
         let u32_at = |at: usize| u32::from_be_bytes(bytes[at..at + 4].try_into().unwrap());
         let u64_at = |at: usize| u64::from_be_bytes(bytes[at..at + 8].try_into().unwrap());
-        // A later header may be longer, its regions found by their offsets
-        // all the same: what follows these 192 bytes is skipped
+        // A later header may be longer: its regions are found by their
+        // offsets, its groups after it, and the bytes past these 192 skipped
         if (u16_at(6) as usize) < HEADER_LEN {
             return Err(Error::Unsupported(format!("header of {} bytes", u16_at(6))));
         }
         let header = Self {
+            header_len: u16_at(6),
             flags_required: u32_at(8),
             flags_optional: u32_at(12),
             profile: bytes[16],

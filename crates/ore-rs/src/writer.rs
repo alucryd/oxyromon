@@ -1126,8 +1126,11 @@ pub fn replace_cue(
             &mut out,
         )?;
         out.write_all(&meta_bytes)?;
-        out.seek(SeekFrom::Start(0))?;
-        out.write_all(&header.write())?;
+        // The metadata's length and checksum alone change: the rest of the
+        // header, what a later version added to it included, is kept
+        out.seek(SeekFrom::Start(80))?;
+        out.write_all(&header.meta_len.to_be_bytes())?;
+        out.write_all(&header.meta_crc.to_be_bytes())?;
         out.sync_all()?;
         progress(input_size);
         Ok(Stats {

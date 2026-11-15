@@ -44,6 +44,17 @@ fn reads_as(path: &Path, rom: &[u8]) {
     assert!(back == rom);
 }
 
+/// `ore` as a later writer would lay it out with a 256-byte header: 64
+/// bytes more before the groups, the index and the metadata as far along.
+fn lengthen(ore: &mut Vec<u8>) {
+    ore[6..8].copy_from_slice(&256u16.to_be_bytes());
+    for at in [48, 72] {
+        let offset = u64::from_be_bytes(ore[at..at + 8].try_into().unwrap()) + 64;
+        ore[at..at + 8].copy_from_slice(&offset.to_be_bytes());
+    }
+    ore.splice(192..192, [0xC3; 64]);
+}
+
 #[test]
 fn what_a_later_writer_adds_is_read_past() {
     let dir = TempDir::new().unwrap();
@@ -60,10 +71,9 @@ fn what_a_later_writer_adds_is_read_past() {
         }),
         // Fixity and AUX regions it does not read
         ("regions.ore", |b| b[152..184].fill(0x5A)),
-        // A longer header, its regions where their offsets say
-        ("header.ore", |b| {
-            b[6..8].copy_from_slice(&256u16.to_be_bytes())
-        }),
+        // A longer header, the groups after it, the regions where their
+        // offsets say
+        ("header.ore", lengthen),
         // A region appended after what it reads, as parity would be
         ("appended.ore", |b| {
             b.extend(std::iter::repeat_n(0xA5, 64 << 10))

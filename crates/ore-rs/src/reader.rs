@@ -351,7 +351,7 @@ impl Reader {
         let count = cursor.uvarint()?;
         let mut groups = Vec::new();
         let mut chunks = Vec::with_capacity(stored_lens.len());
-        let mut position = HEADER_LEN as u64;
+        let mut position = u64::from(header.header_len);
         let mut logical_offset = 0u64;
         let mut next = stored_lens.iter();
         for index in 0..count {

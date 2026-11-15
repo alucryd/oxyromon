@@ -419,6 +419,26 @@ fn a_cd_takes_another_cue_sheet_its_chunks_untouched() {
     // and over itself, as a library rewrites it in place
     ore_rs::replace_cue(&renamed, &renamed, &new_cue, &mut |_| {}).unwrap();
     check(&renamed, &new_cue);
+
+    // and over a later version's, its longer header kept as it was: 64
+    // bytes more before the groups, a higher spec_version, fixity filled
+    let mut later = before.clone();
+    later[4..6].copy_from_slice(&2u16.to_be_bytes());
+    later[6..8].copy_from_slice(&256u16.to_be_bytes());
+    later[152..184].fill(0x5A);
+    for at in [48, 72] {
+        let offset = u64::from_be_bytes(later[at..at + 8].try_into().unwrap()) + 64;
+        later[at..at + 8].copy_from_slice(&offset.to_be_bytes());
+    }
+    later.splice(192..192, [0xC3; 64]);
+    let later_ore = dir.path().join("later.ore");
+    std::fs::write(&later_ore, &later).unwrap();
+    let replaced = dir.path().join("later-renamed.ore");
+    ore_rs::replace_cue(&later_ore, &replaced, &new_cue, &mut |_| {}).unwrap();
+    let after = std::fs::read(&replaced).unwrap();
+    assert_eq!(after[..80], later[..80]);
+    assert_eq!(after[88..4096], later[88..4096]);
+    check(&replaced, &new_cue);
 }
 
 #[test]
