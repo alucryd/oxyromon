@@ -669,6 +669,30 @@ cfg_if! {
 
         pub static MUTEX: LazyLock<Mutex<i32>> = LazyLock::new(|| Mutex::new(0));
 
+        /// A test's database, deleted with the journals SQLite leaves beside
+        /// it: the pool is never closed, so its WAL outlives the connection.
+        pub struct TestDatabase(tempfile::NamedTempFile);
+
+        impl TestDatabase {
+            pub fn new() -> Self {
+                Self(tempfile::NamedTempFile::new().unwrap())
+            }
+
+            pub fn path(&self) -> &Path {
+                self.0.path()
+            }
+        }
+
+        impl Drop for TestDatabase {
+            fn drop(&mut self) {
+                for suffix in ["-wal", "-shm"] {
+                    let mut journal = self.0.path().as_os_str().to_owned();
+                    journal.push(suffix);
+                    let _ = std::fs::remove_file(journal);
+                }
+            }
+        }
+
         pub async fn set_rom_directory(connection: &mut SqliteConnection, rom_directory: PathBuf) -> PathBuf {
             set_directory(connection, "ROM_DIRECTORY", &rom_directory, None).await;
             rom_directory

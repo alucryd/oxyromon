@@ -5,7 +5,7 @@ use super::*;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use tempfile::{NamedTempFile, TempDir};
+use tempfile::TempDir;
 use zip::ZipWriter;
 use zip::write::SimpleFileOptions;
 
@@ -17,7 +17,7 @@ async fn test() {
     let test_directory = Path::new("tests");
     let progress_bar = ProgressBar::hidden();
 
-    let db_file = NamedTempFile::new().unwrap();
+    let db_file = crate::config::TestDatabase::new();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 

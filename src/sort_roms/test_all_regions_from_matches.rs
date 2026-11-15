@@ -1,10 +1,9 @@
 use super::*;
-use tempfile::NamedTempFile;
 
 #[tokio::test]
 async fn test() {
     // given
-    let db_file = NamedTempFile::new().unwrap();
+    let db_file = crate::config::TestDatabase::new();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
     let progress_bar = get_progress_bar(0, get_none_progress_style());

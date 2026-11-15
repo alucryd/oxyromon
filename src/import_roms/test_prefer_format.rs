@@ -3,16 +3,25 @@ use super::*;
 use crate::{convert_roms, import_roms};
 use sqlx::SqlitePool;
 use std::path::PathBuf;
-use tempfile::{NamedTempFile, TempDir};
+use tempfile::TempDir;
 use tokio::fs;
 
-/// Shared given: temp DB + directories + an imported DAT. The `NamedTempFile`
+/// Shared given: temp DB + directories + an imported DAT. The `TestDatabase`
 /// and `TempDir`s must be kept alive by the caller for the whole test.
-async fn setup(dat: &str) -> (NamedTempFile, TempDir, TempDir, SqlitePool, i64, PathBuf) {
+async fn setup(
+    dat: &str,
+) -> (
+    crate::config::TestDatabase,
+    TempDir,
+    TempDir,
+    SqlitePool,
+    i64,
+    PathBuf,
+) {
     let test_directory = Path::new("tests");
     let progress_bar = ProgressBar::hidden();
 
-    let db_file = NamedTempFile::new().unwrap();
+    let db_file = crate::config::TestDatabase::new();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 

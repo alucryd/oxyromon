@@ -3,7 +3,7 @@ use super::super::import_dats;
 use super::super::import_roms;
 use super::super::sort_roms;
 use super::*;
-use tempfile::{NamedTempFile, TempDir};
+use tempfile::TempDir;
 
 #[tokio::test]
 async fn test() {
@@ -13,7 +13,7 @@ async fn test() {
     let test_directory = Path::new("tests");
     let progress_bar = ProgressBar::hidden();
 
-    let db_file = NamedTempFile::new().unwrap();
+    let db_file = crate::config::TestDatabase::new();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 

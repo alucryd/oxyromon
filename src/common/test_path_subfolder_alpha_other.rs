@@ -1,4 +1,4 @@
-use tempfile::{NamedTempFile, TempDir};
+use tempfile::TempDir;
 
 use super::*;
 
@@ -8,7 +8,7 @@ async fn test() {
     let _guard = MUTEX.lock().await;
 
     let test_directory = Path::new("tests");
-    let db_file = NamedTempFile::new().unwrap();
+    let db_file = crate::config::TestDatabase::new();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 

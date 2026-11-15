@@ -1,7 +1,6 @@
 use super::*;
 use crate::config::MUTEX;
 use std::time::Duration;
-use tempfile::NamedTempFile;
 use tokio::sync::oneshot;
 use tokio::time::timeout;
 
@@ -10,7 +9,7 @@ use tokio::time::timeout;
 #[tokio::test]
 async fn test() {
     let _guard = MUTEX.lock().await;
-    let db_file = NamedTempFile::new().unwrap();
+    let db_file = crate::config::TestDatabase::new();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let (sse_tx, mut sse_rx) = broadcast::channel(16);
     let (ran_tx, mut ran_rx) = oneshot::channel();
