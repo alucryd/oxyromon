@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 //! MinCDC, as MinCdcHash4 scores it: a chunk ends after the 4-byte window
 //! whose hash is lowest between [`MIN`] and [`MAX`] bytes in, the earliest
 //! on a tie. Ported rather than depended on, so that a dependency's update

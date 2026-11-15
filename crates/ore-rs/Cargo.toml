@@ -29,9 +29,9 @@ thiserror.workspace = true
 blake3 = "1.8"
 ciborium = "0.2"
 crc32c = "0.6"
-crc32fast.workspace = true
+crc32fast = { workspace = true, optional = true }
 lzma-rust2 = { workspace = true, features = ["encoder"] }
-md-5.workspace = true
+md-5 = { workspace = true, optional = true }
 reed-solomon-erasure = { version = "6", default-features = false }
 rusty_flac.workspace = true
 serde = { version = "1", features = ["derive"] }
@@ -50,5 +50,8 @@ sha1.workspace = true
 tempfile.workspace = true
 
 [features]
-default = ["cli"]
-cli = ["dep:clap", "dep:console", "dep:indicatif"]
+default = ["cli", "write"]
+cli = ["write", "dep:clap", "dep:console", "dep:indicatif"]
+# Writing OREs and stores, and what is ported from Dolphin for it, under
+# GPL-2.0-or-later; without it, ore-rs reads, and is MIT OR Apache-2.0
+write = ["dep:crc32fast", "dep:md-5"]

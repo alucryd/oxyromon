@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! STR video sectors, coded losslessly: the `str` codec.
 //!
 //! A group is video sectors' data, as a CD data track's video plane holds

@@ -1,6 +1,9 @@
 //! A CD comes back out of an ORE as the files it went in as, byte for byte:
 //! its cue sheet, a BIN a track, its SBI; alone or through a store.
 
+// They write the OREs they read
+#![cfg(feature = "write")]
+
 use std::path::{Path, PathBuf};
 
 use ore_rs::{Codec, Options, Profile, Reader, StoreOptions};

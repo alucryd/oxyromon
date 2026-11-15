@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 //! Cutting an area of a disc into what an ORE stores: runs of zeros, runs of
 //! padding as the seed that generates them, and the rest as MinCDC chunks.
 //!
@@ -6,25 +7,12 @@
 //! outside Wii partitions, a partition's decrypted data within one.
 
 use super::cdc;
+use super::format::{BLOCK, RECORD_MAX, Run};
 use super::fst::FileSystem;
 use super::lfg::{Lfg, SEED_BYTES, SEED_SIZE};
 
-/// The block padding is generated in.
-pub const BLOCK: u64 = 0x8000;
 /// Zeros shorter than this stay in the chunks around them.
 const ZERO_MIN: u64 = BLOCK;
-/// No record covers more than this, as the spec bounds a chunk.
-pub const RECORD_MAX: u64 = 16 << 20;
-
-#[derive(Debug, PartialEq)]
-pub enum Run<'a> {
-    Zero(u64),
-    /// A run of one byte not zero: its length and the byte, as ROMs pad.
-    Fill(u64, u8),
-    /// Padding: its length and the seed, big endian.
-    Padding(u64, [u8; SEED_BYTES]),
-    Chunk(&'a [u8]),
-}
 
 enum Piece {
     /// A run of one byte.

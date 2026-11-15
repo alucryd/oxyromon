@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Wii partitions: 32 KiB blocks of 1 KiB of hashes and 31 KiB of data, in
 //! 2 MiB groups of 64 blocks hashed together, all encrypted with the
 //! partition's title key.

@@ -103,7 +103,7 @@ itertools = "0.15.0"
 log = "0.4.35"
 md-5.workspace = true
 nsz-rs = { path = "crates/nsz-rs", version = "0.3.0", default-features = false }
-ore-rs = { path = "crates/ore-rs", version = "0.1.0", default-features = false }
+ore-rs = { path = "crates/ore-rs", version = "0.1.0", default-features = false, features = ["write"] }
 rvz-rs = { path = "crates/rvz-rs", version = "0.1.0", default-features = false }
 wbfs-rs = { path = "crates/wbfs-rs", version = "0.1.0", default-features = false }
 wux-rs = { path = "crates/wux-rs", version = "0.1.0", default-features = false }

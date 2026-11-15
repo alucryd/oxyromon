@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 //! A GameCube or Wii disc, read through whatever holds it: a raw ISO, or an
 //! RVZ. A port of what RVZ needs of Dolphin's `VolumeGC` and `VolumeWii`.
 

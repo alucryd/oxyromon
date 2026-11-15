@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 //! GameCube and Wii disc specifics: the disc's layout, Wii partitions and
 //! their encryption, the file system, the common keys, what a disc uses, and
 //! the generator that fills its padding.

@@ -4,11 +4,11 @@ version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 description = "smelt, the ORE reader library: ore-rs's reader behind a C ABI, for emulators to read an ORE as the disc or ROM it holds"
-license = "GPL-3.0-or-later"
+license = "MIT OR Apache-2.0"
 repository.workspace = true
 keywords = ["ore", "emulator", "ffi", "disc"]
 categories = ["emulators", "external-ffi-bindings"]
-include = ["src/**/*", "include/**/*", "tests/**/*", "cbindgen.toml", "README.md", "CHANGELOG.md"]
+include = ["src/**/*", "include/**/*", "tests/**/*", "cbindgen.toml", "LICENSE-APACHE", "LICENSE-MIT", "README.md", "CHANGELOG.md"]
 # No ABI before the format: nothing is published until ORE's spec is
 publish = false
 
@@ -23,4 +23,6 @@ crate-type = ["rlib", "staticlib", "cdylib"]
 ore-rs = { path = "../ore-rs", version = "0.1", default-features = false }
 
 [dev-dependencies]
+# The tests write the OREs they read
+ore-rs = { path = "../ore-rs", version = "0.1", default-features = false, features = ["write"] }
 tempfile.workspace = true

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 //! Writing an ORE from a disc image.
 
 use std::collections::{HashMap, HashSet};
@@ -20,12 +21,14 @@ use super::crypto::Key;
 use super::disc::{Iso, PARTITION_DATA_SIZE, Platform, Source, Volume};
 use super::error::{Error, Result};
 use super::format::*;
+use super::format::{BLOCK, Run};
 use super::fst::FileSystem;
 use super::io;
 use super::pack::Packer;
 use super::ps2audio;
+use super::reader::Stats;
 use super::reader::{Event, Reader};
-use super::segment::{BLOCK, Run, Segmenter};
+use super::segment::Segmenter;
 use super::store::StoreWriter;
 use super::video;
 use super::wii::{
@@ -80,31 +83,6 @@ pub const CARTRIDGE_PLATFORMS: [&str; 30] = [
     "ws",
     "wsc",
 ];
-
-/// Sizes of the two files a run touched.
-#[derive(Debug, Clone, Copy)]
-pub struct Stats {
-    pub input_size: u64,
-    pub output_size: u64,
-}
-
-impl Stats {
-    /// The output's size as a percentage of the input's.
-    pub fn ratio_percent(&self) -> f64 {
-        if self.input_size == 0 {
-            0.0
-        } else {
-            self.output_size as f64 * 100.0 / self.input_size as f64
-        }
-    }
-}
-
-/// Whether `path` starts as an ORE does.
-pub fn is_ore(path: &Path) -> Result<bool> {
-    let file = File::open(path)?;
-    let mut magic = [0; 4];
-    Ok(io::read_exact_at(&file, &mut magic, 0).is_ok() && magic == MAGIC)
-}
 
 /// How much of a raw area is read at a time.
 const WINDOW: u64 = 4 << 20;

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! smelt, the ORE reader library: ore-rs's reader behind a C ABI, so an
 //! emulator reads an ORE as the disc or ROM it holds, at any offset, with no
 //! temporary file. ore is unrefined iron; smelting refines it.

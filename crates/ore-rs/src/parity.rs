@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! A sealed segment's parity: Reed-Solomon RS(255, 239) over GF(2^8), as
 //! design/01 and design/03 specify, or RS(247, 239).
 //!

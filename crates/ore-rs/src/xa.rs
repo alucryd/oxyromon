@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! XA ADPCM sectors, coded losslessly: the `xa` codec.
 //!
 //! A group is records of a sector each, its 4-byte subheader then its 2324

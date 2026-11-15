@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 //! A disc's file system table: where each file lies, and its name.
 //! Validated as Dolphin's `FileSystemGCWii` validates it.
 

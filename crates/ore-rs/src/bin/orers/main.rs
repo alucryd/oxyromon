@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 //! `orers`: ORE compression and decompression, from the command line.
 
 mod ui;

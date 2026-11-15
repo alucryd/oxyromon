@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Reading an ORE as the disc it holds.
 
 use std::collections::HashMap;
@@ -13,16 +14,15 @@ use super::cdtrack::SectorMap;
 use super::crypto::Key;
 use super::error::{Error, Result};
 use super::format::*;
+use super::format::{BLOCK, RECORD_MAX, Run};
 use super::io;
 use super::lfg::{Lfg, SEED_BYTES};
 use super::pack::{Cache, read_group};
-use super::segment::{BLOCK, RECORD_MAX, Run};
 use super::store::{Index, NOWHERE, StoreReader, find_store, hex};
 use super::wii::{
     self, BLOCK_DATA_SIZE, BLOCK_TOTAL_SIZE, BLOCKS_PER_GROUP, BlockData, GROUP_DATA_SIZE,
     GROUP_TOTAL_SIZE, HashBlock,
 };
-use super::writer::Stats;
 
 /// What a core decodes at a time when writing a disc out: four Wii groups.
 const SLICE: u64 = 4 * GROUP_TOTAL_SIZE;
@@ -884,4 +884,29 @@ pub fn decompress(input: &Path, output: &Path, progress: &mut dyn FnMut(u64)) ->
         }
     }
     result
+}
+
+/// Sizes of the two files a run touched.
+#[derive(Debug, Clone, Copy)]
+pub struct Stats {
+    pub input_size: u64,
+    pub output_size: u64,
+}
+
+impl Stats {
+    /// The output's size as a percentage of the input's.
+    pub fn ratio_percent(&self) -> f64 {
+        if self.input_size == 0 {
+            0.0
+        } else {
+            self.output_size as f64 * 100.0 / self.input_size as f64
+        }
+    }
+}
+
+/// Whether `path` starts as an ORE does.
+pub fn is_ore(path: &Path) -> Result<bool> {
+    let file = File::open(path)?;
+    let mut magic = [0; 4];
+    Ok(io::read_exact_at(&file, &mut magic, 0).is_ok() && magic == MAGIC)
 }

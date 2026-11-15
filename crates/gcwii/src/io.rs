@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Positional reads, so many workers can read one file without seeking, and
 //! the `.part` file an output is written to.
 

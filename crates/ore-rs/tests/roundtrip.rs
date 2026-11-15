@@ -1,6 +1,9 @@
 //! Every disc comes back out of an ORE byte for byte, whatever the profile
 //! and codec, and a damaged ORE fails rather than give back another disc.
 
+// They write the OREs they read
+#![cfg(feature = "write")]
+
 use std::path::Path;
 
 use ore_rs::{Codec, Options, Profile, Reader};

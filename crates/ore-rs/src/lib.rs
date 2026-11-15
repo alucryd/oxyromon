@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! ORE, oxyROMon's ROM enclosure, for GameCube, Wii, PlayStation 2 and PSP
 //! discs and CDs: part of oxyROMon.
 //!
@@ -30,11 +31,17 @@
 //! The format's specification and its profiles are unpublished while the
 //! format is a draft.
 
+// shortcut: without the writer, what only encoding uses (the codecs'
+// encoders, the CD map's writer, the store index's saving) is compiled and
+// unused rather than gated item by item; gate it if a host needs it smaller
+#![cfg_attr(not(feature = "write"), allow(dead_code))]
+
 // The CD-ROM specifics, shared with chd-rs: `src/cd` is a symlink to the cd
 // crate's source, which publishing copies in
 #[allow(dead_code, unused_imports)]
 #[path = "cd/lib.rs"]
 mod cd;
+#[cfg(feature = "write")]
 mod cdc;
 mod cdtrack;
 mod codec;
@@ -43,32 +50,50 @@ mod format;
 // `src/gcwii` is a symlink to the gcwii crate's source, which publishing
 // copies in
 #[allow(dead_code, unused_imports)]
+#[cfg(feature = "write")]
 #[path = "gcwii/lib.rs"]
 mod gcwii;
+// Without the writer, only what reading needs of it, which excludes what is
+// ported from Dolphin, GPL-2.0-or-later: its disc model and file system
+#[cfg(not(feature = "write"))]
+#[allow(dead_code, unused_imports)]
+mod gcwii {
+    pub mod crypto;
+    pub mod error;
+    pub mod io;
+    pub mod lfg;
+    pub mod wii;
+}
 mod pack;
 mod parity;
+#[cfg(feature = "write")]
 mod ps2audio;
 mod range;
 mod reader;
+#[cfg(feature = "write")]
 mod segment;
 mod store;
 mod vag;
 mod video;
+#[cfg(feature = "write")]
 mod writer;
 mod xa;
 
-use gcwii::{crypto, disc, error, fst, io, keys, lfg, wii};
+use gcwii::{crypto, error, io, lfg, wii};
+#[cfg(feature = "write")]
+use gcwii::{disc, fst, keys};
 
 pub use crypto::Key;
 pub use error::{Error, Result};
 pub use format::{Codec, Profile};
+#[cfg(feature = "write")]
 pub use keys::{is_bootmii, load_keys, parse_key_file, parse_keys, parse_otp};
-pub use reader::{Reader, Sizes, decompress};
-pub use store::{
-    Compacted, STORE_DIR, StoreChecked, StoreOptions, check_store, compact, create_store,
-    find_store, set_parity,
-};
+pub use reader::{Reader, Sizes, Stats, decompress, is_ore};
+#[cfg(feature = "write")]
+pub use store::{Compacted, compact, create_store, set_parity};
+pub use store::{STORE_DIR, StoreChecked, StoreOptions, check_store, find_store};
+#[cfg(feature = "write")]
 pub use writer::{
-    CARTRIDGE_PLATFORMS, Options, Stats, StoreBatch, attach, cartridge_header_matches, compress,
-    compress_to_store, default_codec, detach, is_ore, replace_cue,
+    CARTRIDGE_PLATFORMS, Options, StoreBatch, attach, cartridge_header_matches, compress,
+    compress_to_store, default_codec, detach, replace_cue,
 };

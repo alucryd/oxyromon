@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 //! Audio on a PlayStation 2 DVD, found by its headers: Sony's `SShd` and
 //! `VAGp`, and `RIFF WAVE`. What is found becomes an area of its own,
 //! coded by `vag` or `pcm` rather than with the rest. A header that lies

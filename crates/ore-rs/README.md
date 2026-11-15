@@ -265,6 +265,20 @@ its codes MPEG-1's.
 Reed-Solomon coding is
 [reed-solomon-erasure](https://crates.io/crates/reed-solomon-erasure)'s.
 
+## Features
+
+- **`write`** (default): compressing, attaching, detaching and compacting,
+  and the GameCube and Wii disc model they need. Without it, ore-rs reads
+  OREs and stores, and checks and repairs a store, and nothing else: the
+  build smelt, the reader library emulators link, takes.
+- **`cli`** (default, implies `write`): `orers`.
+
 ## License
 
-GPL-3.0-or-later, same as oxyROMon. See [LICENSE](LICENSE).
+Each file says its license in an SPDX header. What ore-rs builds without
+`write`, its reader, is MIT OR Apache-2.0 ([LICENSE-MIT](LICENSE-MIT),
+[LICENSE-APACHE](LICENSE-APACHE)), so an emulator of any license can link
+it, as smelt does; the writer, the CLI, and the GameCube and Wii disc
+model ported from Dolphin for them, are GPL-3.0-or-later and
+GPL-2.0-or-later, so the default build is GPL-3.0-or-later as a whole
+([LICENSE](LICENSE)).

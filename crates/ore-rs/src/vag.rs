@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! SPU ADPCM, PlayStation 2 `VAGp` audio, coded losslessly: the `vag`
 //! codec.
 //!

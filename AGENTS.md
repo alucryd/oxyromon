@@ -140,7 +140,10 @@ run (chdman, ctrtool, gdidrop, nsz, Dolphin, wit, xdelta3, Flips, maxcso),
 published on its own and keeping its upstream's license — MIT for `cia-rs`, whose upstream shipped none. `wux-rs`
 follows wudd and Cemu instead, under wudd's GPL-3.0+, and ships no key. `ore-rs`
 is oxyROMon's own format, ORE, specified in `formats/design/` (a private
-repository checked out there, ignored by this one), under GPL-3.0+;
+repository checked out there, ignored by this one), under GPL-3.0+ but
+for its reader, what it builds without its default `write` feature, MIT OR
+Apache-2.0 file by file (SPDX headers), so smelt can be linked anywhere:
+keep GPL code, and code ported from GPL projects, out of those files;
 used by oxyromon for GameCube, Wii, PlayStation 2 and PSP discs, CDs, GD-ROMs
 and cartridge ROMs,
 an ORE a disc, but its CLI not
@@ -186,7 +189,8 @@ shipped by `dist.sh` while the format is a draft. Every crate follows these, and
 a C ABI for emulators, so it depends on ore-rs, has no CLI, and builds a
 static and a shared library besides its rlib. `include/smelt.h` is
 cbindgen's from it, written again after any ABI change, which a test checks.
-It is unpublished, as its ABI, until ORE's specification is.
+It is MIT OR Apache-2.0, and builds ore-rs without `write`; oxyromon asks
+for `write`. It is unpublished, as its ABI, until ORE's specification is.
 
 ### Embedded Crates
 

@@ -22,8 +22,7 @@ Unpublished, and its ABI unstable, until ORE's specification is.
   ORE's store index, rather than a lock inside serialising a drive thread
   against the rest.
 - **Not yet**: the drive view, a CD's geometry, whole 2,352-byte sectors
-  and its Q subchannel; key providers; prefetch advice; a decode-only
-  ore-rs build. See the ORE study's design 04.
+  and its Q subchannel; prefetch advice. See the ORE study's design 04.
 
 ```c
 #include "smelt.h"
@@ -46,4 +45,9 @@ cbindgen --config cbindgen.toml --output include/smelt.h
 
 ## License
 
-GPL-3.0-or-later, as ore-rs.
+MIT OR Apache-2.0 ([LICENSE-MIT](LICENSE-MIT),
+[LICENSE-APACHE](LICENSE-APACHE)), so an emulator of any license can link
+it. It builds ore-rs without its `write` feature, whose reader is under the
+same licenses; ore-rs's writer, GPL, is not in libsmelt. FLAC and LZMA2's
+decoders, rusty_flac and lzma-rust2, are Apache-2.0 alone, which a
+GPL-2.0-only host should weigh.
