@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //! The ISO 9660 file system of a data track, with the CD-ROM XA attributes
 //! PlayStation discs give every file: which form its sectors are, and
 //! whether it is interleaved with others.

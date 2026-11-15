@@ -26,12 +26,13 @@ SKIP_TRUNK=true cargo build --features server # reuse the web UI already built
 
 cargo test --workspace --features oxyromon/server            # everything
 cargo test -p xso-rs                                         # one format crate
+cargo test --manifest-path crates/smelt-rs/Cargo.toml        # smelt, a workspace of its own
 cargo test --release -p xso-rs -- --ignored                  # its slow tests
 cargo clippy --workspace --all-targets --features oxyromon/server
 cargo clippy --no-default-features --features use-rustls,mcp # the stdio-only MCP build
 (cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets) # the web UI
 (cd desktop && cargo clippy --all-targets)   # the desktop shell: stage the sidecar first
-cargo fmt --all && (cd frontend && cargo fmt) && (cd desktop && cargo fmt) # each workspace on its own
+cargo fmt --all && (cd frontend && cargo fmt) && (cd desktop && cargo fmt) && (cd crates/smelt-rs && cargo fmt) # each workspace on its own
 
 cargo sqlx prepare -- --all-targets --features server  # after any query change; --all-targets keeps test-only queries
 ```
@@ -39,10 +40,12 @@ cargo sqlx prepare -- --all-targets --features server  # after any query change;
 Helper scripts at the root: `build.sh`, `desktop.sh`, `dist.sh`, `docker.sh`,
 `test.sh` (the test suite under `cargo llvm-cov`).
 
-CI runs four parallel jobs. **Format** checks `cargo fmt` in all three
+CI runs four parallel jobs. **Format** checks `cargo fmt` in all four
 workspaces. **Web UI** builds it with trunk, lints it, and uploads it as an
 artifact. **Lint and test** runs the two root clippy invocations and the
-workspace tests under `cargo llvm-cov`, against an empty UI. **Release build
+workspace tests under `cargo llvm-cov`, against an empty UI, then smelt's
+clippy and tests in its own workspace, cbindgen installed for its header
+check. **Release build
 and desktop** waits for the web UI, then builds the release binary with it
 through `desktop/scripts/stage-sidecar.sh` and lints the desktop shell, which
 `tauri-build` refuses to compile until that sidecar exists. Only that job
@@ -190,7 +193,11 @@ a C ABI for emulators, so it depends on ore-rs, has no CLI, and builds a
 static and a shared library besides its rlib. `include/smelt.h` is
 cbindgen's from it, written again after any ABI change, which a test checks.
 It is MIT OR Apache-2.0, and builds ore-rs without `write`; oxyromon asks
-for `write`. It is unpublished, as its ABI, until ORE's specification is.
+for `write`. It is a workspace of its own, excluded from the root's, as
+`frontend/` and `desktop/` are, so that no workspace build unifies the
+GPL writer into libsmelt: build, lint and test it with `--manifest-path
+crates/smelt-rs/Cargo.toml`. It is unpublished, as its ABI, until ORE's
+specification is.
 
 ### Embedded Crates
 

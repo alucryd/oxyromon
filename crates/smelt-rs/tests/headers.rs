@@ -76,7 +76,7 @@ fn the_headers_compile_as_c_and_cpp() {
 fn shared_library() -> Option<PathBuf> {
     let output = Command::new(env!("CARGO"))
         .current_dir(crate_dir())
-        .args(["build", "-p", "smelt-rs", "--lib", "--message-format=json"])
+        .args(["build", "--lib", "--message-format=json"])
         .output()
         .unwrap();
     if !output.status.success() {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //! Cue sheets, as Redump writes them: a `FILE` a track, each `TRACK` raw,
 //! 2352 bytes a sector, its `INDEX`es counted from the start of its file;
 //! a GD-ROM's tracks after its `REM HIGH-DENSITY AREA` in that area.

@@ -7,8 +7,9 @@ Part of [oxyROMon](https://github.com/alucryd/oxyromon).
 
 Unpublished, and its ABI unstable, until ORE's specification is.
 
-- **`libsmelt.a` and `libsmelt.so`**, built by `cargo build --release -p
-  smelt-rs`, with [`include/smelt.h`](include/smelt.h), which cbindgen
+- **`libsmelt.a` and `libsmelt.so`**, built by `cargo build --release
+  --manifest-path crates/smelt-rs/Cargo.toml`, smelt being a workspace of
+  its own, with [`include/smelt.h`](include/smelt.h), which cbindgen
   writes from the crate, and [`include/smelt.hpp`](include/smelt.hpp), a
   header-only C++11 wrapper closing its ingot when it goes and throwing
   `smelt::error`.
@@ -55,6 +56,9 @@ cbindgen --config cbindgen.toml --output include/smelt.h
 MIT OR Apache-2.0 ([LICENSE-MIT](LICENSE-MIT),
 [LICENSE-APACHE](LICENSE-APACHE)), so an emulator of any license can link
 it. It builds ore-rs without its `write` feature, whose reader is under the
-same licenses; ore-rs's writer, GPL, is not in libsmelt. FLAC and LZMA2's
+same licenses but for the CD sector model, BSD-3-Clause, its ECC ported
+from MAME ([LICENSE-BSD-3-Clause](LICENSE-BSD-3-Clause)): a host shipping
+libsmelt keeps that notice with the others. ore-rs's writer, GPL, is not in
+libsmelt; smelt is a workspace of its own so that no build unifies it in. FLAC and LZMA2's
 decoders, rusty_flac and lzma-rust2, are Apache-2.0 alone, which a
 GPL-2.0-only host should weigh.

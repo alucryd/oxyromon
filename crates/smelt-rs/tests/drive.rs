@@ -26,6 +26,15 @@ fn noise(len: usize, mut state: u64) -> Vec<u8> {
 /// seconds of pregap, with an SBI replacing LBA 10's Q: the disc's bytes,
 /// its tracks end to end, and its ORE.
 fn cd(dir: &Path) -> (Vec<u8>, std::path::PathBuf) {
+    let mut sbi = b"SBI\0".to_vec();
+    // 00:02:10, LBA 10, type 1, then its Q
+    sbi.extend_from_slice(&[0x00, 0x02, 0x10, 0x01]);
+    sbi.extend_from_slice(&[0x41, 0x01, 0x01, 0x00, 0x00, 0x10, 0x00, 0x00, 0x02, 0x10]);
+    cd_with(dir, &sbi)
+}
+
+/// [`cd`] with the SBI `sbi`.
+fn cd_with(dir: &Path, sbi: &[u8]) -> (Vec<u8>, std::path::PathBuf) {
     let data = noise(DATA * SECTOR, 3);
     let audio = noise(AUDIO * SECTOR, 4);
     std::fs::write(dir.join("Game (Track 1).bin"), &data).unwrap();
@@ -37,10 +46,6 @@ fn cd(dir: &Path) -> (Vec<u8>, std::path::PathBuf) {
          FILE \"Game (Track 2).bin\" BINARY\r\n  TRACK 02 AUDIO\r\n    INDEX 00 00:00:00\r\n    INDEX 01 00:02:00\r\n",
     )
     .unwrap();
-    let mut sbi = b"SBI\0".to_vec();
-    // 00:02:10, LBA 10, type 1, then its Q
-    sbi.extend_from_slice(&[0x00, 0x02, 0x10, 0x01]);
-    sbi.extend_from_slice(&[0x41, 0x01, 0x01, 0x00, 0x00, 0x10, 0x00, 0x00, 0x02, 0x10]);
     std::fs::write(dir.join("Game.sbi"), sbi).unwrap();
     let ore = dir.join("Game.ore");
     ore_rs::compress(&cue, &ore, &Options::default(), &[], &mut |_| {}).unwrap();
@@ -190,4 +195,53 @@ fn what_is_no_cd_has_no_drive_view() {
     );
     assert_eq!(replaced, 0);
     unsafe { smelt_close(ingot) };
+}
+
+#[test]
+fn an_sbi_smelt_cannot_take_is_refused_where_it_is_asked_for() {
+    let header = |kind: u8, frame: u8| [0x00, 0x02, frame, kind];
+    let q = [0x41, 0x01, 0x01, 0x00, 0x00, 0x10, 0x00, 0x00, 0x02, 0x10];
+    for (name, sbi, code) in [
+        // A partial replacement, its relative address alone
+        (
+            "type 2",
+            [&b"SBI\0"[..], &header(2, 0x10), &q[..3]].concat(),
+            SmeltErr::SmeltErrUnsupported,
+        ),
+        // An entry cut short
+        (
+            "short",
+            [&b"SBI\0"[..], &header(1, 0x10), &q[..6]].concat(),
+            SmeltErr::SmeltErrCorrupt,
+        ),
+        // Frame 75 of a second, and a nibble past 9
+        (
+            "frame",
+            [&b"SBI\0"[..], &header(1, 0x75), &q[..]].concat(),
+            SmeltErr::SmeltErrCorrupt,
+        ),
+        (
+            "nibble",
+            [&b"SBI\0"[..], &header(1, 0x1A), &q[..]].concat(),
+            SmeltErr::SmeltErrCorrupt,
+        ),
+    ] {
+        let dir = TempDir::new().unwrap();
+        let (bytes, ore) = cd_with(dir.path(), &sbi);
+        // The disc reads all the same
+        let ingot = open(&ore);
+        let mut sector = vec![0u8; SECTOR];
+        assert_eq!(
+            unsafe { smelt_read_sectors(ingot, 0, 1, sector.as_mut_ptr()) },
+            SmeltErr::SmeltOk
+        );
+        assert!(sector[..] == bytes[..SECTOR]);
+        let (mut q, mut replaced) = ([0u8; 10], 9);
+        assert_eq!(
+            unsafe { smelt_subq_replacement(ingot, 10, q.as_mut_ptr(), &mut replaced) },
+            code,
+            "{name}"
+        );
+        unsafe { smelt_close(ingot) };
+    }
 }

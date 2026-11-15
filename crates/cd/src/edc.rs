@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //! The CD-ROM EDC: a CRC-32 of polynomial 0x8001801B, reflected, without
 //! initial value or final xor, as ECMA-130 specifies.
 

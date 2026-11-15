@@ -203,8 +203,9 @@ enum smelt_err smelt_identity(const struct smelt_ingot *ingot,
                               size_t *len);
 
 /**
- * Read `len` bytes at `offset` of what the ORE holds into `dst`, all or
- * nothing: SMELT_ERR_RANGE past its end.
+ * Read `len` bytes at `offset` of what the ORE holds into `dst`:
+ * SMELT_ERR_RANGE past its end, before anything is written. On any other
+ * error, `dst` may hold some of the bytes: discard it.
  *
  * # Safety
  *
@@ -232,9 +233,10 @@ enum smelt_err smelt_track_at(const struct smelt_ingot *ingot, size_t i, struct 
 
 /**
  * Read `n` whole sectors of a CD from `lba` into `dst`, 2,352 bytes each,
- * all or nothing, across tracks: SMELT_ERR_RANGE for a sector no track's
- * file holds, as a pregap the dump leaves out, SMELT_ERR_UNSUPPORTED for
- * what is not a CD.
+ * across tracks: SMELT_ERR_RANGE for a sector no track's file holds, as a
+ * pregap the dump leaves out, before anything is written;
+ * SMELT_ERR_UNSUPPORTED for what is not a CD. On any other error, `dst`
+ * may hold some of the sectors: discard it.
  *
  * # Safety
  *

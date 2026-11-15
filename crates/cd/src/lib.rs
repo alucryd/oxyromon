@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //! CD-ROM specifics shared by oxyROMon's format crates: raw sectors, what
 //! of them can be generated, their EDC and ECC, Redump cue sheets, and the
 //! ISO 9660 file system with its CD-ROM XA attributes.

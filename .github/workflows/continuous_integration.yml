@@ -32,13 +32,14 @@ jobs:
         with:
           toolchain: stable
           components: rustfmt
-      # frontend/ and desktop/ are workspaces of their own, so the root's
-      # `--all` does not reach them.
+      # frontend/, desktop/ and crates/smelt-rs/ are workspaces of their own,
+      # so the root's `--all` does not reach them.
       - name: Check formatting
         run: |
           cargo fmt --all --check
           (cd frontend && cargo fmt --check)
           (cd desktop && cargo fmt --check)
+          (cd crates/smelt-rs && cargo fmt --check)
 
   web-ui:
     name: Web UI
@@ -110,6 +111,14 @@ jobs:
         run: cargo clippy --no-default-features --features use-rustls,mcp --all-targets
       - name: Test
         run: cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info
+      # smelt, a workspace of its own so ore-rs's GPL writer stays out of
+      # libsmelt; cbindgen for its test that smelt.h is current
+      - name: Install cbindgen
+        run: cargo install cbindgen --locked
+      - name: Run clippy (smelt)
+        run: cargo clippy --manifest-path crates/smelt-rs/Cargo.toml --all-targets
+      - name: Test smelt
+        run: cargo test --manifest-path crates/smelt-rs/Cargo.toml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:

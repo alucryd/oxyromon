@@ -89,13 +89,16 @@ pub struct OpenOptions {
     pub reserved: u32,
 }
 
+/// A sector's frame from 00:00:00, and the 10 bytes of Q its SBI gives it.
+type Replacement = (u64, [u8; 10]);
+
 /// An open ORE.
 pub struct Ingot {
     reader: Reader,
     /// A CD's tracks, none for what is not one.
     tracks: Vec<Track>,
     /// Its SBI's replacements by frame, in order, or why it has none.
-    subq: std::result::Result<Vec<(u64, [u8; 10])>, String>,
+    subq: std::result::Result<Vec<Replacement>, (SmeltErr, String)>,
 }
 
 impl Ingot {
@@ -107,7 +110,7 @@ impl Ingot {
                 entries.sort_unstable_by_key(|&(frame, _)| frame);
                 entries
             })
-            .map_err(|error| error.to_string());
+            .map_err(|error| (code(&error), error.to_string()));
         Ok(Self {
             reader,
             tracks,
@@ -138,14 +141,17 @@ fn fail(code: SmeltErr, message: impl Into<String>) -> SmeltErr {
     code
 }
 
-fn fail_with(error: Error) -> SmeltErr {
-    let code = match &error {
+fn code(error: &Error) -> SmeltErr {
+    match error {
         Error::Io(_) => SmeltErrIo,
         Error::BadMagic { .. } => SmeltErrNotOre,
         Error::Corrupt(_) => SmeltErrCorrupt,
         _ => SmeltErrUnsupported,
-    };
-    fail(code, error.to_string())
+    }
+}
+
+fn fail_with(error: Error) -> SmeltErr {
+    fail(code(&error), error.to_string())
 }
 
 /// Run `f`, a panic in it an error rather than unwinding into C.
@@ -350,8 +356,9 @@ pub unsafe extern "C" fn smelt_identity(
     })
 }
 
-/// Read `len` bytes at `offset` of what the ORE holds into `dst`, all or
-/// nothing: SMELT_ERR_RANGE past its end.
+/// Read `len` bytes at `offset` of what the ORE holds into `dst`:
+/// SMELT_ERR_RANGE past its end, before anything is written. On any other
+/// error, `dst` may hold some of the bytes: discard it.
 ///
 /// # Safety
 ///
@@ -425,7 +432,12 @@ pub unsafe extern "C" fn smelt_track_at(
                 format!("track {i} of {}", ingot.tracks.len()),
             );
         };
-        let first = track.frame.saturating_sub(LEAD_IN);
+        let Some(first) = track.frame.checked_sub(LEAD_IN) else {
+            return fail(
+                SmeltErrCorrupt,
+                format!("track {} before LBA 0", track.number),
+            );
+        };
         unsafe {
             *out = SmeltTrack {
                 number: track.number,
@@ -446,9 +458,10 @@ pub unsafe extern "C" fn smelt_track_at(
 }
 
 /// Read `n` whole sectors of a CD from `lba` into `dst`, 2,352 bytes each,
-/// all or nothing, across tracks: SMELT_ERR_RANGE for a sector no track's
-/// file holds, as a pregap the dump leaves out, SMELT_ERR_UNSUPPORTED for
-/// what is not a CD.
+/// across tracks: SMELT_ERR_RANGE for a sector no track's file holds, as a
+/// pregap the dump leaves out, before anything is written;
+/// SMELT_ERR_UNSUPPORTED for what is not a CD. On any other error, `dst`
+/// may hold some of the sectors: discard it.
 ///
 /// # Safety
 ///
@@ -525,7 +538,7 @@ pub unsafe extern "C" fn smelt_subq_replacement(
         };
         let entries = match &ingot.subq {
             Ok(entries) => entries,
-            Err(error) => return fail(SmeltErrUnsupported, error.clone()),
+            Err((code, error)) => return fail(*code, error.clone()),
         };
         let frame = u64::from(lba) + LEAD_IN;
         match entries.binary_search_by_key(&frame, |&(frame, _)| frame) {

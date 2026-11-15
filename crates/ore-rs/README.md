@@ -277,8 +277,10 @@ Reed-Solomon coding is
 
 Each file says its license in an SPDX header. What ore-rs builds without
 `write`, its reader, is MIT OR Apache-2.0 ([LICENSE-MIT](LICENSE-MIT),
-[LICENSE-APACHE](LICENSE-APACHE)), so an emulator of any license can link
-it, as smelt does; the writer, the CLI, and the GameCube and Wii disc
+[LICENSE-APACHE](LICENSE-APACHE)), with the CD sector model it embeds,
+whose ECC is ported from MAME, under BSD-3-Clause
+([LICENSE-BSD-3-Clause](LICENSE-BSD-3-Clause)): all permissive, so an
+emulator of any license can link it, as smelt does, keeping those notices; the writer, the CLI, and the GameCube and Wii disc
 model ported from Dolphin for them, are GPL-3.0-or-later and
 GPL-2.0-or-later, so the default build is GPL-3.0-or-later as a whole
 ([LICENSE](LICENSE)).

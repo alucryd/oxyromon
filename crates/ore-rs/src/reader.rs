@@ -640,7 +640,14 @@ impl Reader {
         let Some(sbi) = &self.meta.media.sbi else {
             return Ok(Vec::new());
         };
-        let bcd = |byte: u8| u64::from(byte >> 4) * 10 + u64::from(byte & 0xF);
+        // An address's minutes, seconds and frames, each a BCD byte below
+        // its bound
+        let bcd = |byte: u8, below: u64| {
+            let value = u64::from(byte >> 4) * 10 + u64::from(byte & 0xF);
+            (byte >> 4 < 10 && byte & 0xF < 10 && value < below)
+                .then_some(value)
+                .ok_or_else(|| corrupt("an SBI's address"))
+        };
         let mut entries = Vec::new();
         let mut rest = sbi
             .strip_prefix(b"SBI\0")
@@ -655,7 +662,7 @@ impl Reader {
             let (&q, tail) = tail
                 .split_first_chunk::<10>()
                 .ok_or_else(|| corrupt("an SBI cut short"))?;
-            entries.push(((bcd(m) * 60 + bcd(s)) * 75 + bcd(f), q));
+            entries.push(((bcd(m, 100)? * 60 + bcd(s, 60)?) * 75 + bcd(f, 75)?, q));
             rest = tail;
         }
         Ok(entries)

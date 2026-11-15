@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //! CD sector ECC (P and Q parity), ported from MAME's
 //! `src/lib/util/cdrom.cpp` (`ecc_verify`/`ecc_generate`/`ecc_clear`).
 //!
