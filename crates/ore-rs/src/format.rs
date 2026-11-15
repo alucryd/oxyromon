@@ -42,6 +42,8 @@ pub const KIND_STORE: u8 = 9;
 
 /// The GameCube and Wii padding generator.
 pub const GEN_GC_WII_FILLER: u8 = 4;
+/// One byte repeated, the byte its payload: a ROM's padding.
+pub const GEN_FILL: u8 = 5;
 
 /// Bounds a hostile file cannot push a reader past.
 pub const GROUP_MAX: u64 = 16 << 20;

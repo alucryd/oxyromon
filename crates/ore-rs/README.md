@@ -1,8 +1,8 @@
 # ore-rs
 
 ORE, oxyROMon's ROM enclosure, for GameCube, Wii, PlayStation 2 and PSP
-discs, CDs, PlayStation's first, Dreamcast GD-ROMs, and Game Boy and Game
-Boy Advance ROMs. Part of
+discs, CDs, PlayStation's first, Dreamcast GD-ROMs, and Game Boy, Game Boy
+Advance, DS, N64 and Mega Drive ROMs. Part of
 [oxyROMon](https://github.com/alucryd/oxyromon), as a library and the
 `orers` CLI. An ORE gives back the disc that went in, byte for byte, and
 records the disc's hashes, so it checks against a DAT without being decoded.
@@ -165,7 +165,10 @@ partition's title key, so reading one needs no key, nor does a GameCube disc.
   executable, and a PSP UMD when it holds `UMD_DATA.BIN` or
   `PSP_GAME/PARAM.SFO`; Game Boy, Game Boy Color and Game Boy Advance
   ROMs, by the Nintendo logo or the header checksum their console checks,
-  each kept with its file name. Anything else is refused.
+  DS ROMs by their logo CRC and header CRC-16, N64 ROMs by their first
+  word, in any byte order, and Mega Drive ROMs by their `SEGA`, each kept
+  with its file name, its padding, a run of one byte, stored as that byte
+  and its length. Anything else is refused.
 - **Not yet in the file**: the Merkle tree, parity, the tail index and the
   `deep` profile of the spec, beyond a store's segment parity.
 

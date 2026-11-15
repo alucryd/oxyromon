@@ -34,6 +34,35 @@ fn gb(rom: &mut [u8]) {
     rom[0x143] = 0x80;
 }
 
+fn crc16(bytes: &[u8]) -> u16 {
+    let mut crc = 0xFFFFu16;
+    for &byte in bytes {
+        crc ^= byte as u16;
+        for _ in 0..8 {
+            crc = if crc & 1 != 0 {
+                crc >> 1 ^ 0xA001
+            } else {
+                crc >> 1
+            };
+        }
+    }
+    crc
+}
+
+fn nds(rom: &mut [u8]) {
+    rom[0x15C..0x15E].copy_from_slice(&0xCF56u16.to_le_bytes());
+    let crc = crc16(&rom[..0x15E]);
+    rom[0x15E..0x160].copy_from_slice(&crc.to_le_bytes());
+}
+
+fn n64(rom: &mut [u8]) {
+    rom[..4].copy_from_slice(&[0x80, 0x37, 0x12, 0x40]);
+}
+
+fn md(rom: &mut [u8]) {
+    rom[0x100..0x110].copy_from_slice(b"SEGA MEGA DRIVE ");
+}
+
 fn gba(rom: &mut [u8]) {
     rom[0xB2] = 0x96;
     rom[0xBD] = rom[0xA0..0xBD]
@@ -48,12 +77,19 @@ fn a_game_boy_and_a_game_boy_advance_rom_round_trip_under_their_names() {
     for (name, header) in [
         ("Game (USA).gbc", gb as fn(&mut [u8])),
         ("Game (Europe).gba", gba),
+        ("Game (Japan).nds", nds),
+        ("Game (USA).z64", n64),
+        ("Game (Europe).md", md),
     ] {
         let input = rom(dir.path(), name, header);
         let ore = dir.path().join("game.ore");
         let stats = ore_rs::compress(&input, &ore, &Options::default(), &[], &mut |_| {}).unwrap();
-        // The noise, and next to nothing of the padding
-        assert!(stats.output_size < 140 << 10, "{}", stats.output_size);
+        // The noise, and next to nothing of the padding, a run of 0xFF
+        assert!(
+            stats.output_size < 140 << 10,
+            "{name}: {}",
+            stats.output_size
+        );
         assert_eq!(Reader::open(&ore).unwrap().file_name(), Some(name));
         let back = dir.path().join("back.rom");
         ore_rs::decompress(&ore, &back, &mut |_| {}).unwrap();
@@ -64,6 +100,13 @@ fn a_game_boy_and_a_game_boy_advance_rom_round_trip_under_their_names() {
 #[test]
 fn a_rom_whose_header_does_not_check_is_refused() {
     let dir = TempDir::new().unwrap();
+    // A DS header whose CRC is off by one
+    let bad_nds = rom(dir.path(), "a.nds", |rom| {
+        nds(rom);
+        rom[0x15E] = rom[0x15E].wrapping_add(1);
+    });
+    let ore = dir.path().join("a.ore");
+    assert!(ore_rs::compress(&bad_nds, &ore, &Options::default(), &[], &mut |_| {}).is_err());
     // A logo off by a bit, and a checksum off by one
     let bad_gb = rom(dir.path(), "a.gb", |rom| {
         gb(rom);

@@ -31,6 +31,8 @@ const SLICE: u64 = 4 * GROUP_TOTAL_SIZE;
 enum Record {
     Zero,
     Padding(Box<[u8; SEED_BYTES]>),
+    /// One byte repeated.
+    Fill(u8),
     Chunk(u32),
     /// A chunk of the store, by its id there.
     Store(u64),
@@ -289,12 +291,13 @@ impl Reader {
                 }
                 let record = match kind {
                     KIND_ZERO => Record::Zero,
-                    KIND_GENERATED => {
-                        if cursor.u8()? != GEN_GC_WII_FILLER {
-                            return Err(Error::Unsupported("generator".into()));
+                    KIND_GENERATED => match cursor.u8()? {
+                        GEN_GC_WII_FILLER => {
+                            Record::Padding(Box::new(cursor.take(SEED_BYTES)?.try_into().unwrap()))
                         }
-                        Record::Padding(Box::new(cursor.take(SEED_BYTES)?.try_into().unwrap()))
-                    }
+                        GEN_FILL => Record::Fill(cursor.u8()?),
+                        _ => return Err(Error::Unsupported("generator".into())),
+                    },
                     KIND_STORE if thin => {
                         last_id = last_id
                             .checked_add_signed(unzigzag(cursor.uvarint()?))
@@ -507,6 +510,7 @@ impl Reader {
                 match self.areas[area].records[record].clone() {
                     Record::Zero => emit(Event::Run(Run::Zero(length)), done)?,
                     Record::Padding(seed) => emit(Event::Run(Run::Padding(length, *seed)), done)?,
+                    Record::Fill(byte) => emit(Event::Run(Run::Fill(length, byte)), done)?,
                     Record::Chunk(id) => {
                         let chunk = self.chunks[id as usize];
                         let group = self.group(chunk.group)?;
@@ -739,6 +743,7 @@ impl Reader {
             let out = &mut buf[..length];
             match &self.areas[area].records[record] {
                 Record::Zero => out.fill(0),
+                &Record::Fill(byte) => out.fill(byte),
                 Record::Padding(seed) => {
                     let mut lfg = Lfg::from_bytes(&seed[..]);
                     lfg.forward_bytes(((self.phase(area) + start) % BLOCK + within) as usize);

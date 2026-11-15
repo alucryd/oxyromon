@@ -19,13 +19,16 @@ pub const RECORD_MAX: u64 = 16 << 20;
 #[derive(Debug, PartialEq)]
 pub enum Run<'a> {
     Zero(u64),
+    /// A run of one byte not zero: its length and the byte, as ROMs pad.
+    Fill(u64, u8),
     /// Padding: its length and the seed, big endian.
     Padding(u64, [u8; SEED_BYTES]),
     Chunk(&'a [u8]),
 }
 
 enum Piece {
-    Zero(u64),
+    /// A run of one byte.
+    Repeat(u64, u8),
     Padding(u64, [u8; SEED_BYTES]),
     Data(usize, usize),
 }
@@ -35,7 +38,9 @@ pub struct Segmenter {
     /// Where the area's generator counts from, at area offset 0.
     phase: u64,
     data: Vec<u8>,
-    zeros: u64,
+    /// The run of one byte being counted, and its byte.
+    run: u64,
+    byte: u8,
     /// Whether to look for the GameCube and Wii padding generator.
     padding: bool,
 }
@@ -45,7 +50,8 @@ impl Segmenter {
         Self {
             phase,
             data: Vec::new(),
-            zeros: 0,
+            run: 0,
+            byte: 0,
             padding: true,
         }
     }
@@ -82,14 +88,20 @@ impl Segmenter {
                 self.padding,
             ) {
                 match piece {
-                    Piece::Zero(n) => self.zeros += n,
+                    Piece::Repeat(n, byte) => {
+                        if self.run > 0 && self.byte != byte {
+                            self.settle_run(emit);
+                        }
+                        self.byte = byte;
+                        self.run += n;
+                    }
                     Piece::Padding(n, seed) => {
-                        self.settle_zeros(emit);
+                        self.settle_run(emit);
                         self.flush(true, emit);
                         emit(Run::Padding(n, seed));
                     }
                     Piece::Data(start, end) => {
-                        self.settle_zeros(emit);
+                        self.settle_run(emit);
                         self.data.extend_from_slice(&block[start..end]);
                     }
                 }
@@ -101,21 +113,26 @@ impl Segmenter {
 
     /// Emit what is left at the area's end.
     pub fn finish(&mut self, emit: &mut dyn FnMut(Run)) {
-        self.settle_zeros(emit);
+        self.settle_run(emit);
         self.flush(true, emit);
     }
 
-    fn settle_zeros(&mut self, emit: &mut dyn FnMut(Run)) {
-        if self.zeros >= ZERO_MIN {
+    /// A long run as its length, a short one into the chunks around it.
+    fn settle_run(&mut self, emit: &mut dyn FnMut(Run)) {
+        if self.run >= ZERO_MIN {
             self.flush(true, emit);
-            while self.zeros > 0 {
-                let n = self.zeros.min(RECORD_MAX);
-                emit(Run::Zero(n));
-                self.zeros -= n;
+            while self.run > 0 {
+                let n = self.run.min(RECORD_MAX);
+                emit(match self.byte {
+                    0 => Run::Zero(n),
+                    byte => Run::Fill(n, byte),
+                });
+                self.run -= n;
             }
         } else {
-            self.data.resize(self.data.len() + self.zeros as usize, 0);
-            self.zeros = 0;
+            self.data
+                .resize(self.data.len() + self.run as usize, self.byte);
+            self.run = 0;
         }
     }
 
@@ -145,10 +162,14 @@ fn pieces(
     let mut pieces = Vec::new();
     let mut position = 0;
     while position < block.len() {
-        let zeros = block[position..].iter().take_while(|&&b| b == 0).count();
-        if zeros > 0 {
-            pieces.push(Piece::Zero(zeros as u64));
-            position += zeros;
+        // Zeros wherever they start; another byte filling the rest of the
+        // block, as a ROM's padding does, so the padding generator's blocks
+        // are looked at as before
+        let byte = block[position];
+        let run = block[position..].iter().take_while(|&&b| b == byte).count();
+        if byte == 0 || position + run == block.len() {
+            pieces.push(Piece::Repeat(run as u64, byte));
+            position += run;
             continue;
         }
         let mut seed = [0; SEED_SIZE];

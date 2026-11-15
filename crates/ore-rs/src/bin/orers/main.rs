@@ -11,7 +11,7 @@ use ore_rs::{Codec, Options, Profile, StoreBatch};
 fn cli() -> Command {
     Command::new("orers")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("ORE compression and decompression: GameCube, Wii, PlayStation 2 and PSP ISOs, Game Boy and Game Boy Advance ROMs and CD and GD-ROM cue sheets are compressed, OREs decompressed, stores checked and repaired")
+        .about("ORE compression and decompression: GameCube, Wii, PlayStation 2 and PSP ISOs, Game Boy, DS, N64 and Mega Drive ROMs and CD and GD-ROM cue sheets are compressed, OREs decompressed, stores checked and repaired")
         .after_help(format!(
             "Writing an ORE from a Wii ISO needs the Wii common key among the keys; orers ships none.\n\n\
              A CD is given as its cue sheet, its tracks a file each; an SBI of the cue sheet's name beside it\n\

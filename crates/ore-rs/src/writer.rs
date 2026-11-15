@@ -247,6 +247,8 @@ struct Encoder<'a> {
     sink: Sink<'a>,
     padding: u64,
     zeros: u64,
+    /// Bytes stored as runs of one byte not zero.
+    filled: u64,
     deduped: u64,
 }
 
@@ -276,6 +278,7 @@ impl<'a> Encoder<'a> {
             sink,
             padding: 0,
             zeros: 0,
+            filled: 0,
             deduped: 0,
         })
     }
@@ -286,6 +289,14 @@ impl<'a> Encoder<'a> {
                 self.index.push(KIND_ZERO);
                 put_uvarint(&mut self.index, n);
                 self.zeros += n;
+                n
+            }
+            Run::Fill(n, byte) => {
+                self.index.push(KIND_GENERATED);
+                put_uvarint(&mut self.index, n);
+                self.index.push(GEN_FILL);
+                self.index.push(byte);
+                self.filled += n;
                 n
             }
             Run::Padding(n, seed) => {
@@ -509,16 +520,51 @@ const GB_LOGO: [u8; 48] = [
     0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E,
 ];
 
+/// The largest cartridge ROM taken, past the DS's 512 MiB.
+const CARTRIDGE_MAX: u64 = 1 << 30;
+
+/// The CRC-16 a DS checks its header with: polynomial 0xA001, reflected,
+/// from 0xFFFF.
+fn crc16(bytes: &[u8]) -> u16 {
+    let mut crc = 0xFFFFu16;
+    for &byte in bytes {
+        crc ^= byte as u16;
+        for _ in 0..8 {
+            crc = if crc & 1 != 0 {
+                crc >> 1 ^ 0xA001
+            } else {
+                crc >> 1
+            };
+        }
+    }
+    crc
+}
+
 /// Which cartridge `iso` is the ROM of, if one, by what its console checks
-/// in its header: a Game Boy's Nintendo logo, `gbc` when it flags Game Boy
-/// Color support; a Game Boy Advance's fixed byte and header checksum.
+/// in its header:
+/// - a DS's logo CRC, 0xCF56, and its header's CRC-16;
+/// - an N64's first word, in any of the three byte orders dumps come in;
+/// - a Game Boy's Nintendo logo, `gbc` when it flags Game Boy Color
+///   support;
+/// - a Game Boy Advance's fixed byte and header checksum;
+/// - a Mega Drive's `SEGA` at 0x100, which a 32X's has too.
 fn cartridge_platform(iso: &mut Iso) -> Result<Option<&'static str>> {
     let size = iso.size();
-    if !(0x150..=64 << 20).contains(&size) {
+    if !(0x150..=CARTRIDGE_MAX).contains(&size) {
         return Ok(None);
     }
-    let mut header = [0; 0x150];
-    iso.read_at(0, &mut header)?;
+    let mut header = [0; 0x200];
+    iso.read_at(0, &mut header[..(size as usize).min(0x200)])?;
+    let le16 = |at: usize| u16::from_le_bytes([header[at], header[at + 1]]);
+    if size >= 0x200 && le16(0x15C) == 0xCF56 && le16(0x15E) == crc16(&header[..0x15E]) {
+        return Ok(Some("nds"));
+    }
+    if matches!(
+        header[..4],
+        [0x80, 0x37, 0x12, 0x40] | [0x37, 0x80, 0x40, 0x12] | [0x40, 0x12, 0x37, 0x80]
+    ) {
+        return Ok(Some("n64"));
+    }
     if header[0x104..0x134] == GB_LOGO {
         return Ok(Some(if header[0x143] & 0x80 != 0 {
             "gbc"
@@ -530,7 +576,10 @@ fn cartridge_platform(iso: &mut Iso) -> Result<Option<&'static str>> {
         .iter()
         .fold(0u8, |sum, &b| sum.wrapping_sub(b))
         .wrapping_sub(0x19);
-    Ok((header[0xB2] == 0x96 && header[0xBD] == checksum).then_some("gba"))
+    if header[0xB2] == 0x96 && header[0xBD] == checksum {
+        return Ok(Some("gba"));
+    }
+    Ok((header[0x100..0x104] == *b"SEGA" || header[0x101..0x105] == *b"SEGA").then_some("md"))
 }
 
 /// Which of Sony's discs `iso` is, if one: a PlayStation 2 DVD, an ISO
@@ -833,6 +882,9 @@ fn encode(
             ledger.push(step("gc-wii-filler-prng", Some(encoder.padding)));
         }
         ledger.push(step("zero", Some(encoder.zeros)));
+        if encoder.filled > 0 {
+            ledger.push(step("fill", Some(encoder.filled)));
+        }
         ledger.push(step("mincdc-dedup", Some(encoder.deduped)));
         let identity = |algo: &str, value: Vec<u8>| Identity {
             algo: algo.into(),
