@@ -7,7 +7,7 @@ use super::database::*;
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
-use super::ore::{AsOre, OreCompressionAlgorithm, OreProfile, OreRomfile, ToOre};
+use super::ore::{AsOre, OreCompressionAlgorithm, OreProfile, OreRomfile, ToOre, sync_store};
 use super::progress::*;
 use super::prompt::*;
 use super::rvz::{AsRvz, RvzCompressionAlgorithm, ToRvz};
@@ -306,6 +306,7 @@ pub async fn convert_system(
                     .unwrap(),
             )
             .unwrap();
+            let game_ids: Vec<i64> = roms_by_game_id.keys().copied().collect();
             to_ore(
                 connection,
                 progress_bar,
@@ -314,6 +315,24 @@ pub async fn convert_system(
                 recompress,
                 diff,
                 check,
+                &compression_algorithm,
+                &profile,
+            )
+            .await?;
+            // Then into the system's store, or out of it, as it says
+            let romfile_ids: Vec<i64> = find_roms_with_romfile_by_game_ids(connection, &game_ids)
+                .await
+                .iter()
+                .filter_map(|rom| rom.romfile_id)
+                .collect::<std::collections::HashSet<i64>>()
+                .into_iter()
+                .collect();
+            let romfiles = find_romfiles_by_ids(connection, &romfile_ids).await;
+            sync_store(
+                connection,
+                progress_bar,
+                &system,
+                &romfiles,
                 &compression_algorithm,
                 &profile,
             )
@@ -4057,6 +4076,8 @@ mod test_rvz_to_rvz;
 mod test_rvz_to_sevenzip_iso;
 #[cfg(test)]
 mod test_sevenzip_gb_to_ore;
+#[cfg(test)]
+mod test_sevenzip_gb_to_ore_store;
 #[cfg(test)]
 mod test_sevenzip_iso_to_chd;
 #[cfg(test)]

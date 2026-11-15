@@ -313,8 +313,12 @@ pub async fn main(
                     let mut walker = WalkDir::new(&path).into_iter();
                     while let Some(entry) = walker.next() {
                         let Ok(entry) = entry else { continue };
-                        // the update partitions WUAs share, which they bring along
-                        if entry.path().is_dir() && entry.file_name() == STORE_DIR {
+                        // the update partitions WUAs share, which they bring
+                        // along, and an ORE store, its thin OREs'
+                        if entry.path().is_dir()
+                            && (entry.file_name() == STORE_DIR
+                                || entry.file_name() == ore_rs::STORE_DIR)
+                        {
                             walker.skip_current_dir();
                             continue;
                         }

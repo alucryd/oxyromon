@@ -8,7 +8,7 @@ use super::chd::{
 };
 use super::database::*;
 use super::model::Setting;
-use super::ore::{OreCompressionAlgorithm, OreProfile};
+use super::ore::{OreCompressionAlgorithm, OreProfile, OreStoreBatch};
 use super::progress::*;
 use super::prompt::{prompt_for_system_like, prompt_for_systems_like};
 use super::rvz::{RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE, RvzCompressionAlgorithm};
@@ -74,6 +74,7 @@ pub(crate) const BOOLEANS: &[&str] = &[
     "CHD_PARENTS",
     "GROUP_SUBSYSTEMS",
     "INFER_CLONES",
+    "ORE_STORE",
     "PREFER_PARENTS",
     "REGIONS_ONE_STRICT",
     "SEVENZIP_SOLID_COMPRESSION",
@@ -83,6 +84,7 @@ pub(crate) fn choice_options(key: &str) -> Option<&[&str]> {
         "GAME_SUBFOLDERS" => Some(GameSubfolders::VARIANTS),
         "ORE_COMPRESSION_ALGORITHM" => Some(OreCompressionAlgorithm::VARIANTS),
         "ORE_PROFILE" => Some(OreProfile::VARIANTS),
+        "ORE_STORE_BATCH" => Some(OreStoreBatch::VARIANTS),
         "PREFER_FORMAT" => Some(crate::convert_roms::ALL_FORMATS),
         "PREFER_REGIONS" => Some(PreferredRegion::VARIANTS),
         "PREFER_VERSIONS" => Some(PreferredVersion::VARIANTS),

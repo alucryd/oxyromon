@@ -406,9 +406,8 @@ pub fn create_store(dir: &Path, options: &StoreOptions) -> Result<()> {
 
 /// A store being read: its index, shared by every reader of it, and the
 /// groups last decoded.
-// ponytail: readers take no lock, so a compaction or a write folding the
-// last segment under one fails its reads (a segment gone) rather than wait
-// for it; a shared lock, or the index loaded again, if that bites
+// Readers take no lock: a segment a compaction or a fold removed under one
+// is found again in the index, which the writer saves before removing it
 pub(super) struct StoreReader {
     dir: PathBuf,
     pub index: Arc<Index>,
@@ -430,8 +429,26 @@ impl StoreReader {
         &self.dir
     }
 
-    /// The group a chunk lies in, decoded, and where it starts there.
+    /// The group a chunk lies in, decoded, and where it starts there. A
+    /// segment gone since the index was loaded, compacted or folded into
+    /// another, sends it to the index again: a chunk keeps its id.
     pub fn chunk(&mut self, id: u64) -> Result<(Arc<Vec<u8>>, usize)> {
+        match self.chunk_in_index(id) {
+            Err(Error::Io(e)) if e.kind() == std::io::ErrorKind::NotFound => {
+                let index = Index::load(&self.dir)?;
+                if index.uuid != self.index.uuid || id as usize >= index.chunks.len() {
+                    return Err(Error::Io(e));
+                }
+                self.index = Arc::new(index);
+                self.files.clear();
+                self.cache = Cache::default();
+                self.chunk_in_index(id)
+            }
+            result => result,
+        }
+    }
+
+    fn chunk_in_index(&mut self, id: u64) -> Result<(Arc<Vec<u8>>, usize)> {
         let chunk = self.index.chunks[id as usize];
         let at = &self.index.groups[chunk.group as usize];
         if !self.files.contains_key(&at.segment) {

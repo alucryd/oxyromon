@@ -3,6 +3,7 @@ use super::config::*;
 use super::database::*;
 use super::mimetype::WUA_EXTENSION;
 use super::model::Romfile;
+use super::ore::{OreProfile, compact_store, system_store};
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
@@ -13,6 +14,7 @@ use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::path::PathBuf;
+use std::str::FromStr;
 use walkdir::WalkDir;
 
 pub fn subcommand() -> Command {
@@ -80,8 +82,31 @@ pub async fn main(
     if matches.get_flag("FOREIGN") {
         purge_foreign_romfiles(connection, progress_bar, answer_yes).await?;
     }
+    compact_stores(connection, progress_bar).await?;
     for system in find_systems(connection).await {
         compute_system_completion(connection, progress_bar, &system).await?;
+    }
+    Ok(())
+}
+
+/// Compact each system's ORE store, once a directory shared by systems: the
+/// chunks of games purged go, and small groups are packed together.
+async fn compact_stores(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+) -> Result<()> {
+    let mut done = HashSet::new();
+    for system in find_systems(connection).await {
+        let store = system_store(connection, &system).await?;
+        if store.is_dir() && done.insert(store.clone()) {
+            let profile = OreProfile::from_str(
+                &get_string(connection, "ORE_PROFILE", Some(system.id))
+                    .await
+                    .unwrap(),
+            )
+            .unwrap();
+            compact_store(progress_bar, &store, &profile).await?;
+        }
     }
     Ok(())
 }
@@ -217,6 +242,14 @@ async fn purge_foreign_romfiles(
     let mut emptied_directories: HashSet<PathBuf> = HashSet::new();
     let mut count = 0;
     for path in files {
+        // An ORE store's segments and index belong to the thin OREs beneath
+        // it, which the database knows, never to it
+        if path
+            .components()
+            .any(|component| component.as_os_str() == ore_rs::STORE_DIR)
+        {
+            continue;
+        }
         let in_store = path
             .parent()
             .and_then(|p| p.file_name())

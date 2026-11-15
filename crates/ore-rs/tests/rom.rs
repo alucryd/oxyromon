@@ -212,3 +212,38 @@ fn a_batch_writes_many_roms_to_a_store_as_one_write() {
             == 0
     );
 }
+
+#[test]
+fn a_reader_open_across_a_fold_finds_its_chunks_again() {
+    let dir = TempDir::new().unwrap();
+    let games = dir.path().join("games");
+    let store = games.join(".ore-store");
+    ore_rs::create_store(&store, &Default::default()).unwrap();
+    let options = Options::default();
+    let first = rom(dir.path(), "First.gb", gb);
+    let first_ore = games.join("First.ore");
+    ore_rs::compress_to_store(&first, &first_ore, &store, &options, &[], &mut |_| {}).unwrap();
+    let mut reader = Reader::open(&first_ore).unwrap();
+
+    // The next write folds the first's segment into its own and removes it
+    let segment = std::fs::read_dir(&store)
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .find(|path| path.extension().is_some_and(|e| e == "ores"))
+        .unwrap();
+    let second = rom(dir.path(), "Second.gba", gba);
+    ore_rs::compress_to_store(
+        &second,
+        &games.join("Second.ore"),
+        &store,
+        &options,
+        &[],
+        &mut |_| {},
+    )
+    .unwrap();
+    assert!(!segment.exists());
+
+    let mut bytes = vec![0; std::fs::metadata(&first).unwrap().len() as usize];
+    reader.read_at(0, &mut bytes).unwrap();
+    assert!(bytes == std::fs::read(&first).unwrap());
+}

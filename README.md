@@ -176,6 +176,8 @@ These environment variables change where things go:
 | `CHD_LD_COMPRESSION_ALGORITHMS`   | CHD codecs for LaserDiscs: `none`, `avhu`                                                                | auto      |
 | `ORE_COMPRESSION_ALGORITHM`       | ORE codec: `auto`, `lzma2` for cartridges and `zstd` for discs; `zstd`, quicker to read; or `lzma2`, smaller                                                  | `auto`    |
 | `ORE_PROFILE`                     | ORE group size: `stream`, 1 MiB, quicker to read, or `archive`, 4 MiB, smaller                           | `stream`  |
+| `ORE_STORE`                       | Keep a system's OREs' chunks in one store, `.ore-store` in its directory, each game a thin ORE           | `false`   |
+| `ORE_STORE_BATCH`                 | How OREs go into the store: `run`, all of a conversion at once, or `game`, each committed alone          | `run`     |
 | `RVZ_BLOCK_SIZE`                  | RVZ block size in KiB, `32` to `2048`, rounded up to a power of two                                      | `128`     |
 | `RVZ_COMPRESSION_ALGORITHM`       | RVZ codec: `none`, `zstd`, `bzip2`, `lzma`, `lzma2`                                                      | `zstd`    |
 | `RVZ_COMPRESSION_LEVEL`           | RVZ level, `1` to `22` for zstd and `1` to `9` otherwise                                                 | `5`       |
@@ -247,6 +249,12 @@ An ORE holds a GameCube, Wii, PlayStation 2 or PSP disc, a Game Boy or Game Boy 
 Importing a CD ORE needs every track it holds to match the DAT; when its cue sheet is not the DAT's, import the DAT's, and it goes into the ORE in its place, its metadata alone written again.
 Like RVZ, compressing a Wii ISO needs the Wii common key, and reading an ORE needs none.
 No emulator reads ORE yet.
+
+With `ORE_STORE` on for a system, `convert-roms --format ORE` puts its OREs' chunks in one store, `.ore-store` in the system's directory, and each game becomes a thin ORE naming its chunks there: a chunk that regional versions, revisions or a game's discs share is stored once, with Reed-Solomon parity that `check-roms` repairs from.
+On the Game Boy libraries this was 11-34% under their 7z files, against about the same as 7z an ORE a game.
+Each ORE is converted on its own first, then attached to the store, so conversions take about twice as long; it turns thin once its batch is committed, the whole run's with `ORE_STORE_BATCH` at `run`, each game's with `game`, which writes far more as the store's last segment is copied each time.
+Turning `ORE_STORE` off makes the run's OREs standalone again.
+A thin ORE reads only beneath its store's directory, which `sort-roms`' folders are.
 
 Wii U discs are WUDs, which Redump lists as ISOs, so that is what converting back to the original gives; a `.wud` found in the wild is matched and renamed all the same.
 WUX compresses a WUD losslessly, as wudd dumps it and Cemu reads it.
@@ -731,6 +739,7 @@ Options:
 
 Hashes every ROM file of the selected systems again and moves corrupt ones to `Trash`.
 `--size` also recomputes stored file sizes.
+A system's ORE store is checked whole too, what its parity covers repaired, and the check fails naming the games past repair.
 
 ```text
 Usage: oxyromon check-roms [OPTIONS]
@@ -748,6 +757,7 @@ Options:
 Forgets ROM files that went missing or that no ROM references, and deletes the files in every `Trash` directory, the ROM directory's own included.
 `--foreign` deletes files in the ROM directory that the database doesn't know.
 Directories left empty are deleted, except the ROM, system and `Trash` directories.
+Each system's ORE store is then compacted: the chunks of games purged go, and small groups are packed together; its files are never foreign.
 
 ```text
 Usage: oxyromon purge-roms [OPTIONS]

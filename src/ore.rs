@@ -14,11 +14,12 @@ use super::model::*;
 use super::progress::*;
 use super::util::*;
 use anyhow::{Context, Result, bail};
-use indicatif::ProgressBar;
-use ore_rs::{Codec, Options, Profile, Reader};
+use indicatif::{HumanBytes, ProgressBar};
+use ore_rs::{Codec, Options, Profile, Reader, StoreBatch, StoreOptions};
 use sqlx::SqliteConnection;
 use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use strum::{Display, EnumString, VariantNames};
 use tokio::task::spawn_blocking;
 
@@ -37,6 +38,15 @@ pub enum OreCompressionAlgorithm {
 pub enum OreProfile {
     Stream,
     Archive,
+}
+
+/// How OREs go into a system's store: a run's at once, which writes the
+/// least, or a game's at a time, each committed with its game.
+#[derive(Display, PartialEq, EnumString, VariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum OreStoreBatch {
+    Run,
+    Game,
 }
 
 pub struct OreRomfile {
@@ -400,6 +410,186 @@ impl ToOre for CueBinRomfile {
         )
         .await
     }
+}
+
+/// The store a system's thin OREs share: `.ore-store` in its directory,
+/// which every folder beneath finds.
+pub async fn system_store(connection: &mut SqliteConnection, system: &System) -> Result<PathBuf> {
+    Ok(get_system_directory(connection, system)
+        .await?
+        .join(ore_rs::STORE_DIR))
+}
+
+/// Bring the OREs among `romfiles` in line with the system's `ORE_STORE`:
+/// standalone ones attached to its store when it is on, thin ones detached
+/// when it is off. An ORE turns thin only once its batch is committed, a
+/// run's or a game's as `ORE_STORE_BATCH` says, so it is whole at its path
+/// throughout, and the database, which only knows its path, never changes.
+pub async fn sync_store(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &System,
+    romfiles: &[Romfile],
+    compression_algorithm: &OreCompressionAlgorithm,
+    profile: &OreProfile,
+) -> Result<()> {
+    let store_on = get_bool(connection, "ORE_STORE", Some(system.id)).await;
+    let per_game = OreStoreBatch::from_str(
+        &get_string(connection, "ORE_STORE_BATCH", Some(system.id))
+            .await
+            .unwrap(),
+    )
+    .unwrap()
+        == OreStoreBatch::Game;
+    let profile = match profile {
+        OreProfile::Stream => Profile::Stream,
+        OreProfile::Archive => Profile::Archive,
+    };
+
+    let mut moving = Vec::new();
+    for romfile in romfiles {
+        let path = romfile.as_common(connection).await?.path;
+        if path
+            .extension()
+            .is_none_or(|extension| extension != ORE_EXTENSION)
+        {
+            continue;
+        }
+        let reader = Reader::inspect(&path)
+            .with_context(|| format!("Failed to read \"{}\"", path.display()))?;
+        if reader.store_uuid().is_some() != store_on {
+            // Left to ORE, the codec it was written with
+            let codec = match compression_algorithm {
+                OreCompressionAlgorithm::Auto => reader.codec(),
+                OreCompressionAlgorithm::Zstd => Codec::Zstd,
+                OreCompressionAlgorithm::Lzma2 => Codec::Lzma2,
+            };
+            moving.push((path, Options { profile, codec }));
+        }
+    }
+    if moving.is_empty() {
+        return Ok(());
+    }
+
+    let store = system_store(connection, system).await?;
+    if store_on && !store.is_dir() {
+        ore_rs::create_store(&store, &StoreOptions::default())
+            .with_context(|| format!("Failed to create \"{}\"", store.display()))?;
+    }
+    print_action(
+        progress_bar,
+        &format!(
+            "{} {} ORE(s) {} \"{}\"",
+            if store_on { "Moving" } else { "Taking" },
+            moving.len(),
+            if store_on { "into" } else { "out of" },
+            store.display()
+        ),
+    );
+    let size = moving
+        .iter()
+        .map(|(path, _)| path.metadata().map(|metadata| metadata.len()))
+        .sum::<std::io::Result<u64>>()?;
+    run_blocking(progress_bar, size, move |progress| -> ore_rs::Result<()> {
+        if !store_on {
+            for (path, options) in &moving {
+                ore_rs::detach(path, path, options, progress)?;
+            }
+            return Ok(());
+        }
+        let mut batch: Option<StoreBatch> = None;
+        for (path, options) in &moving {
+            let open = match &mut batch {
+                Some(open) => open,
+                None => batch.insert(StoreBatch::open(&store, options)?),
+            };
+            // Over itself, landing once the batch is committed
+            open.attach(path, path, options, progress)?;
+            if per_game {
+                batch.take().unwrap().commit()?;
+            }
+        }
+        if let Some(batch) = batch {
+            batch.commit()?;
+        }
+        Ok(())
+    })
+    .await
+    .context("Failed to sync the system's ORE store")?;
+    stop_action(progress_bar);
+    Ok(())
+}
+
+/// Check a system's store whole, repairing what its parity covers, and
+/// fail naming the games past repair.
+pub async fn check_store(progress_bar: &ProgressBar, store: &Path) -> Result<()> {
+    print_action(progress_bar, &format!("Checking \"{}\"", store.display()));
+    let path = store.to_path_buf();
+    let checked = run_blocking(progress_bar, 0, move |_| ore_rs::check_store(&path, true))
+        .await
+        .with_context(|| format!("Failed to check \"{}\"", store.display()))?;
+    stop_action(progress_bar);
+    if checked.repaired > 0 {
+        print_warning(
+            progress_bar,
+            &format!(
+                "Repaired {} damaged block(s) in \"{}\"",
+                checked.repaired,
+                store.display()
+            ),
+        );
+    }
+    if checked.lost_groups > 0 {
+        let games: Vec<String> = checked
+            .lost_games
+            .iter()
+            .map(|game| game.display().to_string())
+            .collect();
+        bail!(
+            "\"{}\" has {} group(s) past repair, used by: {}",
+            store.display(),
+            checked.lost_groups,
+            games.join(", ")
+        );
+    }
+    Ok(())
+}
+
+/// Compact a system's store: drop what no game beneath it uses any more,
+/// and pack small groups together.
+pub async fn compact_store(
+    progress_bar: &ProgressBar,
+    store: &Path,
+    profile: &OreProfile,
+) -> Result<()> {
+    print_action(progress_bar, &format!("Compacting \"{}\"", store.display()));
+    let options = Options {
+        profile: match profile {
+            OreProfile::Stream => Profile::Stream,
+            OreProfile::Archive => Profile::Archive,
+        },
+        ..Options::default()
+    };
+    let path = store.to_path_buf();
+    // How dead a segment has to be before its live chunks move, as orers
+    let compacted = run_blocking(progress_bar, 0, move |_| {
+        ore_rs::compact(&path, &options, 0.5, false)
+    })
+    .await
+    .with_context(|| format!("Failed to compact \"{}\"", store.display()))?;
+    stop_action(progress_bar);
+    if compacted.after < compacted.before {
+        print_success(
+            progress_bar,
+            &format!(
+                "Compacted \"{}\" from {} to {}",
+                store.display(),
+                HumanBytes(compacted.before),
+                HumanBytes(compacted.after)
+            ),
+        );
+    }
+    Ok(())
 }
 
 pub trait AsOre {

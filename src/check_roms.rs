@@ -4,7 +4,7 @@ use super::database::*;
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::AsNsz;
-use super::ore::AsOre;
+use super::ore::{AsOre, check_store, system_store};
 use super::progress::*;
 use super::prompt::*;
 use super::rvz::AsRvz;
@@ -79,6 +79,11 @@ pub async fn main(
             matches.get_flag("SIZE"),
         )
         .await?;
+        // The store its thin OREs share, whole, its parity repairing it
+        let store = system_store(connection, &system).await?;
+        if store.is_dir() {
+            check_store(progress_bar, &store).await?;
+        }
         print_separator(progress_bar);
     }
     Ok(())
