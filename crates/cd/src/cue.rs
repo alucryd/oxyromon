@@ -141,7 +141,8 @@ pub fn parse(text: &str, dir: &Path) -> Result<Cue> {
                         "DCP" => 0x2,
                         "PRE" => 0x1,
                         // Serial copy management, not in the Q subchannel
-                        _ => 0,
+                        "SCMS" => 0,
+                        other => return Err(invalid(format!("unknown flag {other:?}"))),
                     };
                 }
             }
@@ -173,6 +174,9 @@ mod tests {
         assert_eq!(cue.tracks[1].indexes, [(0, 0), (1, 150)]);
         assert_eq!((cue.tracks[0].flags, cue.tracks[1].flags), (0, 0x3));
         assert!(parse("TRACK 01 MODE1/2048\n", Path::new("")).is_err());
+        assert!(parse("FLAGS DCP\n", Path::new("")).is_err());
+        let typo = text.replace("FLAGS DCP PRE SCMS", "FLAGS DCPP");
+        assert!(parse(&typo, Path::new("")).is_err());
     }
 
     #[test]

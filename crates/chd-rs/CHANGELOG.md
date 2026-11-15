@@ -2,7 +2,7 @@
 
 ## Features
 
-- The CD sector model's cue sheet parser keeps a track's `FLAGS`, as the Q subchannel's control bits
+- The CD sector model's cue sheet parser keeps a track's `FLAGS`, as the Q subchannel's control bits, and refuses one it does not know
 - Added the first slice of a port of `chdman` and MAME's CHD code: reading,
   inspecting and verifying CHD versions 3 to 5, of every media type, through
   `Chd::open`, `Chd::info`, `Chd::verify` and `Chd::read_bytes`
