@@ -90,6 +90,7 @@ async fn test() {
         &OreCompressionAlgorithm::Zstd,
         &OreProfile::Stream,
         None,
+        None,
     )
     .await
     .unwrap();

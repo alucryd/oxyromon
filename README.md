@@ -252,9 +252,10 @@ No emulator reads ORE yet.
 
 With `ORE_STORE` on for a system, `convert-roms --format ORE` puts its OREs' chunks in one store, `.ore-store` in the system's directory, and each game becomes a thin ORE naming its chunks there: a chunk that regional versions, revisions or a game's discs share is stored once, with Reed-Solomon parity that `check-roms` repairs from.
 On the Game Boy libraries this was 11-34% under their 7z files, against about the same as 7z an ORE a game.
-Each ORE is converted on its own first, then attached to the store, so conversions take about twice as long; it turns thin once its batch is committed, the whole run's with `ORE_STORE_BATCH` at `run`, each game's with `game`, which writes far more as the store's last segment is copied each time.
+ISOs and cartridge ROMs, loose or in an archive, are written straight into the store, compressed once; a game is checked and its original replaced once its batch is committed, the whole run's with `ORE_STORE_BATCH` at `run`, each game's with `game`, which writes far more as the store's last segment is copied each time, so a run that fails before leaves the originals and the database as they were.
+CD games and CHDs are converted to standalone OREs first, then attached, which takes about twice as long.
 Turning `ORE_STORE` off makes the run's OREs standalone again.
-A thin ORE reads only beneath its store's directory, which `sort-roms`' folders are.
+A thin ORE reads only beneath its store's directory, which `sort-roms`' folders are; `export-roms --format ORE` detaches it.
 
 Wii U discs are WUDs, which Redump lists as ISOs, so that is what converting back to the original gives; a `.wud` found in the wild is matched and renamed all the same.
 WUX compresses a WUD losslessly, as wudd dumps it and Cemu reads it.
@@ -700,6 +701,8 @@ Options:
 Like `convert-roms`, but writes copies to another directory and leaves your library untouched, so lossy formats are allowed.
 It is meant for real hardware, through an EverDrive or an optical drive emulator.
 
+An ORE, thin or not, exports as the files it holds to `ORIGINAL`, `7Z` and `ZIP`, as its ISO or cue sheet and tracks to `ISO` and `CHD`, and as a standalone ORE to `ORE`, a thin one detached from its store; `ORE` exports OREs only.
+
 `ISO` targets OPL on the PlayStation 2.
 It turns CUE/BIN CD games into an ISO of the first track's 2048-byte data sectors, as bchunk does, keeping only that track for multi-track games.
 
@@ -707,7 +710,7 @@ It turns CUE/BIN CD games into an ISO of the first track's 2048-byte data sector
 Usage: oxyromon export-roms [OPTIONS] --directory <DIRECTORY>
 
 Options:
-  -f, --format <FORMAT>        Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, GDI, ISO, NSZ, NUS, RVZ, WBFS, WUA, WUX, ZIP, ZSO]
+  -f, --format <FORMAT>        Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, GDI, ISO, NSZ, NUS, ORE, RVZ, WBFS, WUA, WUX, ZIP, ZSO]
   -g, --game <GAME>            Select games by name
   -s, --system <SYSTEM>        Select systems by name
   -d, --directory <DIRECTORY>  Set the output directory

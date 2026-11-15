@@ -557,6 +557,22 @@ pub fn default_codec(input: &Path, platform: Option<&str>) -> Result<Codec> {
     })
 }
 
+/// Whether `input`'s header says it is a ROM of `platform`, one of
+/// [`CARTRIDGE_PLATFORMS`], as its console checks it: `None` for a platform
+/// whose header ORE does not check. A ROM named a cartridge's is taken
+/// either way; this tells a caller vouching for it what the header says.
+pub fn cartridge_header_matches(input: &Path, platform: &str) -> Result<Option<bool>> {
+    if !matches!(platform, "gb" | "gbc" | "gba" | "md" | "n64" | "nds") {
+        return Ok(None);
+    }
+    Ok(Some(match cartridge_platform(&mut Iso::open(input)?)? {
+        // A Game Boy Color system holds Game Boy ROMs, and the other way round
+        Some("gb" | "gbc") => matches!(platform, "gb" | "gbc"),
+        Some(found) => found == platform,
+        None => false,
+    }))
+}
+
 /// The Nintendo logo a Game Boy's boot ROM checks a cartridge for.
 const GB_LOGO: [u8; 48] = [
     0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,

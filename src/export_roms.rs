@@ -8,6 +8,7 @@ use super::gdi::*;
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
+use super::ore::{AsOre, export_ore, ore_to_files};
 use super::progress::*;
 use super::prompt::*;
 use super::rvz::{AsRvz, RvzCompressionAlgorithm, ToRvz};
@@ -33,8 +34,8 @@ use std::str::FromStr;
 use tempfile::TempDir;
 
 const ALL_FORMATS: &[&str] = &[
-    "ORIGINAL", "7Z", "CHD", "CSO", "GDI", "ISO", "NSZ", "NUS", "RVZ", "WBFS", "WUA", "WUX", "ZIP",
-    "ZSO",
+    "ORIGINAL", "7Z", "CHD", "CSO", "GDI", "ISO", "NSZ", "NUS", "ORE", "RVZ", "WBFS", "WUA", "WUX",
+    "ZIP", "ZSO",
 ];
 const ARCADE_FORMATS: &[&str] = &["ORIGINAL", "ZIP"];
 
@@ -120,6 +121,7 @@ pub async fn main(
             | "ISO"
             | "NSZ"
             | "NUS"
+            | "ORE"
             | "ORIGINAL"
             | "RVZ"
             | "WBFS"
@@ -289,6 +291,16 @@ pub async fn main(
                 )
                 .await?
             }
+            "ORE" => {
+                to_ore(
+                    connection,
+                    progress_bar,
+                    &destination_directory,
+                    roms_by_game_id,
+                    romfiles_by_id,
+                )
+                .await?
+            }
             "RVZ" => {
                 let compression_algorithm = RvzCompressionAlgorithm::from_str(
                     &get_string(connection, "RVZ_COMPRESSION_ALGORITHM", Some(system.id))
@@ -414,6 +426,10 @@ async fn to_archive(
     // partition ZSOs
     let (zsos, roms_by_game_id) =
         partition_games_by_extensions(roms_by_game_id, &romfiles_by_id, &[ZSO_EXTENSION]);
+
+    // partition OREs
+    let (ores, roms_by_game_id) =
+        partition_games_by_extensions(roms_by_game_id, &romfiles_by_id, &[ORE_EXTENSION]);
 
     // partition archives
     let (archives, roms_by_game_id) = partition_games_by_extensions(
@@ -651,6 +667,31 @@ async fn to_archive(
             .await?;
     }
 
+    // export OREs, as the files they hold
+    for roms in ores.values() {
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let rom = roms.first().unwrap();
+        let game = games_by_id.get(&rom.game_id).unwrap();
+        let ore = romfiles_by_id
+            .get(&rom.romfile_id.unwrap())
+            .unwrap()
+            .as_common(connection)
+            .await?
+            .as_ore()?;
+        for file in ore_to_files(progress_bar, &ore, roms, tmp_directory.path()).await? {
+            file.to_archive(
+                progress_bar,
+                &tmp_directory.path(),
+                destination_directory,
+                &game.name,
+                &archive_type,
+                compression,
+                solid,
+            )
+            .await?;
+        }
+    }
+
     // export archives
     for roms in archives.values() {
         let tmp_directory = create_tmp_directory(connection).await?;
@@ -777,8 +818,62 @@ async fn to_chd(
     // partition CHDs
     let (chds, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CHD_EXTENSION]);
 
+    // partition OREs
+    let (ores, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ORE_EXTENSION]);
+
     // drop others
     drop(others);
+
+    // export OREs: a CD's as its cue sheet and tracks, a disc image's as its
+    // ISO; a cartridge's has no CHD
+    for roms in ores.values() {
+        let rom = roms.first().unwrap();
+        let game = games_by_id.get(&rom.game_id).unwrap();
+        let ore = romfiles_by_id
+            .get(&rom.romfile_id.unwrap())
+            .unwrap()
+            .as_common(connection)
+            .await?
+            .as_ore()?;
+        if ore.is_rom()? {
+            print_skip(
+                progress_bar,
+                &format!("\"{}\" is a cartridge's ROM", ore.romfile),
+            );
+            continue;
+        }
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let parent_chd_romfile = match find_parent_chd_romfile_by_game(connection, game).await {
+            Some(romfile) => Some(romfile.as_common(connection).await?),
+            None => None,
+        };
+        let mut files = ore_to_files(progress_bar, &ore, roms, tmp_directory.path()).await?;
+        if ore.is_cd()? {
+            let cue_romfile = files.remove(0);
+            cue_romfile
+                .as_cue_bin(files)?
+                .to_chd(
+                    progress_bar,
+                    destination_directory,
+                    cd_compression_algorithms,
+                    cd_hunk_size,
+                    parent_chd_romfile,
+                )
+                .await?;
+        } else {
+            files
+                .remove(0)
+                .as_iso()?
+                .to_chd(
+                    progress_bar,
+                    destination_directory,
+                    dvd_compression_algorithms,
+                    dvd_hunk_size,
+                    parent_chd_romfile,
+                )
+                .await?;
+        }
+    }
 
     // export archives
     for roms in archives.values() {
@@ -1344,6 +1439,37 @@ async fn to_nsz(
     Ok(())
 }
 
+/// Export OREs as standalone OREs, a thin one detached from its store; other
+/// formats are left to `convert-roms`.
+async fn to_ore(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    destination_directory: &std::path::Path,
+    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
+    romfiles_by_id: HashMap<i64, Romfile>,
+) -> Result<()> {
+    // partition OREs
+    let (ores, others) =
+        partition_games_by_extensions(roms_by_game_id, &romfiles_by_id, &[ORE_EXTENSION]);
+
+    // drop others
+    drop(others);
+
+    // export OREs
+    for roms in ores.values() {
+        let ore = romfiles_by_id
+            .get(&roms.first().unwrap().romfile_id.unwrap())
+            .unwrap()
+            .as_common(connection)
+            .await?
+            .as_ore()?;
+        let destination = destination_directory.join(ore.romfile.path.file_name().unwrap());
+        export_ore(progress_bar, &ore, &destination).await?;
+    }
+
+    Ok(())
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn to_rvz(
     connection: &mut SqliteConnection,
@@ -1698,7 +1824,25 @@ async fn to_iso(
     // partition ISOs
     let (isos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ISO_EXTENSION]);
 
+    // partition OREs
+    let (ores, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ORE_EXTENSION]);
+
     drop(others);
+
+    // export OREs holding a disc image; a CD's or a cartridge's is no ISO
+    for roms in ores.values() {
+        let ore = romfiles_by_id
+            .get(&roms.first().unwrap().romfile_id.unwrap())
+            .unwrap()
+            .as_common(connection)
+            .await?
+            .as_ore()?;
+        if ore.is_cd()? || ore.is_rom()? {
+            print_skip(progress_bar, &format!("\"{}\" holds no ISO", ore.romfile));
+            continue;
+        }
+        ore_to_files(progress_bar, &ore, roms, destination_directory).await?;
+    }
 
     // export archives
     for roms in archives.values() {
@@ -1889,6 +2033,20 @@ async fn to_original(
 
     // partition ZSOs
     let (zsos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ZSO_EXTENSION]);
+
+    // partition OREs
+    let (ores, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ORE_EXTENSION]);
+
+    // export OREs, as the files they hold
+    for roms in ores.values() {
+        let ore = romfiles_by_id
+            .get(&roms.first().unwrap().romfile_id.unwrap())
+            .unwrap()
+            .as_common(connection)
+            .await?
+            .as_ore()?;
+        ore_to_files(progress_bar, &ore, roms, destination_directory).await?;
+    }
 
     // export archives
     for roms in archives.values() {
@@ -2178,6 +2336,8 @@ mod test_sevenzip_to_zip;
 mod test_single_track_chd_to_iso;
 #[cfg(test)]
 mod test_single_track_cue_bin_to_iso;
+#[cfg(test)]
+mod test_thin_ore_to_original_and_ore;
 #[cfg(test)]
 mod test_wua_to_nus;
 #[cfg(test)]

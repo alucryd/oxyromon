@@ -8,7 +8,8 @@ use super::mimetype::*;
 use super::model::*;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
 use super::ore::{
-    AsOre, OreCompressionAlgorithm, OreProfile, OreRomfile, ToOre, cartridge_platform, sync_store,
+    AsOre, OreCompressionAlgorithm, OreProfile, OreRomfile, StoreSink, ToOre, cartridge_platform,
+    sync_store,
 };
 use super::progress::*;
 use super::prompt::*;
@@ -309,6 +310,7 @@ pub async fn convert_system(
             )
             .unwrap();
             let game_ids: Vec<i64> = roms_by_game_id.keys().copied().collect();
+            let mut sink = StoreSink::open(connection, &system).await?;
             to_ore(
                 connection,
                 progress_bar,
@@ -320,9 +322,11 @@ pub async fn convert_system(
                 &compression_algorithm,
                 &profile,
                 cartridge_platform(&system),
+                sink.as_mut(),
             )
             .await?;
-            // Then into the system's store, or out of it, as it says
+            // Then into the system's store, or out of it, what was not
+            // written there already, or out of it, as it says
             let romfile_ids: Vec<i64> = find_roms_with_romfile_by_game_ids(connection, &game_ids)
                 .await
                 .iter()
@@ -2777,6 +2781,7 @@ async fn to_ore(
     compression_algorithm: &OreCompressionAlgorithm,
     profile: &OreProfile,
     platform: Option<&'static str>,
+    mut sink: Option<&mut StoreSink>,
 ) -> Result<()> {
     // partition archives
     let (archives, others) = partition_games_by_extensions(
@@ -2809,6 +2814,9 @@ async fn to_ore(
     // drop others
     drop(others);
 
+    // the games written into the store, until it is committed
+    let mut pending = Vec::new();
+
     // convert archives holding an ISO, a cartridge's ROM, or a cue sheet and
     // its tracks
     for roms in archives.values() {
@@ -2835,7 +2843,13 @@ async fn to_ore(
                 decoded
                     .inner
                     .as_iso()?
-                    .to_ore(progress_bar, &destination, compression_algorithm, profile)
+                    .to_ore_into(
+                        progress_bar,
+                        &destination,
+                        compression_algorithm,
+                        profile,
+                        sink.as_deref_mut(),
+                    )
                     .await
             } else {
                 decoded
@@ -2846,12 +2860,27 @@ async fn to_ore(
                         compression_algorithm,
                         profile,
                         platform,
+                        sink.as_deref_mut(),
                     )
                     .await
             };
             let Some(ore_romfile) = skip_unsupported(progress_bar, ore_romfile)? else {
                 continue;
             };
+            if let Some(sink) = sink.as_deref_mut() {
+                drop(transaction);
+                pending.push(Pending {
+                    roms: roms.iter().collect(),
+                    source: decoded.source,
+                    ore: ore_romfile,
+                    romfile_id: romfile.id,
+                });
+                if sink.per_game {
+                    persist_pending(connection, progress_bar, sink, &mut pending, check, diff)
+                        .await?;
+                }
+                continue;
+            }
             (decoded.source, ore_romfile)
         } else {
             let decoded = archive_to_cue_bin(
@@ -2970,17 +2999,31 @@ async fn to_ore(
             decoded
                 .inner
                 .as_iso()?
-                .to_ore(
+                .to_ore_into(
                     progress_bar,
                     &decoded.source.path.parent().unwrap(),
                     compression_algorithm,
                     profile,
+                    sink.as_deref_mut(),
                 )
                 .await,
         )?
         else {
             continue;
         };
+        if let Some(sink) = sink.as_deref_mut() {
+            drop(transaction);
+            pending.push(Pending {
+                roms: roms.iter().collect(),
+                source: decoded.source,
+                ore: ore_romfile,
+                romfile_id: romfile.id,
+            });
+            if sink.per_game {
+                persist_pending(connection, progress_bar, sink, &mut pending, check, diff).await?;
+            }
+            continue;
+        }
         if check_and_persist(
             &mut transaction,
             progress_bar,
@@ -3017,12 +3060,26 @@ async fn to_ore(
                     compression_algorithm,
                     profile,
                     platform,
+                    sink.as_deref_mut(),
                 )
                 .await,
         )?
         else {
             continue;
         };
+        if let Some(sink) = sink.as_deref_mut() {
+            drop(transaction);
+            pending.push(Pending {
+                roms: roms.iter().collect(),
+                source: decoded.source,
+                ore: ore_romfile,
+                romfile_id: romfile.id,
+            });
+            if sink.per_game {
+                persist_pending(connection, progress_bar, sink, &mut pending, check, diff).await?;
+            }
+            continue;
+        }
         if check_and_persist(
             &mut transaction,
             progress_bar,
@@ -3196,6 +3253,7 @@ async fn to_ore(
                         compression_algorithm,
                         profile,
                         platform,
+                        None,
                     )
                     .await?
             } else {
@@ -3228,6 +3286,52 @@ async fn to_ore(
         }
     }
 
+    // the games written into the store, once it is committed
+    if let Some(sink) = sink {
+        persist_pending(connection, progress_bar, sink, &mut pending, check, diff).await?;
+    }
+
+    Ok(())
+}
+
+/// A game written into the store, checked and persisted once its batch is
+/// committed.
+struct Pending<'a> {
+    roms: Vec<&'a Rom>,
+    source: CommonRomfile,
+    ore: OreRomfile,
+    romfile_id: i64,
+}
+
+/// Commit `sink`, landing the thin OREs of `pending`, then check and
+/// persist each game a transaction at a time, as a standalone ORE is.
+async fn persist_pending(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    sink: &mut StoreSink,
+    pending: &mut Vec<Pending<'_>>,
+    check: bool,
+    diff: bool,
+) -> Result<()> {
+    sink.commit(progress_bar).await?;
+    for game in pending.drain(..) {
+        let mut transaction = begin_transaction(connection).await;
+        if check_and_persist(
+            &mut transaction,
+            progress_bar,
+            &game.roms,
+            &game.source,
+            &game.ore,
+            game.romfile_id,
+            check,
+            diff,
+            false,
+        )
+        .await?
+        {
+            commit_transaction(transaction).await;
+        }
+    }
     Ok(())
 }
 
@@ -4096,6 +4200,8 @@ mod test_rvz_to_sevenzip_iso;
 mod test_sevenzip_gb_to_ore;
 #[cfg(test)]
 mod test_sevenzip_gb_to_ore_store;
+#[cfg(test)]
+mod test_sevenzip_gb_to_ore_store_run;
 #[cfg(test)]
 mod test_sevenzip_iso_to_chd;
 #[cfg(test)]

@@ -312,6 +312,11 @@ fn a_rom_named_a_cartridges_is_taken_whole_without_a_header() {
             ..Options::default()
         };
         assert_eq!(options.codec, ore_rs::Codec::Lzma2);
+        // What the header says, which naming the platform overrides
+        assert_eq!(
+            ore_rs::cartridge_header_matches(input, platform).unwrap(),
+            (platform == "gb").then_some(false)
+        );
         let stats = ore_rs::compress(input, &ore, &options, &[], &mut |_| {}).unwrap();
         assert!(stats.output_size < 140 << 10, "{}", stats.output_size);
         let reader = Reader::open(&ore).unwrap();
@@ -321,6 +326,16 @@ fn a_rom_named_a_cartridges_is_taken_whole_without_a_header() {
         ore_rs::decompress(&ore, &back, &mut |_| {}).unwrap();
         assert!(std::fs::read(input).unwrap() == std::fs::read(&back).unwrap());
     }
+    let good_gb = rom(dir.path(), "Good (USA).gb", gb);
+    assert_eq!(
+        ore_rs::cartridge_header_matches(&good_gb, "gbc").unwrap(),
+        Some(true)
+    );
+    assert_eq!(
+        ore_rs::cartridge_header_matches(&good_gb, "gba").unwrap(),
+        Some(false)
+    );
+
     // A platform ORE does not know, and an empty ROM, are refused
     let ore = dir.path().join("refused.ore");
     for (input, platform) in [(&nes, "dreamcast"), (&dir.path().join("empty.nes"), "nes")] {

@@ -305,6 +305,33 @@ impl ToOre for IsoRomfile {
             profile,
             size,
             None,
+            None,
+        )
+        .await
+    }
+}
+
+impl IsoRomfile {
+    /// [`ToOre::to_ore`], into `sink` when there is one: a thin ORE, landing
+    /// when its batch is committed.
+    pub async fn to_ore_into<P: AsRef<Path>>(
+        &self,
+        progress_bar: &ProgressBar,
+        destination_directory: &P,
+        compression_algorithm: &OreCompressionAlgorithm,
+        profile: &OreProfile,
+        sink: Option<&mut StoreSink>,
+    ) -> Result<OreRomfile> {
+        let size = self.romfile.path.metadata()?.len();
+        compress(
+            progress_bar,
+            &self.romfile.path,
+            destination_directory.as_ref(),
+            compression_algorithm,
+            profile,
+            size,
+            None,
+            sink,
         )
         .await
     }
@@ -312,6 +339,7 @@ impl ToOre for IsoRomfile {
 
 /// A cartridge's ROM: of `platform` when its system names one, which
 /// ore-rs takes whole; otherwise if its header says it is one ore-rs knows.
+/// Into `sink` when there is one, as [`IsoRomfile::to_ore_into`].
 impl CommonRomfile {
     pub async fn to_ore_rom<P: AsRef<Path>>(
         &self,
@@ -320,6 +348,7 @@ impl CommonRomfile {
         compression_algorithm: &OreCompressionAlgorithm,
         profile: &OreProfile,
         platform: Option<&'static str>,
+        sink: Option<&mut StoreSink>,
     ) -> Result<OreRomfile> {
         let size = self.path.metadata()?.len();
         compress(
@@ -330,6 +359,7 @@ impl CommonRomfile {
             profile,
             size,
             platform,
+            sink,
         )
         .await
     }
@@ -376,7 +406,9 @@ pub fn cartridge_platform(system: &System) -> Option<&'static str> {
 }
 
 /// Compress `source`, an ISO, a ROM or a cue sheet, into `destination_directory`,
-/// `size` the input bytes the progress bar counts.
+/// `size` the input bytes the progress bar counts; into `sink`'s store when
+/// there is one, the ORE landing once the sink is committed.
+#[allow(clippy::too_many_arguments)]
 async fn compress(
     progress_bar: &ProgressBar,
     source: &Path,
@@ -385,6 +417,7 @@ async fn compress(
     profile: &OreProfile,
     size: u64,
     platform: Option<&'static str>,
+    sink: Option<&mut StoreSink>,
 ) -> Result<OreRomfile> {
     progress_bar.set_message("Creating ore");
 
@@ -412,19 +445,42 @@ async fn compress(
         },
         platform,
     };
+    // Taken whole as its system says, but told when its header disagrees
+    if let Some(platform) = platform
+        && ore_rs::cartridge_header_matches(source, platform)? == Some(false)
+    {
+        print_warning(
+            progress_bar,
+            &format!(
+                "\"{}\" has no {} header, taken as its DAT says",
+                source.file_name().unwrap().to_str().unwrap(),
+                platform
+            ),
+        );
+    }
     let keys = load_wii_keys()?;
-    let (input, output) = (source.to_path_buf(), path.clone());
-    run_blocking(progress_bar, size, move |progress| {
-        ore_rs::compress(&input, &output, &options, &keys, progress)
-    })
-    .await
-    .map_err(|error| match error.downcast_ref() {
-        Some(ore_rs::Error::MissingKey(_)) => {
-            error.context("A Wii disc needs the Wii common key: run import-keys")
+    let result = match sink {
+        Some(sink) => {
+            sink.compress(progress_bar, source, &path, options, keys, size)
+                .await
         }
-        _ => error,
-    })
-    .with_context(|| format!("Failed to create \"{}\"", path.display()))?;
+        None => {
+            let (input, output) = (source.to_path_buf(), path.clone());
+            run_blocking(progress_bar, size, move |progress| {
+                ore_rs::compress(&input, &output, &options, &keys, progress)
+            })
+            .await
+            .map(|_| ())
+        }
+    };
+    result
+        .map_err(|error| match error.downcast_ref() {
+            Some(ore_rs::Error::MissingKey(_)) => {
+                error.context("A Wii disc needs the Wii common key: run import-keys")
+            }
+            _ => error,
+        })
+        .with_context(|| format!("Failed to create \"{}\"", path.display()))?;
 
     stop_action(progress_bar);
 
@@ -453,9 +509,163 @@ impl ToOre for CueBinRomfile {
             profile,
             size,
             None,
+            None,
         )
         .await
     }
+}
+
+/// A run's OREs written straight into their system's store, as `ORE_STORE`
+/// asks, rather than standalone and then attached: compressed once. A thin
+/// ORE lands when its batch is committed, a run's or a game's as
+/// `ORE_STORE_BATCH` says; until then neither it nor the database exists,
+/// so a game is checked and persisted after [`StoreSink::commit`], and a
+/// run that fails before leaves the originals and the database as they were.
+pub struct StoreSink {
+    store: PathBuf,
+    pub per_game: bool,
+    batch: Option<StoreBatch>,
+}
+
+impl StoreSink {
+    /// The system's sink, or `None` when its `ORE_STORE` is off.
+    pub async fn open(connection: &mut SqliteConnection, system: &System) -> Result<Option<Self>> {
+        if !get_bool(connection, "ORE_STORE", Some(system.id)).await {
+            return Ok(None);
+        }
+        let per_game = OreStoreBatch::from_str(
+            &get_string(connection, "ORE_STORE_BATCH", Some(system.id))
+                .await
+                .unwrap(),
+        )
+        .unwrap()
+            == OreStoreBatch::Game;
+        Ok(Some(Self {
+            store: system_store(connection, system).await?,
+            per_game,
+            batch: None,
+        }))
+    }
+
+    async fn compress(
+        &mut self,
+        progress_bar: &ProgressBar,
+        input: &Path,
+        output: &Path,
+        options: Options,
+        keys: Vec<ore_rs::Key>,
+        size: u64,
+    ) -> Result<()> {
+        let (store, batch) = (self.store.clone(), self.batch.take());
+        let (input, output) = (input.to_path_buf(), output.to_path_buf());
+        let (batch, result) = run_blocking(progress_bar, size, move |progress| {
+            let mut batch = match batch {
+                Some(batch) => batch,
+                None => {
+                    if !store.is_dir() {
+                        ore_rs::create_store(&store, &StoreOptions::default())?;
+                    }
+                    StoreBatch::open(&store, &options)?
+                }
+            };
+            // A game refused leaves the batch as it was, for the next
+            let result = batch.compress(&input, &output, &options, &keys, progress);
+            Ok::<_, ore_rs::Error>((batch, result))
+        })
+        .await?;
+        self.batch = Some(batch);
+        result.map(|_| ()).map_err(anyhow::Error::from)
+    }
+
+    /// Commit what was written, landing its thin OREs.
+    pub async fn commit(&mut self, progress_bar: &ProgressBar) -> Result<()> {
+        let Some(batch) = self.batch.take() else {
+            return Ok(());
+        };
+        print_action(
+            progress_bar,
+            &format!("Committing \"{}\"", self.store.display()),
+        );
+        run_blocking(progress_bar, 0, move |_| batch.commit())
+            .await
+            .context("Failed to commit the system's ORE store")?;
+        stop_action(progress_bar);
+        Ok(())
+    }
+}
+
+/// Write `ore` to `destination` as a standalone ORE, for it to leave its
+/// system: a thin one detached, its chunks out of its store, a standalone
+/// one copied.
+pub async fn export_ore(
+    progress_bar: &ProgressBar,
+    ore: &OreRomfile,
+    destination: &Path,
+) -> Result<()> {
+    let reader = Reader::inspect(&ore.romfile.path)
+        .with_context(|| format!("Failed to read \"{}\"", ore.romfile))?;
+    if reader.store_uuid().is_none() {
+        return copy_file(progress_bar, &ore.romfile.path, &destination, false).await;
+    }
+    print_action(
+        progress_bar,
+        &format!(
+            "Detaching \"{}\" to \"{}\"",
+            ore.romfile,
+            destination.display()
+        ),
+    );
+    let options = Options {
+        profile: reader.profile()?,
+        codec: reader.codec(),
+        ..Options::default()
+    };
+    let (input, output) = (ore.romfile.path.clone(), destination.to_path_buf());
+    run_blocking(progress_bar, input.metadata()?.len(), move |progress| {
+        ore_rs::detach(&input, &output, &options, progress)
+    })
+    .await
+    .with_context(|| format!("Failed to detach \"{}\"", ore.romfile))?;
+    stop_action(progress_bar);
+    Ok(())
+}
+
+/// Write a game's ORE out as the files it holds into `directory`, under the
+/// names `roms` give them: a CD's cue sheet and tracks, a cartridge's ROM,
+/// or a disc's ISO. A thin ORE reads through its store, where it is.
+pub async fn ore_to_files(
+    progress_bar: &ProgressBar,
+    ore: &OreRomfile,
+    roms: &[Rom],
+    directory: &Path,
+) -> Result<Vec<CommonRomfile>> {
+    if ore.is_cd()? {
+        let cue_name = roms
+            .iter()
+            .find(|rom| rom.name.ends_with(CUE_EXTENSION))
+            .map(|rom| rom.name.as_str());
+        let cue_bin = ore
+            .to_cue_bin_files(progress_bar, &directory, cue_name)
+            .await?;
+        return Ok([vec![cue_bin.cue_romfile], cue_bin.bin_romfiles].concat());
+    }
+    let name = &roms.first().context("A game with no ROM")?.name;
+    if ore.is_rom()? {
+        return Ok(vec![ore.to_rom(progress_bar, &directory, name).await?]);
+    }
+    let iso = ore.to_iso(progress_bar, &directory).await?.romfile;
+    if iso
+        .path
+        .file_name()
+        .and_then(|file_name| file_name.to_str())
+        == Some(name)
+    {
+        return Ok(vec![iso]);
+    }
+    Ok(vec![
+        iso.rename(progress_bar, &directory.join(name), true)
+            .await?,
+    ])
 }
 
 /// The store a system's thin OREs share: `.ore-store` in its directory,

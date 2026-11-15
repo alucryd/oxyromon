@@ -66,6 +66,7 @@ async fn test() {
         &OreCompressionAlgorithm::Auto,
         &OreProfile::Stream,
         cartridge_platform(&system),
+        None,
     )
     .await
     .unwrap();

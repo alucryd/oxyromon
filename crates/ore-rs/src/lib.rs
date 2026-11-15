@@ -69,6 +69,6 @@ pub use store::{
     find_store,
 };
 pub use writer::{
-    CARTRIDGE_PLATFORMS, Options, Stats, StoreBatch, attach, compress, compress_to_store,
-    default_codec, detach, is_ore, replace_cue,
+    CARTRIDGE_PLATFORMS, Options, Stats, StoreBatch, attach, cartridge_header_matches, compress,
+    compress_to_store, default_codec, detach, is_ore, replace_cue,
 };
