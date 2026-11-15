@@ -13,6 +13,7 @@
 //! ADPCM sectors, in order, each a record of its subheader and its data,
 //! as the `xa` codec takes them.
 
+use std::io::Read;
 use std::ops::Range;
 
 use super::cd::sector::{self, Kind, SECTOR};
@@ -103,16 +104,27 @@ fn corrupt(what: &str) -> Error {
 }
 
 impl SectorMap {
-    /// Read the map of `sectors` sectors.
+    /// Read the map of `sectors` sectors. `sectors` comes from the ORE, so
+    /// nothing is allocated for it: the map is decoded as far as it goes,
+    /// 9 bytes a sector at most, and sized by what it holds, a byte a
+    /// sector at least.
     pub fn read(compressed: &[u8], sectors: u64) -> Result<Self> {
-        // A sector takes 9 bytes of map at most
-        let bytes = zstd::bulk::decompress(compressed, sectors as usize * 9)
+        let limit = sectors.saturating_mul(9);
+        let mut bytes = Vec::new();
+        zstd::stream::read::Decoder::with_buffer(compressed)
+            .map_err(|e| corrupt(&e.to_string()))?
+            .take(limit.saturating_add(1))
+            .read_to_end(&mut bytes)
             .map_err(|e| corrupt(&e.to_string()))?;
+        if bytes.len() as u64 > limit {
+            return Err(corrupt("longer than its sectors"));
+        }
+        let count = bytes.len().min(sectors as usize);
         let mut map = Self {
-            kinds: Vec::with_capacity(sectors as usize),
-            subheaders: Vec::with_capacity(sectors as usize),
-            planes: Vec::with_capacity(sectors as usize),
-            starts: Vec::with_capacity(sectors as usize + 1),
+            kinds: Vec::with_capacity(count),
+            subheaders: Vec::with_capacity(count),
+            planes: Vec::with_capacity(count),
+            starts: Vec::with_capacity(count + 1),
         };
         let mut at = 0;
         let mut start = [0; 3];
@@ -200,6 +212,24 @@ impl SectorMap {
 mod tests {
     use super::*;
     use crate::cd::sector::LEAD_IN;
+
+    #[test]
+    fn a_map_claiming_more_sectors_than_it_holds_is_refused_unallocated() {
+        let mut writer = MapWriter::default();
+        let mut raw = [0; SECTOR];
+        sector::rebuild(Kind::Zero, LEAD_IN, &[0; 8], &[], &mut raw);
+        writer.push(&raw, LEAD_IN);
+        let compressed = writer.finish();
+        // Terabytes of CD claimed for a byte of map: an error, not an
+        // allocation of what is claimed
+        for sectors in [2, 1 << 40, u64::MAX] {
+            assert!(SectorMap::read(&compressed, sectors).is_err());
+        }
+        assert!(SectorMap::read(&compressed, 1).is_ok());
+        // A map that decodes to more than its sectors can take
+        let long = zstd::bulk::compress(&[0; 64], 3).unwrap();
+        assert!(SectorMap::read(&long, 1).is_err());
+    }
 
     #[test]
     fn a_map_gives_back_what_it_was_written_from() {

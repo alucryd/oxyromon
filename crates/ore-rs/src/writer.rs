@@ -1267,6 +1267,15 @@ fn encode_cd(
                 "a cue sheet with several tracks in one file".into(),
             ));
         }
+        // The cue sheet is kept as it is and its tracks written beside it,
+        // so a track elsewhere would not be where it says once written, as
+        // replace_cue refuses too
+        if track.file != dir.join(file_name(&track.file)) {
+            return Err(Error::Unsupported(format!(
+                "a cue sheet naming a track not beside it: {}",
+                track.file.display()
+            )));
+        }
         let len = std::fs::metadata(&track.file)?.len();
         if len == 0 || !len.is_multiple_of(SECTOR as u64) {
             return Err(Error::Corrupt(format!(

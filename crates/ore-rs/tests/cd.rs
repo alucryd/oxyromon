@@ -335,6 +335,31 @@ fn a_cue_sheet_naming_one_file_for_two_tracks_is_refused() {
     assert!(matches!(error, ore_rs::Error::Unsupported(_)), "{error}");
 }
 
+#[test]
+fn a_cue_sheet_naming_a_track_not_beside_it_is_refused() {
+    let dir = TempDir::new().unwrap();
+    std::fs::create_dir(dir.path().join("sub")).unwrap();
+    std::fs::write(dir.path().join("sub/g.bin"), vec![0; SECTOR * 4]).unwrap();
+    std::fs::write(dir.path().join("g.bin"), vec![0; SECTOR * 4]).unwrap();
+    // In a directory below, and above by way of one
+    for name in ["sub/g.bin", "sub/../g.bin"] {
+        let cue = dir.path().join("g.cue");
+        std::fs::write(
+            &cue,
+            format!("FILE \"{name}\" BINARY\n TRACK 01 MODE2/2352\n  INDEX 01 00:00:00\n"),
+        )
+        .unwrap();
+        let ore = dir.path().join("g.ore");
+        let error =
+            ore_rs::compress(&cue, &ore, &Options::default(), &[], &mut |_| {}).unwrap_err();
+        assert!(
+            matches!(error, ore_rs::Error::Unsupported(_)),
+            "{name}: {error}"
+        );
+        assert!(!ore.exists());
+    }
+}
+
 /// `cue`'s text with every `from` in it `to`.
 fn retitle(cue: &Path, from: &str, to: &str) -> String {
     std::fs::read_to_string(cue).unwrap().replace(from, to)
