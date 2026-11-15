@@ -1,4 +1,4 @@
-//! A disc's file system table, as far as RVZ needs it: where each file lies.
+//! A disc's file system table: where each file lies, and its name.
 //! Validated as Dolphin's `FileSystemGCWii` validates it.
 
 use std::collections::BTreeMap;
@@ -116,6 +116,31 @@ impl FileSystem {
             .map(|index| (self.offset(index), self.get(index, 2) as u64))
     }
 
+    /// Every file, as its name, offset and size. The name is the file's own,
+    /// without its directory, and lossy where it is not UTF-8, as Shift JIS
+    /// names on Japanese discs are.
+    pub fn named_files(&self) -> impl Iterator<Item = (String, u64, u64)> + '_ {
+        (1..self.entries)
+            .filter(|&index| !self.is_directory(index))
+            .map(|index| {
+                (
+                    self.name(index),
+                    self.offset(index),
+                    self.get(index, 2) as u64,
+                )
+            })
+    }
+
+    fn name(&self, index: u32) -> String {
+        let start = ENTRY_SIZE * self.entries as usize + (self.get(index, 0) & 0xFFFFFF) as usize;
+        let name = &self.fst[start..];
+        let end = name
+            .iter()
+            .position(|&byte| byte == 0)
+            .unwrap_or(name.len());
+        String::from_utf8_lossy(&name[..end]).into_owned()
+    }
+
     /// The file `offset` falls in, as its offset and size.
     pub fn file_at(&self, offset: u64) -> Option<(u64, u64)> {
         let (_, &index) = self
@@ -160,6 +185,10 @@ mod tests {
         assert_eq!(fs.file_at(0x1010), Some((0x1000, 0x20)));
         assert_eq!(fs.file_at(0x1020), None);
         assert_eq!(fs.file_at(0x200F), Some((0x2000, 0x10)));
+        assert_eq!(
+            fs.named_files().collect::<Vec<_>>(),
+            [("a".into(), 0x1000, 0x20), ("b".into(), 0x2000, 0x10)]
+        );
     }
 
     #[test]

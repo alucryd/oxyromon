@@ -9,6 +9,7 @@ use super::database::*;
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::AsNsz;
+use super::ore::{AsOre, OreRomfile};
 use super::progress::*;
 use super::prompt::*;
 use super::rvz::AsRvz;
@@ -312,8 +313,12 @@ pub async fn main(
                     let mut walker = WalkDir::new(&path).into_iter();
                     while let Some(entry) = walker.next() {
                         let Ok(entry) = entry else { continue };
-                        // the update partitions WUAs share, which they bring along
-                        if entry.path().is_dir() && entry.file_name() == STORE_DIR {
+                        // the update partitions WUAs share, which they bring
+                        // along, and an ORE store, its thin OREs'
+                        if entry.path().is_dir()
+                            && (entry.file_name() == STORE_DIR
+                                || entry.file_name() == ore_rs::STORE_DIR)
+                        {
                             walker.skip_current_dir();
                             continue;
                         }
@@ -595,6 +600,38 @@ pub async fn import_rom<P: AsRef<Path>>(
             system_ids.insert(ids[0]);
             game_ids.insert(ids[1]);
         };
+    } else if ORE_EXTENSION == extension && !as_is {
+        let ore_romfile = romfile.as_ore()?;
+        let ids = if ore_romfile.is_cd()? {
+            import_ore_cd(
+                &mut transaction,
+                progress_bar,
+                system,
+                &game_ids,
+                ore_romfile,
+                trash,
+                delete,
+                unattended_mode,
+            )
+            .await?
+        } else {
+            import_disc(
+                &mut transaction,
+                progress_bar,
+                system,
+                &game_ids,
+                ore_romfile,
+                ORE_EXTENSION,
+                trash,
+                delete,
+                unattended_mode,
+            )
+            .await?
+        };
+        if let Some(ids) = ids {
+            system_ids.insert(ids[0]);
+            game_ids.insert(ids[1]);
+        };
     } else if RVZ_EXTENSION == extension && !as_is {
         if let Some(ids) = import_rvz(
             &mut transaction,
@@ -612,7 +649,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             game_ids.insert(ids[1]);
         };
     } else if WUX_EXTENSION == extension && !as_is {
-        if let Some(ids) = import_wiiu_disc(
+        if let Some(ids) = import_disc(
             &mut transaction,
             progress_bar,
             system,
@@ -633,7 +670,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         .flatten()
     {
         // only a lossless WUA, which knows the disc it holds
-        if let Some(ids) = import_wiiu_disc(
+        if let Some(ids) = import_disc(
             &mut transaction,
             progress_bar,
             system,
@@ -2171,6 +2208,136 @@ async fn import_nsz(
     Ok(None)
 }
 
+/// Import a CD ORE, matched by every file it holds: its tracks must all be
+/// ROMs of one game, which then point to the ORE, and so does the cue's ROM
+/// if its cue sheet is the DAT's.
+#[allow(clippy::too_many_arguments)]
+async fn import_ore_cd(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &Option<&System>,
+    game_ids: &HashSet<i64>,
+    ore_romfile: OreRomfile,
+    trash: bool,
+    delete: bool,
+    unattended_mode: UnattendedMode,
+) -> Result<Option<[i64; 2]>> {
+    let tmp_directory = create_tmp_directory(connection).await?;
+    let hash_algorithms = HashAlgorithm::iter().rev().collect::<Vec<HashAlgorithm>>(); // SHA1 first
+    let cue_bin_romfile = ore_romfile
+        .to_cue_bin_files(progress_bar, &tmp_directory.path(), None)
+        .await?;
+    let files = [
+        std::slice::from_ref(&cue_bin_romfile.cue_romfile),
+        cue_bin_romfile.bin_romfiles.as_slice(),
+    ]
+    .concat();
+    let ore_stem = ore_romfile
+        .romfile
+        .path
+        .file_stem()
+        .unwrap()
+        .to_str()
+        .unwrap();
+    let ore_name = ore_romfile.romfile.path.file_name().unwrap().to_str();
+
+    let mut matches: Vec<(Rom, Game, System)> = vec![];
+    let mut new_game_ids: HashSet<i64> = HashSet::new();
+    let mut invalid = false;
+    let mut cue_matched = false;
+    for (index, file) in files.iter().enumerate() {
+        for hash_algorithm in &hash_algorithms {
+            let (hash, size) = file
+                .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
+                .await?;
+            let match_result = find_rom_by_size_and_hash(
+                connection,
+                progress_bar,
+                size,
+                &hash,
+                system,
+                if new_game_ids.is_empty() {
+                    game_ids
+                } else {
+                    &new_game_ids
+                },
+                &[ore_stem],
+                ore_name,
+                hash_algorithm,
+                unattended_mode,
+            )
+            .await?;
+            match match_result.state {
+                MatchState::Valid => {
+                    let game = match_result.game.unwrap();
+                    new_game_ids.insert(game.id);
+                    matches.push((
+                        match_result.rom.unwrap(),
+                        game,
+                        match_result.system.unwrap(),
+                    ));
+                    cue_matched |= index == 0;
+                    break;
+                }
+                MatchState::Duplicate => break,
+                // a cue sheet unlike the DAT's still leaves its tracks
+                MatchState::Invalid => invalid |= index > 0,
+                // the user or the unattended mode already chose to leave the file be
+                MatchState::Skipped => return Ok(None),
+            }
+        }
+    }
+
+    let mut games: Vec<&Game> = matches.iter().map(|(_, game, _)| game).collect();
+    games.dedup_by_key(|game| game.id);
+    let tracks = matches.len() - usize::from(cue_matched);
+    if tracks == files.len() - 1 && games.len() == 1 {
+        let (_, game, system) = matches.first().unwrap();
+        if !cue_matched {
+            print_warning(
+                progress_bar,
+                "Its cue sheet is not the DAT's: import the DAT's to put it in the ORE",
+            );
+        }
+        let system_directory = get_system_directory(connection, system).await?;
+        let new_ore_path = system_directory.join(format!("{}.{}", game.name, ORE_EXTENSION));
+        ore_romfile
+            .romfile
+            .rename(progress_bar, &new_ore_path, false)
+            .await?;
+        let roms: Vec<&Rom> = matches.iter().map(|(rom, _, _)| rom).collect();
+        create_or_update_romfile(
+            connection,
+            progress_bar,
+            &new_ore_path,
+            &roms,
+            Some(system.id),
+        )
+        .await?;
+        return Ok(Some([system.id, game.id]));
+    }
+    if invalid {
+        print_error(progress_bar, "Not every track matches the DAT");
+        trash_or_delete_romfile(
+            connection,
+            progress_bar,
+            &ore_romfile.romfile,
+            trash,
+            delete,
+            &MatchResult {
+                state: MatchState::Invalid,
+                system: None,
+                game: None,
+                rom: None,
+                hash_algorithm: None,
+                hash: None,
+            },
+        )
+        .await?;
+    }
+    Ok(None)
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn import_rvz(
     connection: &mut SqliteConnection,
@@ -2271,7 +2438,9 @@ async fn import_rvz(
 /// Import a Wii U disc kept compressed: a WUX, or a lossless WUA, matched by
 /// the WUD it holds and named after it, its extension its own.
 #[allow(clippy::too_many_arguments)]
-async fn import_wiiu_disc<T: HashAndSize + GetRomfile>(
+/// Import a compressed disc image matched by its decoded disc: a WUX, a
+/// lossless WUA or an ORE.
+async fn import_disc<T: HashAndSize + GetRomfile>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &Option<&System>,
@@ -2482,6 +2651,27 @@ async fn import_zso(
     Ok(None)
 }
 
+/// The CD ORE holding a game's tracks, and its romfile's id.
+async fn find_cd_ore(
+    connection: &mut SqliteConnection,
+    game: &Game,
+) -> Result<Option<(i64, OreRomfile)>> {
+    for rom in find_roms_by_game_id_no_parents(connection, game.id).await {
+        let Some(romfile_id) = rom.romfile_id else {
+            continue;
+        };
+        let romfile = find_romfile_by_id(connection, romfile_id).await;
+        if !romfile.path.ends_with(&format!(".{ORE_EXTENSION}")) {
+            continue;
+        }
+        let ore_romfile = romfile.as_common(connection).await?.as_ore()?;
+        if ore_romfile.is_cd()? {
+            return Ok(Some((romfile.id, ore_romfile)));
+        }
+    }
+    Ok(None)
+}
+
 #[allow(clippy::too_many_arguments)]
 pub async fn import_other(
     connection: &mut SqliteConnection,
@@ -2534,6 +2724,23 @@ pub async fn import_other(
                 let system = match_result.system.unwrap();
                 let game = match_result.game.unwrap();
                 let rom = match_result.rom.unwrap();
+                // a CD's cue sheet goes into the ORE holding its tracks
+                if rom.name.ends_with(CUE_EXTENSION)
+                    && let Some((ore_romfile_id, ore_romfile)) =
+                        find_cd_ore(connection, &game).await?
+                {
+                    match ore_romfile
+                        .replace_cue(connection, progress_bar, &romfile.path, &rom.name)
+                        .await
+                    {
+                        Ok(()) => {
+                            update_rom_romfile(connection, rom.id, Some(ore_romfile_id)).await;
+                            romfile.delete(progress_bar, false).await?;
+                            return Ok(Some([system.id, game.id]));
+                        }
+                        Err(error) => print_warning(progress_bar, &format!("{error:#}")),
+                    }
+                }
                 let new_path = romfile
                     .get_sorted_path(connection, &system, &game, &rom, &None, &None)
                     .await?;
@@ -3150,6 +3357,8 @@ mod test_cia;
 #[cfg(test)]
 mod test_cso;
 #[cfg(test)]
+mod test_gb_ore;
+#[cfg(test)]
 mod test_iso_chd;
 #[cfg(test)]
 mod test_mame;
@@ -3159,6 +3368,10 @@ mod test_mame_chd;
 mod test_mame_mixed;
 #[cfg(test)]
 mod test_multiple_tracks_chd;
+#[cfg(test)]
+mod test_multiple_tracks_ore;
+#[cfg(test)]
+mod test_multiple_tracks_ore_dump_cue;
 #[cfg(test)]
 mod test_none_selected;
 #[cfg(test)]
@@ -3171,6 +3384,8 @@ mod test_nus_multi_version;
 mod test_nus_multi_version_missing;
 #[cfg(test)]
 mod test_nus_unlisted_ticket;
+#[cfg(test)]
+mod test_ore;
 #[cfg(test)]
 mod test_original;
 #[cfg(test)]

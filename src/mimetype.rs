@@ -18,6 +18,7 @@ pub const ISO_EXTENSION: &str = "iso";
 pub const M3U_EXTENSION: &str = "m3u";
 pub const NSP_EXTENSION: &str = "nsp";
 pub const NSZ_EXTENSION: &str = "nsz";
+pub const ORE_EXTENSION: &str = "ore";
 pub const PKG_EXTENSION: &str = "pkg";
 pub const PUP_EXTENSION: &str = "pup";
 pub const RAP_EXTENSION: &str = "rap";
@@ -35,12 +36,16 @@ pub const ZIP_EXTENSION: &str = "zip";
 pub const ZSO_EXTENSION: &str = "zso";
 
 pub static ARCHIVE_EXTENSIONS: [&str; 2] = [SEVENZIP_EXTENSION, ZIP_EXTENSION];
+/// The cartridges' ROMs ORE takes.
+pub static ORE_CARTRIDGE_EXTENSIONS: [&str; 8] =
+    ["gb", "gbc", "gba", "md", "n64", "nds", "v64", "z64"];
 pub static PS3_EXTENSIONS: [&str; 3] = [PKG_EXTENSION, PUP_EXTENSION, RAP_EXTENSION];
 
 pub static NON_ORIGINAL_EXTENSIONS: &[&str] = &[
     CHD_EXTENSION,
     CSO_EXTENSION,
     NSZ_EXTENSION,
+    ORE_EXTENSION,
     RVZ_EXTENSION,
     WUA_EXTENSION,
     WUX_EXTENSION,
@@ -82,6 +87,10 @@ fn ird_matcher(buf: &[u8]) -> bool {
     buf.len() >= 4 && buf[0] == 0x33 && buf[1] == 0x49 && buf[2] == 0x52 && buf[3] == 0x44
 }
 
+fn ore_matcher(buf: &[u8]) -> bool {
+    buf.starts_with(b"ORE1")
+}
+
 fn rdsk_matcher(buf: &[u8]) -> bool {
     buf.len() >= 4 && buf[0] == 0x52 && buf[1] == 0x44 && buf[2] == 0x53 && buf[3] == 0x4B
 }
@@ -111,6 +120,7 @@ fn init_matcher() -> Infer {
     matcher.add("application/x-cso", CSO_EXTENSION, cso_matcher);
     matcher.add("application/x-ips", IPS_EXTENSION, ips_matcher);
     matcher.add("application/x-ird", IRD_EXTENSION, ird_matcher);
+    matcher.add("application/x-ore", ORE_EXTENSION, ore_matcher);
     matcher.add("application/x-rdsk", RDSK_EXTENSION, rdsk_matcher);
     matcher.add("application/x-riff", RIFF_EXTENSION, riff_matcher);
     matcher.add("application/x-rvz", RVZ_EXTENSION, rvz_matcher);

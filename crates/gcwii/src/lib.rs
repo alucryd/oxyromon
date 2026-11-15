@@ -1,5 +1,6 @@
 //! GameCube and Wii disc specifics: the disc's layout, Wii partitions and
-//! their encryption, the file system, the common keys, and what a disc uses.
+//! their encryption, the file system, the common keys, what a disc uses, and
+//! the generator that fills its padding.
 //!
 //! This crate is never published. rvz-rs and wbfs-rs embed it instead: each
 //! symlinks this `src` directory into its own as `src/gcwii` and declares it
@@ -19,5 +20,6 @@ pub mod error;
 pub mod fst;
 pub mod io;
 pub mod keys;
+pub mod lfg;
 pub mod scrub;
 pub mod wii;

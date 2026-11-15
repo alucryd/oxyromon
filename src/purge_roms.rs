@@ -217,6 +217,14 @@ async fn purge_foreign_romfiles(
     let mut emptied_directories: HashSet<PathBuf> = HashSet::new();
     let mut count = 0;
     for path in files {
+        // An ORE store's segments and index belong to the thin OREs beneath
+        // it, which the database knows, never to it
+        if path
+            .components()
+            .any(|component| component.as_os_str() == ore_rs::STORE_DIR)
+        {
+            continue;
+        }
         let in_store = path
             .parent()
             .and_then(|p| p.file_name())

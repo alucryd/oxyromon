@@ -4,6 +4,7 @@ use super::database::*;
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::AsNsz;
+use super::ore::{AsOre, check_store, system_store};
 use super::progress::*;
 use super::prompt::*;
 use super::rvz::AsRvz;
@@ -78,6 +79,11 @@ pub async fn main(
             matches.get_flag("SIZE"),
         )
         .await?;
+        // The store its thin OREs share, whole, its parity repairing it
+        let store = system_store(connection, &system).await?;
+        if store.is_dir() {
+            check_store(progress_bar, &store).await?;
+        }
         print_separator(progress_bar);
     }
     Ok(())
@@ -160,6 +166,13 @@ async fn check_system(
                 .as_common(&mut transaction)
                 .await?
                 .as_nsz()?
+                .check(&mut transaction, progress_bar, &header, &romfile_roms)
+                .await
+        } else if ORE_EXTENSION == romfile_extension {
+            romfile
+                .as_common(&mut transaction)
+                .await?
+                .as_ore()?
                 .check(&mut transaction, progress_bar, &header, &romfile_roms)
                 .await
         } else if RVZ_EXTENSION == romfile_extension {
@@ -330,7 +343,11 @@ mod test_iso_chd;
 #[cfg(test)]
 mod test_multiple_tracks_chd;
 #[cfg(test)]
+mod test_multiple_tracks_ore;
+#[cfg(test)]
 mod test_nus;
+#[cfg(test)]
+mod test_ore;
 #[cfg(test)]
 mod test_original;
 #[cfg(test)]

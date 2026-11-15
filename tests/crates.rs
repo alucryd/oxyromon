@@ -10,6 +10,7 @@ fn every_cli_shares_one_ui() {
         "crates/cia-rs/src/bin/ciars/ui.rs",
         "crates/gdi-rs/src/bin/gdirs/ui.rs",
         "crates/nsz-rs/src/bin/nszrs/ui.rs",
+        "crates/ore-rs/src/bin/orers/ui.rs",
         "crates/rvz-rs/src/bin/rvzrs/ui.rs",
         "crates/wbfs-rs/src/bin/wbfsrs/ui.rs",
         "crates/xdelta-rs/src/bin/xdeltars/ui.rs",
@@ -22,15 +23,23 @@ fn every_cli_shares_one_ui() {
 
 /// Crates embedded rather than published, each symlinked into the source of
 /// the crates using it, by where each symlink sits.
-const EMBEDDED: &[(&str, &[&str])] = &[(
-    "crates/gcwii",
-    &[
-        "crates/rvz-rs/src/gcwii",
-        "crates/rvz-rs/tests/common",
-        "crates/wbfs-rs/src/gcwii",
-        "crates/wbfs-rs/tests/common",
-    ],
-)];
+const EMBEDDED: &[(&str, &[&str])] = &[
+    (
+        "crates/cd",
+        &["crates/chd-rs/src/cd", "crates/ore-rs/src/cd"],
+    ),
+    (
+        "crates/gcwii",
+        &[
+            "crates/ore-rs/src/gcwii",
+            "crates/ore-rs/tests/common",
+            "crates/rvz-rs/src/gcwii",
+            "crates/rvz-rs/tests/common",
+            "crates/wbfs-rs/src/gcwii",
+            "crates/wbfs-rs/tests/common",
+        ],
+    ),
+];
 
 #[test]
 fn embedded_crates_are_symlinked_in() {

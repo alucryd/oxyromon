@@ -8,6 +8,7 @@ use super::chd::{
 };
 use super::database::*;
 use super::model::Setting;
+use super::ore::{ORE_STORE_PARITY_RANGE, OreCompressionAlgorithm, OreProfile, OreStoreBatch};
 use super::progress::*;
 use super::prompt::{prompt_for_system_like, prompt_for_systems_like};
 use super::rvz::{RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE, RvzCompressionAlgorithm};
@@ -73,6 +74,7 @@ pub(crate) const BOOLEANS: &[&str] = &[
     "CHD_PARENTS",
     "GROUP_SUBSYSTEMS",
     "INFER_CLONES",
+    "ORE_STORE",
     "PREFER_PARENTS",
     "REGIONS_ONE_STRICT",
     "SEVENZIP_SOLID_COMPRESSION",
@@ -80,6 +82,9 @@ pub(crate) const BOOLEANS: &[&str] = &[
 pub(crate) fn choice_options(key: &str) -> Option<&[&str]> {
     match key {
         "GAME_SUBFOLDERS" => Some(GameSubfolders::VARIANTS),
+        "ORE_COMPRESSION_ALGORITHM" => Some(OreCompressionAlgorithm::VARIANTS),
+        "ORE_PROFILE" => Some(OreProfile::VARIANTS),
+        "ORE_STORE_BATCH" => Some(OreStoreBatch::VARIANTS),
         "PREFER_FORMAT" => Some(crate::convert_roms::ALL_FORMATS),
         "PREFER_REGIONS" => Some(PreferredRegion::VARIANTS),
         "PREFER_VERSIONS" => Some(PreferredVersion::VARIANTS),
@@ -109,6 +114,7 @@ pub(crate) fn integer_range(key: &str) -> Option<&[usize; 2]> {
         "CHD_CD_HUNK_SIZE" | "CHD_DVD_HUNK_SIZE" | "CHD_HD_HUNK_SIZE" | "CHD_LD_HUNK_SIZE" => {
             Some(&CHD_HUNK_SIZE_RANGE)
         }
+        "ORE_STORE_PARITY" => Some(&ORE_STORE_PARITY_RANGE),
         "RVZ_BLOCK_SIZE" => Some(&RVZ_BLOCK_SIZE_RANGE),
         "RVZ_COMPRESSION_LEVEL" => Some(&RVZ_COMPRESSION_LEVEL_RANGE),
         "SEVENZIP_COMPRESSION_LEVEL" => Some(&SEVENZIP_COMPRESSION_LEVEL_RANGE),
@@ -493,7 +499,7 @@ pub async fn get_integer(
         .map(|value| value.parse().unwrap())
 }
 
-async fn set_integer(
+pub async fn set_integer(
     connection: &mut SqliteConnection,
     key: &str,
     value: usize,

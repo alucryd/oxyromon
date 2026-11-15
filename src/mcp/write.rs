@@ -9,13 +9,14 @@
 use super::actions::{need_confirm, ok_json, ok_text, read_only_denial, tool_error};
 use super::output::{ActionOut, DownloadDatsOut, FailedSystemOut};
 use super::params::{
-    CheckRomsParams, ConvertRomsParams, DownloadDatsParams, ImportDatsParams, ImportRomsParams,
-    PurgeGamesParams, PurgeIrdsParams, PurgeRomsParams, PurgeSystemParams, SetSettingParams,
-    SortRomsParams,
+    CheckRomsParams, CompactRomsParams, ConvertRomsParams, DownloadDatsParams, ImportDatsParams,
+    ImportRomsParams, PurgeGamesParams, PurgeIrdsParams, PurgeRomsParams, PurgeSystemParams,
+    SetSettingParams, SortRomsParams,
 };
 use super::resources::system_uri;
 use super::{OxyromonMcp, internal};
 use crate::check_roms;
+use crate::compact_roms;
 use crate::config::{self, BOOLEANS, LISTS, NULLABLES, PATHS, choice_options, integer_range};
 use crate::convert_roms;
 use crate::database::*;
@@ -382,7 +383,7 @@ impl OxyromonMcp {
     }
 
     #[tool(
-        description = "Convert one system's ROM files to a target format: ORIGINAL, 7Z, CHD, CSO, NSZ, RVZ, WUA, WUX, ZIP or ZSO (the PREFER_FORMAT values; arcade systems take only ORIGINAL or ZIP). Long jobs.",
+        description = "Convert one system's ROM files to a target format: ORIGINAL, 7Z, CHD, CSO, NSZ, ORE, RVZ, WUA, WUX, ZIP or ZSO (the PREFER_FORMAT values; arcade systems take only ORIGINAL or ZIP). Long jobs.",
         annotations(read_only_hint = false)
     )]
     async fn convert_roms(
@@ -601,6 +602,43 @@ impl OxyromonMcp {
             Some(value) => ok_text(format!("\"{key}\" is now \"{value}\"")),
             None => ok_text(format!("\"{key}\" was unset")),
         })
+    }
+
+    #[tool(
+        description = "Compact every system's ORE store: drop the chunks no game uses any more, as purge_roms leaves them, pack small groups together, and seal again with ORE_STORE_PARITY the segments sealed otherwise. recompress: pack every group again, the smallest store, for a read and a write of all of it. Deletes no game.",
+        annotations(read_only_hint = false, destructive_hint = false)
+    )]
+    async fn compact_roms(
+        &self,
+        Parameters(params): Parameters<CompactRomsParams>,
+        ctx: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, McpError> {
+        if self.read_only {
+            return Ok(read_only_denial("compact_roms"));
+        }
+        let mut argv = vec!["compact-roms".to_string(), "--all".to_string()];
+        if params.recompress {
+            argv.push("--recompress".to_string());
+        }
+        let outcome = self
+            .run_action(
+                "Compacting ORE stores".to_string(),
+                Some("compact_roms"),
+                ctx.peer.clone(),
+                ctx.meta.get_progress_token(),
+                ctx.ct.clone(),
+                move |connection, progress_bar| {
+                    Box::pin(async move {
+                        let matches = compact_roms::subcommand().try_get_matches_from(argv)?;
+                        compact_roms::main(connection, &matches, progress_bar).await
+                    })
+                },
+            )
+            .await;
+        if let Err(message) = outcome {
+            return Ok(tool_error(message));
+        }
+        Ok(ok_text("compaction complete"))
     }
 
     #[tool(

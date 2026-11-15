@@ -10,7 +10,7 @@ license = "GPL-3.0+"
 name = "oxyromon"
 readme = "README.md"
 repository = "https://github.com/alucryd/oxyromon"
-version = "0.25.0"
+version = "0.26.0"
 rust-version = "1.94.0"
 
 # The format crates: standalone libraries and CLIs ported from the external
@@ -33,6 +33,7 @@ flate2 = { version = "1.1.10", default-features = false, features = ["zlib-rs"] 
 indicatif = "0.18.6"
 lzma-rust2 = { version = "0.25", default-features = false, features = ["std"] }
 rayon = "1.12.0"
+rusty_flac = { version = "0.5.0", default-features = false, features = ["std", "libm"] }
 sha1 = "0.11.0"
 sha2 = "0.11"
 tempfile = "3.27.0"
@@ -102,6 +103,7 @@ itertools = "0.15.0"
 log = "0.4.35"
 md-5.workspace = true
 nsz-rs = { path = "crates/nsz-rs", version = "0.3.0", default-features = false }
+ore-rs = { path = "crates/ore-rs", version = "0.1.0", default-features = false }
 rvz-rs = { path = "crates/rvz-rs", version = "0.1.0", default-features = false }
 wbfs-rs = { path = "crates/wbfs-rs", version = "0.1.0", default-features = false }
 wux-rs = { path = "crates/wux-rs", version = "0.1.0", default-features = false }

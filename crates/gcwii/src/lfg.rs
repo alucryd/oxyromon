@@ -1,6 +1,7 @@
 //! The lagged Fibonacci generator that fills the padding of GameCube and Wii
 //! discs, and the reverse: finding the seed that produced some padding, so
-//! RVZ can store 68 bytes of seed in its place.
+//! RVZ can store 68 bytes of seed in its place, and a disc's padding can be
+//! told from data.
 //!
 //! A port of Dolphin's `LaggedFibonacciGenerator`, which is CC0. The buffer
 //! holds words as Dolphin's does on a little endian host: each word's

@@ -137,8 +137,8 @@ pub(crate) struct CheckRomsParams {
 pub(crate) struct ConvertRomsParams {
     /// Convert this system's ROM files.
     pub system_id: i64,
-    /// Target format: "ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "WUA",
-    /// "WUX", "ZIP" or "ZSO" — the same values as PREFER_FORMAT.
+    /// Target format: "ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "ORE", "RVZ",
+    /// "WUA", "WUX", "ZIP" or "ZSO" — the same values as PREFER_FORMAT.
     pub format: String,
 }
 
@@ -176,6 +176,14 @@ pub(crate) struct PurgeRomsParams {
     /// be undone.
     #[serde(default)]
     pub confirm: bool,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub(crate) struct CompactRomsParams {
+    /// Decode and pack every group again: the smallest store, for a read
+    /// and a write of all of it.
+    #[serde(default)]
+    pub recompress: bool,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]

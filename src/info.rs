@@ -3,6 +3,7 @@ use super::chd;
 use super::cia;
 use super::database::*;
 use super::nsz;
+use super::ore;
 use super::progress::*;
 use super::rvz;
 use super::wbfs;
@@ -31,6 +32,7 @@ pub async fn dependencies() -> Vec<(&'static str, Result<String>)> {
         ("nsz-rs", nsz::get_version().await),
         ("xdelta-rs", xdelta::get_version().await),
         ("wux-rs", wux::get_version().await),
+        ("ore-rs", ore::get_version().await),
         ("rvz-rs", rvz::get_version().await),
         ("wbfs-rs", wbfs::get_version().await),
     ];

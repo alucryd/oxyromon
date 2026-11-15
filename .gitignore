@@ -6,6 +6,8 @@
 .idea
 .vscode
 plans/
+# the ORE study, versioned in its own private repository until the format ships
+formats/
 port/
 
 # rust

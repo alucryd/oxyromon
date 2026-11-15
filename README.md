@@ -164,7 +164,7 @@ These environment variables change where things go:
 
 | Setting                           | Description                                                                                              | Default   |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------- | --------- |
-| `PREFER_FORMAT`                   | Format imported ROMs are converted to: `ORIGINAL`, `7Z`, `CHD`, `CSO`, `NSZ`, `RVZ`, `ZIP`, `ZSO`; arcade systems take only `ORIGINAL` and `ZIP` |           |
+| `PREFER_FORMAT`                   | Format imported ROMs are converted to: `ORIGINAL`, `7Z`, `CHD`, `CSO`, `NSZ`, `ORE`, `RVZ`, `ZIP`, `ZSO`; arcade systems take only `ORIGINAL` and `ZIP` |           |
 | `CHD_PARENTS`                     | Use the other discs of a game as CHD parents, which needs playlists to have been generated              | `false`   |
 | `CHD_CD_HUNK_SIZE`                | CHD hunk size in bytes for CDs, `16` to `1048576`                                                        | auto      |
 | `CHD_CD_COMPRESSION_ALGORITHMS`   | Up to 4 CHD codecs for CDs: `none`, `cdfl`, `cdlz`, `cdzl`, `cdzs`                                       | auto      |
@@ -174,6 +174,11 @@ These environment variables change where things go:
 | `CHD_HD_COMPRESSION_ALGORITHMS`   | Up to 4 CHD codecs for hard disks: `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd`                        | auto      |
 | `CHD_LD_HUNK_SIZE`                | CHD hunk size in bytes for LaserDiscs, `16` to `1048576`                                                 | auto      |
 | `CHD_LD_COMPRESSION_ALGORITHMS`   | CHD codecs for LaserDiscs: `none`, `avhu`                                                                | auto      |
+| `ORE_COMPRESSION_ALGORITHM`       | ORE codec: `auto`, `lzma2` for cartridges and `zstd` for discs; `zstd`, quicker to read; or `lzma2`, smaller                                                  | `auto`    |
+| `ORE_PROFILE`                     | ORE group size: `stream`, 1 MiB, quicker to read, or `archive`, 4 MiB, smaller                           | `stream`  |
+| `ORE_STORE`                       | Keep a system's OREs' chunks in one store, `.ore-store` in its directory, each game a thin ORE           | `false`   |
+| `ORE_STORE_BATCH`                 | How OREs go into the store: `run`, all of a conversion at once, or `game`, each committed alone          | `run`     |
+| `ORE_STORE_PARITY`                | Parity shards a store's segment gets against its 239 data shards, 0 to 16: 16 adds 6.7%, 8 3.2%, 0 nothing; a change applies to existing segments at the next `compact-roms` | `16`      |
 | `RVZ_BLOCK_SIZE`                  | RVZ block size in KiB, `32` to `2048`, rounded up to a power of two                                      | `128`     |
 | `RVZ_COMPRESSION_ALGORITHM`       | RVZ codec: `none`, `zstd`, `bzip2`, `lzma`, `lzma2`                                                      | `zstd`    |
 | `RVZ_COMPRESSION_LEVEL`           | RVZ level, `1` to `22` for zstd and `1` to `9` otherwise                                                 | `5`       |
@@ -214,6 +219,7 @@ Arcade games stored as archives stay as they are.
 | CHD                     | ✔                | ✔       | ✔      | chd-rs                                                       |
 | CSO, ZSO                | ✔                | ✔       | ✔      | xso-rs                                                       |
 | NSZ                     | ✔                | ✔       | ✔      | nsz-rs                                                       |
+| ORE (GC, Wii, PS2, CD, GD-ROM) | ✔                | ✔       |        | ore-rs                                                       |
 | RVZ                     | ✔                | ✔       | ✔      | rvz-rs                                                       |
 | WBFS                    |                  |         | ✔      | wbfs-rs                                                      |
 | WUX (Wii U)             | ✔                | ✔       | ✔      | wux-rs                                                       |
@@ -238,6 +244,19 @@ Reading an RVZ, or rewriting one, needs no key, and neither does a GameCube disc
 
 WBFS files are those `wit copy --wbfs` writes: only what the disc points to is kept, so a WBFS is no longer the original disc, which is why it is an export format only.
 Exporting an RVZ to WBFS needs no key and decodes no ISO on the way; exporting a Wii ISO needs the Wii common key, as compressing it to RVZ does.
+
+ORE is oxyROMon's own format, a draft: an ORE written now may not open in a later version, so keep your originals, or another format, until it is final.
+An ORE holds a GameCube, Wii, PlayStation 2 or PSP disc, a cartridge's ROM, or a CD or a Dreamcast GD-ROM as its cue sheet and tracks, an ORE a disc: the cue sheet is inside it, so a CD is one file, which every ROM of the game points to.
+Importing a CD ORE needs every track it holds to match the DAT; when its cue sheet is not the DAT's, import the DAT's, and it goes into the ORE in its place, its metadata alone written again.
+Like RVZ, compressing a Wii ISO needs the Wii common key, and reading an ORE needs none.
+No emulator reads ORE yet.
+
+With `ORE_STORE` on for a system, `convert-roms --format ORE` puts its OREs' chunks in one store, `.ore-store` in the system's directory, and each game becomes a thin ORE naming its chunks there: a chunk that regional versions, revisions or a game's discs share is stored once, with Reed-Solomon parity that `check-roms` repairs from.
+On the Game Boy libraries this was 11-34% under their 7z files, against about the same as 7z an ORE a game.
+ISOs and cartridge ROMs, loose or in an archive, are written straight into the store, compressed once; a game is checked and its original replaced once its batch is committed, the whole run's with `ORE_STORE_BATCH` at `run`, each game's with `game`, which writes far more as the store's last segment is copied each time, so a run that fails before leaves the originals and the database as they were.
+CD games and CHDs are converted to standalone OREs first, then attached, which takes about twice as long.
+Turning `ORE_STORE` off makes the run's OREs standalone again.
+A thin ORE reads only beneath its store's directory, which `sort-roms`' folders are; `export-roms --format ORE` detaches it.
 
 Wii U discs are WUDs, which Redump lists as ISOs, so that is what converting back to the original gives; a `.wud` found in the wild is matched and renamed all the same.
 WUX compresses a WUD losslessly, as wudd dumps it and Cemu reads it.
@@ -339,6 +358,7 @@ Commands:
   rebuild-roms        Rebuild arcade ROM sets according to the selected strategy
   check-roms          Check ROM files' integrity
   purge-roms          Purge trashed, missing, and orphan ROM files
+  compact-roms        Compact ORE stores, dropping what no game uses
   purge-systems       Purge systems
   generate-playlists  Generate M3U playlists for multi-disc games
   benchmark           Benchmark oxyromon
@@ -577,7 +597,7 @@ Files are moved as they are, except archives holding several games, which are ex
 When the system has a `PREFER_FORMAT`, imported ROMs are then converted to it, unless you pass `--as-is`.
 Files needing a choice, such as JB folders or ambiguous matches, prompt by default, and `-u` skips them or picks the first match instead.
 
-Consoles accept every No-Intro and Redump format, 7Z, ZIP, CHD, CIA, CSO, NSZ, RVZ, WUA, WUX, ZSO, JB folders and Wii U title folders.
+Consoles accept every No-Intro and Redump format, 7Z, ZIP, CHD, CIA, CSO, NSZ, ORE, RVZ, WUA, WUX, ZSO, JB folders and Wii U title folders.
 A Wii U title folder, an update or DLC as Nintendo's servers deliver it, is found by its TMD, and either a downloader's names (`title.tmd`, `00000000.app`) or No-Intro's (`tmd.32`, `00000000`) will do.
 Arcade systems accept uncompressed files, ZIP and CHD.
 
@@ -654,6 +674,8 @@ Converts ROM files between lossless formats and back to their originals:
 - Any original format to and from 7Z and ZIP.
 - CUE/BIN and ISO to and from CHD, with CHDs restored to their original split CUE/BIN.
 - ISO to and from CSO, ZSO and RVZ.
+- GameCube, Wii, PlayStation 2 and PSP ISOs, CUE/BIN and CHD to and from ORE, with OREs restored to their cue sheet and tracks; an ISO of another system is skipped.
+- Cartridge ROMs, loose or in an archive, to and from ORE, restored under their name: every ROM of a cartridge system ORE knows by its DAT's name, the Atari consoles, ColecoVision, Odyssey 2, PC Engine and SuperGrafx, the Nintendo handhelds and consoles from the NES to the DS, the NeoGeo Pocket, the Sega consoles from the SG-1000 to the 32X, and the WonderSwan, headerless or not, BIOSes included; in any other system, Game Boy, Game Boy Advance, DS, N64 and Mega Drive ROMs ORE recognises by their header, the rest skipped.
 - NSP to and from NSZ.
 - Wii U discs between ISO, WUX and lossless WUA.
 
@@ -664,7 +686,7 @@ Games and systems are selected by case-insensitive name, with SQL wildcards, and
 Usage: oxyromon convert-roms [OPTIONS]
 
 Options:
-  -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, NSZ, RVZ, WUA, WUX, ZIP, ZSO]
+  -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, NSZ, ORE, RVZ, WUA, WUX, ZIP, ZSO]
   -g, --game <GAME>      Select games by name
   -s, --system <SYSTEM>  Select systems by name
   -a, --all              Convert all systems/games
@@ -681,6 +703,8 @@ Options:
 Like `convert-roms`, but writes copies to another directory and leaves your library untouched, so lossy formats are allowed.
 It is meant for real hardware, through an EverDrive or an optical drive emulator.
 
+An ORE, thin or not, exports as the files it holds to `ORIGINAL`, `7Z` and `ZIP`, as its ISO or cue sheet and tracks to `ISO` and `CHD`, and as a standalone ORE to `ORE`, a thin one detached from its store; `ORE` exports OREs only.
+
 `ISO` targets OPL on the PlayStation 2.
 It turns CUE/BIN CD games into an ISO of the first track's 2048-byte data sectors, as bchunk does, keeping only that track for multi-track games.
 
@@ -688,7 +712,7 @@ It turns CUE/BIN CD games into an ISO of the first track's 2048-byte data sector
 Usage: oxyromon export-roms [OPTIONS] --directory <DIRECTORY>
 
 Options:
-  -f, --format <FORMAT>        Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, GDI, ISO, NSZ, NUS, RVZ, WBFS, WUA, WUX, ZIP, ZSO]
+  -f, --format <FORMAT>        Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, GDI, ISO, NSZ, NUS, ORE, RVZ, WBFS, WUA, WUX, ZIP, ZSO]
   -g, --game <GAME>            Select games by name
   -s, --system <SYSTEM>        Select systems by name
   -d, --directory <DIRECTORY>  Set the output directory
@@ -720,6 +744,7 @@ Options:
 
 Hashes every ROM file of the selected systems again and moves corrupt ones to `Trash`.
 `--size` also recomputes stored file sizes.
+A system's ORE store is checked whole too, what its parity covers repaired, and the check fails naming the games past repair.
 
 ```text
 Usage: oxyromon check-roms [OPTIONS]
@@ -737,6 +762,7 @@ Options:
 Forgets ROM files that went missing or that no ROM references, and deletes the files in every `Trash` directory, the ROM directory's own included.
 `--foreign` deletes files in the ROM directory that the database doesn't know.
 Directories left empty are deleted, except the ROM, system and `Trash` directories.
+An ORE store's files are never foreign; the chunks of games purged stay in it until `compact-roms`.
 
 ```text
 Usage: oxyromon purge-roms [OPTIONS]
@@ -764,6 +790,21 @@ Options:
   -s, --system <SYSTEM>  Select systems by name
   -g, --game <GAME>      Select games by exact name
   -h, --help             Print help
+```
+
+### compact-roms
+
+Compacts the ORE store of each system selected, once a directory shared by systems: the chunks no game uses any more go, as `purge-roms` and conversions leave them, small groups are packed together, and segments sealed with other parity than `ORE_STORE_PARITY` are sealed again with it, their groups copied as they are.
+`--recompress` decodes and packs every group again, the smallest the store gets, for a read and a write of all of it: worth it after many runs a game at a time.
+It deletes no game, and a game reads on through it.
+
+```text
+Usage: oxyromon compact-roms [OPTIONS]
+
+Options:
+  -a, --all         Compact all systems
+  -r, --recompress  Decode and pack every group again: the smallest store, for a read and a write of all of it
+  -h, --help        Print help
 ```
 
 ### purge-systems
