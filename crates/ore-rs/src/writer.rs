@@ -39,7 +39,47 @@ use super::xa;
 pub struct Options {
     pub profile: Profile,
     pub codec: Codec,
+    /// The cartridge the input is the ROM of, one of [`CARTRIDGE_PLATFORMS`],
+    /// when the caller knows it, as a ROM manager does from its DAT: the ROM
+    /// is then taken whole, its header not checked, which a console such as
+    /// the NES or the PC Engine has none of. `None` recognises a disc or a
+    /// cartridge by its header, refusing what it does not know.
+    pub platform: Option<&'static str>,
 }
+
+/// The cartridges a ROM can be named the ROM of, in [`Options::platform`].
+pub const CARTRIDGE_PLATFORMS: [&str; 30] = [
+    "32x",
+    "a2600",
+    "a5200",
+    "a7800",
+    "colecovision",
+    "dsi",
+    "gb",
+    "gba",
+    "gbc",
+    "gg",
+    "jaguar",
+    "lynx",
+    "md",
+    "n64",
+    "nds",
+    "nes",
+    "ngp",
+    "ngpc",
+    "odyssey2",
+    "pce",
+    "pokemini",
+    "satellaview",
+    "sg1000",
+    "sgx",
+    "sms",
+    "snes",
+    "sufami",
+    "vb",
+    "ws",
+    "wsc",
+];
 
 /// Sizes of the two files a run touched.
 #[derive(Debug, Clone, Copy)]
@@ -503,7 +543,11 @@ pub fn compress(
 /// The codec `input` is best written with when nothing says otherwise:
 /// LZMA2 for a cartridge's ROM, small and read whole, which Zstandard
 /// loses to 7z on by 7%; Zstandard for the rest, the quicker to read.
-pub fn default_codec(input: &Path) -> Result<Codec> {
+/// `platform` is [`Options::platform`]: a ROM named a cartridge's is one.
+pub fn default_codec(input: &Path, platform: Option<&str>) -> Result<Codec> {
+    if platform.is_some() {
+        return Ok(Codec::Lzma2);
+    }
     if is_cue(input) {
         return Ok(Codec::Zstd);
     }
@@ -747,7 +791,18 @@ fn encode(
     // A GameCube or Wii disc is cut by its structure; a PlayStation 2 DVD
     // and a cartridge are one area, their zeros and the rest
     let mut hashes = Hashes::default();
-    let cartridge = cartridge_platform(&mut iso)?;
+    let cartridge = match options.platform {
+        Some(platform) if !CARTRIDGE_PLATFORMS.contains(&platform) => {
+            return Err(Error::Unsupported(format!("no cartridge named {platform}")));
+        }
+        Some(_) if !(1..=CARTRIDGE_MAX).contains(&size) => {
+            return Err(Error::Unsupported(format!(
+                "a ROM of {size} bytes, past 1 GiB or empty"
+            )));
+        }
+        Some(platform) => Some(platform),
+        None => cartridge_platform(&mut iso)?,
+    };
     let (plans, platform) = match cartridge.map(|platform| (vec![raw(0, size)], platform)) {
         Some(planned) => planned,
         None => match Volume::new(&mut iso, keys)? {
@@ -762,7 +817,7 @@ fn encode(
                 Some(platform) => (plan_sony(&mut iso, &mut hashes)?, platform),
                 None => {
                     return Err(Error::Unsupported(
-                    "neither a GameCube, a Wii, a PlayStation 2 nor a PSP disc, nor a Game Boy or Game Boy Advance ROM".into(),
+                    "neither a GameCube, a Wii, a PlayStation 2 nor a PSP disc, nor a cartridge ROM recognised by its header: name its platform".into(),
                 ));
                 }
             },

@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Nintendo - Nintendo Entertainment System (Headerless)</name>
+		<description>Nintendo - Nintendo Entertainment System (Headerless)</description>
+		<version>20261115</version>
+		<date>20261115</date>
+		<author>Maxime Gauduin</author>
+	</header>
+	<game name="Test Game (USA)">
+		<description>Test Game (USA)</description>
+		<release name="Test Game (USA)" region="USA" />
+		<rom name="Test Game (USA).nes" size="32768" crc="58df4cba"
+			md5="26f05052dd95a323b1275e15d52d7b22" sha1="53e78e150e9bce8e56058852128adcce9fb1721f" />
+	</game>
+</datafile>

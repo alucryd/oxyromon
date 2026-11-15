@@ -7,7 +7,9 @@ use super::database::*;
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
-use super::ore::{AsOre, OreCompressionAlgorithm, OreProfile, OreRomfile, ToOre, sync_store};
+use super::ore::{
+    AsOre, OreCompressionAlgorithm, OreProfile, OreRomfile, ToOre, cartridge_platform, sync_store,
+};
 use super::progress::*;
 use super::prompt::*;
 use super::rvz::{AsRvz, RvzCompressionAlgorithm, ToRvz};
@@ -317,6 +319,7 @@ pub async fn convert_system(
                 check,
                 &compression_algorithm,
                 &profile,
+                cartridge_platform(&system),
             )
             .await?;
             // Then into the system's store, or out of it, as it says
@@ -2773,6 +2776,7 @@ async fn to_ore(
     check: bool,
     compression_algorithm: &OreCompressionAlgorithm,
     profile: &OreProfile,
+    platform: Option<&'static str>,
 ) -> Result<()> {
     // partition archives
     let (archives, others) = partition_games_by_extensions(
@@ -2794,9 +2798,13 @@ async fn to_ore(
     // partition OREs
     let (ores, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ORE_EXTENSION]);
 
-    // partition cartridges' ROMs
-    let (cartridges, others) =
-        partition_games_by_extensions(others, &romfiles_by_id, &ORE_CARTRIDGE_EXTENSIONS);
+    // partition cartridges' ROMs: every other game's, of a system ore-rs
+    // knows as a cartridge
+    let (cartridges, others) = if platform.is_some() {
+        (others, IndexMap::new())
+    } else {
+        partition_games_by_extensions(others, &romfiles_by_id, &ORE_CARTRIDGE_EXTENSIONS)
+    };
 
     // drop others
     drop(others);
@@ -2809,7 +2817,7 @@ async fn to_ore(
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
         let single = (roms.len() == 1).then(|| roms.first().unwrap().name.as_str());
         let iso = single.is_some_and(|name| name.ends_with(ISO_EXTENSION));
-        let cartridge = single.is_some_and(is_cartridge);
+        let cartridge = single.is_some_and(|name| platform.is_some() || is_cartridge(name));
         let cd = cue_roms.len() == 1 && !bin_roms.is_empty();
         if !iso && !cartridge && !cd {
             continue;
@@ -2832,7 +2840,13 @@ async fn to_ore(
             } else {
                 decoded
                     .inner
-                    .to_ore(progress_bar, &destination, compression_algorithm, profile)
+                    .to_ore_rom(
+                        progress_bar,
+                        &destination,
+                        compression_algorithm,
+                        profile,
+                        platform,
+                    )
                     .await
             };
             let Some(ore_romfile) = skip_unsupported(progress_bar, ore_romfile)? else {
@@ -2997,11 +3011,12 @@ async fn to_ore(
             progress_bar,
             decoded
                 .inner
-                .to_ore(
+                .to_ore_rom(
                     progress_bar,
                     &decoded.source.path.parent().unwrap(),
                     compression_algorithm,
                     profile,
+                    platform,
                 )
                 .await,
         )?
@@ -3175,11 +3190,12 @@ async fn to_ore(
                 source
                     .to_rom(progress_bar, &tmp_directory.path(), &rom.name)
                     .await?
-                    .to_ore(
+                    .to_ore_rom(
                         progress_bar,
                         &tmp_directory.path(),
                         compression_algorithm,
                         profile,
+                        platform,
                     )
                     .await?
             } else {
@@ -4048,6 +4064,8 @@ mod test_multiple_tracks_ore_to_cue_bin;
 mod test_multiple_tracks_ore_to_ore;
 #[cfg(test)]
 mod test_multiple_tracks_ore_to_sevenzip_cue_bin;
+#[cfg(test)]
+mod test_nes_to_ore;
 #[cfg(test)]
 mod test_nus_sevenzip_to_original;
 #[cfg(test)]

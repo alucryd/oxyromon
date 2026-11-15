@@ -7,6 +7,7 @@
 - ORE takes PlayStation 2 DVDs too, and converts from CHD: a DVD's ISO, or a CD's tracks with its cue sheet; a disc of another system is skipped rather than failing the run
 - ORE takes PSP UMDs, from their ISO or CHD, as it takes PlayStation 2 DVDs
 - ORE takes Game Boy, Game Boy Color, Game Boy Advance, DS, N64 and Mega Drive ROMs, loose or in an archive, and gives them back under their name
+- ORE takes every ROM of 30 cartridge systems, known by their DAT's name, NES, SNES, PC Engine, Master System and Atari's among them, headerless or not, BIOSes included
 - ORE stores, opt-in a system with `ORE_STORE`: `convert-roms --format ORE` attaches a system's OREs to `.ore-store` in its directory, each game a thin ORE, as one batch a run or, with `ORE_STORE_BATCH` at `game`, one a game, and detaches them again when it is off; `check-roms` checks and repairs the store, `purge-roms` compacts it, and `purge-roms --foreign` and `import-roms` leave its files alone
 - `ORE_COMPRESSION_ALGORITHM` defaults to `auto`: LZMA2 for a cartridge's ROM, where Zstandard loses to 7z, and Zstandard for a disc
 - ORE codes a PlayStation 2 DVD's audio as audio: its `VAGp` streams' SPU ADPCM and its 16-bit PCM, found by their headers, so a disc full of sound no longer loses to its CHD

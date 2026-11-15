@@ -570,6 +570,12 @@ impl Reader {
         })
     }
 
+    /// The platform it was written as: `gamecube`, `ps2` or `snes`, say,
+    /// one of [`crate::CARTRIDGE_PLATFORMS`] for a cartridge's ROM.
+    pub fn platform(&self) -> &str {
+        &self.meta.media.platform
+    }
+
     /// A cartridge ROM's file name, as it was written from.
     pub fn file_name(&self) -> Option<&str> {
         (self.header.media_class == MEDIA_ROM_CARTRIDGE)

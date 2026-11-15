@@ -63,6 +63,8 @@ fn md(rom: &mut [u8]) {
     rom[0x100..0x110].copy_from_slice(b"SEGA MEGA DRIVE ");
 }
 
+fn none(_: &mut [u8]) {}
+
 fn gba(rom: &mut [u8]) {
     rom[0xB2] = 0x96;
     rom[0xBD] = rom[0xA0..0xBD]
@@ -289,4 +291,45 @@ fn a_reader_open_across_a_fold_finds_its_chunks_again() {
     let mut bytes = vec![0; std::fs::metadata(&first).unwrap().len() as usize];
     reader.read_at(0, &mut bytes).unwrap();
     assert!(bytes == std::fs::read(&first).unwrap());
+}
+
+#[test]
+fn a_rom_named_a_cartridges_is_taken_whole_without_a_header() {
+    let dir = TempDir::new().unwrap();
+    // A headerless NES ROM, and a Game Boy ROM whose logo is off
+    let nes = rom(dir.path(), "Game (USA).nes", none);
+    let bad_gb = rom(dir.path(), "Game (Japan).gb", |rom| {
+        gb(rom);
+        rom[0x110] ^= 1;
+    });
+    for (input, platform) in [(&nes, "nes"), (&bad_gb, "gb")] {
+        let ore = dir.path().join("game.ore");
+        // Unnamed, refused, as it was
+        assert!(ore_rs::compress(input, &ore, &Options::default(), &[], &mut |_| {}).is_err());
+        let options = Options {
+            codec: ore_rs::default_codec(input, Some(platform)).unwrap(),
+            platform: Some(platform),
+            ..Options::default()
+        };
+        assert_eq!(options.codec, ore_rs::Codec::Lzma2);
+        let stats = ore_rs::compress(input, &ore, &options, &[], &mut |_| {}).unwrap();
+        assert!(stats.output_size < 140 << 10, "{}", stats.output_size);
+        let reader = Reader::open(&ore).unwrap();
+        assert_eq!(reader.platform(), platform);
+        assert_eq!(reader.file_name(), input.file_name().unwrap().to_str());
+        let back = dir.path().join("back.rom");
+        ore_rs::decompress(&ore, &back, &mut |_| {}).unwrap();
+        assert!(std::fs::read(input).unwrap() == std::fs::read(&back).unwrap());
+    }
+    // A platform ORE does not know, and an empty ROM, are refused
+    let ore = dir.path().join("refused.ore");
+    for (input, platform) in [(&nes, "dreamcast"), (&dir.path().join("empty.nes"), "nes")] {
+        std::fs::write(dir.path().join("empty.nes"), []).unwrap();
+        let options = Options {
+            platform: Some(platform),
+            ..Options::default()
+        };
+        assert!(ore_rs::compress(input, &ore, &options, &[], &mut |_| {}).is_err());
+        assert!(!ore.exists());
+    }
 }

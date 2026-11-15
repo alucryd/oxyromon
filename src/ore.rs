@@ -304,20 +304,22 @@ impl ToOre for IsoRomfile {
             compression_algorithm,
             profile,
             size,
+            None,
         )
         .await
     }
 }
 
-/// A cartridge's ROM, which ore-rs takes if its header says it is one it
-/// knows.
-impl ToOre for CommonRomfile {
-    async fn to_ore<P: AsRef<Path>>(
+/// A cartridge's ROM: of `platform` when its system names one, which
+/// ore-rs takes whole; otherwise if its header says it is one ore-rs knows.
+impl CommonRomfile {
+    pub async fn to_ore_rom<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
         compression_algorithm: &OreCompressionAlgorithm,
         profile: &OreProfile,
+        platform: Option<&'static str>,
     ) -> Result<OreRomfile> {
         let size = self.path.metadata()?.len();
         compress(
@@ -327,9 +329,50 @@ impl ToOre for CommonRomfile {
             compression_algorithm,
             profile,
             size,
+            platform,
         )
         .await
     }
+}
+
+/// The cartridge platform ore-rs knows a system's ROMs as, by its DAT's
+/// name, any suffix such as `(Headered)` aside: its ROMs are then taken
+/// whole, the DAT vouching for them, whether or not they carry a header.
+pub fn cartridge_platform(system: &System) -> Option<&'static str> {
+    let name = system.name.split(" (").next().unwrap_or_default();
+    Some(match name {
+        "Atari - Atari 2600" | "Atari - 2600" => "a2600",
+        "Atari - Atari 5200" | "Atari - 5200" => "a5200",
+        "Atari - Atari 7800" | "Atari - 7800" => "a7800",
+        "Atari - Atari Jaguar" | "Atari - Jaguar" => "jaguar",
+        "Atari - Atari Lynx" | "Atari - Lynx" => "lynx",
+        "Bandai - WonderSwan" => "ws",
+        "Bandai - WonderSwan Color" => "wsc",
+        "Coleco - ColecoVision" => "colecovision",
+        "Magnavox - Odyssey 2" | "Magnavox - Odyssey2" => "odyssey2",
+        "NEC - PC Engine - TurboGrafx-16" | "NEC - PC Engine - TurboGrafx 16" => "pce",
+        "NEC - PC Engine SuperGrafx" => "sgx",
+        "Nintendo - Game Boy" => "gb",
+        "Nintendo - Game Boy Advance" => "gba",
+        "Nintendo - Game Boy Color" => "gbc",
+        "Nintendo - Nintendo 64" => "n64",
+        "Nintendo - Nintendo DS" => "nds",
+        "Nintendo - Nintendo DSi" => "dsi",
+        "Nintendo - Nintendo Entertainment System" => "nes",
+        "Nintendo - Pokemon Mini" => "pokemini",
+        "Nintendo - Satellaview" => "satellaview",
+        "Nintendo - Sufami Turbo" => "sufami",
+        "Nintendo - Super Nintendo Entertainment System" => "snes",
+        "Nintendo - Virtual Boy" => "vb",
+        "SNK - NeoGeo Pocket" => "ngp",
+        "SNK - NeoGeo Pocket Color" => "ngpc",
+        "Sega - 32X" => "32x",
+        "Sega - Game Gear" => "gg",
+        "Sega - Master System - Mark III" => "sms",
+        "Sega - Mega Drive - Genesis" => "md",
+        "Sega - SG-1000" | "Sega - SG-1000 - SC-3000" => "sg1000",
+        _ => return None,
+    })
 }
 
 /// Compress `source`, an ISO, a ROM or a cue sheet, into `destination_directory`,
@@ -341,6 +384,7 @@ async fn compress(
     compression_algorithm: &OreCompressionAlgorithm,
     profile: &OreProfile,
     size: u64,
+    platform: Option<&'static str>,
 ) -> Result<OreRomfile> {
     progress_bar.set_message("Creating ore");
 
@@ -362,10 +406,11 @@ async fn compress(
             OreProfile::Archive => Profile::Archive,
         },
         codec: match compression_algorithm {
-            OreCompressionAlgorithm::Auto => ore_rs::default_codec(source)?,
+            OreCompressionAlgorithm::Auto => ore_rs::default_codec(source, platform)?,
             OreCompressionAlgorithm::Zstd => Codec::Zstd,
             OreCompressionAlgorithm::Lzma2 => Codec::Lzma2,
         },
+        platform,
     };
     let keys = load_wii_keys()?;
     let (input, output) = (source.to_path_buf(), path.clone());
@@ -407,6 +452,7 @@ impl ToOre for CueBinRomfile {
             compression_algorithm,
             profile,
             size,
+            None,
         )
         .await
     }
@@ -464,7 +510,14 @@ pub async fn sync_store(
                 OreCompressionAlgorithm::Zstd => Codec::Zstd,
                 OreCompressionAlgorithm::Lzma2 => Codec::Lzma2,
             };
-            moving.push((path, Options { profile, codec }));
+            moving.push((
+                path,
+                Options {
+                    profile,
+                    codec,
+                    ..Options::default()
+                },
+            ));
         }
     }
     if moving.is_empty() {

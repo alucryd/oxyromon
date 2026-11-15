@@ -1,8 +1,8 @@
 # ore-rs
 
 ORE, oxyROMon's ROM enclosure, for GameCube, Wii, PlayStation 2 and PSP
-discs, CDs, PlayStation's first, Dreamcast GD-ROMs, and Game Boy, Game Boy
-Advance, DS, N64 and Mega Drive ROMs. Part of
+discs, CDs, PlayStation's first, Dreamcast GD-ROMs, and cartridge ROMs,
+from the Atari 2600 to the DS. Part of
 [oxyROMon](https://github.com/alucryd/oxyromon), as a library and the
 `orers` CLI. An ORE gives back the disc that went in, byte for byte, and
 records the disc's hashes, so it checks against a DAT without being decoded.
@@ -168,7 +168,11 @@ partition's title key, so reading one needs no key, nor does a GameCube disc.
   DS ROMs by their logo CRC and header CRC-16, N64 ROMs by their first
   word, in any byte order, and Mega Drive ROMs by their `SEGA`, each kept
   with its file name, its padding, a run of one byte, stored as that byte
-  and its length. Anything else is refused.
+  and its length. A ROM named a cartridge's, by `Options::platform` or
+  `--platform`, is taken whole, its header not checked: a NES, SNES, PC
+  Engine, Master System or Atari ROM, which none says, or a BIOS, the
+  caller vouching for it, as a ROM manager does from its DAT. Anything else
+  is refused.
 - **Not yet in the file**: the Merkle tree, parity, the tail index and the
   `deep` profile of the spec, beyond a store's segment parity.
 
@@ -182,6 +186,7 @@ orers -p archive -c lzma2 game.iso      # smaller, slower to read
 orers game.ore                          # back to game.iso
 orers "Game (Europe).cue"               # a CD, its SBI with it if beside it
 orers "Game (USA).gba"                  # a ROM, back as a .gba
+orers --platform snes "Game (USA).sfc"  # a ROM with no header ORE knows
 orers -o out/ "Game (Europe).ore"       # back to its cue sheet, tracks and SBI
 orers --store GameCube/.ore-store -o GameCube/ *.iso   # thin OREs, chunks in the store
 orers --detach -o out/ GameCube/game.ore               # a standalone ORE again
@@ -195,6 +200,7 @@ orers --compact --recompress GB/.ore-store  # and pack every group again, the sm
 | `-o DIR` | output directory (default: next to each input) |
 | `-p PROFILE` | `stream` (default): 1 MiB groups; `archive`: 4 MiB groups |
 | `-c CODEC` | `zstd` or `lzma2`; by default `lzma2` for a cartridge's ROM, which Zstandard loses to 7z on, and `zstd` otherwise |
+| `--platform NAME` | the cartridge the inputs are ROMs of, taken whole, their headers not checked: `32x`, `a2600`, `a5200`, `a7800`, `colecovision`, `dsi`, `gb`, `gba`, `gbc`, `gg`, `jaguar`, `lynx`, `md`, `n64`, `nds`, `nes`, `ngp`, `ngpc`, `odyssey2`, `pce`, `pokemini`, `satellaview`, `sg1000`, `sgx`, `sms`, `snes`, `sufami`, `vb`, `ws`, `wsc` (default: recognised by their headers) |
 | `--store DIR` | write ISOs as thin OREs, their chunks in the store `DIR`, made if missing; attach OREs to it; every input as one write, committed after the last |
 | `--detach` | write OREs as standalone OREs |
 | `--compact` | once a store is checked, compact it, dropping what no game uses |

@@ -14,14 +14,17 @@ const OPTIONS: [Options; 3] = [
     Options {
         profile: Profile::Stream,
         codec: Codec::Zstd,
+        platform: None,
     },
     Options {
         profile: Profile::Archive,
         codec: Codec::Zstd,
+        platform: None,
     },
     Options {
         profile: Profile::Archive,
         codec: Codec::Lzma2,
+        platform: None,
     },
 ];
 

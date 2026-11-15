@@ -11,7 +11,7 @@ use ore_rs::{Codec, Options, Profile, StoreBatch};
 fn cli() -> Command {
     Command::new("orers")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("ORE compression and decompression: GameCube, Wii, PlayStation 2 and PSP ISOs, Game Boy, DS, N64 and Mega Drive ROMs and CD and GD-ROM cue sheets are compressed, OREs decompressed, stores checked and repaired")
+        .about("ORE compression and decompression: GameCube, Wii, PlayStation 2 and PSP ISOs, cartridge ROMs and CD and GD-ROM cue sheets are compressed, OREs decompressed, stores checked and repaired")
         .after_help(format!(
             "Writing an ORE from a Wii ISO needs the Wii common key among the keys; orers ships none.\n\n\
              A CD is given as its cue sheet, its tracks a file each; an SBI of the cue sheet's name beside it\n\
@@ -48,6 +48,12 @@ fn cli() -> Command {
                 .long("compression")
                 .help("zstd: the quicker to read; lzma2: the smaller [default: lzma2 for cartridge ROMs, zstd otherwise]")
                 .value_parser(["zstd", "lzma2"]),
+        )
+        .arg(
+            Arg::new("platform")
+                .long("platform")
+                .help("Cartridge the inputs are ROMs of, taken whole, their headers not checked [default: recognised by their headers]")
+                .value_parser(ore_rs::CARTRIDGE_PLATFORMS),
         )
         .arg(
             Arg::new("store")
@@ -235,6 +241,11 @@ fn store(input: &Path, matches: &ArgMatches, options: &Options) -> Result<String
 }
 
 fn options(matches: &ArgMatches, input: &Path) -> Options {
+    let platform = matches.get_one::<String>("platform").and_then(|name| {
+        ore_rs::CARTRIDGE_PLATFORMS
+            .into_iter()
+            .find(|known| known == name)
+    });
     Options {
         profile: match matches.get_one::<String>("profile").unwrap().as_str() {
             "archive" => Profile::Archive,
@@ -244,8 +255,9 @@ fn options(matches: &ArgMatches, input: &Path) -> Options {
             Some("lzma2") => Codec::Lzma2,
             Some(_) => Codec::Zstd,
             // An input it cannot read fails on its own, as it is converted
-            None => ore_rs::default_codec(input).unwrap_or(Codec::Zstd),
+            None => ore_rs::default_codec(input, platform).unwrap_or(Codec::Zstd),
         },
+        platform,
     }
 }
 
