@@ -394,8 +394,8 @@ pub fn extract_cd(
         )));
     }
     let mut track_filenames = Vec::with_capacity(toc.numtrks);
-    for t in 0..toc.numtrks {
-        let ext = if mode == Mode::Gdi && toc.tracks[t].trktype == TRACK_AUDIO {
+    for (t, track) in toc.tracks[..toc.numtrks].iter().enumerate() {
+        let ext = if mode == Mode::Gdi && track.trktype == TRACK_AUDIO {
             ".raw"
         } else {
             &bin_ext
