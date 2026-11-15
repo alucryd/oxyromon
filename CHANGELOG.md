@@ -16,6 +16,10 @@
 - ORE codes a PlayStation 2 DVD's audio as audio: its `VAGp` streams' SPU ADPCM and its 16-bit PCM, found by their headers, so a disc full of sound no longer loses to its CHD
 - Importing a cue sheet for a game whose tracks are in an ORE puts it in the ORE, in place of the dump's, writing the ORE's metadata alone again
 
+## Fixes
+
+- Converting CHDs converts a clone before the CHD it reads from, in ORE as in every other format, and leaves a CHD whose clones are still on disk alone: a clone imported from outside keeps its link to its parent in its header alone, and converting its parent first used to leave it unreadable
+
 # 0.25.0
 
 ## Features
