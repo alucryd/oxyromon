@@ -1,6 +1,7 @@
 //! WUD and WUX to WUA, on a synthetic disc, read back with an independent
 //! ZArchive reader.
 
+mod archive;
 mod common;
 
 use std::path::Path;
@@ -11,7 +12,7 @@ use wux_rs::{Error, Key};
 /// Every file of the archive at `path` but the revert data and what
 /// rebuilds the disc, which are checked on their own.
 fn files(path: &Path) -> Vec<(String, Vec<u8>)> {
-    common::archive_files(path)
+    archive::archive_files(path)
         .into_iter()
         .filter(|(path, _)| !path.starts_with(".nus/") && !path.starts_with(".wud/"))
         .collect()

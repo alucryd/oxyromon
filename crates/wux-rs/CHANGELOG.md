@@ -2,7 +2,7 @@
 
 ## Changes
 
-- The Wii U disc model, its crypto, TMDs, tickets, keys and image reading moved to `wiiu`, a crate embedded in wux-rs's source as `gcwii` is in rvz-rs's, so that ore-rs can share it; wux-rs's API is unchanged
+- The Wii U disc model, its crypto, TMDs, tickets, keys and image reading moved to `wiiu`, a crate embedded in wux-rs's source as `gcwii` is in rvz-rs's, so that ore-rs can share it; wux-rs's API is unchanged; with it, how a disc is laid out for a lossless WUA, which ore-rs writes Wii U discs from
 
 ## Fixes
 

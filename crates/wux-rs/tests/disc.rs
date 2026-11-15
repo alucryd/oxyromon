@@ -2,6 +2,7 @@
 //! update partition kept once in a store, decrypted, or in the WUA without
 //! one, and sectors the layout gets wrong kept whole.
 
+mod archive;
 mod common;
 
 use std::path::{Path, PathBuf};
@@ -29,7 +30,7 @@ fn disc(dir: &Path, name: &str, bytes: &[u8]) -> (PathBuf, PathBuf) {
 
 /// A file of what rebuilds a WUA's disc.
 fn disc_file(wua: &Path, name: &str) -> Option<Vec<u8>> {
-    common::archive_files(wua)
+    archive::archive_files(wua)
         .into_iter()
         .find(|(path, _)| path == &format!(".wud/{name}"))
         .map(|(_, bytes)| bytes)

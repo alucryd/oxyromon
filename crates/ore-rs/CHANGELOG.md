@@ -2,6 +2,7 @@
 
 ## Features
 
+- Added Wii U discs, from a WUD, WUX or ISO, laid out as wux-rs lays out a lossless WUA: each partition's regions stored decrypted, by the disc key and by their titles' keys, the system titles of the update partition included, and encrypted back on read, every 64 KiB of a chain's IV kept so a read starts anywhere; the free space a partition's mastering fills with the region before it a repeat; each region checked at encode to encrypt back. The disc and title keys are kept in the ORE, so reading needs no keys file; writing needs the disc key and the Wii U common key, and the vWii common key for a vWii title to be decrypted
 - Added `Track::flags`, a CD track's cue sheet `FLAGS` as the Q subchannel's control bits, a cue sheet with a flag it does not know refused
 - Added `Reader::tracks`, a CD's tracks as its cue sheet and its areas give them, and `Reader::subchannel_q`, the Q subchannel its SBI replaces, an address past its bounds refused
 - Added the `write` feature, on by default: without it ore-rs reads OREs and stores and checks them, and leaves out the writer, the CLI and the GameCube and Wii disc model ported from Dolphin, and the reader so built is MIT OR Apache-2.0 but for the CD sector model it embeds, BSD-3-Clause, each file's license in an SPDX header and its text packaged

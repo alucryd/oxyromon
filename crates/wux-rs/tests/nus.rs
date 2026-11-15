@@ -1,5 +1,6 @@
 //! WUD and WUX to a NUS folder, on a synthetic disc.
 
+mod archive;
 mod common;
 
 use std::path::Path;
@@ -65,11 +66,11 @@ fn a_disc_converts_to_an_installable_folder() {
         let wua_of_disc = dir.path().join("d.wua");
         wux_rs::to_wua(&[input], &wua_of_disc, &keys(), None, &mut |_| {}).unwrap();
         // but for what rebuilds the disc, which only the disc's WUA holds
-        let of_disc: Vec<_> = common::archive_files(&wua_of_disc)
+        let of_disc: Vec<_> = archive::archive_files(&wua_of_disc)
             .into_iter()
             .filter(|(path, _)| !path.starts_with(".wud/"))
             .collect();
-        assert!(common::archive_files(&wua) == of_disc);
+        assert!(archive::archive_files(&wua) == of_disc);
         // Converting again replaces the folder.
         wux_rs::to_nus(input, &output, &keys(), &mut |_| {}).unwrap();
         assert!(!dir.path().join("Test Game.part").exists());

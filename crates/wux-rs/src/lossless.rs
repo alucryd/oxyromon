@@ -39,8 +39,8 @@ use crate::image::Image;
 use crate::io::{Scaled, finish};
 // The disc's layout, wiiu's since ore-rs writes discs from it too
 pub(crate) use crate::wiiu::plan::{
-    Kind, Plan, Region, Tickets, TitleKeys, Transform, common_by_sha1, pieces, plan, read_plain,
-    stream_offsets, ticket_key, title_crypt,
+    Kind, Plan, Region, Step, Tickets, TitleKeys, Transform, common_by_sha1, pieces, plan,
+    read_plain, steps, stream_offsets, ticket_key, title_crypt,
 };
 use crate::zarchive::{self, Writer};
 
@@ -109,57 +109,15 @@ pub(crate) struct Layout {
 /// Sectors kept whole, by index.
 type Patches = Vec<(u64, Vec<u8>)>;
 
-/// What makes up a partition, sector by sector: its header, its regions,
-/// and runs repeating the region before them.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Step {
-    Header,
-    Region(usize),
-    /// `count` sectors, each the one `period` sectors before it; `None` if
-    /// nothing comes before, which only patches can fill.
-    Fill {
-        count: u64,
-        period: Option<u64>,
-    },
-}
-
 impl PartitionLayout {
     /// The partition's steps, covering it whole.
     pub fn steps(&self) -> Result<Vec<Step>> {
-        let size = self.end - self.start;
-        let mut steps = Vec::new();
-        let mut cursor = self.header_sectors;
-        let mut period = None;
-        if self.header_sectors > 0 {
-            steps.push(Step::Header);
-            period = Some(self.header_sectors);
-        }
-        for (i, region) in self.regions.iter().enumerate() {
-            if region.start < cursor || region.start + region.sectors() > size {
-                return Err(corrupt(format!(
-                    "partition {}'s regions overlap or overflow it",
-                    self.name
-                )));
-            }
-            if region.start > cursor {
-                steps.push(Step::Fill {
-                    count: region.start - cursor,
-                    period,
-                });
-            }
-            steps.push(Step::Region(i));
-            cursor = region.start + region.sectors();
-            if region.sectors() > 0 {
-                period = Some(region.sectors());
-            }
-        }
-        if size > cursor {
-            steps.push(Step::Fill {
-                count: size - cursor,
-                period,
-            });
-        }
-        Ok(steps)
+        steps(
+            &self.name,
+            self.header_sectors,
+            &self.regions,
+            self.end - self.start,
+        )
     }
 
     /// Each stream region's offset in the stream, by region index.

@@ -769,6 +769,9 @@ impl Drop for StoreBatch {
     }
 }
 
+// A Wii U disc, laid out by wiiu's plan
+mod wiiu_disc;
+
 fn encode(
     input: &Path,
     part: &Path,
@@ -779,6 +782,9 @@ fn encode(
 ) -> Result<Stats> {
     if is_cue(input) {
         return encode_cd(input, part, options, store, progress);
+    }
+    if wiiu_disc::is_wiiu(input) {
+        return wiiu_disc::encode(input, part, options, keys, store, progress);
     }
     let mut iso = Iso::open(input)?;
     let size = iso.size();
@@ -895,8 +901,8 @@ fn encode(
                     }
                     segmenter.finish(&mut |run| encoder.push(run));
                 }
-                AreaKind::CdData | AreaKind::CdAudio => {
-                    unreachable!("a disc image's plan has no CD track")
+                AreaKind::CdData | AreaKind::CdAudio | AreaKind::Wiiu | AreaKind::Repeat => {
+                    unreachable!("a disc image's plan has no CD track nor Wii U region")
                 }
             }
             exception_count += exceptions.len() as u64;
@@ -912,6 +918,8 @@ fn encode(
                 title_key: plan.key.map(|key| key.to_vec()),
                 codec: plan.codec,
                 exceptions,
+                wiiu: None,
+                period: None,
             });
         }
 
@@ -1371,6 +1379,8 @@ fn encode_cd(
                 title_key: None,
                 codec: None,
                 exceptions: Vec::new(),
+                wiiu: None,
+                period: None,
             });
             start += len;
         }

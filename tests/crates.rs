@@ -41,7 +41,11 @@ const EMBEDDED: &[(&str, &[&str])] = &[
     ),
     (
         "crates/wiiu",
-        &["crates/wux-rs/src/wiiu", "crates/wux-rs/tests/common"],
+        &[
+            "crates/ore-rs/src/wiiu",
+            "crates/wux-rs/src/wiiu",
+            "crates/wux-rs/tests/common",
+        ],
     ),
 ];
 

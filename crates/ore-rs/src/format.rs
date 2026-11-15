@@ -432,6 +432,60 @@ pub struct Area {
     /// A partition's hash blocks recomputing does not give back.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub exceptions: Vec<Exception>,
+    /// A Wii U region's encryption, its bytes stored decrypted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wiiu: Option<Wiiu>,
+    /// A repeat's period: the disc as it is this many bytes before, a
+    /// whole number of Wii U sectors.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub period: Option<u64>,
+}
+
+/// A Wii U disc's sector, which its repeats count in.
+pub const WIIU_SECTOR: u64 = 0x8000;
+
+/// How a Wii U region is encrypted: by the disc key, the whole region, and
+/// by title keys, the titles' contents within it, the latter first.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct Wiiu {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub outer: Option<Layer>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub pieces: Vec<Piece>,
+}
+
+/// A title's content within a region, from `offset` in it, `len` long.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Piece {
+    pub offset: u64,
+    pub len: u64,
+    pub layer: Layer,
+}
+
+/// One AES-128-CBC encryption: its key, how it chains, and the cluster or
+/// content index its IVs start from.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Layer {
+    pub mode: LayerMode,
+    #[serde(with = "serde_bytes")]
+    pub key: Vec<u8>,
+    pub index: u16,
+    /// A chain's IV at each 64 KiB from its start but the first: the
+    /// ciphertext block before it, so a read starts at any of them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty", with = "serde_bytes")]
+    pub ivs: Vec<u8>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum LayerMode {
+    /// One chain, from the index's IV.
+    Chain,
+    /// 64 KiB blocks, each a chain of its own from its IV.
+    Blocks,
+    /// 64 KiB blocks of 1 KiB of hashes, a chain from a zero IV, then data,
+    /// a chain from the block's own hash.
+    Hashed,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -447,6 +501,11 @@ pub enum AreaKind {
     CdData,
     /// A CD audio track: its PCM.
     CdAudio,
+    /// A Wii U region, stored decrypted: its `wiiu` encrypts it back.
+    Wiiu,
+    /// The disc as it is `period` bytes before: a Wii U disc's mastering
+    /// fills a partition's free space with the region before it.
+    Repeat,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

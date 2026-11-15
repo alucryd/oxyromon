@@ -756,3 +756,67 @@ pub fn plan(disc_path: &Path, keys: &[Key]) -> Result<Plan> {
         partitions: parts,
     })
 }
+
+/// What makes up a partition, sector by sector: its header, its regions,
+/// and runs repeating the region before them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Step {
+    Header,
+    Region(usize),
+    /// `count` sectors, each the one `period` sectors before it; `None` if
+    /// nothing comes before, which only patches can fill.
+    Fill {
+        count: u64,
+        period: Option<u64>,
+    },
+}
+
+/// A partition's steps, covering its `size` sectors whole: its header, its
+/// regions, and between them runs repeating the region before.
+pub fn steps(name: &str, header_sectors: u64, regions: &[Region], size: u64) -> Result<Vec<Step>> {
+    let mut steps = Vec::new();
+    let mut cursor = header_sectors;
+    let mut period = None;
+    if header_sectors > 0 {
+        steps.push(Step::Header);
+        period = Some(header_sectors);
+    }
+    for (i, region) in regions.iter().enumerate() {
+        if region.start < cursor || region.start + region.sectors() > size {
+            return Err(corrupt(format!(
+                "partition {}'s regions overlap or overflow it",
+                name
+            )));
+        }
+        if region.start > cursor {
+            steps.push(Step::Fill {
+                count: region.start - cursor,
+                period,
+            });
+        }
+        steps.push(Step::Region(i));
+        cursor = region.start + region.sectors();
+        if region.sectors() > 0 {
+            period = Some(region.sectors());
+        }
+    }
+    if size > cursor {
+        steps.push(Step::Fill {
+            count: size - cursor,
+            period,
+        });
+    }
+    Ok(steps)
+}
+
+impl PartitionPlan {
+    /// The partition's steps, covering it whole.
+    pub fn steps(&self) -> Result<Vec<Step>> {
+        steps(
+            &self.name,
+            self.header_sectors,
+            &self.regions,
+            self.end - self.start,
+        )
+    }
+}

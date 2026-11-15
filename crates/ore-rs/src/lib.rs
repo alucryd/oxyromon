@@ -75,6 +75,13 @@ mod segment;
 mod store;
 mod vag;
 mod video;
+// The Wii U disc specifics, shared with wux-rs: `src/wiiu` is a symlink to
+// the wiiu crate's source, GPL-3.0-or-later, which only writing needs
+#[allow(dead_code, unused_imports)]
+#[cfg(feature = "write")]
+#[path = "wiiu/lib.rs"]
+mod wiiu;
+mod wiiu_crypt;
 #[cfg(feature = "write")]
 mod writer;
 mod xa;
