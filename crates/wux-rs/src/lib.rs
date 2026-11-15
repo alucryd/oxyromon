@@ -23,28 +23,31 @@
 //! [wudd]: https://github.com/wiiu-env/wudd
 //! [Cemu]: https://github.com/cemu-project/Cemu
 
-mod crypto;
-mod disc;
-mod error;
-mod image;
 mod install;
-mod io;
-mod keys;
 mod lossless;
-mod nus;
 mod rebuild;
 mod revert;
 mod wua;
 mod wux;
 mod zarchive;
 
+#[allow(dead_code, unused_imports)]
+#[path = "wiiu/lib.rs"]
+mod wiiu;
+// The Wii U specifics, wux-rs's own once: its modules reach them as before
+use wiiu::{crypto, disc, error, image, io, keys, nus};
+
 pub use crypto::Key;
 pub use error::{Error, Result};
 pub use image::Image;
 pub use install::{to_nus, write_missing_h3};
-#[cfg(feature = "cli")]
-pub use keys::cemu_keys_path;
 pub use keys::{load_keys, parse_keys, parse_otp};
+
+/// Where Cemu keeps its `keys.txt` when it isn't portable.
+#[cfg(feature = "cli")]
+pub fn cemu_keys_path() -> Option<std::path::PathBuf> {
+    dirs::data_dir().map(|dir| dir.join("Cemu").join("keys.txt"))
+}
 pub use lossless::{DISC_DIR, DiscInfo, STORE_DIR, disc_info, store_entries};
 pub use nus::{Content, Tmd, parse_tmd, ticket_path, tmd_path};
 pub use rebuild::{wua_to_wud, wua_to_wux};

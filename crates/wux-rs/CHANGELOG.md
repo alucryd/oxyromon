@@ -1,5 +1,9 @@
 # 0.1.1
 
+## Changes
+
+- The Wii U disc model, its crypto, TMDs, tickets, keys and image reading moved to `wiiu`, a crate embedded in wux-rs's source as `gcwii` is in rvz-rs's, so that ore-rs can share it; wux-rs's API is unchanged
+
 ## Fixes
 
 - An update or DLC content whose TMD size is not a multiple of 16, its file padded to the AES block, converts to a WUA and back, where it was refused as corrupt

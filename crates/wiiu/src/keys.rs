@@ -3,8 +3,8 @@
 
 use std::path::Path;
 
-use crate::crypto::Key;
-use crate::error::{Error, Result};
+use super::crypto::Key;
+use super::error::{Error, Result};
 
 /// Parse keys in Cemu's `keys.txt` format: one 32-digit hex key per line,
 /// anything after `#` or `;` ignored, and spaces, tabs, dashes and
@@ -67,12 +67,6 @@ pub fn load_keys(path: &Path) -> Result<Vec<Key>> {
         }
         Err(_) => Err(unsupported()),
     }
-}
-
-/// Where Cemu keeps its `keys.txt` when it isn't portable.
-#[cfg(feature = "cli")]
-pub fn cemu_keys_path() -> Option<std::path::PathBuf> {
-    dirs::data_dir().map(|dir| dir.join("Cemu").join("keys.txt"))
 }
 
 #[cfg(test)]

@@ -9,9 +9,9 @@ use std::rc::Rc;
 
 use sha1::{Digest, Sha1};
 
-use crate::crypto::{Key, cbc_decrypt, decrypt_block};
-use crate::error::{Error, Result, corrupt};
-use crate::image::Image;
+use super::crypto::{Key, cbc_decrypt, decrypt_block};
+use super::error::{Error, Result, corrupt};
+use super::image::Image;
 
 /// The disc's sector size, which every offset below counts in.
 pub const SECTOR: u64 = 0x8000;

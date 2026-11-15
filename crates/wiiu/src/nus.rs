@@ -9,9 +9,9 @@
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
-use crate::disc::Source;
-use crate::error::{Result, corrupt};
-use crate::io::read_at;
+use super::disc::Source;
+use super::error::{Result, corrupt};
+use super::io::read_at;
 
 /// A content's flag: its file is made of hashed blocks.
 pub const HASHED: u16 = 0x0002;

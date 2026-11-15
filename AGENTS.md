@@ -206,8 +206,10 @@ format crates, lives in a small crate of its own that is never published:
 `gcwii`, the GameCube and Wii disc specifics shared by `rvz-rs`,
 `wbfs-rs` and `ore-rs`, and `cd`, the CD-ROM sector model, EDC and ECC,
 cue sheets and ISO 9660, embedded by `chd-rs` and `ore-rs`, BSD-3-Clause
-so every host may embed it. Each format crate embeds it, so that the crate it publishes holds
-a copy and stands alone:
+so every host may embed it, and `wiiu`, the Wii U disc model, its crypto,
+TMDs, tickets, keys and the WUD and WUX image, embedded by `wux-rs`, under
+its GPL-3.0+. Each format crate embeds it, so that the crate it publishes
+holds a copy and stands alone:
 
 - **Symlinked, not depended on.** `crates/<host>/src/<embedded>` is a symlink
   to `../../<embedded>/src`, declared in the host's `lib.rs` as
