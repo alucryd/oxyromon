@@ -64,7 +64,7 @@ typedef enum smelt_err {
   /**
    * smelt itself failed; the ingot should be closed.
    */
-  SMELT_ERR_PANIC = 9,
+  SMELT_ERR_PANIC = 9
 } smelt_err;
 
 /**
@@ -73,7 +73,7 @@ typedef enum smelt_err {
 typedef enum smelt_track_mode {
   SMELT_TRACK_AUDIO = 0,
   SMELT_TRACK_MODE1 = 1,
-  SMELT_TRACK_MODE2 = 2,
+  SMELT_TRACK_MODE2 = 2
 } smelt_track_mode;
 
 /**
@@ -101,6 +101,12 @@ typedef struct smelt_track {
    * In a GD-ROM's high-density area: 1, or 0.
    */
   uint8_t high_density;
+  /**
+   * Its Q subchannel's control bits, the high nibble of Q's first
+   * byte: its cue sheet's FLAGS, 4CH 0x8, DCP 0x2, PRE 0x1, and 0x4
+   * for a data track.
+   */
+  uint8_t control;
   enum smelt_track_mode mode;
   /**
    * Where its index 01 lies.
@@ -123,7 +129,7 @@ typedef struct smelt_track {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif /* __cplusplus */
 
 /**
  * This build's version, `major << 16 | minor << 8 | patch`.
@@ -264,7 +270,7 @@ enum smelt_err smelt_subq_replacement(const struct smelt_ingot *ingot,
                                       uint8_t *replaced);
 
 #ifdef __cplusplus
-}  // extern "C"
-#endif  // __cplusplus
+}  /* extern "C" */
+#endif  /* __cplusplus */
 
 #endif  /* SMELT_H */

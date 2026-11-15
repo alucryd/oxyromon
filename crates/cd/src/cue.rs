@@ -24,6 +24,9 @@ pub struct Track {
     pub pregap: u32,
     /// In a GD-ROM's high-density area, which starts at sector 45,000.
     pub high_density: bool,
+    /// Its `FLAGS`, as the Q subchannel's control bits: 4CH 0x8, DCP 0x2,
+    /// PRE 0x1.
+    pub flags: u8,
 }
 
 /// Where a GD-ROM's high-density area starts, in sectors.
@@ -104,6 +107,7 @@ pub fn parse(text: &str, dir: &Path) -> Result<Cue> {
                     indexes: Vec::new(),
                     pregap: 0,
                     high_density,
+                    flags: 0,
                 });
             }
             "INDEX" | "PREGAP" => {
@@ -126,6 +130,22 @@ pub fn parse(text: &str, dir: &Path) -> Result<Cue> {
                     track.indexes.push((number, at));
                 }
             }
+            "FLAGS" => {
+                let track = cue
+                    .tracks
+                    .last_mut()
+                    .ok_or_else(|| invalid(format!("{command} before any track")))?;
+                for flag in rest.split_whitespace() {
+                    track.flags |= match flag {
+                        "4CH" => 0x8,
+                        "DCP" => 0x2,
+                        "PRE" => 0x1,
+                        // Serial copy management, not in the Q subchannel
+                        "SCMS" => 0,
+                        other => return Err(invalid(format!("unknown flag {other:?}"))),
+                    };
+                }
+            }
             "REM" => match rest.trim() {
                 "HIGH-DENSITY AREA" => high_density = true,
                 "SINGLE-DENSITY AREA" => high_density = false,
@@ -146,13 +166,17 @@ mod tests {
 
     #[test]
     fn parses_a_redump_cue_sheet() {
-        let text = "FILE \"Game (Track 1).bin\" BINARY\r\n  TRACK 01 MODE2/2352\r\n    INDEX 01 00:00:00\r\nFILE \"Game (Track 2).bin\" BINARY\r\n  TRACK 02 AUDIO\r\n    INDEX 00 00:00:00\r\n    INDEX 01 00:02:00\r\n";
+        let text = "FILE \"Game (Track 1).bin\" BINARY\r\n  TRACK 01 MODE2/2352\r\n    INDEX 01 00:00:00\r\nFILE \"Game (Track 2).bin\" BINARY\r\n  TRACK 02 AUDIO\r\n    FLAGS DCP PRE SCMS\r\n    INDEX 00 00:00:00\r\n    INDEX 01 00:02:00\r\n";
         let cue = parse(text, Path::new("/d")).unwrap();
         assert_eq!(cue.tracks.len(), 2);
         assert_eq!(cue.tracks[0].mode, Mode::Mode2);
         assert_eq!(cue.tracks[1].file, Path::new("/d/Game (Track 2).bin"));
         assert_eq!(cue.tracks[1].indexes, [(0, 0), (1, 150)]);
+        assert_eq!((cue.tracks[0].flags, cue.tracks[1].flags), (0, 0x3));
         assert!(parse("TRACK 01 MODE1/2048\n", Path::new("")).is_err());
+        assert!(parse("FLAGS DCP\n", Path::new("")).is_err());
+        let typo = text.replace("FLAGS DCP PRE SCMS", "FLAGS DCPP");
+        assert!(parse(&typo, Path::new("")).is_err());
     }
 
     #[test]

@@ -1,4 +1,4 @@
-# cbindgen --config cbindgen.toml --output include/smelt.h
+# SMELT_BLESS=1 cargo test --test headers: cbindgen's output, made C89
 language = "C"
 cpp_compat = true
 include_guard = "SMELT_H"
