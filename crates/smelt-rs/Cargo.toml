@@ -1,0 +1,26 @@
+[package]
+name = "smelt-rs"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "smelt, the ORE reader library: ore-rs's reader behind a C ABI, for emulators to read an ORE as the disc or ROM it holds"
+license = "GPL-3.0-or-later"
+repository.workspace = true
+keywords = ["ore", "emulator", "ffi", "disc"]
+categories = ["emulators", "external-ffi-bindings"]
+include = ["src/**/*", "include/**/*", "tests/**/*", "cbindgen.toml", "README.md", "CHANGELOG.md"]
+# No ABI before the format: nothing is published until ORE's spec is
+publish = false
+
+[lib]
+name = "smelt"
+path = "src/lib.rs"
+# A static library and a shared one for C and C++ hosts, and an rlib for
+# this crate's own tests
+crate-type = ["rlib", "staticlib", "cdylib"]
+
+[dependencies]
+ore-rs = { path = "../ore-rs", version = "0.1", default-features = false }
+
+[dev-dependencies]
+tempfile.workspace = true

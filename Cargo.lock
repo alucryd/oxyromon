@@ -4165,6 +4165,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "smelt-rs"
+version = "0.1.0"
+dependencies = [
+ "ore-rs",
+ "tempfile",
+]
+
+[[package]]
 name = "socket2"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"

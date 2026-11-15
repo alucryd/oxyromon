@@ -182,6 +182,12 @@ shipped by `dist.sh` while the format is a draft. Every crate follows these, and
 - **Standalone.** A format crate depends on no other crate of this
   repository. What several share goes in an embedded crate, below.
 
+`smelt-rs` is the exception: ORE's reader library, ore-rs's `Reader` behind
+a C ABI for emulators, so it depends on ore-rs, has no CLI, and builds a
+static and a shared library besides its rlib. `include/smelt.h` is
+cbindgen's from it, written again after any ABI change, which a test checks.
+It is unpublished, as its ABI, until ORE's specification is.
+
 ### Embedded Crates
 
 What is specific to a system rather than a format, and shared by several
