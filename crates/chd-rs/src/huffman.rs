@@ -92,12 +92,12 @@ impl HuffmanDecoder {
         smallhuff.node_bits[0] = bitbuf.read(3) as u8;
         let start = bitbuf.read(3) as usize + 1;
         let mut count = 0;
-        for index in 1..24 {
+        for (index, bits) in smallhuff.node_bits[..24].iter_mut().enumerate().skip(1) {
             if index < start || count == 7 {
-                smallhuff.node_bits[index] = 0;
+                *bits = 0;
             } else {
                 count = bitbuf.read(3);
-                smallhuff.node_bits[index] = (if count == 7 { 0 } else { count }) as u8;
+                *bits = (if count == 7 { 0 } else { count }) as u8;
             }
         }
 
@@ -434,8 +434,8 @@ impl HuffmanEncoder {
         // Walk the code lengths, grouping consecutive runs.
         let mut lastval: i32 = -1;
         let mut repcount: i32 = 0;
-        for curcode in 0..self.num_codes {
-            let newval = self.nodes[curcode].numbits as i32;
+        for node in &self.nodes[..self.num_codes] {
+            let newval = node.numbits as i32;
             if newval == lastval {
                 repcount += 1;
             } else {
@@ -498,8 +498,8 @@ impl HuffmanEncoder {
         // Walk the code lengths, grouping consecutive runs.
         let mut last: i32 = -1;
         let mut repcount: i32 = 0;
-        for curcode in 0..self.num_codes {
-            let newval = self.nodes[curcode].numbits as i32;
+        for node in &self.nodes[..self.num_codes] {
+            let newval = node.numbits as i32;
             if newval != last && repcount > 0 {
                 if repcount == 1 {
                     // Just one, write it as a literal.
@@ -539,8 +539,8 @@ impl HuffmanEncoder {
         // eight, since shorter lengths are cheaper to enumerate.
         let mut first_non_zero = 31usize;
         let mut last_non_zero = 0usize;
-        for index in 1..24 {
-            if smallhuff.nodes[index].numbits != 0 {
+        for (index, node) in smallhuff.nodes[..24].iter().enumerate().skip(1) {
+            if node.numbits != 0 {
                 if first_non_zero == 31 {
                     first_non_zero = index;
                 }
@@ -552,8 +552,14 @@ impl HuffmanEncoder {
         // Write out the small tree.
         bitbuf.write(smallhuff.nodes[0].numbits, 3);
         bitbuf.write((first_non_zero - 1) as u32, 3);
-        for index in first_non_zero..=last_non_zero {
-            bitbuf.write(smallhuff.nodes[index].numbits, 3);
+        // An empty range when every length is zero, as 8..=0 is
+        for node in smallhuff
+            .nodes
+            .iter()
+            .take(last_non_zero + 1)
+            .skip(first_non_zero)
+        {
+            bitbuf.write(node.numbits, 3);
         }
         bitbuf.write(7, 3);
 

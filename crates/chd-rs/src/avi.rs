@@ -155,8 +155,11 @@ fn huffyuv_extract_tables(chunk: &[u8]) -> Result<Box<[HuffYuvTable; 3]>> {
 
         if bitsat16 > 0 {
             table.extralookup = vec![0; usize::from(bitsat16) * 65536];
-            for offset in 0..usize::from(bitsat16) {
-                table.baselookup[offset] = (offset << 8) as u16;
+            for (offset, entry) in table.baselookup[..usize::from(bitsat16)]
+                .iter_mut()
+                .enumerate()
+            {
+                *entry = (offset << 8) as u16;
             }
         }
         for offset in 0..256 {
@@ -1254,8 +1257,8 @@ impl AviWriter {
         let bytes_per_sample = channels as u32 * 2;
         let mut finalchunks = self.streams[audio].stream.chunks.len();
         let mut channelsamples = self.soundbuf_samples as i32;
-        for channel in 0..channels {
-            channelsamples = channelsamples.min(self.chansamples[channel] as i32);
+        for &samples in &self.chansamples[..channels] {
+            channelsamples = channelsamples.min(samples as i32);
         }
         let mut processedsamples: i32 = 0;
         let mut chunknum = self.soundbuf_chunks as usize;
@@ -1303,8 +1306,8 @@ impl AviWriter {
                 let count = (self.soundbuf_samples - processed) as usize * channels;
                 self.soundbuf.copy_within(from..from + count, 0);
             }
-            for channel in 0..channels {
-                self.chansamples[channel] = self.chansamples[channel].wrapping_sub(processed);
+            for samples in &mut self.chansamples[..channels] {
+                *samples = samples.wrapping_sub(processed);
             }
         }
         if !only_flush_full {
