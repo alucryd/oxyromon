@@ -17,12 +17,19 @@ Unpublished, and its ABI unstable, until ORE's specification is.
   `smelt_read`, what the ORE holds read as one run of bytes, a CD's tracks
   end to end. A thin ORE reads through its store, the nearest `.ore-store`
   up from its folder; one away from it is `SMELT_ERR_MISSING_STORE`.
+- **The drive view**, for a CD: `smelt_track_count` and `smelt_track_at`,
+  each track's number, mode, LBA, the pregap its file holds, its length,
+  and where its file lies in the byte view; `smelt_read_sectors`, whole
+  2,352-byte sectors by LBA across tracks, all or nothing; and
+  `smelt_subq_replacement`, the Q subchannel the CD's SBI replaces, as
+  libcrypt protected discs need, the drive generating every other.
 - **One thread an ingot**: an ingot caches what it decodes, so each call
   may change it; `smelt_clone` gives another thread its own, sharing a thin
   ORE's store index, rather than a lock inside serialising a drive thread
   against the rest.
-- **Not yet**: the drive view, a CD's geometry, whole 2,352-byte sectors
-  and its Q subchannel; prefetch advice. See the ORE study's design 04.
+- **Not yet**: prefetch advice, to measure in a host first; DVD and
+  GameCube discs read through the byte view meanwhile. See the ORE study's
+  design 04.
 
 ```c
 #include "smelt.h"

@@ -2,6 +2,7 @@
 
 ## Features
 
+- Added `Reader::tracks`, a CD's tracks as its cue sheet and its areas give them, and `Reader::subchannel_q`, the Q subchannel its SBI replaces
 - Added the `write` feature, on by default: without it ore-rs reads OREs and stores and checks them, and leaves out the writer, the CLI and the GameCube and Wii disc model ported from Dolphin, and the reader so built is MIT OR Apache-2.0, each file's license in an SPDX header
 - Added ORE compression of GameCube and Wii discs, bit-exact: Wii partitions stored decrypted and without their hashes, those recomputing would not give back kept as exceptions, and each group checked to encrypt back to what the disc holds; padding stored as its seed and long runs of zeros as their length; the rest cut into MinCDC chunks of 8 to 24 KiB, each stored once, and compressed in groups of 1 MiB (`stream`) or 4 MiB (`archive`) with Zstandard 19 or LZMA2
 - Added the disc's CRC-32, MD5, SHA-1 and BLAKE3, recorded when it is written, so it can be checked against a DAT without decoding it

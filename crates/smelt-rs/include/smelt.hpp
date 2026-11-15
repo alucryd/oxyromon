@@ -90,6 +90,30 @@ public:
         check(smelt_read(raw_, offset, static_cast<std::uint8_t *>(dst), len));
     }
 
+    /* A CD's tracks; none for what is not a CD. */
+    std::vector<smelt_track> tracks() const {
+        std::size_t count = 0;
+        check(smelt_track_count(raw_, &count));
+        std::vector<smelt_track> out(count);
+        for (std::size_t i = 0; i < count; ++i) {
+            check(smelt_track_at(raw_, i, &out[i]));
+        }
+        return out;
+    }
+
+    /* Read `n` whole CD sectors from `lba`, SMELT_SECTOR bytes each. */
+    void read_sectors(std::uint32_t lba, std::uint32_t n, void *dst) {
+        check(smelt_read_sectors(raw_, lba, n, static_cast<std::uint8_t *>(dst)));
+    }
+
+    /* The SBI's Q for the sector at `lba` into `q`, 10 bytes: whether it
+     * replaces the one its position generates. */
+    bool subq_replacement(std::uint32_t lba, std::uint8_t q[10]) const {
+        std::uint8_t replaced = 0;
+        check(smelt_subq_replacement(raw_, lba, q, &replaced));
+        return replaced != 0;
+    }
+
     smelt_ingot *get() noexcept { return raw_; }
 
 private:

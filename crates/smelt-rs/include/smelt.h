@@ -20,6 +20,11 @@
 #include <stdint.h>
 
 /**
+ * The bytes of a raw CD sector, which smelt_read_sectors gives a sector.
+ */
+#define SMELT_SECTOR 2352
+
+/**
  * What a call came to.
  */
 typedef enum smelt_err {
@@ -63,6 +68,15 @@ typedef enum smelt_err {
 } smelt_err;
 
 /**
+ * What a CD track's sectors hold.
+ */
+typedef enum smelt_track_mode {
+  SMELT_TRACK_AUDIO = 0,
+  SMELT_TRACK_MODE1 = 1,
+  SMELT_TRACK_MODE2 = 2,
+} smelt_track_mode;
+
+/**
  * An open ORE.
  */
 typedef struct smelt_ingot smelt_ingot;
@@ -76,6 +90,36 @@ typedef struct smelt_open_opts {
    */
   uint32_t reserved;
 } smelt_open_opts;
+
+/**
+ * A CD track, as its cue sheet and the ORE give it. LBAs count from
+ * 00:02:00, and a GD-ROM's high-density area starts at LBA 45,000.
+ */
+typedef struct smelt_track {
+  uint8_t number;
+  /**
+   * In a GD-ROM's high-density area: 1, or 0.
+   */
+  uint8_t high_density;
+  enum smelt_track_mode mode;
+  /**
+   * Where its index 01 lies.
+   */
+  uint32_t lba;
+  /**
+   * The sectors of pregap held before index 01, from `lba - pregap`.
+   */
+  uint32_t pregap;
+  /**
+   * Its sectors from index 01 to its end.
+   */
+  uint32_t sectors;
+  /**
+   * Where its first sector, its pregap's if held, starts in the byte
+   * view, in bytes.
+   */
+  uint64_t offset;
+} smelt_track;
 
 #ifdef __cplusplus
 extern "C" {
@@ -167,6 +211,55 @@ enum smelt_err smelt_identity(const struct smelt_ingot *ingot,
  * `ingot` is an open ingot no other thread is using, `dst` of `len` bytes.
  */
 enum smelt_err smelt_read(struct smelt_ingot *ingot, uint64_t offset, uint8_t *dst, size_t len);
+
+/**
+ * A CD's tracks: 0 for what is not a CD.
+ *
+ * # Safety
+ *
+ * `ingot` is an open ingot, `out` valid.
+ */
+enum smelt_err smelt_track_count(const struct smelt_ingot *ingot, size_t *out);
+
+/**
+ * The `i`th track, from 0, into `out`: SMELT_ERR_RANGE past the last.
+ *
+ * # Safety
+ *
+ * `ingot` is an open ingot, `out` valid.
+ */
+enum smelt_err smelt_track_at(const struct smelt_ingot *ingot, size_t i, struct smelt_track *out);
+
+/**
+ * Read `n` whole sectors of a CD from `lba` into `dst`, 2,352 bytes each,
+ * all or nothing, across tracks: SMELT_ERR_RANGE for a sector no track's
+ * file holds, as a pregap the dump leaves out, SMELT_ERR_UNSUPPORTED for
+ * what is not a CD.
+ *
+ * # Safety
+ *
+ * `ingot` is an open ingot no other thread is using, `dst` of
+ * `n * SMELT_SECTOR` bytes.
+ */
+enum smelt_err smelt_read_sectors(struct smelt_ingot *ingot,
+                                  uint32_t lba,
+                                  uint32_t n,
+                                  uint8_t *dst);
+
+/**
+ * The Q subchannel of the sector at `lba`, its 10 bytes without their CRC,
+ * into `q` with `*replaced` 1 when the CD's SBI replaces it, as libcrypt
+ * protected discs have it; `*replaced` 0 and `q` untouched when the drive
+ * should generate it from the sector's position, as for every other.
+ *
+ * # Safety
+ *
+ * `ingot` is an open ingot, `q` of 10 bytes, `replaced` valid.
+ */
+enum smelt_err smelt_subq_replacement(const struct smelt_ingot *ingot,
+                                      uint32_t lba,
+                                      uint8_t *q,
+                                      uint8_t *replaced);
 
 #ifdef __cplusplus
 }  // extern "C"

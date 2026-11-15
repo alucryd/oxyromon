@@ -3,9 +3,10 @@
 //! emulator reads an ORE as the disc or ROM it holds, at any offset, with no
 //! temporary file. ore is unrefined iron; smelting refines it.
 //!
-//! This is the byte view, the first of design 04's API: open, clone, close,
-//! the size, the platform and the hashes of what the ORE holds, and reads.
-//! The drive view, a CD's geometry, whole sectors and channels, comes next.
+//! Two views of an ORE. The byte view, for everything: open, clone, close,
+//! the size, the platform and the hashes of what it holds, and reads. The
+//! drive view, for a CD: its tracks, whole 2,352-byte sectors by LBA as a
+//! drive reads them, and the Q subchannel its SBI replaces, libcrypt's.
 //!
 //! An ingot belongs to one thread at a time: [`Reader::read_at`] caches what
 //! it decodes, so every read changes it. [`smelt_clone`] gives another
@@ -20,7 +21,7 @@ use std::ffi::{CStr, CString, c_char};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::Path;
 
-use ore_rs::{Error, Reader};
+use ore_rs::{Error, Reader, Track, TrackMode};
 
 /// What a call came to.
 #[repr(C)]
@@ -47,6 +48,38 @@ pub enum SmeltErr {
     SmeltErrPanic = 9,
 }
 
+/// What a CD track's sectors hold.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SmeltTrackMode {
+    SmeltTrackAudio = 0,
+    SmeltTrackMode1 = 1,
+    SmeltTrackMode2 = 2,
+}
+
+/// A CD track, as its cue sheet and the ORE give it. LBAs count from
+/// 00:02:00, and a GD-ROM's high-density area starts at LBA 45,000.
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct SmeltTrack {
+    pub number: u8,
+    /// In a GD-ROM's high-density area: 1, or 0.
+    pub high_density: u8,
+    pub mode: SmeltTrackMode,
+    /// Where its index 01 lies.
+    pub lba: u32,
+    /// The sectors of pregap held before index 01, from `lba - pregap`.
+    pub pregap: u32,
+    /// Its sectors from index 01 to its end.
+    pub sectors: u32,
+    /// Where its first sector, its pregap's if held, starts in the byte
+    /// view, in bytes.
+    pub offset: u64,
+}
+
+/// The bytes of a raw CD sector, which smelt_read_sectors gives a sector.
+pub const SMELT_SECTOR: u32 = 2352;
+
 use SmeltErr::*;
 
 /// Options to [`smelt_open`]; none yet, so pass NULL.
@@ -59,7 +92,41 @@ pub struct OpenOptions {
 /// An open ORE.
 pub struct Ingot {
     reader: Reader,
+    /// A CD's tracks, none for what is not one.
+    tracks: Vec<Track>,
+    /// Its SBI's replacements by frame, in order, or why it has none.
+    subq: std::result::Result<Vec<(u64, [u8; 10])>, String>,
 }
+
+impl Ingot {
+    fn new(reader: Reader) -> std::result::Result<Self, Error> {
+        let tracks = reader.tracks()?;
+        let subq = reader
+            .subchannel_q()
+            .map(|mut entries| {
+                entries.sort_unstable_by_key(|&(frame, _)| frame);
+                entries
+            })
+            .map_err(|error| error.to_string());
+        Ok(Self {
+            reader,
+            tracks,
+            subq,
+        })
+    }
+
+    /// The track whose file holds the sector at `lba`, and that file's
+    /// first LBA.
+    fn track_at(&self, lba: u64) -> Option<(&Track, u64)> {
+        self.tracks.iter().find_map(|track| {
+            let first = track.frame.checked_sub(LEAD_IN)?;
+            (first <= lba && lba < first + track.sectors).then_some((track, first))
+        })
+    }
+}
+
+/// LBA 0's frame from 00:00:00.
+const LEAD_IN: u64 = 150;
 
 thread_local! {
     static LAST_ERROR: RefCell<CString> = RefCell::new(CString::default());
@@ -155,8 +222,13 @@ pub unsafe extern "C" fn smelt_open(
             }
             Err(error) => return fail_with(error),
         };
-        unsafe { *out = Box::into_raw(Box::new(Ingot { reader })) };
-        SmeltOk
+        match Ingot::new(reader) {
+            Ok(ingot) => {
+                unsafe { *out = Box::into_raw(Box::new(ingot)) };
+                SmeltOk
+            }
+            Err(error) => fail_with(error),
+        }
     })
 }
 
@@ -174,7 +246,12 @@ pub unsafe extern "C" fn smelt_clone(ingot: *const Ingot, out: *mut *mut Ingot) 
         };
         match ingot.reader.try_clone() {
             Ok(reader) => {
-                unsafe { *out = Box::into_raw(Box::new(Ingot { reader })) };
+                let clone = Ingot {
+                    reader,
+                    tracks: ingot.tracks.clone(),
+                    subq: ingot.subq.clone(),
+                };
+                unsafe { *out = Box::into_raw(Box::new(clone)) };
                 SmeltOk
             }
             Err(error) => fail_with(error),
@@ -308,5 +385,156 @@ pub unsafe extern "C" fn smelt_read(
             Ok(()) => SmeltOk,
             Err(error) => fail_with(error),
         }
+    })
+}
+
+/// A CD's tracks: 0 for what is not a CD.
+///
+/// # Safety
+///
+/// `ingot` is an open ingot, `out` valid.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn smelt_track_count(ingot: *const Ingot, out: *mut usize) -> SmeltErr {
+    guard(|| {
+        let (Some(ingot), false) = (unsafe { ingot.as_ref() }, out.is_null()) else {
+            return fail(SmeltErrArgument, "a NULL argument");
+        };
+        unsafe { *out = ingot.tracks.len() };
+        SmeltOk
+    })
+}
+
+/// The `i`th track, from 0, into `out`: SMELT_ERR_RANGE past the last.
+///
+/// # Safety
+///
+/// `ingot` is an open ingot, `out` valid.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn smelt_track_at(
+    ingot: *const Ingot,
+    i: usize,
+    out: *mut SmeltTrack,
+) -> SmeltErr {
+    guard(|| {
+        let (Some(ingot), false) = (unsafe { ingot.as_ref() }, out.is_null()) else {
+            return fail(SmeltErrArgument, "a NULL argument");
+        };
+        let Some(track) = ingot.tracks.get(i) else {
+            return fail(
+                SmeltErrRange,
+                format!("track {i} of {}", ingot.tracks.len()),
+            );
+        };
+        let first = track.frame.saturating_sub(LEAD_IN);
+        unsafe {
+            *out = SmeltTrack {
+                number: track.number,
+                high_density: track.high_density.into(),
+                mode: match track.mode {
+                    TrackMode::Audio => SmeltTrackMode::SmeltTrackAudio,
+                    TrackMode::Mode1 => SmeltTrackMode::SmeltTrackMode1,
+                    TrackMode::Mode2 => SmeltTrackMode::SmeltTrackMode2,
+                },
+                lba: (first + track.index1) as u32,
+                pregap: track.index1 as u32,
+                sectors: track.sectors.saturating_sub(track.index1) as u32,
+                offset: track.offset,
+            }
+        };
+        SmeltOk
+    })
+}
+
+/// Read `n` whole sectors of a CD from `lba` into `dst`, 2,352 bytes each,
+/// all or nothing, across tracks: SMELT_ERR_RANGE for a sector no track's
+/// file holds, as a pregap the dump leaves out, SMELT_ERR_UNSUPPORTED for
+/// what is not a CD.
+///
+/// # Safety
+///
+/// `ingot` is an open ingot no other thread is using, `dst` of
+/// `n * SMELT_SECTOR` bytes.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn smelt_read_sectors(
+    ingot: *mut Ingot,
+    lba: u32,
+    n: u32,
+    dst: *mut u8,
+) -> SmeltErr {
+    guard(|| {
+        let Some(ingot) = (unsafe { ingot.as_mut() }) else {
+            return fail(SmeltErrArgument, "a NULL argument");
+        };
+        if ingot.tracks.is_empty() {
+            return fail(SmeltErrUnsupported, "not a CD");
+        }
+        if n == 0 {
+            return SmeltOk;
+        }
+        if dst.is_null() {
+            return fail(SmeltErrArgument, "a NULL argument");
+        }
+        let sector = SMELT_SECTOR as usize;
+        let dst = unsafe { std::slice::from_raw_parts_mut(dst, n as usize * sector) };
+        // Checked whole first, so a read past a track's end writes nothing
+        let (mut at, end) = (u64::from(lba), u64::from(lba) + u64::from(n));
+        let mut spans = Vec::new();
+        while at < end {
+            let Some((track, first)) = ingot.track_at(at) else {
+                return fail(SmeltErrRange, format!("sector {at} is in no track's file"));
+            };
+            let count = end.min(first + track.sectors) - at;
+            spans.push((track.offset + (at - first) * sector as u64, count));
+            at += count;
+        }
+        let mut written = 0;
+        for (offset, count) in spans {
+            let len = count as usize * sector;
+            if let Err(error) = ingot
+                .reader
+                .read_at(offset, &mut dst[written..written + len])
+            {
+                return fail_with(error);
+            }
+            written += len;
+        }
+        SmeltOk
+    })
+}
+
+/// The Q subchannel of the sector at `lba`, its 10 bytes without their CRC,
+/// into `q` with `*replaced` 1 when the CD's SBI replaces it, as libcrypt
+/// protected discs have it; `*replaced` 0 and `q` untouched when the drive
+/// should generate it from the sector's position, as for every other.
+///
+/// # Safety
+///
+/// `ingot` is an open ingot, `q` of 10 bytes, `replaced` valid.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn smelt_subq_replacement(
+    ingot: *const Ingot,
+    lba: u32,
+    q: *mut u8,
+    replaced: *mut u8,
+) -> SmeltErr {
+    guard(|| {
+        let (Some(ingot), false, false) =
+            (unsafe { ingot.as_ref() }, q.is_null(), replaced.is_null())
+        else {
+            return fail(SmeltErrArgument, "a NULL argument");
+        };
+        let entries = match &ingot.subq {
+            Ok(entries) => entries,
+            Err(error) => return fail(SmeltErrUnsupported, error.clone()),
+        };
+        let frame = u64::from(lba) + LEAD_IN;
+        match entries.binary_search_by_key(&frame, |&(frame, _)| frame) {
+            Ok(i) => unsafe {
+                std::ptr::copy_nonoverlapping(entries[i].1.as_ptr(), q, 10);
+                *replaced = 1;
+            },
+            Err(_) => unsafe { *replaced = 0 },
+        }
+        SmeltOk
     })
 }

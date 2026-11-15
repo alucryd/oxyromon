@@ -28,3 +28,5 @@ prefix_with_name = false
 "Ingot" = "smelt_ingot"
 "OpenOptions" = "smelt_open_opts"
 "SmeltErr" = "smelt_err"
+"SmeltTrack" = "smelt_track"
+"SmeltTrackMode" = "smelt_track_mode"
