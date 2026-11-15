@@ -21,4 +21,5 @@ pub mod image;
 pub mod io;
 pub mod keys;
 pub mod nus;
+pub mod plan;
 pub mod wux;

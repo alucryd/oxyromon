@@ -22,6 +22,7 @@ use sha1::{Digest, Sha1};
 use sha2::Sha256;
 
 use crate::Stats;
+pub(crate) use crate::crypto::encrypt;
 use crate::crypto::{Key, cbc_decrypt};
 use crate::disc::{Fst, Source};
 use crate::error::{Error, Result, corrupt};
@@ -655,19 +656,5 @@ impl Contents {
         )
         .map_err(|e| corrupt(format!("{}: {e}", self.folder)))?;
         Ok(h3)
-    }
-}
-
-/// Encrypt `buf` in place with AES-128-CBC, continuing the chain from `iv`.
-pub(crate) fn encrypt(key: &Key, iv: &mut [u8; 16], buf: &mut [u8]) {
-    use aes::Aes128;
-    use aes::cipher::{BlockCipherEncrypt, KeyInit};
-    let cipher = Aes128::new(key.into());
-    for block in buf.as_chunks_mut::<16>().0 {
-        for (b, c) in block.iter_mut().zip(iv.iter()) {
-            *b ^= c;
-        }
-        cipher.encrypt_block(block.into());
-        *iv = *block;
     }
 }
