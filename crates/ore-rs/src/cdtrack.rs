@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! A CD data track as an ORE stores it: its sectors' data in one stream,
 //! and a map of what each sector is, from which the rest is generated.
 //!

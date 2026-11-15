@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Reading an ORE as the disc it holds.
 
 use std::collections::HashMap;
@@ -8,21 +9,21 @@ use std::sync::{Arc, Mutex};
 
 use rayon::prelude::*;
 
+use super::cd::cue;
 use super::cd::sector::SECTOR;
 use super::cdtrack::SectorMap;
 use super::crypto::Key;
 use super::error::{Error, Result};
 use super::format::*;
+use super::format::{BLOCK, RECORD_MAX, Run};
 use super::io;
 use super::lfg::{Lfg, SEED_BYTES};
 use super::pack::{Cache, read_group};
-use super::segment::{BLOCK, RECORD_MAX, Run};
 use super::store::{Index, NOWHERE, StoreReader, find_store, hex};
 use super::wii::{
     self, BLOCK_DATA_SIZE, BLOCK_TOTAL_SIZE, BLOCKS_PER_GROUP, BlockData, GROUP_DATA_SIZE,
     GROUP_TOTAL_SIZE, HashBlock,
 };
-use super::writer::Stats;
 
 /// What a core decodes at a time when writing a disc out: four Wii groups.
 const SLICE: u64 = 4 * GROUP_TOTAL_SIZE;
@@ -589,6 +590,84 @@ impl Reader {
         self.meta.media.cue.is_some()
     }
 
+    /// A CD's tracks, as its cue sheet and its areas give them, in order;
+    /// none for what is not a CD.
+    pub fn tracks(&self) -> Result<Vec<Track>> {
+        let Some(cue) = &self.meta.media.cue else {
+            return Ok(Vec::new());
+        };
+        let sheet = cue::parse(&String::from_utf8_lossy(cue), Path::new(""))?;
+        sheet
+            .tracks
+            .iter()
+            .map(|track| {
+                let name = track.file.file_name().and_then(|name| name.to_str());
+                let area = self
+                    .meta
+                    .media
+                    .areas
+                    .iter()
+                    .find(|area| area.file.as_deref() == name && area.frame.is_some())
+                    .ok_or_else(|| corrupt("a cue sheet's file not in the ORE"))?;
+                let index1 = track
+                    .indexes
+                    .iter()
+                    .find(|&&(number, _)| number == 1)
+                    .map_or(0, |&(_, frames)| u64::from(frames));
+                Ok(Track {
+                    number: track.number,
+                    mode: match track.mode {
+                        cue::Mode::Audio => TrackMode::Audio,
+                        cue::Mode::Mode1 => TrackMode::Mode1,
+                        cue::Mode::Mode2 => TrackMode::Mode2,
+                    },
+                    high_density: track.high_density,
+                    frame: area.frame.unwrap_or_default(),
+                    index1,
+                    sectors: area.len / SECTOR as u64,
+                    offset: area.start,
+                })
+            })
+            .collect()
+    }
+
+    /// A CD's SBI, the Q subchannel of the sectors where it differs from
+    /// what its position generates, as libcrypt protection has it: each
+    /// sector's frame from 00:00:00 and its 10 bytes of Q, without their
+    /// CRC. Only full replacements, an SBI's type 1, which are what Redump
+    /// writes; the partial ones, 2 and 3, are refused.
+    pub fn subchannel_q(&self) -> Result<Vec<(u64, [u8; 10])>> {
+        let Some(sbi) = &self.meta.media.sbi else {
+            return Ok(Vec::new());
+        };
+        // An address's minutes, seconds and frames, each a BCD byte below
+        // its bound
+        let bcd = |byte: u8, below: u64| {
+            let value = u64::from(byte >> 4) * 10 + u64::from(byte & 0xF);
+            (byte >> 4 < 10 && byte & 0xF < 10 && value < below)
+                .then_some(value)
+                .ok_or_else(|| corrupt("an SBI's address"))
+        };
+        let mut entries = Vec::new();
+        let mut rest = sbi
+            .strip_prefix(b"SBI\0")
+            .ok_or_else(|| corrupt("an SBI's magic"))?;
+        while !rest.is_empty() {
+            let (&[m, s, f, kind], tail) = rest
+                .split_first_chunk::<4>()
+                .ok_or_else(|| corrupt("an SBI cut short"))?;
+            if kind != 1 {
+                return Err(Error::Unsupported(format!("SBI entries of type {kind}")));
+            }
+            let (&q, tail) = tail
+                .split_first_chunk::<10>()
+                .ok_or_else(|| corrupt("an SBI cut short"))?;
+            entries.push(((bcd(m, 100)? * 60 + bcd(s, 60)?) * 75 + bcd(f, 75)?, q));
+            rest = tail;
+        }
+        Ok(entries)
+    }
+
     /// The files [`decompress`] writes, given `output`: the disc image, or
     /// a CD's tracks beside its cue sheet, each with where it lies in the
     /// logical stream; and the files written whole, a CD's cue sheet and
@@ -884,4 +963,55 @@ pub fn decompress(input: &Path, output: &Path, progress: &mut dyn FnMut(u64)) ->
         }
     }
     result
+}
+
+/// Sizes of the two files a run touched.
+#[derive(Debug, Clone, Copy)]
+pub struct Stats {
+    pub input_size: u64,
+    pub output_size: u64,
+}
+
+impl Stats {
+    /// The output's size as a percentage of the input's.
+    pub fn ratio_percent(&self) -> f64 {
+        if self.input_size == 0 {
+            0.0
+        } else {
+            self.output_size as f64 * 100.0 / self.input_size as f64
+        }
+    }
+}
+
+/// Whether `path` starts as an ORE does.
+pub fn is_ore(path: &Path) -> Result<bool> {
+    let file = File::open(path)?;
+    let mut magic = [0; 4];
+    Ok(io::read_exact_at(&file, &mut magic, 0).is_ok() && magic == MAGIC)
+}
+
+/// A CD track, as [`Reader::tracks`] gives it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Track {
+    pub number: u8,
+    pub mode: TrackMode,
+    /// In a GD-ROM's high-density area.
+    pub high_density: bool,
+    /// Its file's first sector, in frames from 00:00:00: its LBA plus 150.
+    pub frame: u64,
+    /// Where its index 01 lies in its file, in sectors: the pregap the file
+    /// holds before it.
+    pub index1: u64,
+    /// The sectors its file holds.
+    pub sectors: u64,
+    /// Where its file starts in what [`Reader::read_at`] reads, in bytes.
+    pub offset: u64,
+}
+
+/// What a CD track's sectors hold, as its cue sheet says.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TrackMode {
+    Audio,
+    Mode1,
+    Mode2,
 }

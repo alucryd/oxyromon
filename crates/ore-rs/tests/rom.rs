@@ -2,6 +2,9 @@
 //! byte, under its name; a ROM whose header its console would refuse is
 //! refused.
 
+// They write the OREs they read
+#![cfg(feature = "write")]
+
 use std::path::{Path, PathBuf};
 
 use ore_rs::{Options, Reader};

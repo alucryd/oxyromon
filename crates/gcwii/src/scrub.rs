@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 //! Scrubbing: zeroing every 32 KiB cluster of a disc that nothing on it
 //! points to, the padding a disc is filled with, so it stores as next to
 //! nothing. A scrubbed disc plays the same, but is no longer the disc it was.

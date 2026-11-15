@@ -2,6 +2,9 @@
 //! chunks they share stored once, and a store compacted once a game leaves keeps what
 //! the others use.
 
+// They write the OREs they read
+#![cfg(feature = "write")]
+
 use std::path::{Path, PathBuf};
 
 use ore_rs::{Options, Reader, StoreOptions};

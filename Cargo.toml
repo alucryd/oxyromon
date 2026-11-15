@@ -18,6 +18,10 @@ rust-version = "1.94.0"
 # conventions, documented in CLAUDE.md, but are published independently.
 [workspace]
 members = ["crates/*"]
+# smelt builds ore-rs without its GPL writer, which oxyromon asks for: in
+# one workspace, a workspace build would unify the two and link the writer
+# into libsmelt
+exclude = ["crates/smelt-rs"]
 
 [workspace.package]
 edition = "2024"
@@ -103,7 +107,7 @@ itertools = "0.15.0"
 log = "0.4.35"
 md-5.workspace = true
 nsz-rs = { path = "crates/nsz-rs", version = "0.3.0", default-features = false }
-ore-rs = { path = "crates/ore-rs", version = "0.1.0", default-features = false }
+ore-rs = { path = "crates/ore-rs", version = "0.1.0", default-features = false, features = ["write"] }
 rvz-rs = { path = "crates/rvz-rs", version = "0.1.0", default-features = false }
 wbfs-rs = { path = "crates/wbfs-rs", version = "0.1.0", default-features = false }
 wux-rs = { path = "crates/wux-rs", version = "0.1.0", default-features = false }

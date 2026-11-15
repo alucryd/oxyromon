@@ -3,6 +3,9 @@
 //! alone and through a store; an ISO that does not boot a PlayStation 2 is
 //! refused. A PSP UMD is cut as one.
 
+// They write the OREs they read
+#![cfg(feature = "write")]
+
 use std::path::Path;
 
 use ore_rs::{Options, Reader};

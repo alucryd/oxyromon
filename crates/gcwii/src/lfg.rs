@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The lagged Fibonacci generator that fills the padding of GameCube and Wii
 //! discs, and the reverse: finding the seed that produced some padding, so
 //! RVZ can store 68 bytes of seed in its place, and a disc's padding can be

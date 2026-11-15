@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The error type of every crate embedding this one.
 
 use thiserror::Error;

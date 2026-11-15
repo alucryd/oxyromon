@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AES-128-CBC, the cipher Wii partitions are encrypted with.
 
 use aes::Aes128;

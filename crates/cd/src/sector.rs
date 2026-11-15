@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //! A raw CD-ROM sector, 2352 bytes, as what has to be stored to rebuild it
 //! and what can be generated.
 //!

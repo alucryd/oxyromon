@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 //! Wii common keys, which turn a partition's ticket into the title key its
 //! data is encrypted with. None ship with this crate: they come from a text
 //! file, a console's OTP dump, or a BootMii `keys.bin`.

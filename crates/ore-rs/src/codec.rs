@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Compressing a group, with each codec's parameters pinned.
 
 use std::io::{Read, Write};

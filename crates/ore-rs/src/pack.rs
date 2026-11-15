@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Stored chunks gathered into groups, each compressed on its own, and
 //! groups read back.
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The range coder of the modelling codecs, `xa` and `str`: LZMA's, its
 //! probabilities 16-bit, each the mean of a fast and a slow estimate. One
 //! [`Coder`] trait serves both ways, so a codec's model is written once.

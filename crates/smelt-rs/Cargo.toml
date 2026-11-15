@@ -1,0 +1,32 @@
+[package]
+name = "smelt-rs"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94.0"
+description = "smelt, the ORE reader library: ore-rs's reader behind a C ABI, for emulators to read an ORE as the disc or ROM it holds"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/alucryd/oxyromon"
+keywords = ["ore", "emulator", "ffi", "disc"]
+categories = ["emulators", "external-ffi-bindings"]
+include = ["src/**/*", "include/**/*", "tests/**/*", "cbindgen.toml", "LICENSE-APACHE", "LICENSE-BSD-3-Clause", "LICENSE-MIT", "README.md", "CHANGELOG.md"]
+# No ABI before the format: nothing is published until ORE's spec is
+publish = false
+
+# A workspace of its own, out of oxyromon's, so that no build there unifies
+# ore-rs's write feature, GPL, into libsmelt
+[workspace]
+
+[lib]
+name = "smelt"
+path = "src/lib.rs"
+# A static library and a shared one for C and C++ hosts, and an rlib for
+# this crate's own tests
+crate-type = ["rlib", "staticlib", "cdylib"]
+
+[dependencies]
+ore-rs = { path = "../ore-rs", version = "0.1", default-features = false }
+
+[dev-dependencies]
+# The tests write the OREs they read
+ore-rs = { path = "../ore-rs", version = "0.1", default-features = false, features = ["write"] }
+tempfile = "3.27.0"
