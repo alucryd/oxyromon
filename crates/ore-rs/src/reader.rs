@@ -622,6 +622,7 @@ impl Reader {
                         cue::Mode::Mode2 => TrackMode::Mode2,
                     },
                     high_density: track.high_density,
+                    flags: track.flags,
                     frame: area.frame.unwrap_or_default(),
                     index1,
                     sectors: area.len / SECTOR as u64,
@@ -997,6 +998,9 @@ pub struct Track {
     pub mode: TrackMode,
     /// In a GD-ROM's high-density area.
     pub high_density: bool,
+    /// Its cue sheet's `FLAGS`, as the Q subchannel's control bits: 4CH
+    /// 0x8, DCP 0x2, PRE 0x1.
+    pub flags: u8,
     /// Its file's first sector, in frames from 00:00:00: its LBA plus 150.
     pub frame: u64,
     /// Where its index 01 lies in its file, in sectors: the pregap the file

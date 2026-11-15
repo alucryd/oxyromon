@@ -65,6 +65,10 @@ pub struct SmeltTrack {
     pub number: u8,
     /// In a GD-ROM's high-density area: 1, or 0.
     pub high_density: u8,
+    /// Its Q subchannel's control bits, the high nibble of Q's first
+    /// byte: its cue sheet's FLAGS, 4CH 0x8, DCP 0x2, PRE 0x1, and 0x4
+    /// for a data track.
+    pub control: u8,
     pub mode: SmeltTrackMode,
     /// Where its index 01 lies.
     pub lba: u32,
@@ -442,6 +446,12 @@ pub unsafe extern "C" fn smelt_track_at(
             *out = SmeltTrack {
                 number: track.number,
                 high_density: track.high_density.into(),
+                control: track.flags
+                    | if track.mode == TrackMode::Audio {
+                        0
+                    } else {
+                        0x4
+                    },
                 mode: match track.mode {
                     TrackMode::Audio => SmeltTrackMode::SmeltTrackAudio,
                     TrackMode::Mode1 => SmeltTrackMode::SmeltTrackMode1,

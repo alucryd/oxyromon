@@ -23,7 +23,7 @@ fn noise(len: usize, mut state: u64) -> Vec<u8> {
 }
 
 /// A data track of noise and an audio track whose file holds its two
-/// seconds of pregap, with an SBI replacing LBA 10's Q: the disc's bytes,
+/// seconds of pregap, copying permitted, with an SBI replacing LBA 10's Q: the disc's bytes,
 /// its tracks end to end, and its ORE.
 fn cd(dir: &Path) -> (Vec<u8>, std::path::PathBuf) {
     let mut sbi = b"SBI\0".to_vec();
@@ -43,7 +43,7 @@ fn cd_with(dir: &Path, sbi: &[u8]) -> (Vec<u8>, std::path::PathBuf) {
     std::fs::write(
         &cue,
         "FILE \"Game (Track 1).bin\" BINARY\r\n  TRACK 01 MODE1/2352\r\n    INDEX 01 00:00:00\r\n\
-         FILE \"Game (Track 2).bin\" BINARY\r\n  TRACK 02 AUDIO\r\n    INDEX 00 00:00:00\r\n    INDEX 01 00:02:00\r\n",
+         FILE \"Game (Track 2).bin\" BINARY\r\n  TRACK 02 AUDIO\r\n    FLAGS DCP\r\n    INDEX 00 00:00:00\r\n    INDEX 01 00:02:00\r\n",
     )
     .unwrap();
     std::fs::write(dir.join("Game.sbi"), sbi).unwrap();
@@ -77,6 +77,7 @@ fn a_cd_reads_as_a_drive_reads_it() {
     let mut tracks = [SmeltTrack {
         number: 0,
         high_density: 0,
+        control: 0,
         mode: SmeltTrackMode::SmeltTrackAudio,
         lba: 0,
         pregap: 0,
@@ -120,6 +121,8 @@ fn a_cd_reads_as_a_drive_reads_it() {
     );
     assert_eq!(audio.offset, (DATA * SECTOR) as u64);
     assert_eq!(audio.high_density, 0);
+    // Q's control bits: data, then its FLAGS DCP
+    assert_eq!((data.control, audio.control), (0x4, 0x2));
     assert_eq!(
         unsafe { smelt_track_at(ingot, 2, &mut tracks[0]) },
         SmeltErr::SmeltErrRange

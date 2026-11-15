@@ -45,10 +45,12 @@ smelt_read(ingot, 16 * 2048, sector, sizeof sector);
 smelt_close(ingot);
 ```
 
-After changing the ABI, write the header again; a test fails until it is:
+`smelt.h` is C89, for the emulators that build as C89. After changing the
+ABI, write it again, cbindgen's output with the commas and comments C89
+refuses rewritten; a test fails until it is:
 
 ```sh
-cbindgen --config cbindgen.toml --output include/smelt.h
+SMELT_BLESS=1 cargo test --test headers
 ```
 
 ## License

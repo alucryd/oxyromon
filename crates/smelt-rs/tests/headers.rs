@@ -1,4 +1,4 @@
-//! `smelt.h` is cbindgen's from the crate as it is, compiles as C99 and with
+//! `smelt.h` is cbindgen's from the crate as it is, compiles as C89 and with
 //! `smelt.hpp` as C++11, and a C program linked against libsmelt reads an
 //! ORE through it. Each step skips, rather than fails, when its tool is
 //! missing.
@@ -16,6 +16,29 @@ fn have(tool: &str) -> bool {
     Command::new(tool).arg("--version").output().is_ok()
 }
 
+/// cbindgen's output as C89 takes it: no comma after an enum's last
+/// variant, and `/* */` for the comments it puts after `#endif` and `}`.
+fn c89(header: &str) -> String {
+    let lines: Vec<&str> = header.lines().collect();
+    let mut out = String::with_capacity(header.len());
+    for (i, line) in lines.iter().enumerate() {
+        let next = lines.get(i + 1).map_or("", |next| next.trim_start());
+        let line = match line.split_once("// ") {
+            Some((code, comment))
+                if code.trim_start().starts_with("#endif") || code.trim() == "}" =>
+            {
+                format!("{code}/* {comment} */")
+            }
+            _ if next.starts_with('}') && line.ends_with(',') => line[..line.len() - 1].into(),
+            _ => (*line).into(),
+        };
+        out.push_str(&line);
+        out.push('\n');
+    }
+    out
+}
+
+/// `SMELT_BLESS=1` writes it after an ABI change.
 #[test]
 fn the_header_is_cbindgens() {
     if !have("cbindgen") {
@@ -31,10 +54,14 @@ fn the_header_is_cbindgens() {
         .status()
         .unwrap();
     assert!(status.success());
+    let expected = c89(&std::fs::read_to_string(&header).unwrap());
+    let committed = crate_dir().join("include/smelt.h");
+    if std::env::var_os("SMELT_BLESS").is_some() {
+        std::fs::write(&committed, &expected).unwrap();
+    }
     assert!(
-        std::fs::read(&header).unwrap()
-            == std::fs::read(crate_dir().join("include/smelt.h")).unwrap(),
-        "include/smelt.h is stale: cbindgen --config cbindgen.toml --output include/smelt.h"
+        expected == std::fs::read_to_string(&committed).unwrap(),
+        "include/smelt.h is stale: SMELT_BLESS=1 cargo test --test headers"
     );
 }
 
@@ -42,7 +69,7 @@ fn the_header_is_cbindgens() {
 fn the_headers_compile_as_c_and_cpp() {
     let include = crate_dir().join("include");
     for (compiler, language, standard, header) in [
-        ("cc", "c", "-std=c99", "smelt.h"),
+        ("cc", "c", "-std=c89", "smelt.h"),
         ("c++", "c++", "-std=c++11", "smelt.hpp"),
     ] {
         if !have(compiler) {
