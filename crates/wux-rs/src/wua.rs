@@ -91,7 +91,7 @@ pub fn to_wua_with_tickets(
         total += nus::parse_tmd(&title.meta.tmd)?
             .contents
             .iter()
-            .map(|c| c.size)
+            .map(|c| c.stored_size())
             .sum::<u64>();
     }
     // The disc read through, then its partitions' streams.

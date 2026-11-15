@@ -1079,11 +1079,7 @@ fn find_transforms(
             let hashed = content.is_hashed();
             let size = fst.extent(entry).2;
             let Some(at) = place(entry) else { continue };
-            // A raw content's file is padded to the AES block size.
-            let expected = match hashed {
-                true => content.size,
-                false => content.size.next_multiple_of(16),
-            };
+            let expected = content.stored_size();
             if size != expected
                 || size == 0
                 || !size.is_multiple_of(if hashed { BLOCK } else { 16 })

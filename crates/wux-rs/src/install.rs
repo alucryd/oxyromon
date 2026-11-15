@@ -47,7 +47,7 @@ pub fn to_nus(
     let tmd_bytes = game.si_file("title.tmd")?;
     let tmd = nus::parse_tmd(&tmd_bytes)?;
     let input_size = std::fs::metadata(input)?.len();
-    let total: u64 = tmd.contents.iter().map(|c| c.size).sum();
+    let total: u64 = tmd.contents.iter().map(|c| c.stored_size()).sum();
 
     let part = part(output);
     if part.exists() {
@@ -74,7 +74,7 @@ pub fn to_nus(
                 ))
             })?;
             let hashed = content.is_hashed();
-            if !content.size.is_multiple_of(if hashed { BLOCK } else { 16 }) {
+            if hashed && !content.size.is_multiple_of(BLOCK) {
                 return Err(corrupt(format!(
                     "content {:08x} is {} bytes",
                     content.id, content.size
@@ -87,8 +87,8 @@ pub fn to_nus(
             let (mut sha1, mut sha256) = (Sha1::new(), Sha256::new());
             let mut h3 = Vec::new();
             let mut offset = 0;
-            while offset < content.size {
-                let len = (content.size - offset).min(buf.len() as u64) as usize;
+            while offset < content.stored_size() {
+                let len = (content.stored_size() - offset).min(buf.len() as u64) as usize;
                 let chunk = &mut buf[..len];
                 game.source
                     .read_cluster(content.index, start, offset, chunk)?;
@@ -101,9 +101,11 @@ pub fn to_nus(
                         }
                     }
                 } else {
+                    // The TMD hashes its size, not the padding past it
                     cbc_decrypt(&game.title_key, &mut iv, chunk);
-                    sha1.update(&*chunk);
-                    sha256.update(&*chunk);
+                    let hashed_len = (content.size.saturating_sub(offset) as usize).min(len);
+                    sha1.update(&chunk[..hashed_len]);
+                    sha256.update(&chunk[..hashed_len]);
                 }
                 offset += len as u64;
                 done += len as u64;

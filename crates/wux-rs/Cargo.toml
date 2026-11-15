@@ -1,6 +1,6 @@
 [package]
 name = "wux-rs"
-version = "0.1.0"
+version = "0.1.1"
 edition.workspace = true
 rust-version.workspace = true
 description = "Wii U disc images: WUD to WUX compression and back, and WUD/WUX to Cemu's WUA archives"

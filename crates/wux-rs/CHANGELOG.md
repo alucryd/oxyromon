@@ -1,3 +1,9 @@
+# 0.1.1
+
+## Fixes
+
+- An update or DLC content whose TMD size is not a multiple of 16, its file padded to the AES block, converts to a WUA and back, where it was refused as corrupt
+
 # 0.1.0
 
 ## Features

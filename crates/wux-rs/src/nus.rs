@@ -34,6 +34,15 @@ impl Content {
     pub fn is_hashed(&self) -> bool {
         self.flags & HASHED != 0
     }
+
+    /// The bytes its file holds: an unhashed content padded to the AES
+    /// block, as its TMD size need not be a multiple of 16.
+    pub fn stored_size(&self) -> u64 {
+        match self.is_hashed() {
+            true => self.size,
+            false => self.size.next_multiple_of(16),
+        }
+    }
 }
 
 /// A Wii U TMD.
