@@ -1,7 +1,6 @@
 extern crate wiremock;
 
 use super::*;
-use tempfile::NamedTempFile;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -10,7 +9,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 async fn test() {
     // given
     let progress_bar = ProgressBar::hidden();
-    let db_file = NamedTempFile::new().unwrap();
+    let db_file = crate::config::TestDatabase::new();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 

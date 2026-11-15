@@ -4,7 +4,7 @@ use super::super::config::*;
 use super::*;
 use std::io::{Cursor, Write};
 use std::path::{Path, PathBuf};
-use tempfile::{NamedTempFile, TempDir};
+use tempfile::TempDir;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 use zip::write::{SimpleFileOptions, ZipWriter};
@@ -27,7 +27,7 @@ async fn test() {
     let test_directory = Path::new("tests");
     let progress_bar = ProgressBar::hidden();
 
-    let db_file = NamedTempFile::new().unwrap();
+    let db_file = crate::config::TestDatabase::new();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 

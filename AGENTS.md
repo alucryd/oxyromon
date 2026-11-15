@@ -124,8 +124,9 @@ global `MultiProgress`.
 
 - Each test case is its own file: `src/<module>/test_<case>.rs`, included with
   `#[cfg(test)] mod test_<case>;` at the bottom of the module.
-- Tests use a `NamedTempFile` database and `TempDir::new_in("tests")`
-  directories, set with `set_rom_directory` / `set_tmp_directory`.
+- Tests use a `config::TestDatabase`, which deletes the WAL journal SQLite
+  leaves beside it, and `TempDir::new_in("tests")` directories, set with
+  `set_rom_directory` / `set_tmp_directory`.
 - **Acquire the global `MUTEX`** (`config.rs`) in every test touching shared
   state: `let _guard = MUTEX.lock().await;`. Forgetting it causes flaky failures.
 - Subcommand tests run the real pipeline: import a DAT from `tests/`, import
