@@ -1,6 +1,5 @@
 use super::super::import_dats;
 use super::super::import_roms;
-use super::super::purge_roms;
 use super::*;
 use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
@@ -86,20 +85,4 @@ async fn test() {
             .unwrap()
             .all(|entry| { !entry.unwrap().path().to_string_lossy().ends_with(".part") })
     );
-
-    // when its parity is turned off, a purge seals the store again without it
-    let size = |dir: &Path| -> u64 {
-        std::fs::read_dir(dir)
-            .unwrap()
-            .map(|entry| entry.unwrap().metadata().unwrap().len())
-            .sum()
-    };
-    let with_parity = size(&store);
-    set_integer(&mut connection, "ORE_STORE_PARITY", 0, Some(system.id)).await;
-    let matches = purge_roms::subcommand().get_matches_from(["purge-roms", "-y"]);
-    purge_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-    assert!(size(&store) < with_parity);
-    assert!(reads_back(&ore_path));
 }

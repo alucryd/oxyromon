@@ -1,4 +1,5 @@
 use super::check_roms;
+use super::compact_roms;
 use super::config::{add_to_list, remove_from_list, set_bool, set_directory, set_string};
 use super::convert_roms;
 use super::database::*;
@@ -662,6 +663,38 @@ impl Mutation {
                     arguments.push("-y".to_string());
                     let matches = purge_roms::subcommand().try_get_matches_from(arguments)?;
                     purge_roms::main(connection, &matches, &progress_bar).await
+                })
+            },
+        );
+
+        Ok(true)
+    }
+
+    /// Compact every system's ORE store, dropping what no game uses; with
+    /// `recompress`, pack every group again.
+    async fn compact_roms(&self, ctx: &Context<'_>, recompress: bool) -> Result<bool> {
+        log::debug!("mutation::compact_roms({})", recompress);
+        let pool = ctx.data_unchecked::<SqlitePool>().clone();
+        let sse_tx = ctx
+            .data_unchecked::<broadcast::Sender<SseMessage>>()
+            .clone();
+
+        spawn_cli_action(
+            pool,
+            sse_tx,
+            "compact_roms",
+            "Compacting ORE stores".to_string(),
+            "Compacted ORE stores".to_string(),
+            "Failed to compact ORE stores",
+            move |connection| {
+                Box::pin(async move {
+                    let progress_bar = ProgressBar::hidden();
+                    let mut arguments = vec!["compact-roms".to_string(), "-a".to_string()];
+                    if recompress {
+                        arguments.push("-r".to_string());
+                    }
+                    let matches = compact_roms::subcommand().try_get_matches_from(arguments)?;
+                    compact_roms::main(connection, &matches, &progress_bar).await
                 })
             },
         );

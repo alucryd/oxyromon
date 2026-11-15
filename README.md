@@ -178,7 +178,7 @@ These environment variables change where things go:
 | `ORE_PROFILE`                     | ORE group size: `stream`, 1 MiB, quicker to read, or `archive`, 4 MiB, smaller                           | `stream`  |
 | `ORE_STORE`                       | Keep a system's OREs' chunks in one store, `.ore-store` in its directory, each game a thin ORE           | `false`   |
 | `ORE_STORE_BATCH`                 | How OREs go into the store: `run`, all of a conversion at once, or `game`, each committed alone          | `run`     |
-| `ORE_STORE_PARITY`                | Parity shards a store's segment gets against its 239 data shards, 0 to 16: 16 adds 6.7%, 8 3.2%, 0 nothing; a change applies to existing segments at the next `purge-roms` | `16`      |
+| `ORE_STORE_PARITY`                | Parity shards a store's segment gets against its 239 data shards, 0 to 16: 16 adds 6.7%, 8 3.2%, 0 nothing; a change applies to existing segments at the next `compact-roms` | `16`      |
 | `RVZ_BLOCK_SIZE`                  | RVZ block size in KiB, `32` to `2048`, rounded up to a power of two                                      | `128`     |
 | `RVZ_COMPRESSION_ALGORITHM`       | RVZ codec: `none`, `zstd`, `bzip2`, `lzma`, `lzma2`                                                      | `zstd`    |
 | `RVZ_COMPRESSION_LEVEL`           | RVZ level, `1` to `22` for zstd and `1` to `9` otherwise                                                 | `5`       |
@@ -358,6 +358,7 @@ Commands:
   rebuild-roms        Rebuild arcade ROM sets according to the selected strategy
   check-roms          Check ROM files' integrity
   purge-roms          Purge trashed, missing, and orphan ROM files
+  compact-roms        Compact ORE stores, dropping what no game uses
   purge-systems       Purge systems
   generate-playlists  Generate M3U playlists for multi-disc games
   benchmark           Benchmark oxyromon
@@ -761,7 +762,7 @@ Options:
 Forgets ROM files that went missing or that no ROM references, and deletes the files in every `Trash` directory, the ROM directory's own included.
 `--foreign` deletes files in the ROM directory that the database doesn't know.
 Directories left empty are deleted, except the ROM, system and `Trash` directories.
-Each system's ORE store is then compacted: the chunks of games purged go, and small groups are packed together; its files are never foreign.
+An ORE store's files are never foreign; the chunks of games purged stay in it until `compact-roms`.
 
 ```text
 Usage: oxyromon purge-roms [OPTIONS]
@@ -789,6 +790,21 @@ Options:
   -s, --system <SYSTEM>  Select systems by name
   -g, --game <GAME>      Select games by exact name
   -h, --help             Print help
+```
+
+### compact-roms
+
+Compacts the ORE store of each system selected, once a directory shared by systems: the chunks no game uses any more go, as `purge-roms` and conversions leave them, small groups are packed together, and segments sealed with other parity than `ORE_STORE_PARITY` are sealed again with it, their groups copied as they are.
+`--recompress` decodes and packs every group again, the smallest the store gets, for a read and a write of all of it: worth it after many runs a game at a time.
+It deletes no game, and a game reads on through it.
+
+```text
+Usage: oxyromon compact-roms [OPTIONS]
+
+Options:
+  -a, --all         Compact all systems
+  -r, --recompress  Decode and pack every group again: the smallest store, for a read and a write of all of it
+  -h, --help        Print help
 ```
 
 ### purge-systems

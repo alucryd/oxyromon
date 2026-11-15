@@ -8,6 +8,7 @@ mod chd;
 mod check_roms;
 mod cia;
 mod common;
+mod compact_roms;
 mod config;
 mod convert_roms;
 mod crc32;
@@ -89,6 +90,7 @@ async fn main() -> Result<()> {
         rebuild_roms::subcommand(),
         check_roms::subcommand(),
         purge_roms::subcommand(),
+        compact_roms::subcommand(),
         purge_systems::subcommand(),
         generate_playlists::subcommand(),
         benchmark::subcommand(),
@@ -175,6 +177,9 @@ async fn main() -> Result<()> {
                 }
                 "check-roms" => check_roms::main(connection, sub_matches, &progress_bar).await?,
                 "purge-roms" => purge_roms::main(connection, sub_matches, &progress_bar).await?,
+                "compact-roms" => {
+                    compact_roms::main(connection, sub_matches, &progress_bar).await?
+                }
                 "purge-systems" => {
                     purge_systems::main(connection, sub_matches, &progress_bar).await?
                 }

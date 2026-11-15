@@ -1,4 +1,5 @@
 use super::super::check_roms;
+use super::super::compact_roms;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::super::purge_roms;
@@ -101,8 +102,7 @@ async fn test() {
     assert!(thin(&ore_path));
     assert!(reads_back(&ore_path));
 
-    // then a purge compacts the store, keeping what the game uses, and
-    // never takes the store's files for foreign ones
+    // then a purge never takes the store's files for foreign ones
     let matches = purge_roms::subcommand().get_matches_from(["purge-roms", "-f", "-y"]);
     purge_roms::main(&mut connection, &matches, &progress_bar)
         .await
@@ -110,4 +110,11 @@ async fn test() {
     assert!(reads_back(&ore_path));
     assert!(store.join("store.index").is_file());
     assert_eq!(find_romfiles(&mut connection).await.len(), 1);
+
+    // and a compaction keeps what the game uses
+    let matches = compact_roms::subcommand().get_matches_from(["compact-roms", "-a"]);
+    compact_roms::main(&mut connection, &matches, &progress_bar)
+        .await
+        .unwrap();
+    assert!(reads_back(&ore_path));
 }

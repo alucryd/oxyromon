@@ -848,12 +848,13 @@ pub async fn check_store(progress_bar: &ProgressBar, store: &Path) -> Result<()>
 
 /// Compact a system's store: drop what no game beneath it uses any more,
 /// pack small groups together, and seal again with `parity` the segments
-/// sealed with other parity.
+/// sealed with other parity; with `recompress`, pack every group again.
 pub async fn compact_store(
     progress_bar: &ProgressBar,
     store: &Path,
     profile: &OreProfile,
     parity: u8,
+    recompress: bool,
 ) -> Result<()> {
     print_action(progress_bar, &format!("Compacting \"{}\"", store.display()));
     let options = Options {
@@ -867,7 +868,7 @@ pub async fn compact_store(
     // How dead a segment has to be before its live chunks move, as orers
     let compacted = run_blocking(progress_bar, 0, move |_| {
         ore_rs::set_parity(&path, parity)?;
-        ore_rs::compact(&path, &options, 0.5, false)
+        ore_rs::compact(&path, &options, 0.5, recompress)
     })
     .await
     .with_context(|| format!("Failed to compact \"{}\"", store.display()))?;

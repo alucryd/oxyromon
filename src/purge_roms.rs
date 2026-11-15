@@ -3,7 +3,6 @@ use super::config::*;
 use super::database::*;
 use super::mimetype::WUA_EXTENSION;
 use super::model::Romfile;
-use super::ore::{OreProfile, compact_store, store_parity, system_store};
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
@@ -14,7 +13,6 @@ use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::path::PathBuf;
-use std::str::FromStr;
 use walkdir::WalkDir;
 
 pub fn subcommand() -> Command {
@@ -82,32 +80,8 @@ pub async fn main(
     if matches.get_flag("FOREIGN") {
         purge_foreign_romfiles(connection, progress_bar, answer_yes).await?;
     }
-    compact_stores(connection, progress_bar).await?;
     for system in find_systems(connection).await {
         compute_system_completion(connection, progress_bar, &system).await?;
-    }
-    Ok(())
-}
-
-/// Compact each system's ORE store, once a directory shared by systems: the
-/// chunks of games purged go, and small groups are packed together.
-async fn compact_stores(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-) -> Result<()> {
-    let mut done = HashSet::new();
-    for system in find_systems(connection).await {
-        let store = system_store(connection, &system).await?;
-        if store.is_dir() && done.insert(store.clone()) {
-            let profile = OreProfile::from_str(
-                &get_string(connection, "ORE_PROFILE", Some(system.id))
-                    .await
-                    .unwrap(),
-            )
-            .unwrap();
-            let parity = store_parity(connection, system.id).await;
-            compact_store(progress_bar, &store, &profile, parity).await?;
-        }
     }
     Ok(())
 }

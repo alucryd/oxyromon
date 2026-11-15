@@ -136,6 +136,7 @@ fn handshake_exposes_the_full_surface() {
         "convert_roms",
         "set_setting",
         "purge_roms",
+        "compact_roms",
         "purge_systems",
         "purge_irds",
         "purge_games",
