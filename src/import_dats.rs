@@ -1357,9 +1357,13 @@ mod test_dat_updated_renamed_cue_bin;
 #[cfg(test)]
 mod test_dat_updated_renamed_cue_chd;
 #[cfg(test)]
+mod test_dat_updated_renamed_cue_identical_tracks;
+#[cfg(test)]
 mod test_dat_updated_renamed_cue_mismatch;
 #[cfg(test)]
 mod test_dat_updated_renamed_cue_same_game;
+#[cfg(test)]
+mod test_dat_updated_renamed_cue_shared_track;
 #[cfg(test)]
 mod test_dat_updated_renamed_subfolder;
 #[cfg(test)]
