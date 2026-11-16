@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//! A Wii U disc written as an ORE: laid out by wiiu's plan, as wux-rs lays
-//! out a lossless WUA. Each region, the FST and clusters of a disc-key
+//! A Wii U disc or eShop title written as an ORE. A disc is laid out by
+//! wiiu's plan, as wux-rs lays out a lossless WUA. Each region, the FST and clusters of a disc-key
 //! partition and the game partition's contents, is stored decrypted, by the
 //! disc key and by its titles' keys, with what encrypts it back; the free
 //! space a partition's mastering fills with the region before it is a
 //! repeat; headers, the rest of a region's last sector, and the sectors a
-//! repeat gets wrong are kept as they are.
+//! repeat gets wrong are kept as they are. A title, a NUS folder, is its
+//! files end to end, each content decrypted by its title key when its
+//! ticket is there, its ticket kept beside them.
 
 use std::collections::HashMap;
 use std::path::Path;
 
 use super::*;
-use crate::format::{Layer, LayerMode, Piece, WIIU_SECTOR, Wiiu};
+use crate::format::{Layer, LayerMode, MEDIA_CDN_TITLE, Piece, Sidecar, WIIU_SECTOR, Wiiu};
 use crate::wiiu::disc::{self as wiiu_disc, SECTOR};
 use crate::wiiu::error::Error as WiiuError;
 use crate::wiiu::image::Image;
@@ -42,12 +44,18 @@ pub(super) fn is_wiiu(input: &Path) -> bool {
         .is_ok_and(|image| image.size() > 3 * SECTOR && wiiu_disc::check_magic(&image).is_ok())
 }
 
-/// The disc being written: its image, the encoder, its hashes, its areas
-/// so far, and how much its decrypting and repeats account for.
+/// What a disc or a title reads from: its bytes at a logical offset.
+type Source<'a> = &'a dyn Fn(u64, &mut [u8]) -> Result<()>;
+
+/// The disc or title being written: what it reads from, the encoder, its
+/// hashes, its areas so far, and how much decrypting and repeats account
+/// for.
 struct Disc<'a, 'b> {
-    image: &'a Image,
+    read: Source<'a>,
     encoder: Encoder<'b>,
     hashes: Hashes,
+    /// A title's file's own hashes, as its DAT lists them.
+    file: Hashes,
     areas: Vec<Area>,
     progress: &'a mut dyn FnMut(u64),
     decrypted: u64,
@@ -84,8 +92,9 @@ impl Disc<'_, '_> {
         while at < len {
             let length = (len - at).min(REGION_WINDOW) as usize;
             let buf = &mut buf[..length];
-            self.image.read_exact_at(buf, start + at)?;
+            (self.read)(start + at, buf)?;
             self.hashes.update(buf);
+            self.file.update(buf);
             segmenter.feed(buf, at, None, &mut |run| self.encoder.push(run));
             self.encoder.flush(false)?;
             (self.progress)(length as u64);
@@ -112,11 +121,10 @@ impl Disc<'_, '_> {
             // A window, and around it the inner blocks it needs
             let span = layers.span(len, from, (from + REGION_WINDOW).min(len));
             let mut disc = vec![0; (span.hi - span.lo) as usize];
-            self.image.read_exact_at(&mut disc, start + span.lo)?;
+            (self.read)(start + span.lo, &mut disc)?;
             let mut before = [0; 16];
             if span.lo > 0 {
-                self.image
-                    .read_exact_at(&mut before, start + span.lo - 16)?;
+                (self.read)(start + span.lo - 16, &mut before)?;
             }
             let mut plain = disc.clone();
             layers.decrypt(&span, &before, &mut plain);
@@ -129,6 +137,7 @@ impl Disc<'_, '_> {
                 )));
             }
             self.hashes.update(&disc[window.clone()]);
+            self.file.update(&disc[window.clone()]);
             segmenter.feed(&plain[window], span.from, None, &mut |run| {
                 self.encoder.push(run)
             });
@@ -152,11 +161,10 @@ impl Disc<'_, '_> {
         // The run being gathered: where it starts, and whether it repeats
         let mut run: Option<(u64, bool)> = None;
         for s in first..first + count {
-            self.image.read_exact_at(&mut sector, s * SECTOR)?;
+            (self.read)(s * SECTOR, &mut sector)?;
             let repeats = match period {
                 Some(period) if period > 0 && period <= s => {
-                    self.image
-                        .read_exact_at(&mut earlier, (s - period) * SECTOR)?;
+                    (self.read)((s - period) * SECTOR, &mut earlier)?;
                     earlier == sector
                 }
                 _ => false,
@@ -247,10 +255,12 @@ pub(super) fn encode(
         .collect();
     let mut encoder = Encoder::new(part, options, store)?;
     encoder.set_codec(options.codec)?;
+    let read = |at: u64, buf: &mut [u8]| Ok(image.read_exact_at(buf, at)?);
     let mut disc = Disc {
-        image: &image,
+        read: &read,
         encoder,
         hashes: Hashes::default(),
+        file: Hashes::default(),
         areas: Vec::new(),
         progress,
         decrypted: 0,
@@ -406,6 +416,7 @@ pub(super) fn encode(
         media: Media {
             cue: None,
             sbi: None,
+            ticket: None,
             size,
             areas,
             class: MEDIA_DVD_2048,
@@ -424,6 +435,200 @@ pub(super) fn encode(
             identity("md5", md5.finalize().to_vec()),
             identity("crc-32", crc32.finalize().to_be_bytes().to_vec()),
         ],
+        // Filled in as the ORE is finished
+        provenance: Provenance {
+            tool: String::new(),
+            params: Params {
+                codec: options.codec,
+                group: 0,
+                level: 0,
+                chunker: Chunker {
+                    max: 0,
+                    min: 0,
+                    name: String::new(),
+                },
+            },
+        },
+    };
+    Ok(Stats {
+        input_size: size,
+        output_size: encoder.finish(meta, options, logical_hash)?,
+    })
+}
+
+/// Whether `input` is a folder holding a Wii U title, a NUS folder: one
+/// with its TMD.
+pub fn is_title_folder(input: &Path) -> bool {
+    input.is_dir() && nus::tmd_path(input).is_some()
+}
+
+/// Write the Wii U title in the NUS folder `input`, a game, an update or a
+/// DLC, opened with `keys`, to `part`: its files end to end in name order,
+/// each content stored decrypted by its title key if the folder holds its
+/// ticket, as it is otherwise; the ticket kept beside them, which no DAT
+/// lists.
+pub(super) fn encode_title(
+    input: &Path,
+    part: &Path,
+    options: &Options,
+    keys: &[Key],
+    store: Option<&mut StoreWriter>,
+    progress: &mut dyn FnMut(u64),
+) -> Result<Stats> {
+    let tmd_path = nus::tmd_path(input)
+        .ok_or_else(|| Error::Unsupported("a folder holding no Wii U title".into()))?;
+    let tmd = nus::parse_tmd(&std::fs::read(&tmd_path)?)?;
+    let ticket = match nus::ticket_path(input) {
+        Some(path) => Some(Sidecar {
+            name: file_name(&path),
+            bytes: std::fs::read(&path)?,
+        }),
+        None => None,
+    };
+    // Its files, the ticket aside, in name order
+    let mut names = Vec::new();
+    for entry in std::fs::read_dir(input)? {
+        let entry = entry?;
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if entry.file_type()?.is_file() && ticket.as_ref().is_none_or(|t| t.name != name) {
+            names.push(name);
+        }
+    }
+    names.sort();
+    // A content's file, as No-Intro names it, or as downloaders do
+    let content = |name: &str| {
+        let name = name.to_lowercase();
+        tmd.contents
+            .iter()
+            .find(|c| name == format!("{:08x}", c.id) || name == format!("{:08x}.app", c.id))
+    };
+    // Its title key, from its ticket, by whichever key opens content 0,
+    // the FST
+    let title_key = match &ticket {
+        None => None,
+        Some(ticket) => {
+            let (title_id, encrypted) = plan::parse_ticket(&ticket.bytes)?;
+            let fst = names
+                .iter()
+                .find(|name| content(name).is_some_and(|c| c.index == 0))
+                .ok_or_else(|| Error::Corrupt("the title has no content 0".into()))?;
+            let fst = std::fs::read(input.join(fst))?;
+            Some(plan::title_key(&fst, title_id, &encrypted, keys)?)
+        }
+    };
+    let mut files = Vec::with_capacity(names.len());
+    let mut size = 0;
+    for name in &names {
+        let file = File::open(input.join(name))?;
+        let len = file.metadata()?.len();
+        if len == 0 {
+            return Err(Error::Unsupported(format!("an empty file: {name}")));
+        }
+        files.push((size, len, file));
+        size += len;
+    }
+    // A file's bytes at a logical offset: reads stay within one
+    let read = |at: u64, buf: &mut [u8]| -> Result<()> {
+        let (start, len, file) = files
+            .iter()
+            .find(|(start, len, _)| (*start..start + len).contains(&at))
+            .ok_or_else(|| Error::Corrupt("a read past the title".into()))?;
+        if at + buf.len() as u64 > start + len {
+            return Err(Error::Corrupt("a read across a title's files".into()));
+        }
+        Ok(io::read_exact_at(file, buf, at - start)?)
+    };
+
+    let mut encoder = Encoder::new(part, options, store)?;
+    encoder.set_codec(options.codec)?;
+    let mut disc = Disc {
+        read: &read,
+        encoder,
+        hashes: Hashes::default(),
+        file: Hashes::default(),
+        areas: Vec::new(),
+        progress,
+        decrypted: 0,
+        repeated: 0,
+    };
+    let mut identity = Vec::new();
+    for (name, (start, len, _)) in names.iter().zip(&files) {
+        let (start, len) = (*start, *len);
+        let first = disc.areas.len();
+        match (content(name), &title_key) {
+            (Some(content), Some(key)) if len == content.stored_size() => {
+                let mode = match content.is_hashed() {
+                    true => LayerMode::Hashed,
+                    false => LayerMode::Chain,
+                };
+                let layer = layer(mode, key, content.index, len, &mut |offset, iv| {
+                    read(start + offset, iv)
+                })?;
+                disc.region(
+                    start,
+                    len,
+                    Wiiu {
+                        outer: None,
+                        pieces: vec![Piece {
+                            offset: 0,
+                            len,
+                            layer,
+                        }],
+                    },
+                )?;
+            }
+            _ => disc.raw(start, len)?,
+        }
+        for area in &mut disc.areas[first..] {
+            area.file = Some(name.clone());
+        }
+        let Hashes {
+            crc32, md5, sha1, ..
+        } = std::mem::take(&mut disc.file);
+        identity.extend(file_identity(name, crc32, md5, sha1));
+    }
+    if let Some(ticket) = &ticket {
+        let mut hashes = Hashes::default();
+        hashes.update(&ticket.bytes);
+        let Hashes {
+            crc32, md5, sha1, ..
+        } = hashes;
+        identity.extend(file_identity(&ticket.name, crc32, md5, sha1));
+    }
+
+    let Disc {
+        encoder,
+        hashes,
+        areas,
+        decrypted,
+        ..
+    } = disc;
+    let logical_hash: [u8; 32] = hashes.blake3.finalize().into();
+    identity.insert(
+        0,
+        Identity {
+            algo: "blake3-256".into(),
+            view: "logical".into(),
+            value: logical_hash.to_vec(),
+        },
+    );
+    let meta = Meta {
+        media: Media {
+            cue: None,
+            sbi: None,
+            ticket,
+            size,
+            areas,
+            class: MEDIA_CDN_TITLE,
+            platform: "wiiu".into(),
+        },
+        store: None,
+        ledger: vec![
+            step("wiiu-decrypt", Some(decrypted)),
+            step("zero", Some(encoder.zeros)),
+            step("mincdc-dedup", Some(encoder.deduped)),
+        ],
+        identity,
         // Filled in as the ORE is finished
         provenance: Provenance {
             tool: String::new(),

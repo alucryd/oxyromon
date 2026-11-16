@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Reading an ORE as the disc it holds.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
@@ -628,6 +628,12 @@ impl Reader {
         self.meta.media.cue.is_some()
     }
 
+    /// Whether it holds a title's files, a Wii U eShop title's NUS folder,
+    /// which [`decompress`] writes into its output, a folder.
+    pub fn is_title(&self) -> bool {
+        self.meta.media.class == MEDIA_CDN_TITLE
+    }
+
     /// A CD's tracks, as its cue sheet and its areas give them, in order;
     /// none for what is not a CD.
     pub fn tracks(&self) -> Result<Vec<Track>> {
@@ -716,6 +722,9 @@ impl Reader {
         &self,
         output: &Path,
     ) -> Result<(Vec<(PathBuf, u64, u64)>, Vec<(PathBuf, Vec<u8>)>)> {
+        if self.is_title() {
+            return self.title_outputs(output);
+        }
         let Some(cue) = &self.meta.media.cue else {
             return Ok((vec![(output.to_path_buf(), 0, self.size())], Vec::new()));
         };
@@ -741,6 +750,43 @@ impl Reader {
             tracks.push((path, area.start, area.len));
         }
         Ok((tracks, whole))
+    }
+
+    /// A title's files in the folder `output`, each from where its areas
+    /// start to where they end, and its ticket, written whole.
+    #[allow(clippy::type_complexity)]
+    fn title_outputs(
+        &self,
+        output: &Path,
+    ) -> Result<(Vec<(PathBuf, u64, u64)>, Vec<(PathBuf, Vec<u8>)>)> {
+        let mut files: Vec<(PathBuf, u64, u64)> = Vec::new();
+        let mut names = HashSet::new();
+        // A file in the folder, and nowhere else, once
+        let mut path = |name: &str| {
+            let plain = Path::new(name)
+                .file_name()
+                .is_some_and(|plain| plain == std::ffi::OsStr::new(name));
+            if !plain || !names.insert(name.to_owned()) {
+                return Err(Error::Corrupt(format!("a title's file name: {name:?}")));
+            }
+            Ok(output.join(name))
+        };
+        let mut areas: Vec<&Area> = self.meta.media.areas.iter().collect();
+        areas.sort_by_key(|area| area.start);
+        for area in areas {
+            let name = area.file.as_deref().unwrap_or_default();
+            match files.last_mut() {
+                Some((last, _, len)) if last.file_name() == Some(std::ffi::OsStr::new(name)) => {
+                    *len += area.len
+                }
+                _ => files.push((path(name)?, area.start, area.len)),
+            }
+        }
+        let mut whole = Vec::new();
+        if let Some(ticket) = &self.meta.media.ticket {
+            whole.push((path(&ticket.name)?, ticket.bytes.clone()));
+        }
+        Ok((files, whole))
     }
 
     /// Read the disc at `offset`, failing past its end.
@@ -969,6 +1015,11 @@ pub fn decompress(input: &Path, output: &Path, progress: &mut dyn FnMut(u64)) ->
     // A reader a core, each decoding slices of the disc, written in order
     let first = Reader::open(input)?;
     let (files, whole) = first.outputs(output)?;
+    // A title goes in a folder, made for it and gone if it fails
+    let made = first.is_title() && !output.exists();
+    if made {
+        std::fs::create_dir_all(output)?;
+    }
     let (size, logical_hash) = (first.size(), first.header.logical_hash);
     let mut readers = vec![];
     for _ in 1..rayon::current_num_threads() {
@@ -1042,6 +1093,9 @@ pub fn decompress(input: &Path, output: &Path, progress: &mut dyn FnMut(u64)) ->
     if result.is_err() {
         for path in &paths {
             let _ = std::fs::remove_file(io::part(path));
+        }
+        if made {
+            let _ = std::fs::remove_dir(output);
         }
     }
     result

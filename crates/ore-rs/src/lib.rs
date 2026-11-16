@@ -102,5 +102,5 @@ pub use store::{STORE_DIR, StoreChecked, StoreOptions, check_store, find_store};
 #[cfg(feature = "write")]
 pub use writer::{
     CARTRIDGE_PLATFORMS, Options, StoreBatch, attach, cartridge_header_matches, compress,
-    compress_to_store, default_codec, detach, replace_cue,
+    compress_to_store, default_codec, detach, is_title_folder, replace_cue,
 };

@@ -2,6 +2,7 @@
 
 ## Features
 
+- Added Wii U eShop titles, games, updates and DLC as NUS folders, CDN or downloader named: their files end to end, each content stored decrypted by its title key when the folder holds its ticket, kept as it is otherwise, the ticket kept beside them as an SBI is beside a cue sheet, each file's hashes recorded as a DAT lists them; decompressed back to the folder, file for file. `is_title_folder` tells such a folder, and orers compresses one
 - Added Wii U discs, from a WUD, WUX or ISO, laid out as wux-rs lays out a lossless WUA: each partition's regions stored decrypted, by the disc key and by their titles' keys, the system titles of the update partition included, and encrypted back on read, every 64 KiB of a chain's IV kept so a read starts anywhere; the free space a partition's mastering fills with the region before it a repeat; each region checked at encode to encrypt back. The disc and title keys are kept in the ORE, so reading needs no keys file; writing needs the disc key and the Wii U common key, and the vWii common key for a vWii title to be decrypted
 - Added `Track::flags`, a CD track's cue sheet `FLAGS` as the Q subchannel's control bits, a cue sheet with a flag it does not know refused
 - Added `Reader::tracks`, a CD's tracks as its cue sheet and its areas give them, and `Reader::subchannel_q`, the Q subchannel its SBI replaces, an address past its bounds refused

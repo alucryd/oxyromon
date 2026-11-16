@@ -76,3 +76,57 @@ fn a_wii_u_disc_needs_its_keys_to_be_written_only() {
     Reader::open(&ore).unwrap().read_at(0, &mut back).unwrap();
     assert!(back == bytes);
 }
+
+/// Every file in `dir`, with its contents, sorted by name.
+fn files(dir: &Path) -> Vec<(String, Vec<u8>)> {
+    let mut files: Vec<_> = std::fs::read_dir(dir)
+        .unwrap()
+        .map(|entry| {
+            let path = entry.unwrap().path();
+            let name = path.file_name().unwrap().to_string_lossy().into_owned();
+            (name, std::fs::read(&path).unwrap())
+        })
+        .collect();
+    files.sort();
+    files
+}
+
+#[test]
+fn an_eshop_title_comes_back_as_its_folder() {
+    let dir = TempDir::new().unwrap();
+    let nus = dir.path().join("Update");
+    std::fs::create_dir(&nus).unwrap();
+    wiiu_common::nus(&nus);
+    assert!(ore_rs::is_title_folder(&nus));
+    let ore = dir.path().join("Update.ore");
+    ore_rs::compress(&nus, &ore, &Options::default(), &[COMMON_KEY], &mut |_| {}).unwrap();
+
+    let reader = Reader::open(&ore).unwrap();
+    assert!(reader.is_title());
+    // Each file's hashes, the ticket's among them, as a DAT would list them
+    for (name, _) in files(&nus) {
+        assert!(
+            reader
+                .identity()
+                .any(|(view, algo, _)| view == name && algo == "sha-1")
+        );
+    }
+    let back = dir.path().join("back");
+    ore_rs::decompress(&ore, &back, &mut |_| {}).unwrap();
+    assert!(files(&back) == files(&nus));
+}
+
+#[test]
+fn an_eshop_title_without_its_ticket_is_kept_as_it_is() {
+    let dir = TempDir::new().unwrap();
+    let nus = dir.path().join("DLC");
+    std::fs::create_dir(&nus).unwrap();
+    wiiu_common::nus(&nus);
+    std::fs::remove_file(nus.join("title.tik")).unwrap();
+    let ore = dir.path().join("DLC.ore");
+    // No key is needed, as nothing is decrypted
+    ore_rs::compress(&nus, &ore, &Options::default(), &[], &mut |_| {}).unwrap();
+    let back = dir.path().join("back");
+    ore_rs::decompress(&ore, &back, &mut |_| {}).unwrap();
+    assert!(files(&back) == files(&nus));
+}

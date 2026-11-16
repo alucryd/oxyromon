@@ -32,6 +32,9 @@ pub const MEDIA_CD_MIXED: u16 = 33;
 /// sector 45,000, of 2352-byte sectors as a CD's.
 pub const MEDIA_GD_ROM: u16 = 48;
 pub const MEDIA_DVD_2048: u16 = 64;
+/// A title as a CDN delivers it, its files: a Wii U eShop game, update or
+/// DLC as a NUS folder.
+pub const MEDIA_CDN_TITLE: u16 = 97;
 
 /// Index record kinds.
 pub const KIND_ZERO: u8 = 2;
@@ -252,6 +255,7 @@ impl Header {
             MEDIA_CD_MIXED,
             MEDIA_GD_ROM,
             MEDIA_DVD_2048,
+            MEDIA_CDN_TITLE,
         ]
         .contains(&header.media_class)
         {
@@ -396,10 +400,22 @@ pub struct Media {
     /// ones, as the dump has it.
     #[serde(default, skip_serializing_if = "Option::is_none", with = "serde_bytes")]
     pub sbi: Option<Vec<u8>>,
+    /// An eShop title's ticket, as its folder has it: what opens its
+    /// contents, which no DAT lists.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ticket: Option<Sidecar>,
     pub size: u64,
     pub areas: Vec<Area>,
     pub class: u16,
     pub platform: String,
+}
+
+/// A file kept beside a title's own, under its name.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Sidecar {
+    pub name: String,
+    #[serde(with = "serde_bytes")]
+    pub bytes: Vec<u8>,
 }
 
 /// A stretch of the disc, the areas tiling it, listed in the order their
