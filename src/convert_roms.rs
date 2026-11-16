@@ -9,7 +9,7 @@ use super::model::*;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
 use super::ore::{
     AsOre, OreCompressionAlgorithm, OreProfile, OreRomfile, StoreSink, ToOre, cartridge_platform,
-    sync_store,
+    sync_store, wiiu_to_ore,
 };
 use super::progress::*;
 use super::prompt::*;
@@ -18,6 +18,7 @@ use super::transcode::*;
 use super::util::*;
 use super::wux::{
     AsWua, AsWud, AsWux, ToWua, ToWux, disc_to_wud, has_extension, is_tmd_name, store_directory,
+    stored_ticket,
 };
 use super::xso::{AsXso, ToXso, XsoType};
 use anyhow::{Result, bail};
@@ -29,6 +30,7 @@ use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::mem::drop;
+use std::path::Path;
 use std::str::FromStr;
 
 pub const ALL_FORMATS: &[&str] = &[
@@ -2803,6 +2805,15 @@ async fn to_ore(
     // partition OREs
     let (ores, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ORE_EXTENSION]);
 
+    // partition Wii U WUXs and WUAs
+    let (wuxs, others) =
+        partition_games_by_extensions(others, &romfiles_by_id, &[WUX_EXTENSION, WUA_EXTENSION]);
+
+    // partition Wii U titles, the files of their NUS folders
+    let (titles, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) = others
+        .into_iter()
+        .partition(|(_, roms)| roms.iter().any(|rom| is_tmd_name(&rom.name)));
+
     // partition cartridges' ROMs: every other game's, of a system ore-rs
     // knows as a cartridge
     let (cartridges, others) = if platform.is_some() {
@@ -2817,9 +2828,53 @@ async fn to_ore(
     // the games written into the store, until it is committed
     let mut pending = Vec::new();
 
-    // convert archives holding an ISO, a cartridge's ROM, or a cue sheet and
-    // its tracks
+    // convert archives holding an ISO, a cartridge's ROM, a cue sheet and
+    // its tracks, or a Wii U title's NUS folder
     for roms in archives.values() {
+        if roms.iter().any(|rom| is_tmd_name(&rom.name)) {
+            let rom = roms.first().unwrap();
+            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+            let tmp_directory = create_tmp_directory(connection).await?;
+            let mut transaction = begin_transaction(connection).await;
+            let archive = romfile.as_common(&mut transaction).await?;
+            drop(transaction);
+            // Every file, its ticket too, which no DAT lists, in a folder
+            // named after the archive
+            let folder = tmp_directory.path().join(archive.path.file_stem().unwrap());
+            create_directory(progress_bar, &folder, true).await?;
+            for file in archive.as_archive(progress_bar, None).await? {
+                file.to_common(progress_bar, &folder).await?;
+            }
+            let ore_romfile = title_to_ore(
+                connection,
+                progress_bar,
+                &folder,
+                archive.path.parent().unwrap(),
+                compression_algorithm,
+                profile,
+                sink.as_deref_mut(),
+                &mut pending,
+                check,
+                diff,
+            )
+            .await?;
+            let mut transaction = begin_transaction(connection).await;
+            if persist_title(
+                &mut transaction,
+                progress_bar,
+                &roms.iter().collect::<Vec<&Rom>>(),
+                &[(romfile.id, archive)],
+                &ore_romfile,
+                None,
+                check,
+                diff,
+            )
+            .await?
+            {
+                commit_transaction(transaction).await;
+            }
+            continue;
+        }
         let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
             .iter()
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
@@ -3097,6 +3152,112 @@ async fn to_ore(
         }
     }
 
+    // convert Wii U WUXs, and lossless WUAs once their disc is rebuilt
+    for roms in wuxs.values() {
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let mut transaction = begin_transaction(connection).await;
+        let source = romfile.as_common(&mut transaction).await?;
+        let wux = match has_extension(&source.path, WUA_EXTENSION) {
+            true => {
+                source
+                    .clone()
+                    .as_wua()?
+                    .to_wux(progress_bar, &tmp_directory.path())
+                    .await?
+                    .romfile
+                    .path
+            }
+            false => source.path.clone(),
+        };
+        let ore_romfile = wiiu_to_ore(
+            progress_bar,
+            &wux,
+            source.path.parent().unwrap(),
+            compression_algorithm,
+            profile,
+            sink.as_deref_mut(),
+        )
+        .await?;
+        if let Some(sink) = sink.as_deref_mut() {
+            drop(transaction);
+            pending.push(Pending {
+                roms: roms.iter().collect(),
+                source,
+                ore: ore_romfile,
+                romfile_id: romfile.id,
+            });
+            if sink.per_game {
+                persist_pending(connection, progress_bar, sink, &mut pending, check, diff).await?;
+            }
+            continue;
+        }
+        if check_and_persist(
+            &mut transaction,
+            progress_bar,
+            &[rom],
+            &source,
+            &ore_romfile,
+            romfile.id,
+            check,
+            diff,
+            false,
+        )
+        .await?
+        {
+            commit_transaction(transaction).await;
+        }
+    }
+
+    // convert Wii U titles, each NUS folder an ORE beside it, its ticket in
+    // it
+    for roms in titles.values() {
+        let mut transaction = begin_transaction(connection).await;
+        let mut sources = Vec::with_capacity(roms.len());
+        for rom in roms {
+            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+            sources.push((romfile.id, romfile.as_common(&mut transaction).await?));
+        }
+        drop(transaction);
+        // Loose in one folder, every one of them
+        let folder = sources[0].1.path.parent().unwrap().to_path_buf();
+        if sources
+            .iter()
+            .any(|(_, source)| source.path.parent() != Some(folder.as_path()))
+        {
+            continue;
+        }
+        let ore_romfile = title_to_ore(
+            connection,
+            progress_bar,
+            &folder,
+            folder.parent().unwrap(),
+            compression_algorithm,
+            profile,
+            sink.as_deref_mut(),
+            &mut pending,
+            check,
+            diff,
+        )
+        .await?;
+        let mut transaction = begin_transaction(connection).await;
+        if persist_title(
+            &mut transaction,
+            progress_bar,
+            &roms.iter().collect::<Vec<&Rom>>(),
+            &sources,
+            &ore_romfile,
+            Some(&folder),
+            check,
+            diff,
+        )
+        .await?
+        {
+            commit_transaction(transaction).await;
+        }
+    }
+
     // convert CHDs: a DVD's ISO, or a CD's tracks with the cue sheet beside it
     for roms in chds.values() {
         // leave arcade CHDs untouched
@@ -3333,6 +3494,107 @@ async fn persist_pending(
         }
     }
     Ok(())
+}
+
+/// A Wii U title's NUS `folder` into an ORE in `destination_directory`;
+/// into `sink`'s store when there is one, which is then committed with the
+/// games pending, so the title's ORE is in place to be persisted. A folder
+/// without its ticket takes the one kept for its title, if any, for the
+/// time it is read.
+#[allow(clippy::too_many_arguments)]
+async fn title_to_ore(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    folder: &Path,
+    destination_directory: &Path,
+    compression_algorithm: &OreCompressionAlgorithm,
+    profile: &OreProfile,
+    mut sink: Option<&mut StoreSink>,
+    pending: &mut Vec<Pending<'_>>,
+    check: bool,
+    diff: bool,
+) -> Result<OreRomfile> {
+    let mut borrowed = None;
+    if wux_rs::ticket_path(folder).is_none()
+        && let Some(tmd) = wux_rs::tmd_path(folder)
+    {
+        let title_id = wux_rs::parse_tmd(&std::fs::read(&tmd)?)?.title_id;
+        if let Some(ticket) = stored_ticket(connection, title_id).await? {
+            let path = folder.join("title.tik");
+            std::fs::copy(&ticket, &path)?;
+            borrowed = Some(path);
+        }
+    }
+    let result = wiiu_to_ore(
+        progress_bar,
+        folder,
+        destination_directory,
+        compression_algorithm,
+        profile,
+        sink.as_deref_mut(),
+    )
+    .await;
+    if let Some(path) = borrowed {
+        std::fs::remove_file(path)?;
+    }
+    let ore_romfile = result?;
+    if let Some(sink) = sink {
+        persist_pending(connection, progress_bar, sink, pending, check, diff).await?;
+    }
+    Ok(ore_romfile)
+}
+
+/// Check a Wii U title's ORE against its `roms`, then point them at it and
+/// delete the files it was made from, `sources`, by romfile ID; and their
+/// NUS `folder`, once empty: its ticket, which no ROM names, stays.
+#[allow(clippy::too_many_arguments)]
+async fn persist_title(
+    transaction: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    roms: &[&Rom],
+    sources: &[(i64, CommonRomfile)],
+    ore_romfile: &OreRomfile,
+    folder: Option<&Path>,
+    check: bool,
+    diff: bool,
+) -> Result<bool> {
+    if check
+        && ore_romfile
+            .check(transaction, progress_bar, &None, roms)
+            .await
+            .is_err()
+    {
+        print_error(progress_bar, "Integrity check failed, reverting conversion");
+        ore_romfile.romfile.delete(progress_bar, false).await?;
+        return Ok(false);
+    }
+    if diff {
+        print_diff(
+            transaction,
+            progress_bar,
+            roms,
+            &sources.iter().map(|(_, source)| source).collect::<Vec<_>>(),
+            &[&ore_romfile.romfile],
+        )
+        .await?;
+    }
+    let ore_romfile_id = ore_romfile
+        .romfile
+        .create(transaction, progress_bar, RomfileType::Romfile)
+        .await?;
+    for rom in roms {
+        update_rom_romfile(transaction, rom.id, Some(ore_romfile_id)).await;
+    }
+    for (romfile_id, source) in sources {
+        delete_romfile_by_id(transaction, *romfile_id).await;
+        source.delete(progress_bar, false).await?;
+    }
+    if let Some(folder) = folder
+        && std::fs::read_dir(folder)?.next().is_none()
+    {
+        remove_directory(progress_bar, &folder, false).await?;
+    }
+    Ok(true)
 }
 
 /// Whether `name` is a cartridge's ROM ORE takes, by its extension.
@@ -3945,6 +4207,43 @@ async fn to_original(
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         let ore_romfile = romfile.as_common(&mut transaction).await?.as_ore()?;
         let directory = ore_romfile.romfile.path.parent().unwrap();
+        if ore_romfile.is_title()? {
+            // a Wii U title's NUS folder, named after its ORE, a romfile a
+            // file, its ticket beside them
+            let folder = directory.join(ore_romfile.romfile.path.file_stem().unwrap());
+            let roms: Vec<&Rom> = roms.iter().collect();
+            let files = ore_romfile
+                .to_title_files(progress_bar, &folder, &roms)
+                .await?;
+            let mut error = false;
+            if check {
+                for (file, rom) in files.iter().zip(&roms) {
+                    if file
+                        .check(&mut transaction, progress_bar, &None, &[rom])
+                        .await
+                        .is_err()
+                    {
+                        error = true;
+                        break;
+                    }
+                }
+            }
+            if error {
+                print_error(progress_bar, "Integrity check failed, reverting conversion");
+                remove_directory(progress_bar, &folder, false).await?;
+                continue;
+            }
+            for (file, rom) in files.iter().zip(&roms) {
+                let romfile_id = file
+                    .create(&mut transaction, progress_bar, RomfileType::Romfile)
+                    .await?;
+                update_rom_romfile(&mut transaction, rom.id, Some(romfile_id)).await;
+            }
+            delete_romfile_by_id(&mut transaction, romfile.id).await;
+            ore_romfile.romfile.delete(progress_bar, false).await?;
+            commit_transaction(transaction).await;
+            continue;
+        }
         if !ore_romfile.is_cd()? {
             // a cartridge's ROM under its name, a disc image as an ISO
             let original = if ore_romfile.is_rom()? {
@@ -4173,6 +4472,8 @@ mod test_nes_to_ore;
 #[cfg(test)]
 mod test_nus_sevenzip_to_original;
 #[cfg(test)]
+mod test_nus_to_ore_to_original;
+#[cfg(test)]
 mod test_nus_to_sevenzip;
 #[cfg(test)]
 mod test_ore_to_iso;
@@ -4223,11 +4524,15 @@ mod test_wua_to_original;
 #[cfg(test)]
 mod test_wua_to_wux;
 #[cfg(test)]
+mod test_wud_to_ore_to_original;
+#[cfg(test)]
 mod test_wud_to_wux;
 #[cfg(test)]
 mod test_wux_to_sevenzip_wud;
 #[cfg(test)]
 mod test_wux_to_wua;
+#[cfg(test)]
+mod test_wux_to_wua_to_ore_to_original;
 #[cfg(test)]
 mod test_wux_to_wud;
 #[cfg(test)]

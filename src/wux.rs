@@ -38,7 +38,7 @@ pub use wux_rs::STORE_DIR;
 
 /// The keys `import-keys` stored; in tests, the made-up keys of the synthetic
 /// disc.
-fn keys_path() -> Result<PathBuf> {
+pub fn keys_path() -> Result<PathBuf> {
     if cfg!(test) {
         return Ok(PathBuf::from("tests/Test Game (USA).keys.txt"));
     }

@@ -8,7 +8,6 @@
 
 use super::common::*;
 use super::config::*;
-use super::import_keys::WIIU_KEYS_FILE;
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
@@ -147,6 +146,22 @@ impl Check for OreRomfile {
             return Ok(());
         }
 
+        // A Wii U title's files, written out as its folder and checked one
+        // by one
+        if self.is_title()? {
+            let tmp_directory = create_tmp_directory(connection).await?;
+            let folder = tmp_directory.path().join("title");
+            for (file, rom) in self
+                .to_title_files(progress_bar, &folder, roms)
+                .await?
+                .iter()
+                .zip(roms)
+            {
+                file.check(connection, progress_bar, &None, &[rom]).await?;
+            }
+            return Ok(());
+        }
+
         // No GameCube or Wii DAT declares a header, but honour one the long
         // way round if one ever shows up
         if header.is_none() {
@@ -206,6 +221,45 @@ impl OreRomfile {
     /// Whether it holds a CD rather than a disc image.
     pub fn is_cd(&self) -> Result<bool> {
         Ok(cd_files(&self.romfile.path)?.is_some())
+    }
+
+    /// Whether it holds a Wii U eShop title, a NUS folder's files.
+    pub fn is_title(&self) -> Result<bool> {
+        Ok(Reader::inspect(&self.romfile.path)?.is_title())
+    }
+
+    /// Write a Wii U title's ORE out as its NUS folder, `folder`, its ticket
+    /// beside its files: the files `roms` name, in their order.
+    pub async fn to_title_files(
+        &self,
+        progress_bar: &ProgressBar,
+        folder: &Path,
+        roms: &[&Rom],
+    ) -> Result<Vec<CommonRomfile>> {
+        progress_bar.set_message("Extracting ore");
+        print_action(
+            progress_bar,
+            &format!(
+                "Extracting \"{}\"",
+                self.romfile.path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
+        let (input, output) = (self.romfile.path.clone(), folder.to_path_buf());
+        run_blocking(progress_bar, input.metadata()?.len(), move |progress| {
+            ore_rs::decompress(&input, &output, progress)
+        })
+        .await
+        .with_context(|| format!("Failed to extract \"{}\"", self.romfile.path.display()))?;
+        stop_action(progress_bar);
+        roms.iter()
+            .map(|rom| {
+                let path = folder.join(&rom.name);
+                if !path.is_file() {
+                    bail!("\"{}\" is not in \"{}\"", rom.name, self.romfile);
+                }
+                CommonRomfile::from_path(&path)
+            })
+            .collect()
     }
 
     /// Whether it holds a cartridge's ROM rather than a disc.
@@ -449,9 +503,16 @@ async fn compress(
 ) -> Result<OreRomfile> {
     progress_bar.set_message("Creating ore");
 
-    let path = destination_directory
-        .join(source.file_name().unwrap())
-        .with_extension(ORE_EXTENSION);
+    // A folder's name may hold a dot, which is not an extension
+    let path = match source.is_dir() {
+        true => destination_directory.join(format!(
+            "{}.{ORE_EXTENSION}",
+            source.file_name().unwrap().to_string_lossy()
+        )),
+        false => destination_directory
+            .join(source.file_name().unwrap())
+            .with_extension(ORE_EXTENSION),
+    };
 
     print_action(
         progress_bar,
@@ -503,9 +564,10 @@ async fn compress(
     };
     result
         .map_err(|error| match error.downcast_ref() {
-            Some(ore_rs::Error::MissingKey(_)) => {
-                error.context("A Wii disc needs the Wii common key: run import-keys")
-            }
+            Some(ore_rs::Error::MissingKey(_)) => error.context(
+                "A Wii disc needs the Wii common key, a Wii U disc its disc key and the Wii U \
+                 common key, a Wii U title the Wii U common key: run import-keys",
+            ),
             _ => error,
         })
         .with_context(|| format!("Failed to create \"{}\"", path.display()))?;
@@ -513,6 +575,36 @@ async fn compress(
     stop_action(progress_bar);
 
     CommonRomfile::from_path(&path)?.as_ore()
+}
+
+/// A Wii U WUX, or a NUS folder holding a title, an update or a DLC, into
+/// an ORE in `destination_directory`, named after it; into `sink`'s store
+/// when there is one.
+pub async fn wiiu_to_ore(
+    progress_bar: &ProgressBar,
+    source: &Path,
+    destination_directory: &Path,
+    compression_algorithm: &OreCompressionAlgorithm,
+    profile: &OreProfile,
+    sink: Option<&mut StoreSink>,
+) -> Result<OreRomfile> {
+    let size = match source.is_dir() {
+        true => std::fs::read_dir(source)?
+            .map(|entry| entry.and_then(|entry| entry.metadata()).map(|m| m.len()))
+            .sum::<std::io::Result<u64>>()?,
+        false => source.metadata()?.len(),
+    };
+    compress(
+        progress_bar,
+        source,
+        destination_directory,
+        compression_algorithm,
+        profile,
+        size,
+        None,
+        sink,
+    )
+    .await
 }
 
 impl ToOre for CueBinRomfile {
@@ -676,6 +768,10 @@ pub async fn ore_to_files(
             .to_cue_bin_files(progress_bar, &directory, cue_name)
             .await?;
         return Ok([vec![cue_bin.cue_romfile], cue_bin.bin_romfiles].concat());
+    }
+    if ore.is_title()? {
+        let roms: Vec<&Rom> = roms.iter().collect();
+        return ore.to_title_files(progress_bar, directory, &roms).await;
     }
     let name = &roms.first().context("A game with no ROM")?.name;
     if ore.is_rom()? {
@@ -939,9 +1035,10 @@ fn cd_files(path: &Path) -> Result<Option<Vec<String>>> {
     Ok(Some(names))
 }
 
-/// The Wii common key, where `import-keys` stores it, as ore-rs reads it.
+/// The Wii and Wii U keys, where `import-keys` stores them, as ore-rs reads
+/// them; in tests, the made-up keys of the synthetic Wii U disc.
 fn load_wii_keys() -> Result<Vec<ore_rs::Key>> {
-    let path = get_data_directory()?.join(WIIU_KEYS_FILE);
+    let path = super::wux::keys_path()?;
     if !path.is_file() {
         return Ok(Vec::new());
     }
