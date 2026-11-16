@@ -44,6 +44,12 @@ impl Packer {
     }
 
     /// The most bytes a group holds.
+    /// The bytes pushed and not yet taken.
+    pub fn pending(&self) -> u64 {
+        let closed: usize = self.closed.iter().map(|(data, _)| data.len()).sum();
+        (self.group.len() + closed) as u64
+    }
+
     pub fn group_size(&self) -> usize {
         self.group_size
     }

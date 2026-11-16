@@ -264,7 +264,7 @@ impl StoreWriter {
 
     /// Seal the segment being written, if any, and start the next.
     fn new_segment(&mut self) -> Result<()> {
-        self.seal()?;
+        self.seal(&mut |_| {})?;
         let number = self.index.next_segment;
         self.index.next_segment = number
             .checked_add(1)
@@ -288,21 +288,41 @@ impl StoreWriter {
     }
 
     /// Give the segment being written its parity, and close it.
-    fn seal(&mut self) -> Result<()> {
+    fn seal(&mut self, progress: &mut dyn FnMut(u64)) -> Result<()> {
         if let Some(file) = self.file.take() {
             let segment = self.index.segments.last().unwrap();
-            parity::seal(&file, segment.len, segment.parity)?;
+            parity::seal(&file, segment.len, segment.parity, progress)?;
             file.sync_all()?;
             self.added += Layout::new(segment.len, segment.parity).footer_len();
         }
         Ok(())
     }
 
+    /// What a commit writes and seals: the segment being written and what
+    /// is still to be compressed, before it is.
+    pub fn unsealed(&self) -> u64 {
+        let open = match self.file {
+            Some(_) => self.index.segments.last().map_or(0, |segment| segment.len),
+            None => 0,
+        };
+        open + self.packer.pending()
+    }
+
     /// Write what is left to, then the index: only now does the store hold
     /// what was added. Returns the bytes added to its segments.
-    pub fn commit(&mut self) -> Result<u64> {
+    ///
+    /// `progress` is called with the bytes sealed since the last call,
+    /// scaled so the calls add up to [`Self::unsealed`] before it.
+    pub fn commit(&mut self, progress: &mut dyn FnMut(u64)) -> Result<u64> {
+        let total = self.unsealed();
         self.write(true)?;
-        self.seal()?;
+        let work = match self.file {
+            Some(_) => self.index.segments.last().map_or(0, |segment| segment.len),
+            None => 0,
+        };
+        let mut scaled = Scaled::new(progress, total, work);
+        self.seal(&mut |n| scaled.advance(n))?;
+        scaled.finish();
         if self.index.chunks.len() as u128 > 1 << self.index.id_bits
             || self.index.groups.len() >= NOWHERE as usize
         {
@@ -361,7 +381,16 @@ impl StoreWriter {
     /// by the bytes of their chunks, and of the small segments if there
     /// are several, into new segments, and drop them from the index. Their
     /// files go once the index is saved.
-    fn compact_segments(&mut self, threshold: f64, recompress: bool) -> Result<()> {
+    ///
+    /// `progress` is called with the bytes of the groups read since the
+    /// last call, scaled so the calls add up to the store's size.
+    fn compact_segments(
+        &mut self,
+        threshold: f64,
+        recompress: bool,
+        progress: &mut dyn FnMut(u64),
+    ) -> Result<()> {
+        let total = store_size(&self.dir)?;
         // Dead and all bytes of chunks, by segment
         let mut bytes: HashMap<u32, (u64, u64)> = HashMap::new();
         for chunk in &self.index.chunks {
@@ -428,6 +457,7 @@ impl StoreWriter {
                 .map(|(&segment, _)| segment),
         );
         if dropped.is_empty() {
+            progress(total);
             return Ok(());
         }
 
@@ -444,11 +474,20 @@ impl StoreWriter {
             .map(|(id, chunk)| (chunk.group, chunk.offset, id as u64))
             .collect();
         moving.sort_unstable();
+        let work = moving
+            .chunk_by(|a, b| a.0 == b.0)
+            .map(|run| {
+                let at = &self.index.groups[run[0].0 as usize];
+                at.envelope_len() + at.group.stored_len
+            })
+            .sum();
+        let mut scaled = Scaled::new(progress, total, work);
         let mut files = HashMap::new();
         for run in moving.chunk_by(|a, b| a.0 == b.0) {
             let at = &self.index.groups[run[0].0 as usize];
             let (segment, offset, envelope_len, group) =
                 (at.segment, at.offset, at.envelope_len(), at.group);
+            scaled.advance(envelope_len + group.stored_len);
             let live: Vec<u64> = run
                 .iter()
                 .map(|&(_, _, id)| id)
@@ -494,6 +533,7 @@ impl StoreWriter {
             self.write(false)?;
         }
         self.write(true)?;
+        scaled.finish();
 
         // The groups left take new numbers; a chunk still in a group
         // dropped is nowhere
@@ -571,22 +611,26 @@ pub struct Compacted {
 ///
 /// A game that names the store and cannot be read fails the compaction, and so
 /// does one that names a chunk the store lacks.
+///
+/// `progress` is called with the bytes of the groups copied since the last
+/// call, scaled so the calls add up to its [`store_size`] before.
 pub fn compact(
     store: &Path,
     options: &Options,
     threshold: f64,
     recompress: bool,
+    progress: &mut dyn FnMut(u64),
 ) -> Result<Compacted> {
     let mut writer = StoreWriter::open(store, options.codec, options.profile.group_size())?;
     // It copies the small segments itself
     writer.fold = false;
     let before = writer.index.size();
     let games = writer.recount()?;
-    writer.compact_segments(threshold, recompress)?;
+    writer.compact_segments(threshold, recompress, progress)?;
     let after = writer.index.size();
     // The index first, so it never lists a segment gone, then the
     // segments it no longer lists, the store still locked
-    writer.commit()?;
+    writer.commit(&mut |_| {})?;
     writer.sweep()?;
     Ok(Compacted {
         games,
@@ -608,6 +652,6 @@ pub fn set_parity(store: &Path, parity: u8) -> Result<bool> {
         return Ok(false);
     }
     writer.index.parity = parity;
-    writer.commit()?;
+    writer.commit(&mut |_| {})?;
     Ok(true)
 }

@@ -183,7 +183,7 @@ fn a_batch_writes_many_roms_to_a_store_as_one_write() {
             }
             // Nothing lands before the commit
             assert!(!ore(&roms[0]).exists());
-            batch.commit().unwrap();
+            batch.commit(&mut |_| {}).unwrap();
         } else {
             for rom in &roms {
                 ore_rs::compress_to_store(rom, &ore(rom), &store, &options, &[], &mut |_| {})
@@ -221,7 +221,14 @@ fn a_batch_writes_many_roms_to_a_store_as_one_write() {
     // A compaction packs the ROMs written one at a time together, as the
     // batch did
     let single = dir.path().join("single");
-    let compacted = ore_rs::compact(&single.join(".ore-store"), &options, 0.5, false).unwrap();
+    let compacted = ore_rs::compact(
+        &single.join(".ore-store"),
+        &options,
+        0.5,
+        false,
+        &mut |_| {},
+    )
+    .unwrap();
     assert_eq!(compacted.games, 10);
     let after = dir_size(&single);
     assert!(
@@ -230,7 +237,8 @@ fn a_batch_writes_many_roms_to_a_store_as_one_write() {
         sizes[1]
     );
     // Recompressed, every group packed again: no larger
-    let recompressed = ore_rs::compact(&single.join(".ore-store"), &options, 0.5, true).unwrap();
+    let recompressed =
+        ore_rs::compact(&single.join(".ore-store"), &options, 0.5, true, &mut |_| {}).unwrap();
     assert_eq!(recompressed.games, 10);
     assert!(
         dir_size(&single) <= after,
@@ -254,7 +262,7 @@ fn a_batch_writes_many_roms_to_a_store_as_one_write() {
     drop(batch);
     assert!(!games.join("Extra.ore").exists());
     assert!(
-        ore_rs::check_store(&games.join(".ore-store"), false)
+        ore_rs::check_store(&games.join(".ore-store"), false, &mut |_| {})
             .unwrap()
             .lost_groups
             == 0
@@ -372,20 +380,24 @@ fn a_stores_parity_is_changed_and_its_segments_sealed_again_by_a_compaction() {
             .unwrap();
         roms.push((input, ore));
     }
-    batch.commit().unwrap();
+    let (unsealed, mut sealed) = (batch.unsealed(), 0);
+    batch.commit(&mut |n| sealed += n).unwrap();
+    assert_eq!(sealed, unsealed, "progress adds up to what was unsealed");
     let with_parity = dir_size(&store);
 
     // No parity: the next compaction seals every segment again without it
     assert!(ore_rs::set_parity(&store, 0).unwrap());
     assert!(!ore_rs::set_parity(&store, 0).unwrap());
     assert_eq!(dir_size(&store), with_parity);
-    ore_rs::compact(&store, &options, 0.5, false).unwrap();
+    let (size, mut copied) = (ore_rs::store_size(&store).unwrap(), 0);
+    ore_rs::compact(&store, &options, 0.5, false, &mut |n| copied += n).unwrap();
+    assert_eq!(copied, size, "progress adds up to the store");
     let without = dir_size(&store);
     assert!(without < with_parity, "{without} against {with_parity}");
 
     // Then 8 shards, which a damaged byte is repaired from
     ore_rs::set_parity(&store, 8).unwrap();
-    ore_rs::compact(&store, &options, 0.5, false).unwrap();
+    ore_rs::compact(&store, &options, 0.5, false, &mut |_| {}).unwrap();
     let eight = dir_size(&store);
     assert!(without < eight && eight < with_parity, "{eight}");
     let segment = std::fs::read_dir(&store)
@@ -396,7 +408,7 @@ fn a_stores_parity_is_changed_and_its_segments_sealed_again_by_a_compaction() {
     let mut bytes = std::fs::read(&segment).unwrap();
     bytes[200] ^= 0xFF;
     std::fs::write(&segment, bytes).unwrap();
-    let checked = ore_rs::check_store(&store, true).unwrap();
+    let checked = ore_rs::check_store(&store, true, &mut |_| {}).unwrap();
     assert!(checked.repaired > 0 && checked.lost_groups == 0);
     for (input, ore) in &roms {
         let back = dir.path().join("back.gb");

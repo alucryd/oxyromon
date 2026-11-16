@@ -238,13 +238,15 @@ fn purging_a_game_keeps_the_others() {
 
     // Nothing to compact while both are there, once the small segments
     // each commit leaves are merged
-    let compacted = ore_rs::compact(&library.store, &Options::default(), 0.0, false).unwrap();
+    let compacted =
+        ore_rs::compact(&library.store, &Options::default(), 0.0, false, &mut |_| {}).unwrap();
     assert_eq!(compacted.games, 2);
     assert!(compacted.after <= compacted.before * 101 / 100);
     let full = compacted.after;
 
     std::fs::remove_file(&a).unwrap();
-    let compacted = ore_rs::compact(&library.store, &Options::default(), 0.0, false).unwrap();
+    let compacted =
+        ore_rs::compact(&library.store, &Options::default(), 0.0, false, &mut |_| {}).unwrap();
     assert_eq!(compacted.games, 1);
     assert_eq!(compacted.after, library.store_size());
     assert!(
@@ -269,7 +271,7 @@ fn a_game_that_cannot_be_read_stops_a_compaction() {
     bytes[meta + 3] ^= 0x40;
     write(&ore, &bytes);
     let before = library.store_size();
-    assert!(ore_rs::compact(&library.store, &Options::default(), 0.0, false).is_err());
+    assert!(ore_rs::compact(&library.store, &Options::default(), 0.0, false, &mut |_| {}).is_err());
     assert_eq!(library.store_size(), before);
 }
 
@@ -298,7 +300,7 @@ fn a_damaged_segment_fails() {
     let out = library.root.join("a.iso");
     assert!(ore_rs::decompress(&ore, &out, &mut |_| {}).is_err());
     // A check finds it, and names the game
-    let checked = ore_rs::check_store(&library.store, false).unwrap();
+    let checked = ore_rs::check_store(&library.store, false, &mut |_| {}).unwrap();
     assert_eq!(
         (checked.damaged, checked.repaired, checked.lost_groups),
         (1, 0, 1)
@@ -333,13 +335,13 @@ fn a_check_repairs_what_parity_covers() {
         *byte ^= 0x40;
     }
     write(segment, &bytes);
-    let checked = ore_rs::check_store(&library.store, true).unwrap();
+    let checked = ore_rs::check_store(&library.store, true, &mut |_| {}).unwrap();
     assert!(checked.damaged > 10 && checked.repaired == checked.damaged);
     assert_eq!((checked.lost_groups, checked.lost_games.len()), (0, 0));
     assert!(std::fs::read(segment).unwrap() == whole);
     check(&a, &discs[0]);
     check(&b, &discs[1]);
-    let checked = ore_rs::check_store(&library.store, true).unwrap();
+    let checked = ore_rs::check_store(&library.store, true, &mut |_| {}).unwrap();
     // b's write folded a's segment, small, into its own
     assert_eq!((checked.damaged, checked.segments), (0, 1));
 }
@@ -355,7 +357,7 @@ fn without_parity_a_check_only_finds_damage() {
     let mut bytes = std::fs::read(segment).unwrap();
     bytes[1000] ^= 0x40;
     write(segment, &bytes);
-    let checked = ore_rs::check_store(&library.store, true).unwrap();
+    let checked = ore_rs::check_store(&library.store, true, &mut |_| {}).unwrap();
     assert_eq!((checked.damaged, checked.lost_groups), (0, 1));
     assert_eq!(checked.lost_games, [ore]);
 }
@@ -373,7 +375,7 @@ fn a_damaged_last_segment_is_not_folded_but_left_to_repair() {
     // b's write finds a's segment failing its CRC, and writes its own
     let b = library.add("b.ore", &discs[1], &[]);
     assert_eq!(segments(&library.store).len(), 2);
-    let checked = ore_rs::check_store(&library.store, true).unwrap();
+    let checked = ore_rs::check_store(&library.store, true, &mut |_| {}).unwrap();
     assert_eq!((checked.repaired, checked.lost_groups), (1, 0));
     assert!(std::fs::read(&segment).unwrap() == whole);
     check(&a, &discs[0]);
