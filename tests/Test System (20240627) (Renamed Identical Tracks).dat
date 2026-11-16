@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Test System</name>
+		<description>Test System</description>
+		<version>20240627</version>
+		<date>20240627</date>
+		<author>Maxime Gauduin</author>
+		<url>www.no-intro.org</url>
+	</header>
+	<game name="Renamed Game (USA, Europe) (Identical Tracks)">
+		<description>Renamed Game (USA, Europe) (Identical Tracks)</description>
+		<release name="Renamed Game (USA, Europe) (Identical Tracks)" region="EUR" />
+		<release name="Renamed Game (USA, Europe) (Identical Tracks)" region="USA" />
+		<rom name="Renamed Game (USA, Europe) (Identical Tracks).cue" size="391" crc="46222c71"
+			md5="660108b9077e32f2dd7bf4b369da1b6d" sha1="1f500db39491e1b980ba82587bc69da25bf716c9"
+			status="verified" />
+		<rom name="Renamed Game (USA, Europe) (Identical Tracks) (Track 01).bin" size="20309520" crc="9fe63aa2"
+			md5="d4b799c30a4e1939fd02686c4deb8ab8" sha1="c19c6189ffc93a266d13b25e72368037b4a6ad1e"
+			status="verified" />
+		<rom name="Renamed Game (USA, Europe) (Identical Tracks) (Track 02).bin" size="7914480" crc="b979500c"
+			md5="a25a2c129b7100092cc40e9b6e176a63" sha1="9ac3f1a11d434d186466917f1c7955bf7670c910"
+			status="verified" />
+		<rom name="Renamed Game (USA, Europe) (Identical Tracks) (Track 03).bin" size="7914480" crc="b979500c"
+			md5="a25a2c129b7100092cc40e9b6e176a63" sha1="9ac3f1a11d434d186466917f1c7955bf7670c910"
+			status="verified" />
+	</game>
+</datafile>

@@ -19,11 +19,13 @@ use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::tosec::{TOSECName, TOSECToken};
 use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqliteConnection;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::io;
+use std::ops::Range;
 use std::path::Path;
 use std::path::PathBuf;
 use std::str;
+use tokio::fs;
 use vec_drain_where::VecDrainWhereExt;
 use walkdir::WalkDir;
 use zip::ZipArchive;
@@ -381,8 +383,10 @@ pub async fn import_dat(
     }
 
     let mut orphan_romfile_ids: Vec<i64> = vec![];
+    // a cue sheet names the ROMs it goes with, which a rename deletes
+    let mut deleted_roms: Vec<Rom> = vec![];
     print_subheader(progress_bar, "Deleting old games");
-    orphan_romfile_ids.append(
+    deleted_roms.append(
         &mut delete_old_games(
             &mut transaction,
             if !datfile_xml.machines.is_empty() {
@@ -394,6 +398,7 @@ pub async fn import_dat(
         )
         .await,
     );
+    orphan_romfile_ids.extend(deleted_roms.iter().filter_map(|rom| rom.romfile_id));
     print_subheader(progress_bar, "Processing games");
     orphan_romfile_ids.append(
         &mut create_or_update_games(
@@ -406,6 +411,7 @@ pub async fn import_dat(
             system_id,
             arcade,
             progress_bar,
+            &mut deleted_roms,
         )
         .await?,
     );
@@ -422,6 +428,7 @@ pub async fn import_dat(
             progress_bar,
             system_id,
             orphan_romfile_ids,
+            &deleted_roms,
         )
         .await?;
     }
@@ -546,12 +553,14 @@ async fn create_or_update_header(
     }
 }
 
+/// Returns the ROM files left without a ROM, and adds the ROMs it deletes to `deleted_roms`
 async fn create_or_update_games(
     connection: &mut SqliteConnection,
     games_xml: &[GameXml],
     system_id: i64,
     arcade: bool,
     progress_bar: &ProgressBar,
+    deleted_roms: &mut Vec<Rom>,
 ) -> Result<Vec<i64>> {
     let mut orphan_romfile_ids: Vec<i64> = vec![];
     let (mut parent_games_xml, mut child_games_xml): (Vec<&GameXml>, Vec<&GameXml>) = games_xml
@@ -614,18 +623,18 @@ async fn create_or_update_games(
                 .await,
             );
         }
-        orphan_romfile_ids.append(
-            &mut delete_old_roms(
-                connection,
-                &[
-                    game_xml.roms.iter().collect::<Vec<&RomXml>>(),
-                    game_xml.disks.iter().collect::<Vec<&RomXml>>(),
-                ]
-                .concat(),
-                game_id,
-            )
-            .await,
-        );
+        let old_roms = delete_old_roms(
+            connection,
+            &[
+                game_xml.roms.iter().collect::<Vec<&RomXml>>(),
+                game_xml.disks.iter().collect::<Vec<&RomXml>>(),
+            ]
+            .concat(),
+            game_id,
+        )
+        .await;
+        orphan_romfile_ids.extend(old_roms.iter().filter_map(|rom| rom.romfile_id));
+        deleted_roms.extend(old_roms);
         progress_bar.inc(1)
     }
     while !child_games_xml.is_empty() {
@@ -755,18 +764,18 @@ async fn create_or_update_games(
                     .await,
                 );
             }
-            orphan_romfile_ids.append(
-                &mut delete_old_roms(
-                    connection,
-                    &[
-                        game_xml.roms.iter().collect::<Vec<&RomXml>>(),
-                        game_xml.disks.iter().collect::<Vec<&RomXml>>(),
-                    ]
-                    .concat(),
-                    game_id,
-                )
-                .await,
-            );
+            let old_roms = delete_old_roms(
+                connection,
+                &[
+                    game_xml.roms.iter().collect::<Vec<&RomXml>>(),
+                    game_xml.disks.iter().collect::<Vec<&RomXml>>(),
+                ]
+                .concat(),
+                game_id,
+            )
+            .await;
+            orphan_romfile_ids.extend(old_roms.iter().filter_map(|rom| rom.romfile_id));
+            deleted_roms.extend(old_roms);
             progress_bar.inc(1)
         }
     }
@@ -873,12 +882,13 @@ async fn create_or_update_roms(
     orphan_romfile_ids
 }
 
+/// Deletes the games the DAT no longer lists, returning their ROMs
 async fn delete_old_games(
     connection: &mut SqliteConnection,
     games_xml: &[GameXml],
     system_id: i64,
-) -> Vec<i64> {
-    let mut orphan_romfile_ids: Vec<i64> = vec![];
+) -> Vec<Rom> {
+    let mut deleted_roms: Vec<Rom> = vec![];
     let game_names_xml: Vec<&String> = games_xml.iter().map(|game_xml| &game_xml.name).collect();
     let games: Vec<Game> = find_games_by_system_id(connection, system_id)
         .await
@@ -886,48 +896,46 @@ async fn delete_old_games(
         .filter(|game| !game_names_xml.contains(&&game.name))
         .collect();
     for game in games {
-        orphan_romfile_ids.extend(
-            find_roms_by_game_id_no_parents(connection, game.id)
-                .await
-                .into_iter()
-                .filter_map(|rom| rom.romfile_id),
-        );
+        deleted_roms.append(&mut find_roms_by_game_id_no_parents(connection, game.id).await);
         delete_game_by_name_and_system_id(connection, &game.name, system_id).await;
     }
-    orphan_romfile_ids
+    deleted_roms
 }
 
+/// Deletes the ROMs of a game the DAT no longer lists, returning them
 async fn delete_old_roms(
     connection: &mut SqliteConnection,
     roms_xml: &[&RomXml],
     game_id: i64,
-) -> Vec<i64> {
-    let rom_names_romfile_ids: Vec<(String, Option<i64>)> =
-        find_roms_by_game_id_no_parents(connection, game_id)
-            .await
-            .into_par_iter()
-            .map(|rom| (rom.name, rom.romfile_id))
-            .collect();
-    let mut orphan_romfile_ids: Vec<i64> = vec![];
-    for (rom_name, rom_romfile_id) in &rom_names_romfile_ids {
-        if !roms_xml.iter().any(|rom_xml| &rom_xml.name == rom_name) {
-            delete_rom_by_name_and_game_id(connection, rom_name, game_id).await;
-            if let Some(romfile_id) = rom_romfile_id {
-                orphan_romfile_ids.push(*romfile_id);
-            }
+) -> Vec<Rom> {
+    let mut deleted_roms: Vec<Rom> = vec![];
+    for rom in find_roms_by_game_id_no_parents(connection, game_id).await {
+        if !roms_xml.iter().any(|rom_xml| rom_xml.name == rom.name) {
+            delete_rom_by_name_and_game_id(connection, &rom.name, game_id).await;
+            deleted_roms.push(rom);
         }
     }
-    orphan_romfile_ids
+    deleted_roms
 }
 
+/// Reimports the ROM files an update left without a ROM. `deleted_roms` are the ROMs it deleted,
+/// whose names a cue sheet among those files may give.
 pub async fn reimport_orphan_romfiles(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system_id: i64,
     orphan_romfile_ids: Vec<i64>,
+    deleted_roms: &[Rom],
 ) -> Result<()> {
     let system = find_system_by_id(connection, system_id).await;
     let header = find_header_by_system_id(connection, system_id).await;
+    let mut deleted_roms_by_name: HashMap<&str, Vec<&Rom>> = HashMap::new();
+    for rom in deleted_roms {
+        deleted_roms_by_name
+            .entry(rom.name.as_str())
+            .or_default()
+            .push(rom);
+    }
     // every reimported file leaves its directory, for its game's new place or the trash
     let mut left_directories: HashSet<PathBuf> = HashSet::new();
     for romfile_id in orphan_romfile_ids {
@@ -954,12 +962,33 @@ pub async fn reimport_orphan_romfiles(
             )
             .await?;
             if game_ids.is_empty() {
-                let new_path = get_trash_path(connection, Some(&system), &romfile.path).await?;
-                romfile
-                    .rename(progress_bar, &new_path, false)
+                let is_cue = romfile
+                    .path
+                    .extension()
+                    .is_some_and(|extension| extension.eq_ignore_ascii_case(CUE_EXTENSION));
+                if is_cue
+                    && import_renamed_cue(
+                        connection,
+                        progress_bar,
+                        &system,
+                        &header,
+                        &romfile.path,
+                        &deleted_roms_by_name,
+                    )
                     .await?
-                    .create(connection, progress_bar, RomfileType::Romfile)
-                    .await?;
+                {
+                    // the renamed copy took its place, so a file left behind is only a stale copy
+                    if let Err(err) = romfile.delete(progress_bar, false).await {
+                        print_warning(progress_bar, &format!("{:#}", err));
+                    }
+                } else {
+                    let new_path = get_trash_path(connection, Some(&system), &romfile.path).await?;
+                    romfile
+                        .rename(progress_bar, &new_path, false)
+                        .await?
+                        .create(connection, progress_bar, RomfileType::Romfile)
+                        .await?;
+                }
             }
         }
     }
@@ -973,6 +1002,192 @@ pub async fn reimport_orphan_romfiles(
         }
     }
     Ok(())
+}
+
+/// Imports a cue sheet that an update renamed along with the files it names, as Redump renames a
+/// game and its tracks together: each name it gives of a ROM the update deleted becomes the name
+/// of the ROM with the same size and hashes, all of them in one game, and the renamed copy is
+/// imported like any file, so it is kept only when the update lists it. Returns whether it was.
+async fn import_renamed_cue(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &System,
+    header: &Option<Header>,
+    path: &Path,
+    deleted_roms_by_name: &HashMap<&str, Vec<&Rom>>,
+) -> Result<bool> {
+    let cue = fs::read(path)
+        .await
+        .with_context(|| format!("Failed to read \"{}\"", path.display()))?;
+
+    // the ROMs with the hashes of each deleted ROM the cue sheet names
+    let mut renamed_roms: Vec<(&str, Vec<Rom>)> = vec![];
+    for name in get_cue_file_names(&cue) {
+        if renamed_roms
+            .iter()
+            .any(|(renamed_name, _)| *renamed_name == name)
+        {
+            continue;
+        }
+        let mut roms: Vec<Rom> = vec![];
+        for deleted_rom in deleted_roms_by_name.get(name).into_iter().flatten() {
+            roms.append(&mut find_roms_by_size_and_hash(connection, deleted_rom, system.id).await);
+        }
+        if !roms.is_empty() {
+            roms.sort_by(|a, b| a.name.cmp(&b.name));
+            roms.dedup_by_key(|rom| rom.id);
+            renamed_roms.push((name, roms));
+        }
+    }
+
+    // the tracks must all belong to one game, so a track several games share, such as a common
+    // audio track, counts for that one
+    let shared_game_ids = renamed_roms
+        .iter()
+        .map(|(_, roms)| roms.iter().map(|rom| rom.game_id).collect::<HashSet<i64>>())
+        .reduce(|game_ids, other_game_ids| &game_ids & &other_game_ids)
+        .unwrap_or_default();
+    let game_id = match shared_game_ids.iter().next() {
+        Some(game_id) if shared_game_ids.len() == 1 => *game_id,
+        _ => return Ok(false),
+    };
+
+    // identical files in that game are paired in name order
+    let mut new_names: HashMap<&str, String> = HashMap::new();
+    let mut paired_rom_ids: HashSet<i64> = HashSet::new();
+    for (name, roms) in renamed_roms {
+        if let Some(rom) = roms
+            .into_iter()
+            .find(|rom| rom.game_id == game_id && !paired_rom_ids.contains(&rom.id))
+        {
+            paired_rom_ids.insert(rom.id);
+            if rom.name != name {
+                new_names.insert(name, rom.name);
+            }
+        }
+    }
+    if new_names.is_empty() {
+        return Ok(false);
+    }
+
+    print_info(progress_bar, "Renaming the files it names");
+    let tmp_directory = create_tmp_directory(connection).await?;
+    let renamed_path = tmp_directory
+        .path()
+        .join(path.file_name().context("Cue sheet has no file name")?);
+    fs::write(&renamed_path, rename_cue_files(&cue, &new_names))
+        .await
+        .with_context(|| format!("Failed to write \"{}\"", renamed_path.display()))?;
+    let (_, game_ids) = import_rom(
+        connection,
+        progress_bar,
+        &Some(system),
+        header,
+        &renamed_path,
+        false,
+        false,
+        false,
+        UnattendedMode::Skip,
+        false,
+    )
+    .await?;
+    Ok(!game_ids.is_empty())
+}
+
+/// The ROMs of a system with a ROM's size and strongest hash
+async fn find_roms_by_size_and_hash(
+    connection: &mut SqliteConnection,
+    rom: &Rom,
+    system_id: i64,
+) -> Vec<Rom> {
+    let Ok(size) = u64::try_from(rom.size) else {
+        return vec![];
+    };
+    let (mut roms, mut roms_without_romfile) = if let Some(sha1) = &rom.sha1 {
+        (
+            find_roms_with_romfile_by_size_and_sha1_and_system_id(
+                connection, rom.size, sha1, system_id,
+            )
+            .await,
+            find_roms_without_romfile_by_size_and_sha1_and_system_id(
+                connection, size, sha1, system_id,
+            )
+            .await,
+        )
+    } else if let Some(md5) = &rom.md5 {
+        (
+            find_roms_with_romfile_by_size_and_md5_and_system_id(
+                connection, rom.size, md5, system_id,
+            )
+            .await,
+            find_roms_without_romfile_by_size_and_md5_and_system_id(
+                connection, size, md5, system_id,
+            )
+            .await,
+        )
+    } else if let Some(crc) = &rom.crc {
+        (
+            find_roms_with_romfile_by_size_and_crc_and_system_id(
+                connection, rom.size, crc, system_id,
+            )
+            .await,
+            find_roms_without_romfile_by_size_and_crc_and_system_id(
+                connection, size, crc, system_id,
+            )
+            .await,
+        )
+    } else {
+        (vec![], vec![])
+    };
+    roms.append(&mut roms_without_romfile);
+    roms
+}
+
+/// Where the file name a cue sheet line's FILE command gives sits, between its quotes
+fn get_cue_file_name_range(line: &[u8]) -> Option<Range<usize>> {
+    let start = line.iter().position(|byte| !byte.is_ascii_whitespace())?;
+    if !line.get(start..start + 4)?.eq_ignore_ascii_case(b"FILE") {
+        return None;
+    }
+    let after_command = start + 4;
+    let open = after_command
+        + line[after_command..]
+            .iter()
+            .position(|byte| !byte.is_ascii_whitespace())?;
+    if open == after_command || line[open] != b'"' {
+        return None;
+    }
+    let close = open + 1 + line[open + 1..].iter().position(|&byte| byte == b'"')?;
+    Some(open + 1..close)
+}
+
+/// The file names a cue sheet's FILE commands give, in order
+fn get_cue_file_names(cue: &[u8]) -> Vec<&str> {
+    cue.split_inclusive(|&byte| byte == b'\n')
+        .filter_map(|line| {
+            get_cue_file_name_range(line).and_then(|range| str::from_utf8(&line[range]).ok())
+        })
+        .collect()
+}
+
+/// A cue sheet with the file names its FILE commands give renamed, and every other byte kept
+fn rename_cue_files(cue: &[u8], new_names: &HashMap<&str, String>) -> Vec<u8> {
+    let mut renamed: Vec<u8> = Vec::with_capacity(cue.len());
+    for line in cue.split_inclusive(|&byte| byte == b'\n') {
+        let renamed_range = get_cue_file_name_range(line).and_then(|range| {
+            let new_name = new_names.get(str::from_utf8(&line[range.clone()]).ok()?)?;
+            Some((range, new_name))
+        });
+        match renamed_range {
+            Some((range, new_name)) => {
+                renamed.extend_from_slice(&line[..range.start]);
+                renamed.extend_from_slice(new_name.as_bytes());
+                renamed.extend_from_slice(&line[range.end..]);
+            }
+            None => renamed.extend_from_slice(line),
+        }
+    }
+    renamed
 }
 
 #[cfg(feature = "server")]
@@ -1138,6 +1353,18 @@ mod test_dat_updated_orphan_chd_mismatch;
 #[cfg(test)]
 mod test_dat_updated_renamed_arcade;
 #[cfg(test)]
+mod test_dat_updated_renamed_cue_bin;
+#[cfg(test)]
+mod test_dat_updated_renamed_cue_chd;
+#[cfg(test)]
+mod test_dat_updated_renamed_cue_identical_tracks;
+#[cfg(test)]
+mod test_dat_updated_renamed_cue_mismatch;
+#[cfg(test)]
+mod test_dat_updated_renamed_cue_same_game;
+#[cfg(test)]
+mod test_dat_updated_renamed_cue_shared_track;
+#[cfg(test)]
 mod test_dat_updated_renamed_subfolder;
 #[cfg(test)]
 mod test_dat_updated_trashed_subfolder;
@@ -1147,6 +1374,8 @@ mod test_dat_updated_undeletable_subfolder;
 mod test_regions_france_germany;
 #[cfg(test)]
 mod test_regions_world;
+#[cfg(test)]
+mod test_rename_cue_files;
 #[cfg(test)]
 mod test_zip_nested;
 #[cfg(test)]
