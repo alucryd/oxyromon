@@ -312,9 +312,16 @@ fn cds_share_a_store_and_leave_it() {
     // Compacting the store keeps audio as audio
     std::fs::remove_file(&ore_b).unwrap();
     std::fs::remove_file(&again).unwrap();
-    ore_rs::compact(&store, &options, 0.0, false).unwrap();
+    ore_rs::compact(&store, &options, 0.0, false, &mut |_| {}).unwrap();
     check(&ore_a, &cue_a);
-    assert_eq!(ore_rs::check_store(&store, false).unwrap().lost_groups, 0);
+    let mut consumed = 0;
+    let checked = ore_rs::check_store(&store, false, &mut |n| consumed += n).unwrap();
+    assert_eq!(checked.lost_groups, 0);
+    assert_eq!(
+        consumed,
+        ore_rs::store_size(&store).unwrap(),
+        "progress adds up to the store"
+    );
 }
 
 #[test]

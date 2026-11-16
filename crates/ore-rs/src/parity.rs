@@ -112,7 +112,8 @@ impl Layout {
         }
     }
 
-    fn table_at(&self) -> u64 {
+    /// Where the CRC tables start: past the data and its parity.
+    pub fn table_at(&self) -> u64 {
         self.data_len + self.parity * self.shard
     }
 
@@ -136,7 +137,7 @@ fn codec(parity: u64) -> Result<ReedSolomon> {
 
 /// Seal the segment `file`, of `data_len` bytes, with `parity` parity
 /// shards: append its parity, its CRCs and its trailer.
-pub fn seal(file: &File, data_len: u64, parity: u8) -> Result<()> {
+pub fn seal(file: &File, data_len: u64, parity: u8, progress: &mut dyn FnMut(u64)) -> Result<()> {
     let layout = Layout::new(data_len, parity);
     if layout.parity == 0 {
         return Ok(());
@@ -154,6 +155,7 @@ pub fn seal(file: &File, data_len: u64, parity: u8) -> Result<()> {
         }
         let len = layout.shard.min(data_len - start) as usize;
         io::read_exact_at(file, &mut buf[..len], start)?;
+        progress(len as u64);
         buf[len..].fill(0);
         crcs.extend(buf[..len].chunks(BLOCK as usize).map(crc32c::crc32c));
         encode(&rs, i as usize, &buf, &mut parity)?;
@@ -208,7 +210,12 @@ pub struct Checked {
 /// blocks that fail them from parity, in place, and its CRC tables and
 /// trailer if they are damaged. A segment cut short is as damaged as what
 /// it lacks.
-pub fn check(file: &File, layout: &Layout, repair: bool) -> Result<Checked> {
+pub fn check(
+    file: &File,
+    layout: &Layout,
+    repair: bool,
+    progress: &mut dyn FnMut(u64),
+) -> Result<Checked> {
     let blocks = layout.blocks();
     let table = |copy: u64| -> Vec<u32> {
         let mut bytes = vec![0; layout.table_len() as usize];
@@ -238,6 +245,7 @@ pub fn check(file: &File, layout: &Layout, repair: bool) -> Result<Checked> {
         };
         let len = (end - at).min(span as u64) as usize;
         let read = read_some(file, &mut buf[..len], at);
+        progress(len as u64);
         for (i, block) in buf[..len].chunks(BLOCK as usize).enumerate() {
             let whole = i * BLOCK as usize + block.len() <= read;
             crcs.push(whole.then(|| crc32c::crc32c(block)));
@@ -348,7 +356,7 @@ mod tests {
             .write(true)
             .open(file.path())
             .unwrap();
-        seal(&handle, len as u64, parity).unwrap();
+        seal(&handle, len as u64, parity, &mut |_| {}).unwrap();
         let layout = Layout::new(len as u64, parity);
         assert_eq!(
             std::fs::metadata(file.path()).unwrap().len(),
@@ -367,7 +375,7 @@ mod tests {
 
     fn check_file(path: &std::path::Path, layout: &Layout, repair: bool) -> Checked {
         let file = File::options().read(true).write(true).open(path).unwrap();
-        check(&file, layout, repair).unwrap()
+        check(&file, layout, repair, &mut |_| {}).unwrap()
     }
 
     #[test]

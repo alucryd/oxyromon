@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, mpsc};
 
 use rayon::prelude::*;
 
@@ -506,13 +506,78 @@ pub struct StoreChecked {
     pub lost_games: Vec<PathBuf>,
 }
 
+/// Progress through `work` units of work, reported as `total` bytes: what
+/// is reported adds up to `total` once finished, however far the work went.
+pub(crate) struct Scaled<'a> {
+    progress: &'a mut dyn FnMut(u64),
+    total: u64,
+    work: u64,
+    done: u64,
+    reported: u64,
+}
+
+impl<'a> Scaled<'a> {
+    pub fn new(progress: &'a mut dyn FnMut(u64), total: u64, work: u64) -> Self {
+        Self {
+            progress,
+            total,
+            work: work.max(1),
+            done: 0,
+            reported: 0,
+        }
+    }
+
+    pub fn advance(&mut self, n: u64) {
+        self.done = (self.done + n).min(self.work);
+        let consumed = (self.done as u128 * self.total as u128 / self.work as u128) as u64;
+        (self.progress)(consumed - self.reported);
+        self.reported = consumed;
+    }
+
+    pub fn finish(mut self) {
+        self.advance(self.work);
+    }
+}
+
+/// The size of the store at `store`: of the files in it, what
+/// [`check_store`]'s progress adds up to.
+pub fn store_size(store: &Path) -> Result<u64> {
+    let mut size = 0;
+    for entry in std::fs::read_dir(store)? {
+        size += entry?.metadata()?.len();
+    }
+    Ok(size)
+}
+
 /// Check the store at `store` whole: every segment against its CRCs, and
 /// with `repair`, what fails them rebuilt from parity, in place; then
 /// every group decoded, checked against its CRC, and every chunk against
 /// its hash. Each chunk is read once, however many games share it.
-pub fn check_store(store: &Path, repair: bool) -> Result<StoreChecked> {
+///
+/// `progress` is called with the bytes checked since the last call, scaled
+/// so the calls add up to its [`store_size`].
+pub fn check_store(
+    store: &Path,
+    repair: bool,
+    progress: &mut dyn FnMut(u64),
+) -> Result<StoreChecked> {
     let _lock = lock(store)?;
+    let total = store_size(store)?;
     let index = Index::load(store)?;
+    // Segments with parity are read whole, then every group
+    let work = index
+        .segments
+        .iter()
+        .filter(|segment| segment.parity > 0)
+        .map(|segment| Layout::new(segment.len, segment.parity).table_at())
+        .chain(
+            index
+                .groups
+                .iter()
+                .map(|group| group.envelope_len() + group.group.stored_len),
+        )
+        .sum::<u64>();
+    let mut scaled = Scaled::new(progress, total, work);
     let mut checked = StoreChecked::default();
     let mut lost: HashSet<usize> = HashSet::new();
     let mut files = HashMap::new();
@@ -531,7 +596,8 @@ pub fn check_store(store: &Path, repair: bool) -> Result<StoreChecked> {
             continue;
         };
         if segment.parity > 0 {
-            let found = parity::check(&file, &Layout::new(segment.len, segment.parity), repair)?;
+            let layout = Layout::new(segment.len, segment.parity);
+            let found = parity::check(&file, &layout, repair, &mut |n| scaled.advance(n))?;
             checked.damaged += found.damaged;
             checked.repaired += found.repaired;
             for (number, group) in groups() {
@@ -559,24 +625,37 @@ pub fn check_store(store: &Path, repair: bool) -> Result<StoreChecked> {
             chunks[chunk.group as usize].push(id);
         }
     }
-    let bad: Vec<usize> = (0..index.groups.len())
-        .into_par_iter()
-        .filter(|number| !lost.contains(number))
-        .filter(|&number| {
-            let group = &index.groups[number];
-            let Some(file) = files.get(&group.segment) else {
-                return true;
-            };
-            match read_group(file, group.offset, group.envelope_len(), &group.group) {
-                Err(_) => true,
-                Ok(data) => chunks[number].iter().any(|&id| {
-                    let chunk = &index.chunks[id];
-                    let bytes = &data[chunk.offset as usize..][..chunk.len as usize];
-                    blake3::hash(bytes).as_bytes()[..16] != chunk.digest
-                }),
-            }
-        })
-        .collect();
+    // Groups checked on every core, their progress reported from this thread
+    let (sender, checked_len) = mpsc::channel();
+    let (index, files, chunks, lost_ref) = (&index, &files, &chunks, &lost);
+    let bad: Vec<usize> = std::thread::scope(|scope| {
+        let checker = scope.spawn(move || {
+            (0..index.groups.len())
+                .into_par_iter()
+                .filter(|number| !lost_ref.contains(number))
+                .filter(|&number| {
+                    let group = &index.groups[number];
+                    let _ = sender.send(group.envelope_len() + group.group.stored_len);
+                    let Some(file) = files.get(&group.segment) else {
+                        return true;
+                    };
+                    match read_group(file, group.offset, group.envelope_len(), &group.group) {
+                        Err(_) => true,
+                        Ok(data) => chunks[number].iter().any(|&id| {
+                            let chunk = &index.chunks[id];
+                            let bytes = &data[chunk.offset as usize..][..chunk.len as usize];
+                            blake3::hash(bytes).as_bytes()[..16] != chunk.digest
+                        }),
+                    }
+                })
+                .collect()
+        });
+        for len in checked_len {
+            scaled.advance(len);
+        }
+        checker.join().expect("the group checker panicked")
+    });
+    scaled.finish();
     lost.extend(bad);
     checked.lost_groups = lost.len() as u64;
     if !lost.is_empty() {
