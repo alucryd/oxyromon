@@ -106,6 +106,33 @@ impl Crypt {
         }
     }
 
+    /// Decrypt `buf`, `at` bytes into an outer layer, anywhere on an AES
+    /// block: chained from `before`, the ciphertext before it, but where a
+    /// chain starts.
+    #[cfg_attr(not(feature = "write"), allow(dead_code))]
+    fn decrypt_from(&self, at: u64, before: &[u8; 16], buf: &mut [u8]) {
+        let iv = |at: u64| match (self.mode, at % BLOCK, at) {
+            (LayerMode::Blocks, 0, _) => block_iv(self.index, at / BLOCK),
+            (_, _, 0) => block_iv(self.index, 0),
+            _ => *before,
+        };
+        match self.mode {
+            // Each block from its own IV: only the first may start within one
+            LayerMode::Blocks => {
+                let first = ((BLOCK - at % BLOCK) % BLOCK) as usize;
+                let (head, tail) = buf.split_at_mut(first.min(buf.len()));
+                if !head.is_empty() {
+                    cbc_decrypt(&self.key, &iv(at), head);
+                }
+                let at = at + head.len() as u64;
+                for (i, block) in tail.chunks_mut(BLOCK as usize).enumerate() {
+                    cbc_decrypt(&self.key, &iv(at + i as u64 * BLOCK), block);
+                }
+            }
+            _ => cbc_decrypt(&self.key, &iv(at), buf),
+        }
+    }
+
     /// Encrypt `buf`, `at` bytes into the layer: a 64 KiB boundary, and the
     /// layer's end or one after `buf`.
     fn encrypt(&self, at: u64, buf: &mut [u8]) {
@@ -165,71 +192,183 @@ impl Layers {
         Ok(Layers { outer, pieces })
     }
 
-    /// What a read of `from..to` must encrypt, of a region of `len` bytes:
-    /// the 64 KiB blocks of every layer it touches, whole.
-    pub fn span(&self, len: u64, from: u64, to: u64) -> (u64, u64) {
+    /// What a read of `from..to` of a region of `len` bytes needs: the
+    /// outer layer's 64 KiB blocks it touches, which come out encrypted,
+    /// and around them, the plaintext of the inner blocks those touch,
+    /// each one at most, which comes out encrypted by its piece alone.
+    pub fn span(&self, len: u64, from: u64, to: u64) -> Span {
+        let (from, to) = match self.outer {
+            Some(_) => (from / BLOCK * BLOCK, to.next_multiple_of(BLOCK).min(len)),
+            None => (from / 16 * 16, to.next_multiple_of(16).min(len)),
+        };
         let (mut lo, mut hi) = (from, to);
-        loop {
-            let before = (lo, hi);
-            if self.outer.is_some() {
-                lo = lo / BLOCK * BLOCK;
-                hi = hi.next_multiple_of(BLOCK).min(len);
-            }
-            for &(offset, piece, _) in &self.pieces {
-                let end = offset + piece;
-                if lo > offset && lo < end {
-                    lo = offset + (lo - offset) / BLOCK * BLOCK;
-                }
-                if hi > offset && hi < end {
-                    hi = (offset + (hi - offset).next_multiple_of(BLOCK)).min(end);
-                }
-            }
-            // The AES block, where no layer is
-            lo = lo / 16 * 16;
-            hi = hi.next_multiple_of(16).min(len);
-            if (lo, hi) == before {
-                return (lo, hi);
-            }
-        }
-    }
-
-    /// Encrypt `buf`, the region's decrypted bytes from `lo`, as [`span`]
-    /// gives it.
-    ///
-    /// [`span`]: Layers::span
-    pub fn encrypt(&self, lo: u64, buf: &mut [u8]) {
-        let hi = lo + buf.len() as u64;
         for (offset, piece, crypt) in &self.pieces {
-            let (start, end) = (lo.max(*offset), hi.min(offset + piece));
-            if start < end {
-                crypt.encrypt(
-                    start - offset,
-                    &mut buf[(start - lo) as usize..(end - lo) as usize],
-                );
+            let end = offset + piece;
+            if lo > *offset && lo < end {
+                lo = offset + (lo - offset) / BLOCK * BLOCK;
+            }
+            // A chain encrypts forward from where it starts; a hashed
+            // block, whole
+            if hi > *offset && hi < end && crypt.mode == LayerMode::Hashed {
+                hi = (offset + (hi - offset).next_multiple_of(BLOCK)).min(end);
             }
         }
+        Span { lo, hi, from, to }
+    }
+
+    /// Encrypt `buf`, the region's plaintext from `span.lo` to `span.hi`:
+    /// from `span.from` to `span.to`, it is then as the disc has it.
+    pub fn encrypt(&self, span: &Span, buf: &mut [u8]) {
+        self.pieces(span, buf, Crypt::encrypt);
         if let Some(outer) = &self.outer {
-            outer.encrypt(lo, buf);
+            let range = (span.from - span.lo) as usize..(span.to - span.lo) as usize;
+            outer.encrypt(span.from, &mut buf[range]);
         }
     }
 
-    /// Decrypt `buf`, the region's bytes as the disc has them from `lo`, as
-    /// [`span`] gives it: what [`Layers::encrypt`] encrypts back.
-    ///
-    /// [`span`]: Layers::span
+    /// Decrypt `buf`, the region's bytes as the disc has them from
+    /// `span.lo` to `span.hi`, `before` the 16 before them: from
+    /// `span.from` to `span.to`, it is then what [`Layers::encrypt`]
+    /// encrypts back.
     #[cfg_attr(not(feature = "write"), allow(dead_code))]
-    pub fn decrypt(&self, lo: u64, buf: &mut [u8]) {
+    pub fn decrypt(&self, span: &Span, before: &[u8; 16], buf: &mut [u8]) {
         if let Some(outer) = &self.outer {
-            outer.decrypt(lo, buf);
+            outer.decrypt_from(span.lo, before, buf);
         }
-        let hi = lo + buf.len() as u64;
-        for (offset, piece, crypt) in &self.pieces {
-            let (start, end) = (lo.max(*offset), hi.min(offset + piece));
+        self.pieces(span, buf, Crypt::decrypt);
+    }
+
+    /// Apply `crypt` to each piece's bytes in `buf`, from `span.lo`.
+    fn pieces(&self, span: &Span, buf: &mut [u8], crypt: fn(&Crypt, u64, &mut [u8])) {
+        for (offset, piece, layer) in &self.pieces {
+            let (start, end) = (span.lo.max(*offset), span.hi.min(offset + piece));
             if start < end {
-                crypt.decrypt(
+                crypt(
+                    layer,
                     start - offset,
-                    &mut buf[(start - lo) as usize..(end - lo) as usize],
+                    &mut buf[(start - span.lo) as usize..(end - span.lo) as usize],
                 );
+            }
+        }
+    }
+}
+
+/// A read's extent in a region: the plaintext it needs, `lo` to `hi`, and
+/// what of it comes out as the disc has it, `from` to `to`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Span {
+    pub lo: u64,
+    pub hi: u64,
+    pub from: u64,
+    pub to: u64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn noise(len: usize, mut state: u64) -> Vec<u8> {
+        (0..len)
+            .map(|_| {
+                state = state.wrapping_mul(6364136223846793005).wrapping_add(1);
+                (state >> 56) as u8
+            })
+            .collect()
+    }
+
+    fn crypt(mode: LayerMode, key: u8, index: u16) -> Crypt {
+        Crypt {
+            mode,
+            key: [key; 16],
+            index,
+            ivs: Vec::new(),
+        }
+    }
+
+    /// A chain's IVs, from what it encrypted: the 16 bytes before each
+    /// 64 KiB of it.
+    fn ivs(encrypted: &[u8]) -> Vec<[u8; 16]> {
+        (1..(encrypted.len() as u64).div_ceil(BLOCK))
+            .map(|k| {
+                let at = (k * BLOCK) as usize;
+                encrypted[at - 16..at].try_into().unwrap()
+            })
+            .collect()
+    }
+
+    /// Pieces whose blocks start off the outer layer's, as an update
+    /// partition's titles do: a read needs a block of each around it, and
+    /// no more, and decrypts and encrypts back to the disc's bytes.
+    #[test]
+    fn a_read_takes_the_blocks_around_it_alone() {
+        let len = 20 * BLOCK;
+        for outer_mode in [LayerMode::Chain, LayerMode::Blocks] {
+            let plain = noise(len as usize, 1);
+            let mut layers = Layers {
+                outer: None,
+                pieces: vec![
+                    (0x30, 2 * BLOCK + 0x40, crypt(LayerMode::Chain, 1, 3)),
+                    (3 * BLOCK + 0x20, 6 * BLOCK, crypt(LayerMode::Hashed, 2, 4)),
+                    (12 * BLOCK + 0x7F0, 5 * BLOCK, crypt(LayerMode::Chain, 3, 5)),
+                ],
+            };
+            // Encrypted whole, from each chain's start, its IVs from that
+            let whole = |layers: &Layers, buf: &mut [u8]| {
+                let span = Span {
+                    lo: 0,
+                    hi: len,
+                    from: 0,
+                    to: len,
+                };
+                layers.encrypt(&span, buf);
+            };
+            let mut inner = plain.clone();
+            whole(&layers, &mut inner);
+            for (offset, piece, layer) in &mut layers.pieces {
+                if layer.mode == LayerMode::Chain {
+                    layer.ivs = ivs(&inner[*offset as usize..(*offset + *piece) as usize]);
+                }
+            }
+            let mut disc = inner.clone();
+            let outer = crypt(outer_mode, 9, 7);
+            outer.encrypt(0, &mut disc);
+            layers.outer = Some(Crypt {
+                ivs: match outer_mode {
+                    LayerMode::Chain => ivs(&disc),
+                    _ => Vec::new(),
+                },
+                ..outer
+            });
+
+            let mut state = 5;
+            for _ in 0..200 {
+                let from = noise(8, state).iter().fold(0u64, |a, &b| a << 8 | b as u64) % len;
+                state += 1;
+                let to = (from
+                    + noise(4, state)
+                        .iter()
+                        .fold(1u64, |a, &b| a + b as u64 * 300))
+                .min(len);
+                state += 1;
+                let span = layers.span(len, from, to);
+                assert!(span.from <= from && span.to >= to);
+                assert!(
+                    span.hi - span.lo <= (to - from) + 4 * BLOCK,
+                    "{outer_mode:?} {from:#x}..{to:#x}: {span:?}"
+                );
+                let range = span.lo as usize..span.hi as usize;
+                let window = (span.from - span.lo) as usize..(span.to - span.lo) as usize;
+                let at = (span.from as usize)..(span.to as usize);
+                let mut before = [0; 16];
+                if span.lo > 0 {
+                    before.copy_from_slice(&disc[span.lo as usize - 16..span.lo as usize]);
+                }
+                let mut decrypted = disc[range.clone()].to_vec();
+                layers.decrypt(&span, &before, &mut decrypted);
+                assert!(decrypted[window.clone()] == plain[at.clone()], "{span:?}");
+                let mut encrypted = plain[range].to_vec();
+                layers.encrypt(&span, &mut encrypted);
+                assert!(encrypted[window] == disc[at], "{span:?}");
             }
         }
     }

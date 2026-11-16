@@ -844,18 +844,21 @@ impl Reader {
     }
 
     /// A Wii U region's bytes from `from` to `to`, encrypted as the disc
-    /// has them, and the 64 KiB blocks around them its layers need: where
+    /// has them, and the outer layer's 64 KiB blocks around them: where
     /// they start, and their bytes.
     fn encrypt_span(&mut self, area: usize, from: u64, to: u64) -> Result<(u64, Vec<u8>)> {
         let layers = self.areas[area]
             .wiiu
             .clone()
             .expect("a Wii U region has its layers");
-        let (lo, hi) = layers.span(self.areas[area].len, from, to);
-        let mut bytes = vec![0; (hi - lo) as usize];
-        self.read_stored(area, lo, &mut bytes)?;
-        layers.encrypt(lo, &mut bytes);
-        Ok((lo, bytes))
+        let span = layers.span(self.areas[area].len, from, to);
+        let mut bytes = vec![0; (span.hi - span.lo) as usize];
+        self.read_stored(area, span.lo, &mut bytes)?;
+        layers.encrypt(&span, &mut bytes);
+        // What the inner blocks needed around it is the pieces' alone
+        bytes.truncate((span.to - span.lo) as usize);
+        bytes.drain(..(span.from - span.lo) as usize);
+        Ok((span.from, bytes))
     }
 
     /// A Wii group as the disc holds it: its data hashed, the exceptions put

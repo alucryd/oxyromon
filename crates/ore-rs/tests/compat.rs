@@ -2,6 +2,7 @@
 //! `spec_version`, optional flags it does not know, regions it does not
 //! read, bytes after what it reads. And what it must refuse: required
 //! flags it does not know, and a later layout.
+#![cfg(feature = "write")]
 
 use std::path::{Path, PathBuf};
 

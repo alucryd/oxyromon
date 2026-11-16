@@ -107,30 +107,34 @@ impl Disc<'_, '_> {
         let layers = Layers::new(&wiiu, len)?;
         let records = self.encoder.records;
         let mut segmenter = Segmenter::without_padding(0);
-        let mut lo = 0;
-        while lo < len {
-            let (from, hi) = layers.span(len, lo, (lo + REGION_WINDOW).min(len));
-            if from != lo {
-                return Err(Error::Corrupt(
-                    "a Wii U region whose layers' blocks cross".into(),
-                ));
+        let mut from = 0;
+        while from < len {
+            // A window, and around it the inner blocks it needs
+            let span = layers.span(len, from, (from + REGION_WINDOW).min(len));
+            let mut disc = vec![0; (span.hi - span.lo) as usize];
+            self.image.read_exact_at(&mut disc, start + span.lo)?;
+            let mut before = [0; 16];
+            if span.lo > 0 {
+                self.image
+                    .read_exact_at(&mut before, start + span.lo - 16)?;
             }
-            let mut disc = vec![0; (hi - lo) as usize];
-            self.image.read_exact_at(&mut disc, start + lo)?;
-            self.hashes.update(&disc);
             let mut plain = disc.clone();
-            layers.decrypt(lo, &mut plain);
+            layers.decrypt(&span, &before, &mut plain);
             let mut back = plain.clone();
-            layers.encrypt(lo, &mut back);
-            if back != disc {
+            layers.encrypt(&span, &mut back);
+            let window = (span.from - span.lo) as usize..(span.to - span.lo) as usize;
+            if back[window.clone()] != disc[window.clone()] {
                 return Err(Error::Corrupt(format!(
                     "the Wii U region at {start:#x} does not encrypt back"
                 )));
             }
-            segmenter.feed(&plain, lo, None, &mut |run| self.encoder.push(run));
+            self.hashes.update(&disc[window.clone()]);
+            segmenter.feed(&plain[window], span.from, None, &mut |run| {
+                self.encoder.push(run)
+            });
             self.encoder.flush(false)?;
-            (self.progress)(hi - lo);
-            lo = hi;
+            (self.progress)(span.to - span.from);
+            from = span.to;
         }
         segmenter.finish(&mut |run| self.encoder.push(run));
         self.decrypted += len;
