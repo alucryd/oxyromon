@@ -298,14 +298,18 @@ impl StoreWriter {
         Ok(())
     }
 
+    /// The bytes of the segment being written, if any.
+    fn open_len(&self) -> u64 {
+        match self.file {
+            Some(_) => self.index.segments.last().map_or(0, |segment| segment.len),
+            None => 0,
+        }
+    }
+
     /// What a commit writes and seals: the segment being written and what
     /// is still to be compressed, before it is.
     pub fn unsealed(&self) -> u64 {
-        let open = match self.file {
-            Some(_) => self.index.segments.last().map_or(0, |segment| segment.len),
-            None => 0,
-        };
-        open + self.packer.pending()
+        self.open_len() + self.packer.pending()
     }
 
     /// Write what is left to, then the index: only now does the store hold
@@ -316,11 +320,7 @@ impl StoreWriter {
     pub fn commit(&mut self, progress: &mut dyn FnMut(u64)) -> Result<u64> {
         let total = self.unsealed();
         self.write(true)?;
-        let work = match self.file {
-            Some(_) => self.index.segments.last().map_or(0, |segment| segment.len),
-            None => 0,
-        };
-        let mut scaled = Scaled::new(progress, total, work);
+        let mut scaled = Scaled::new(progress, total, self.open_len());
         self.seal(&mut |n| scaled.advance(n))?;
         scaled.finish();
         if self.index.chunks.len() as u128 > 1 << self.index.id_bits
