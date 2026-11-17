@@ -450,6 +450,7 @@ pub async fn import_ird(
             progress_bar,
             game.system_id,
             orphan_romfile_ids,
+            &[],
         )
         .await?;
     }

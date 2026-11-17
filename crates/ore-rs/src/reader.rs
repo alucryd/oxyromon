@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 
 use rayon::prelude::*;
 
@@ -1037,33 +1037,50 @@ pub fn decompress(input: &Path, output: &Path, progress: &mut dyn FnMut(u64)) ->
         for (path, start, len) in &files {
             let mut file = BufWriter::with_capacity(8 << 20, File::create(io::part(path))?);
             let (mut offset, end) = (*start, start + len);
-            while offset < end {
-                let slices: Vec<(u64, usize)> = (0..readers.len() as u64)
-                    .map(|i| offset + i * SLICE)
-                    .take_while(|&at| at < end)
-                    .map(|at| (at, SLICE.min(end - at) as usize))
-                    .collect();
-                let decoded = slices
-                    .par_iter()
-                    .map(|&(at, length)| {
-                        let worker = rayon::current_thread_index().unwrap_or(0) % readers.len();
-                        let mut reader = readers[worker].lock().unwrap();
-                        let mut buf = vec![0; length];
-                        reader.read_at(at, &mut buf)?;
-                        Ok(buf)
-                    })
-                    .collect::<Result<Vec<_>>>()?;
-                for buf in decoded {
-                    hasher.update(&buf);
-                    file.write_all(&buf)?;
-                    offset += buf.len() as u64;
-                    done += buf.len() as u64;
-                }
-                // Scale the progress through the disc to the file
-                let consumed = (done as u128 * input_size as u128 / size as u128) as u64;
-                progress(consumed - reported);
-                reported = consumed;
+            let slices = (offset..end)
+                .step_by(SLICE as usize)
+                .map(move |at| (at, SLICE.min(end - at) as usize));
+            // Slices handed out in order, never more than `ahead` past the
+            // one written, so the cores stay busy and the progress steady
+            let ahead = 2 * readers.len();
+            let (credit, credits) = mpsc::sync_channel(ahead);
+            for _ in 0..ahead {
+                let _ = credit.send(());
             }
+            let (sender, decoded) = mpsc::channel();
+            let readers = &readers;
+            std::thread::scope(|scope| -> Result<()> {
+                // Dropped on return, error or not, so the decoders stop
+                let (credit, decoded) = (credit, decoded);
+                scope.spawn(move || {
+                    slices
+                        .take_while(move |_| credits.recv().is_ok())
+                        .par_bridge()
+                        .for_each_with(sender, |sender, (at, length)| {
+                            let worker = rayon::current_thread_index().unwrap_or(0) % readers.len();
+                            let mut reader = readers[worker].lock().unwrap();
+                            let mut buf = vec![0; length];
+                            let _ = sender.send((at, reader.read_at(at, &mut buf).map(|()| buf)));
+                        });
+                });
+                let mut pending = HashMap::new();
+                while offset < end {
+                    let (at, buf) = decoded.recv().expect("a decoder for every slice");
+                    pending.insert(at, buf?);
+                    while let Some(buf) = pending.remove(&offset) {
+                        hasher.update(&buf);
+                        file.write_all(&buf)?;
+                        offset += buf.len() as u64;
+                        done += buf.len() as u64;
+                        let _ = credit.send(());
+                        // Scale the progress through the disc to the file
+                        let consumed = (done as u128 * input_size as u128 / size as u128) as u64;
+                        progress(consumed - reported);
+                        reported = consumed;
+                    }
+                }
+                Ok(())
+            })?;
             file.into_inner().map_err(|e| e.into_error())?.sync_all()?;
         }
         if *hasher.finalize().as_bytes() != logical_hash {

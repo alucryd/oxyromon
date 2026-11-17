@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Test System (CHD Clone)</name>
+		<description>Test System (CHD Clone)</description>
+		<version>20261115</version>
+		<date>20261115</date>
+		<author>Maxime Gauduin</author>
+	</header>
+	<game name="Test Game (USA)">
+		<description>Test Game (USA)</description>
+		<release name="Test Game (USA)" region="USA" />
+		<rom name="Test Game (USA).iso" size="1013760" crc="ba308785"
+			md5="bed7fedbecab1b5b794df190dcd287f8" sha1="e329534a00ecfb5c2d7f48b4d1b7f0097d968e43" />
+	</game>
+	<game name="Test Game (USA) (Rev 1)">
+		<description>Test Game (USA) (Rev 1)</description>
+		<release name="Test Game (USA) (Rev 1)" region="USA" />
+		<rom name="Test Game (USA) (Rev 1).iso" size="1013760" crc="afc23df6"
+			md5="038749aa93f24652b5e398c7cec92b28" sha1="7e60e82519c3c931e9736c39cf6415a6c8e2201a" />
+	</game>
+</datafile>

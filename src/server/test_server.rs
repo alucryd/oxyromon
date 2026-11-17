@@ -8,7 +8,7 @@ use async_graphql::Result;
 use indicatif::ProgressBar;
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
-use tempfile::{NamedTempFile, TempDir};
+use tempfile::TempDir;
 use tokio::fs;
 use tokio::select;
 use tokio::time::{Duration, sleep};
@@ -39,7 +39,7 @@ async fn test() -> Result<()> {
     let test_directory = Path::new("tests");
     let progress_bar = ProgressBar::hidden();
 
-    let db_file = NamedTempFile::new().unwrap();
+    let db_file = crate::config::TestDatabase::new();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
@@ -237,7 +237,7 @@ async fn test_upload_dat() -> Result<()> {
 
     let test_directory = Path::new("tests");
 
-    let db_file = NamedTempFile::new().unwrap();
+    let db_file = crate::config::TestDatabase::new();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
@@ -305,7 +305,7 @@ async fn test_upload_dat_zip() -> Result<()> {
 
     let test_directory = Path::new("tests");
 
-    let db_file = NamedTempFile::new().unwrap();
+    let db_file = crate::config::TestDatabase::new();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
@@ -374,7 +374,7 @@ async fn test_upload_dat_already_imported() -> Result<()> {
     let test_directory = Path::new("tests");
     let progress_bar = ProgressBar::hidden();
 
-    let db_file = NamedTempFile::new().unwrap();
+    let db_file = crate::config::TestDatabase::new();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
@@ -453,7 +453,7 @@ async fn test_import_rom_source() -> Result<()> {
     let test_directory = Path::new("tests");
     let progress_bar = ProgressBar::hidden();
 
-    let db_file = NamedTempFile::new().unwrap();
+    let db_file = crate::config::TestDatabase::new();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 

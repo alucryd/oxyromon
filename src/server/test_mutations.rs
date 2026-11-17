@@ -3,7 +3,7 @@ use super::*;
 use async_graphql::Result;
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
-use tempfile::{NamedTempFile, TempDir};
+use tempfile::TempDir;
 use tokio::select;
 use tokio::time::{Duration, sleep};
 
@@ -38,7 +38,7 @@ async fn test() -> Result<()> {
 
     let test_directory = Path::new("tests");
 
-    let db_file = NamedTempFile::new().unwrap();
+    let db_file = crate::config::TestDatabase::new();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 

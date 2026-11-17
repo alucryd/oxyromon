@@ -108,8 +108,10 @@ fn main() -> ExitCode {
         let last = matches.get_many::<PathBuf>("INPUTS").unwrap().next_back();
         match batch.take() {
             Some(done) if last.is_some_and(|last| last == input) => {
-                done.commit()
-                    .map_err(|e| format!("committing the store: {e}"))?;
+                let bar = ui::progress_bar(done.unsealed(), "Committing", input);
+                let committed = done.commit(&mut |n| bar.inc(n));
+                bar.finish_and_clear();
+                committed.map_err(|e| format!("committing the store: {e}"))?;
             }
             pending => batch = pending,
         }
@@ -266,7 +268,11 @@ fn store(input: &Path, matches: &ArgMatches, options: &Options) -> Result<String
     if let Some(&parity) = matches.get_one::<u8>("parity") {
         ore_rs::set_parity(input, parity).map_err(|e| format!("{}: {e}", input.display()))?;
     }
-    let checked = ore_rs::check_store(input, true).map_err(|e| e.to_string())?;
+    let size = ore_rs::store_size(input).map_err(|e| e.to_string())?;
+    let bar = ui::progress_bar(size, "Checking", input);
+    let checked = ore_rs::check_store(input, true, &mut |n| bar.inc(n));
+    bar.finish_and_clear();
+    let checked = checked.map_err(|e| e.to_string())?;
     if checked.lost_groups > 0 {
         let games: Vec<String> = checked
             .lost_games
@@ -287,13 +293,17 @@ fn store(input: &Path, matches: &ArgMatches, options: &Options) -> Result<String
         checked.damaged
     );
     if matches.get_flag("compact") {
+        let size = ore_rs::store_size(input).map_err(|e| e.to_string())?;
+        let bar = ui::progress_bar(size, "Compacting", input);
         let compacted = ore_rs::compact(
             input,
             options,
             COMPACT_THRESHOLD,
             matches.get_flag("recompress"),
-        )
-        .map_err(|e| e.to_string())?;
+            &mut |n| bar.inc(n),
+        );
+        bar.finish_and_clear();
+        let compacted = compacted.map_err(|e| e.to_string())?;
         message += &format!(
             "; compacted: {} games, {} to {} bytes",
             compacted.games, compacted.before, compacted.after

@@ -2,7 +2,7 @@
 
 ## Features
 
-- Added ORE, oxyROMon's own format, from the new ore-rs crate: import, check and convert GameCube and Wii discs and CUE/BIN to and from ORE, a CD's cue sheet inside its ORE with its tracks, set by `ORE_COMPRESSION_ALGORITHM` (`zstd` or `lzma2`) and `ORE_PROFILE` (`stream` or `archive`); the format is a draft, and an ORE written now may not open in a later version
+- Added ORE, oxyROMon's own format, from the new ore-rs crate: import, check and convert GameCube and Wii discs and CUE/BIN to and from ORE, RVZs included, through the ISO they hold, a CD's cue sheet inside its ORE with its tracks, set by `ORE_COMPRESSION_ALGORITHM` (`zstd` or `lzma2`) and `ORE_PROFILE` (`stream` or `archive`); the format is a draft, and an ORE written now may not open in a later version
 - ORE takes Dreamcast GD-ROMs, from their Redump cue sheet or CHD
 - ORE takes PlayStation 2 DVDs too, and converts from CHD: a DVD's ISO, or a CD's tracks with its cue sheet; a disc of another system is skipped rather than failing the run
 - ORE takes PSP UMDs, from their ISO or CHD, as it takes PlayStation 2 DVDs
@@ -20,6 +20,9 @@
 ## Fixes
 
 - A Wii U update or DLC with a content of a size off the AES block, as *Nintendo Land*'s update has, converts to WUA, where wux-rs refused it as corrupt
+- Fixed `import-dats` moving a cue sheet to `Trash` when an update renames the tracks it names, as Redump renames a game, which left the game incomplete; the cue sheet is now rewritten with the new names and kept when the DAT lists it
+- Converting CHDs converts a clone before the CHD it reads from, in ORE as in every other format, and leaves a CHD whose clones are still on disk alone: a clone imported from outside keeps its link to its parent in its header alone, and converting its parent first used to leave it unreadable
+- `check-roms`, `compact-roms` and committing a store's batch show their progress as they go, rather than a bar left at the last ORE's size that never moved, and extracting an ORE moves its bar steadily rather than in jumps of a hundred megabytes or so
 
 # 0.25.0
 

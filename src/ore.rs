@@ -706,9 +706,11 @@ impl StoreSink {
             progress_bar,
             &format!("Committing \"{}\"", self.store.display()),
         );
-        run_blocking(progress_bar, 0, move |_| batch.commit())
-            .await
-            .context("Failed to commit the system's ORE store")?;
+        run_blocking(progress_bar, batch.unsealed(), move |progress| {
+            batch.commit(progress)
+        })
+        .await
+        .context("Failed to commit the system's ORE store")?;
         stop_action(progress_bar);
         Ok(())
     }
@@ -893,11 +895,11 @@ pub async fn sync_store(
             // Over itself, landing once the batch is committed
             open.attach(path, path, options, progress)?;
             if per_game {
-                batch.take().unwrap().commit()?;
+                batch.take().unwrap().commit(&mut |_| {})?;
             }
         }
         if let Some(batch) = batch {
-            batch.commit()?;
+            batch.commit(&mut |_| {})?;
         }
         Ok(())
     })
@@ -912,9 +914,12 @@ pub async fn sync_store(
 pub async fn check_store(progress_bar: &ProgressBar, store: &Path) -> Result<()> {
     print_action(progress_bar, &format!("Checking \"{}\"", store.display()));
     let path = store.to_path_buf();
-    let checked = run_blocking(progress_bar, 0, move |_| ore_rs::check_store(&path, true))
-        .await
-        .with_context(|| format!("Failed to check \"{}\"", store.display()))?;
+    let size = ore_rs::store_size(store)?;
+    let checked = run_blocking(progress_bar, size, move |progress| {
+        ore_rs::check_store(&path, true, progress)
+    })
+    .await
+    .with_context(|| format!("Failed to check \"{}\"", store.display()))?;
     stop_action(progress_bar);
     if checked.repaired > 0 {
         print_warning(
@@ -962,9 +967,10 @@ pub async fn compact_store(
     };
     let path = store.to_path_buf();
     // How dead a segment has to be before its live chunks move, as orers
-    let compacted = run_blocking(progress_bar, 0, move |_| {
+    let size = ore_rs::store_size(store)?;
+    let compacted = run_blocking(progress_bar, size, move |progress| {
         ore_rs::set_parity(&path, parity)?;
-        ore_rs::compact(&path, &options, 0.5, recompress)
+        ore_rs::compact(&path, &options, 0.5, recompress, progress)
     })
     .await
     .with_context(|| format!("Failed to compact \"{}\"", store.display()))?;

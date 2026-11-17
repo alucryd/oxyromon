@@ -440,6 +440,7 @@ With `-u`, only systems already in the database are updated, which keeps a colle
 An update keeps a system's custom name and extension unless new ones are given.
 `-f` sets each to what is given, so one left out reverts to the DAT's.
 When an update moves ROM files, to a renamed game or to `Trash`, the directories they leave empty are deleted, except the ROM, system and `Trash` directories.
+When it renames a game's tracks along with their cue sheet, as Redump renames a game, the cue sheet is rewritten to name them as they are now, and kept when the DAT lists the result; otherwise it goes to `Trash`.
 
 Some systems need a header definition next to their DAT file.
 oxyROMon falls back to its own when it is missing.

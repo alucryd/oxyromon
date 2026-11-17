@@ -485,16 +485,8 @@ async fn to_archive(
     let (mut chds, roms_by_game_id) =
         partition_games_by_extensions(roms_by_game_id, &romfiles_by_id, &[CHD_EXTENSION]);
     // make sure children are converted before parents
-    chds.par_sort_by(|_, a, _, b| {
-        b.par_iter()
-            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-            .any(|romfile| romfile.parent_id.is_some())
-            .cmp(
-                &a.par_iter()
-                    .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-                    .any(|romfile| romfile.parent_id.is_some()),
-            )
-    });
+    let lineage = ChdLineage::load(connection, &chds, &romfiles_by_id).await?;
+    lineage.sort(&mut chds);
 
     // partition CSOs
     let (csos, roms_by_game_id) =
@@ -548,6 +540,7 @@ async fn to_archive(
         if !find_romfiles_by_parent_id(&mut transaction, romfile.id)
             .await
             .is_empty()
+            || lineage.has_children(romfile.id)
         {
             print_skip(progress_bar, "CHD has children, skipping");
             continue;
@@ -1513,16 +1506,8 @@ async fn to_chd(
     let (mut chds, others) =
         partition_games_by_extensions(others, &romfiles_by_id, &[CHD_EXTENSION]);
     // make sure children are converted before parents
-    chds.par_sort_by(|_, a, _, b| {
-        b.par_iter()
-            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-            .any(|romfile| romfile.parent_id.is_some())
-            .cmp(
-                &a.par_iter()
-                    .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-                    .any(|romfile| romfile.parent_id.is_some()),
-            )
-    });
+    let lineage = ChdLineage::load(connection, &chds, &romfiles_by_id).await?;
+    lineage.sort(&mut chds);
 
     // convert archives
     for roms in archives.values() {
@@ -1999,6 +1984,7 @@ async fn to_chd(
             if !find_romfiles_by_parent_id(&mut transaction, romfile.id)
                 .await
                 .is_empty()
+                || lineage.has_children(romfile.id)
             {
                 print_skip(progress_bar, "CHD has children, skipping");
                 continue;
@@ -2214,16 +2200,8 @@ async fn to_xso(
     let (mut chds, others) =
         partition_games_by_extensions(others, &romfiles_by_id, &[CHD_EXTENSION]);
     // make sure children are converted before parents
-    chds.par_sort_by(|_, a, _, b| {
-        b.par_iter()
-            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-            .any(|romfile| romfile.parent_id.is_some())
-            .cmp(
-                &a.par_iter()
-                    .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-                    .any(|romfile| romfile.parent_id.is_some()),
-            )
-    });
+    let lineage = ChdLineage::load(connection, &chds, &romfiles_by_id).await?;
+    lineage.sort(&mut chds);
 
     // partition XSOs of the same type
     let (same_xsos, others) =
@@ -2317,6 +2295,7 @@ async fn to_xso(
         if !find_romfiles_by_parent_id(&mut transaction, romfile.id)
             .await
             .is_empty()
+            || lineage.has_children(romfile.id)
         {
             print_skip(progress_bar, "CHD has children, skipping");
             continue;
@@ -2799,8 +2778,15 @@ async fn to_ore(
     // partition ISOs
     let (isos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ISO_EXTENSION]);
 
+    // partition RVZs
+    let (rvzs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[RVZ_EXTENSION]);
+
     // partition CHDs
-    let (chds, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CHD_EXTENSION]);
+    let (mut chds, others) =
+        partition_games_by_extensions(others, &romfiles_by_id, &[CHD_EXTENSION]);
+    // make sure children are converted before parents
+    let lineage = ChdLineage::load(connection, &chds, &romfiles_by_id).await?;
+    lineage.sort(&mut chds);
 
     // partition OREs
     let (ores, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ORE_EXTENSION]);
@@ -3096,6 +3082,59 @@ async fn to_ore(
         }
     }
 
+    // convert RVZs, through the ISO they hold
+    for roms in rvzs.values() {
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let mut transaction = begin_transaction(connection).await;
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let decoded = rvz_to_iso(&mut transaction, progress_bar, romfile, &tmp_directory).await?;
+        let Some(ore_romfile) = skip_unsupported(
+            progress_bar,
+            decoded
+                .inner
+                .to_ore_into(
+                    progress_bar,
+                    &decoded.source.path.parent().unwrap(),
+                    compression_algorithm,
+                    profile,
+                    sink.as_deref_mut(),
+                )
+                .await,
+        )?
+        else {
+            continue;
+        };
+        if let Some(sink) = sink.as_deref_mut() {
+            drop(transaction);
+            pending.push(Pending {
+                roms: roms.iter().collect(),
+                source: decoded.source,
+                ore: ore_romfile,
+                romfile_id: romfile.id,
+            });
+            if sink.per_game {
+                persist_pending(connection, progress_bar, sink, &mut pending, check, diff).await?;
+            }
+            continue;
+        }
+        if check_and_persist(
+            &mut transaction,
+            progress_bar,
+            &[rom],
+            &decoded.source,
+            &ore_romfile,
+            romfile.id,
+            check,
+            diff,
+            false,
+        )
+        .await?
+        {
+            commit_transaction(transaction).await;
+        }
+    }
+
     // convert cartridges' ROMs
     for roms in cartridges.values() {
         if roms.len() != 1 {
@@ -3275,6 +3314,7 @@ async fn to_ore(
         if !find_romfiles_by_parent_id(&mut transaction, romfile.id)
             .await
             .is_empty()
+            || lineage.has_children(romfile.id)
         {
             print_skip(progress_bar, "CHD has children, skipping");
             continue;
@@ -3815,16 +3855,8 @@ async fn to_original(
     let (mut chds, others) =
         partition_games_by_extensions(others, &romfiles_by_id, &[CHD_EXTENSION]);
     // make sure children are converted before parents
-    chds.par_sort_by(|_, a, _, b| {
-        b.par_iter()
-            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-            .any(|romfile| romfile.parent_id.is_some())
-            .cmp(
-                &a.par_iter()
-                    .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-                    .any(|romfile| romfile.parent_id.is_some()),
-            )
-    });
+    let lineage = ChdLineage::load(connection, &chds, &romfiles_by_id).await?;
+    lineage.sort(&mut chds);
 
     // partition CSOs
     let (csos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CSO_EXTENSION]);
@@ -3976,6 +4008,7 @@ async fn to_original(
         if !find_romfiles_by_parent_id(&mut transaction, romfile.id)
             .await
             .is_empty()
+            || lineage.has_children(romfile.id)
         {
             print_skip(progress_bar, "CHD has children, skipping");
             continue;
@@ -4404,6 +4437,8 @@ async fn print_diff(
 }
 
 #[cfg(test)]
+mod test_chd_children_to_ore_before_parents;
+#[cfg(test)]
 mod test_chd_parents_to_chd_should_not_touch_parent;
 #[cfg(test)]
 mod test_chd_parents_to_iso;
@@ -4493,6 +4528,8 @@ mod test_original_to_zip_with_incorrect_name;
 mod test_original_to_zip_zstd;
 #[cfg(test)]
 mod test_rvz_to_iso;
+#[cfg(test)]
+mod test_rvz_to_ore;
 #[cfg(test)]
 mod test_rvz_to_rvz;
 #[cfg(test)]

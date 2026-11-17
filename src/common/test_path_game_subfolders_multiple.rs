@@ -1,6 +1,6 @@
 use super::super::import_dats;
 use std::path::Path;
-use tempfile::{NamedTempFile, TempDir};
+use tempfile::TempDir;
 
 use super::*;
 
@@ -11,7 +11,7 @@ async fn test() {
 
     let test_directory = Path::new("tests");
     let progress_bar = ProgressBar::hidden();
-    let db_file = NamedTempFile::new().unwrap();
+    let db_file = crate::config::TestDatabase::new();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 

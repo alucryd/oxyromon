@@ -38,9 +38,11 @@
 - Added a progress callback to the library API, reporting input bytes consumed
 - Added writing to `<output>.part`, renamed into place once complete, so a failed run leaves an existing output alone and nothing else behind
 - Added the `orers` CLI, which compresses ISOs and cue sheets, alone or into a store, decompresses, attaches and detaches OREs, and checks, repairs and compacts stores, as many as given, in oxyROMon's look, refusing to write one input's output over another's; it sits behind the default `cli` feature
+- Added progress callbacks to `check_store` and `compact`, adding up to the new `store_size`, and to `StoreBatch::commit`, adding up to the new `StoreBatch::unsealed`, and bars to `orers` checking, compacting and committing a store
 
 ## Fixes
 
 - A header longer than 192 bytes is read, its groups found after it and the bytes past the 192 skipped, as the spec has it, and kept as they are by a cue sheet's replacement, so a later version growing the header leaves this one able to read its files; and an ORE of a later layout, `ORE2` on, is refused as one, not as a file of another kind
 - A cue sheet naming a track not beside it, in a directory below or by way of one, is refused, as `replace_cue` refuses it: the cue sheet is kept as it is and its tracks written beside it, so the set written back would not have read
 - A CD track's sector map is decoded as far as it goes and sized by what it holds, no longer allocating for the sectors its ORE claims, so a crafted ORE no longer asks for terabytes
+- Decompressing reports its progress a slice at a time, its cores kept busy a few slices ahead of what is written, rather than once every core's slice was decoded

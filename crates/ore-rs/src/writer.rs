@@ -674,7 +674,7 @@ pub fn compress_to_store(
 ) -> Result<Stats> {
     let mut batch = StoreBatch::open(store, options)?;
     let stats = batch.compress(input, output, options, keys, progress)?;
-    batch.commit()?;
+    batch.commit(&mut |_| {})?;
     Ok(stats)
 }
 
@@ -750,10 +750,18 @@ impl StoreBatch {
         }
     }
 
+    /// What [`Self::commit`] has to write and seal, in bytes.
+    pub fn unsealed(&self) -> u64 {
+        self.writer.unsealed()
+    }
+
     /// Commit the store, then put each thin ORE in place. Returns the bytes
     /// the store's segments took.
-    pub fn commit(mut self) -> Result<u64> {
-        let added = self.writer.commit()?;
+    ///
+    /// `progress` is called with the bytes sealed since the last call,
+    /// scaled so the calls add up to [`Self::unsealed`] before it.
+    pub fn commit(mut self, progress: &mut dyn FnMut(u64)) -> Result<u64> {
+        let added = self.writer.commit(progress)?;
         for (part, output) in std::mem::take(&mut self.parts) {
             std::fs::rename(&part, &output)?;
         }
@@ -1008,7 +1016,7 @@ pub fn attach(
 ) -> Result<Stats> {
     let mut batch = StoreBatch::open(store, options)?;
     let stats = batch.attach(input, output, options, progress)?;
-    batch.commit()?;
+    batch.commit(&mut |_| {})?;
     Ok(stats)
 }
 
