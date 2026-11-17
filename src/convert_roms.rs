@@ -3434,7 +3434,27 @@ async fn to_ore(
                 .get(&roms.first().unwrap().romfile_id.unwrap())
                 .unwrap();
             let source = romfile.as_common(&mut transaction).await?.as_ore()?;
-            let new_ore_romfile = if source.is_cd()? {
+            let new_ore_romfile = if source.is_title()? {
+                // its NUS folder, under the ORE's name, written again: with
+                // the ticket kept for it since, if the ORE has none
+                let folder = tmp_directory
+                    .path()
+                    .join(source.romfile.path.file_stem().unwrap());
+                source.extract_title(progress_bar, &folder).await?;
+                title_to_ore(
+                    &mut transaction,
+                    progress_bar,
+                    &folder,
+                    tmp_directory.path(),
+                    compression_algorithm,
+                    profile,
+                    None,
+                    &mut pending,
+                    check,
+                    diff,
+                )
+                .await?
+            } else if source.is_cd()? {
                 source
                     .to_cue_bin_files(progress_bar, &tmp_directory.path(), None)
                     .await?
@@ -4506,6 +4526,8 @@ mod test_multiple_tracks_ore_to_ore;
 mod test_multiple_tracks_ore_to_sevenzip_cue_bin;
 #[cfg(test)]
 mod test_nes_to_ore;
+#[cfg(test)]
+mod test_nus_ore_recompress_with_kept_ticket;
 #[cfg(test)]
 mod test_nus_sevenzip_to_original;
 #[cfg(test)]
