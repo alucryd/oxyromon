@@ -44,6 +44,31 @@ pub enum OreProfile {
 /// nothing and rebuilds nothing.
 pub const ORE_STORE_PARITY_RANGE: [usize; 2] = [0, 16];
 
+/// The ID of the system whose ORE store settings, `ORE_STORE`,
+/// `ORE_STORE_PARITY`, `ORE_STORE_BATCH` and `ORE_PROFILE`, `system`
+/// follows. With `GROUP_SUBSYSTEMS`, systems of separate DATs share their
+/// directory, and so one store: its settings are the base system's, the one
+/// named as the directory is, so that each system's run does not set the
+/// store back to its own. Without a base system imported, or without
+/// grouping, a system's settings are its own.
+pub async fn store_settings_system_id(
+    connection: &mut SqliteConnection,
+    system: &System,
+) -> Result<i64> {
+    if !get_bool(connection, "GROUP_SUBSYSTEMS", Some(system.id)).await {
+        return Ok(system.id);
+    }
+    let directory = get_system_directory(connection, system).await?;
+    let base_name = directory.file_name().and_then(|name| name.to_str());
+    for other in crate::database::find_systems(connection).await {
+        let name = other.custom_name.as_deref().unwrap_or(other.name.trim());
+        if Some(name) == base_name && get_system_directory(connection, &other).await? == directory {
+            return Ok(other.id);
+        }
+    }
+    Ok(system.id)
+}
+
 /// The system's `ORE_STORE_PARITY`.
 pub async fn store_parity(connection: &mut SqliteConnection, system_id: i64) -> u8 {
     get_integer(connection, "ORE_STORE_PARITY", Some(system_id))
@@ -658,11 +683,12 @@ pub struct StoreSink {
 impl StoreSink {
     /// The system's sink, or `None` when its `ORE_STORE` is off.
     pub async fn open(connection: &mut SqliteConnection, system: &System) -> Result<Option<Self>> {
-        if !get_bool(connection, "ORE_STORE", Some(system.id)).await {
+        let settings_id = store_settings_system_id(connection, system).await?;
+        if !get_bool(connection, "ORE_STORE", Some(settings_id)).await {
             return Ok(None);
         }
         let per_game = OreStoreBatch::from_str(
-            &get_string(connection, "ORE_STORE_BATCH", Some(system.id))
+            &get_string(connection, "ORE_STORE_BATCH", Some(settings_id))
                 .await
                 .unwrap(),
         )
@@ -670,7 +696,7 @@ impl StoreSink {
             == OreStoreBatch::Game;
         Ok(Some(Self {
             store: system_store(connection, system).await?,
-            parity: store_parity(connection, system.id).await,
+            parity: store_parity(connection, settings_id).await,
             per_game,
             batch: None,
         }))
@@ -822,9 +848,10 @@ pub async fn sync_store(
     compression_algorithm: &OreCompressionAlgorithm,
     profile: &OreProfile,
 ) -> Result<()> {
-    let store_on = get_bool(connection, "ORE_STORE", Some(system.id)).await;
+    let settings_id = store_settings_system_id(connection, system).await?;
+    let store_on = get_bool(connection, "ORE_STORE", Some(settings_id)).await;
     let per_game = OreStoreBatch::from_str(
-        &get_string(connection, "ORE_STORE_BATCH", Some(system.id))
+        &get_string(connection, "ORE_STORE_BATCH", Some(settings_id))
             .await
             .unwrap(),
     )
@@ -869,7 +896,7 @@ pub async fn sync_store(
 
     let store = system_store(connection, system).await?;
     if store_on {
-        prepare_store(&store, store_parity(connection, system.id).await)
+        prepare_store(&store, store_parity(connection, settings_id).await)
             .with_context(|| format!("Failed to set up \"{}\"", store.display()))?;
     }
     print_action(
@@ -1108,3 +1135,6 @@ async fn hash_disc(
 pub async fn get_version() -> Result<String> {
     Ok(String::from("built-in"))
 }
+
+#[cfg(test)]
+mod test_store_settings_base_system;

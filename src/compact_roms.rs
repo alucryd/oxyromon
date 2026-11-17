@@ -5,7 +5,7 @@
 //! read and a write of all of it.
 
 use super::config::*;
-use super::ore::{OreProfile, compact_store, store_parity, system_store};
+use super::ore::{OreProfile, compact_store, store_parity, store_settings_system_id, system_store};
 use super::progress::*;
 use super::prompt::*;
 use anyhow::Result;
@@ -52,13 +52,14 @@ pub async fn main(
             continue;
         }
         print_header(progress_bar, &format!("Processing \"{}\"", system.name));
+        let settings_id = store_settings_system_id(connection, &system).await?;
         let profile = OreProfile::from_str(
-            &get_string(connection, "ORE_PROFILE", Some(system.id))
+            &get_string(connection, "ORE_PROFILE", Some(settings_id))
                 .await
                 .unwrap(),
         )
         .unwrap();
-        let parity = store_parity(connection, system.id).await;
+        let parity = store_parity(connection, settings_id).await;
         compact_store(progress_bar, &store, &profile, parity, recompress).await?;
         print_separator(progress_bar);
     }

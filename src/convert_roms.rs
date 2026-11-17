@@ -9,7 +9,7 @@ use super::model::*;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
 use super::ore::{
     AsOre, OreCompressionAlgorithm, OreProfile, OreRomfile, StoreSink, ToOre, cartridge_platform,
-    sync_store, wiiu_to_ore,
+    store_settings_system_id, sync_store, wiiu_to_ore,
 };
 use super::progress::*;
 use super::prompt::*;
@@ -305,8 +305,10 @@ pub async fn convert_system(
                     .unwrap(),
             )
             .unwrap();
+            // the store's, which a grouped subsystem shares with its base
+            let settings_id = store_settings_system_id(connection, &system).await?;
             let profile = OreProfile::from_str(
-                &get_string(connection, "ORE_PROFILE", Some(system.id))
+                &get_string(connection, "ORE_PROFILE", Some(settings_id))
                     .await
                     .unwrap(),
             )

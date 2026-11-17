@@ -7,6 +7,7 @@
 - ORE takes PlayStation 2 DVDs too, and converts from CHD: a DVD's ISO, or a CD's tracks with its cue sheet; a disc of another system is skipped rather than failing the run
 - ORE takes PSP UMDs, from their ISO or CHD, as it takes PlayStation 2 DVDs
 - ORE takes Wii U discs, from their ISO, WUD, WUX or lossless WUA, and back as the ISO their DAT names; and Wii U eShop titles, games, updates and DLC, from their NUS folder, loose or in an archive, and back as that folder. Each is stored decrypted, so it compresses and, in a store, an update partition is kept once whatever the disc and version; a title's ticket goes in its ORE, the one `import-roms` kept for it when its folder has none, and a title without one is kept as it is. Converting needs the Wii U keys `import-keys` stores; reading an ORE back needs none
+- With `GROUP_SUBSYSTEMS`, a subsystem sharing its base system's directory, and so its ORE store, follows the base system's `ORE_STORE`, `ORE_STORE_PARITY`, `ORE_STORE_BATCH` and `ORE_PROFILE`, so systems set apart no longer set the store back to their own each run
 - `check-roms` checks an ORE store shared by systems, as `GROUP_SUBSYSTEMS` gives a system's DATs, once a run rather than once a system
 - `import-roms` imports a Wii U title's ORE made elsewhere, matched by the NUS folder it holds as that folder is, by its TMD then its files within the game, and renamed after it; a disc's ORE already imported
 - ORE takes Game Boy, Game Boy Color, Game Boy Advance, DS, N64 and Mega Drive ROMs, loose or in an archive, and gives them back under their name
