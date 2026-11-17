@@ -135,7 +135,11 @@ fn convert(
     let size = std::fs::metadata(input).map_err(|e| e.to_string())?.len();
     let dir = ui::output_dir(input, matches)?;
     let store = matches.get_one::<PathBuf>("store");
-    if let Some(store) = store {
+    // Before the batch opens: once open, it holds the store's lock until
+    // committed after the last input, which setting the parity waits on
+    if let Some(store) = store
+        && batch.is_none()
+    {
         set_up_store(store, matches)?;
     }
     if ore_rs::is_ore(input).map_err(|e| e.to_string())? {
