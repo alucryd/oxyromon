@@ -51,16 +51,23 @@ jobs:
       - name: Install packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential python3
+          sudo apt-get install -y build-essential python3 libvulkan-dev libgl1-mesa-dev libegl1-mesa-dev
       # Builds libsmelt and orers, then checks an ORE against its CUE
       - name: ORE test
         run: sh core/tools/ore/run.sh
-      - name: Build core
-        run: make -C core -j"$(nproc)" HAVE_ORE=1 SMELT_DIR="$SMELT_DIR"
+      # Software, then HW: one object tree, so cleaned between them
+      - name: Build cores
+        run: |
+          make -C core -j"$(nproc)" HAVE_ORE=1 SMELT_DIR="$SMELT_DIR"
+          make -C core clean HAVE_HW=1
+          make -C core -j"$(nproc)" HAVE_ORE=1 HAVE_HW=1 SMELT_DIR="$SMELT_DIR"
       - uses: actions/upload-artifact@v7
         with:
-          name: mednafen_psx_hw_libretro-ore-linux-x86_64
-          path: core/*_libretro.so
+          name: mednafen_psx_libretro-ore-linux-x86_64
+          path: |
+            core/mednafen_psx_libretro.so
+            core/mednafen_psx_hw_libretro.so
+          if-no-files-found: error
 
   parallel-ps2:
     name: ParaLLEl PS2
