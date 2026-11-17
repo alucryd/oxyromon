@@ -2776,6 +2776,9 @@ async fn to_ore(
     // partition ISOs
     let (isos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ISO_EXTENSION]);
 
+    // partition RVZs
+    let (rvzs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[RVZ_EXTENSION]);
+
     // partition CHDs
     let (mut chds, others) =
         partition_games_by_extensions(others, &romfiles_by_id, &[CHD_EXTENSION]);
@@ -2982,6 +2985,59 @@ async fn to_ore(
             decoded
                 .inner
                 .as_iso()?
+                .to_ore_into(
+                    progress_bar,
+                    &decoded.source.path.parent().unwrap(),
+                    compression_algorithm,
+                    profile,
+                    sink.as_deref_mut(),
+                )
+                .await,
+        )?
+        else {
+            continue;
+        };
+        if let Some(sink) = sink.as_deref_mut() {
+            drop(transaction);
+            pending.push(Pending {
+                roms: roms.iter().collect(),
+                source: decoded.source,
+                ore: ore_romfile,
+                romfile_id: romfile.id,
+            });
+            if sink.per_game {
+                persist_pending(connection, progress_bar, sink, &mut pending, check, diff).await?;
+            }
+            continue;
+        }
+        if check_and_persist(
+            &mut transaction,
+            progress_bar,
+            &[rom],
+            &decoded.source,
+            &ore_romfile,
+            romfile.id,
+            check,
+            diff,
+            false,
+        )
+        .await?
+        {
+            commit_transaction(transaction).await;
+        }
+    }
+
+    // convert RVZs, through the ISO they hold
+    for roms in rvzs.values() {
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let mut transaction = begin_transaction(connection).await;
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let decoded = rvz_to_iso(&mut transaction, progress_bar, romfile, &tmp_directory).await?;
+        let Some(ore_romfile) = skip_unsupported(
+            progress_bar,
+            decoded
+                .inner
                 .to_ore_into(
                     progress_bar,
                     &decoded.source.path.parent().unwrap(),
@@ -4171,6 +4227,8 @@ mod test_original_to_zip_with_incorrect_name;
 mod test_original_to_zip_zstd;
 #[cfg(test)]
 mod test_rvz_to_iso;
+#[cfg(test)]
+mod test_rvz_to_ore;
 #[cfg(test)]
 mod test_rvz_to_rvz;
 #[cfg(test)]

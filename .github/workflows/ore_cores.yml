@@ -6,6 +6,7 @@ name: ORE cores
 # ore-rs, which it is built on, and by hand.
 on:
   push:
+    branches: [develop, master]
     paths:
       - "crates/smelt-rs/**"
       - "crates/ore-rs/**"
