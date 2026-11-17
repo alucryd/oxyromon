@@ -614,6 +614,15 @@ pub async fn import_rom<P: AsRef<Path>>(
                 unattended_mode,
             )
             .await?
+        } else if ore_romfile.is_title()? {
+            import_ore_title(
+                &mut transaction,
+                progress_bar,
+                system,
+                ore_romfile,
+                unattended_mode,
+            )
+            .await?
         } else {
             import_disc(
                 &mut transaction,
@@ -736,23 +745,78 @@ async fn import_nus<P: AsRef<Path>>(
     path: &P,
     unattended_mode: UnattendedMode,
 ) -> Result<Option<[i64; 2]>> {
-    let tmd_path = wux_rs::tmd_path(path.as_ref()).unwrap();
+    let mut transaction = begin_transaction(connection).await;
+    let Some((system, game, hash_algorithm, tmd)) = find_title_game(
+        &mut transaction,
+        progress_bar,
+        system,
+        path.as_ref(),
+        unattended_mode,
+    )
+    .await?
+    else {
+        commit_transaction(transaction).await;
+        return Ok(None);
+    };
+    for (file_path, rom) in match_title_files(
+        &mut transaction,
+        progress_bar,
+        path.as_ref(),
+        &game,
+        &hash_algorithm,
+        &tmd,
+    )
+    .await?
+    {
+        let romfile = CommonRomfile::from_path(&file_path)?;
+        let new_path = romfile
+            .get_sorted_path(&mut transaction, &system, &game, &rom, &None, &None)
+            .await?;
+        romfile.rename(progress_bar, &new_path, false).await?;
+        create_or_update_romfile(
+            &mut transaction,
+            progress_bar,
+            &new_path,
+            &[&rom],
+            Some(system.id),
+        )
+        .await?;
+    }
+    if path.as_ref().read_dir()?.next().is_none() {
+        remove_directory(progress_bar, &path, false).await?;
+    }
+
+    commit_transaction(transaction).await;
+
+    Ok(Some([system.id, game.id]))
+}
+
+/// The game a NUS title's `folder` is, found by its TMD, which names one
+/// title at one version, with the hash it matched by and the TMD parsed;
+/// `None` when it matches none, or was already imported. Its ticket, when no
+/// DAT lists it, is kept either way.
+async fn find_title_game(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &Option<&System>,
+    folder: &Path,
+    unattended_mode: UnattendedMode,
+) -> Result<Option<(System, Game, HashAlgorithm, Option<wux_rs::Tmd>)>> {
+    let Some(tmd_path) = wux_rs::tmd_path(folder) else {
+        print_warning(progress_bar, "No TMD, not a NUS title");
+        return Ok(None);
+    };
     let tmd_romfile = CommonRomfile::from_path(&tmd_path)?;
     // read now, as its file may be moved before the others are matched
     let tmd = std::fs::read(&tmd_path)
         .ok()
         .and_then(|bytes| wux_rs::parse_tmd(&bytes).ok());
-
-    let mut transaction = begin_transaction(connection).await;
-
-    // find the game by its TMD
-    let mut found = None;
     for hash_algorithm in HashAlgorithm::iter() {
         let (hash, size) = tmd_romfile
-            .get_hash_and_size(&mut transaction, progress_bar, 1, 1, &hash_algorithm)
+            .get_hash_and_size(connection, progress_bar, 1, 1, &hash_algorithm)
             .await?;
         let match_result = find_rom_by_size_and_hash(
-            &mut transaction,
+            connection,
             progress_bar,
             size,
             &hash,
@@ -766,46 +830,56 @@ async fn import_nus<P: AsRef<Path>>(
         .await?;
         match match_result.state {
             MatchState::Valid => {
-                found = Some((
+                keep_unlisted_ticket(connection, progress_bar, folder, &tmd).await?;
+                return Ok(Some((
                     match_result.system.unwrap(),
                     match_result.game.unwrap(),
                     hash_algorithm,
-                ));
-                break;
+                    tmd,
+                )));
             }
             MatchState::Duplicate => {
                 print_skip(progress_bar, "Already imported");
                 // a ticket the title was imported without may come later
-                keep_unlisted_ticket(&mut transaction, progress_bar, path.as_ref(), &tmd).await?;
+                keep_unlisted_ticket(connection, progress_bar, folder, &tmd).await?;
                 return Ok(None);
             }
             MatchState::Skipped => break,
             MatchState::Invalid => {}
         }
     }
-    let Some((system, game, hash_algorithm)) = found else {
-        print_warning(progress_bar, "No match");
-        return Ok(None);
-    };
-    keep_unlisted_ticket(&mut transaction, progress_bar, path.as_ref(), &tmd).await?;
+    print_warning(progress_bar, "No match");
+    Ok(None)
+}
 
-    // then its files, within that game
-    let mut roms: Vec<Rom> = find_roms_by_game_id_no_parents(&mut transaction, game.id)
+/// The files of a NUS title's `folder` that are ROMs of `game` without a
+/// romfile yet, each with its ROM, matched by `hash_algorithm` within that
+/// game only, since a game and its update can hold identical files.
+async fn match_title_files(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    folder: &Path,
+    game: &Game,
+    hash_algorithm: &HashAlgorithm,
+    tmd: &Option<wux_rs::Tmd>,
+) -> Result<Vec<(PathBuf, Rom)>> {
+    let mut roms: Vec<Rom> = find_roms_by_game_id_no_parents(connection, game.id)
         .await
         .into_iter()
         .filter(|rom| rom.romfile_id.is_none())
         .collect();
-    let mut paths: Vec<PathBuf> = std::fs::read_dir(path.as_ref())?
+    let mut paths: Vec<PathBuf> = std::fs::read_dir(folder)?
         .filter_map(|entry| entry.ok().map(|entry| entry.path()))
         .filter(|path| path.is_file())
         .collect();
     paths.sort();
+    let mut matched = vec![];
     for file_path in paths {
         let file_name = file_path.file_name().unwrap().to_str().unwrap().to_string();
         print_action(progress_bar, &format!("Processing \"{}\"", file_name));
         let romfile = CommonRomfile::from_path(&file_path)?;
         let (hash, size) = romfile
-            .get_hash_and_size(&mut transaction, progress_bar, 1, 1, &hash_algorithm)
+            .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
             .await?;
         let rom_hash = |rom: &Rom| match hash_algorithm {
             HashAlgorithm::Crc => rom.crc.clone(),
@@ -849,25 +923,53 @@ async fn import_nus<P: AsRef<Path>>(
         };
         let rom = roms.remove(index);
         print_success(progress_bar, &format!("Matches \"{}\"", rom.name));
-        let new_path = romfile
-            .get_sorted_path(&mut transaction, &system, &game, &rom, &None, &None)
-            .await?;
-        romfile.rename(progress_bar, &new_path, false).await?;
-        create_or_update_romfile(
-            &mut transaction,
-            progress_bar,
-            &new_path,
-            &[&rom],
-            Some(system.id),
-        )
+        matched.push((file_path, rom));
+    }
+    Ok(matched)
+}
+
+/// Import a Wii U title's ORE, matched by the NUS folder it holds as that
+/// folder is: its TMD finds the game, its other files are matched within it,
+/// and every ROM matched then points to the ORE, renamed after the game.
+async fn import_ore_title(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &Option<&System>,
+    ore_romfile: OreRomfile,
+    unattended_mode: UnattendedMode,
+) -> Result<Option<[i64; 2]>> {
+    let tmp_directory = create_tmp_directory(connection).await?;
+    let folder = tmp_directory.path().join("title");
+    ore_romfile.extract_title(progress_bar, &folder).await?;
+    let Some((system, game, hash_algorithm, tmd)) =
+        find_title_game(connection, progress_bar, system, &folder, unattended_mode).await?
+    else {
+        return Ok(None);
+    };
+    let matched = match_title_files(
+        connection,
+        progress_bar,
+        &folder,
+        &game,
+        &hash_algorithm,
+        &tmd,
+    )
+    .await?;
+    let roms: Vec<&Rom> = matched.iter().map(|(_, rom)| rom).collect();
+    let system_directory = get_system_directory(connection, &system).await?;
+    let new_ore_path = system_directory.join(format!("{}.{}", game.name, ORE_EXTENSION));
+    ore_romfile
+        .romfile
+        .rename(progress_bar, &new_ore_path, false)
         .await?;
-    }
-    if path.as_ref().read_dir()?.next().is_none() {
-        remove_directory(progress_bar, &path, false).await?;
-    }
-
-    commit_transaction(transaction).await;
-
+    create_or_update_romfile(
+        connection,
+        progress_bar,
+        &new_ore_path,
+        &roms,
+        Some(system.id),
+    )
+    .await?;
     Ok(Some([system.id, game.id]))
 }
 
@@ -3382,6 +3484,8 @@ mod test_nus_missing_h3;
 mod test_nus_multi_version;
 #[cfg(test)]
 mod test_nus_multi_version_missing;
+#[cfg(test)]
+mod test_nus_ore;
 #[cfg(test)]
 mod test_nus_unlisted_ticket;
 #[cfg(test)]

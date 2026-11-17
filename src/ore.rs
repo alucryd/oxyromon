@@ -236,6 +236,21 @@ impl OreRomfile {
         folder: &Path,
         roms: &[&Rom],
     ) -> Result<Vec<CommonRomfile>> {
+        self.extract_title(progress_bar, folder).await?;
+        roms.iter()
+            .map(|rom| {
+                let path = folder.join(&rom.name);
+                if !path.is_file() {
+                    bail!("\"{}\" is not in \"{}\"", rom.name, self.romfile);
+                }
+                CommonRomfile::from_path(&path)
+            })
+            .collect()
+    }
+
+    /// Write a Wii U title's ORE out as its NUS folder, `folder`, every file
+    /// it holds, its ticket included.
+    pub async fn extract_title(&self, progress_bar: &ProgressBar, folder: &Path) -> Result<()> {
         progress_bar.set_message("Extracting ore");
         print_action(
             progress_bar,
@@ -251,15 +266,7 @@ impl OreRomfile {
         .await
         .with_context(|| format!("Failed to extract \"{}\"", self.romfile.path.display()))?;
         stop_action(progress_bar);
-        roms.iter()
-            .map(|rom| {
-                let path = folder.join(&rom.name);
-                if !path.is_file() {
-                    bail!("\"{}\" is not in \"{}\"", rom.name, self.romfile);
-                }
-                CommonRomfile::from_path(&path)
-            })
-            .collect()
+        Ok(())
     }
 
     /// Whether it holds a cartridge's ROM rather than a disc.
