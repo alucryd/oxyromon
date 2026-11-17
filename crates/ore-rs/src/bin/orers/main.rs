@@ -98,22 +98,27 @@ fn cli() -> Command {
 
 fn main() -> ExitCode {
     // Every input given with --store goes to it as one write, committed
-    // after the last
+    // after the last, or before a store given as an input is checked
     let mut batch = None;
     ui::run(cli(), |input, matches, outputs| {
         let result = convert(input, matches, outputs, &mut batch);
         let last = matches.get_many::<PathBuf>("INPUTS").unwrap().next_back();
         match batch.take() {
-            Some(done) if last.is_some_and(|last| last == input) => {
-                let bar = ui::progress_bar(done.unsealed(), "Committing", input);
-                let committed = done.commit(&mut |n| bar.inc(n));
-                bar.finish_and_clear();
-                committed.map_err(|e| format!("committing the store: {e}"))?;
-            }
+            Some(done) if last.is_some_and(|last| last == input) => commit(done, input)?,
             pending => batch = pending,
         }
         result
     })
+}
+
+/// Commit the batch, its bar named after `input`.
+fn commit(batch: StoreBatch, input: &Path) -> Result<(), String> {
+    let bar = ui::progress_bar(batch.unsealed(), "Committing", input);
+    let committed = batch.commit(&mut |n| bar.inc(n));
+    bar.finish_and_clear();
+    committed
+        .map(|_| ())
+        .map_err(|e| format!("committing the store: {e}"))
 }
 
 /// How far a store's segment has to be no game's before a compaction copies
@@ -130,6 +135,10 @@ fn convert(
 ) -> Result<String, String> {
     let options = options(matches, input);
     if input.is_dir() {
+        // Checking a store takes its lock, which an open batch holds
+        if let Some(open) = batch.take() {
+            commit(open, input)?;
+        }
         return store(input, matches, &options);
     }
     let size = std::fs::metadata(input).map_err(|e| e.to_string())?.len();
