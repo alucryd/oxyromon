@@ -218,6 +218,8 @@ a copy and stands alone:
   and a symlink checks out on Windows as a text file. Shared test fixtures go
   the same way, as `tests/common`. `tests/crates.rs` checks every copy matches,
   listed in its `EMBEDDED`.
+  ore-rs, never published, holds no copies: its `#[path]`s reach
+  `crates/<embedded>` where it is.
 - **`super::`, never `crate::`,** within the embedded crate: embedded, its root
   is the host's. `tests/crates.rs` checks this too.
 - **One error type.** The embedded crate's `error::Error`, following the

@@ -25,15 +25,10 @@ fn every_cli_shares_one_ui() {
 /// crates using it, by where each copy sits: a symlink checks out on Windows as
 /// a text file.
 const EMBEDDED: &[(&str, &[&str])] = &[
-    (
-        "crates/cd",
-        &["crates/chd-rs/src/cd", "crates/ore-rs/src/cd"],
-    ),
+    ("crates/cd", &["crates/chd-rs/src/cd"]),
     (
         "crates/gcwii",
         &[
-            "crates/ore-rs/src/gcwii",
-            "crates/ore-rs/tests/common",
             "crates/rvz-rs/src/gcwii",
             "crates/rvz-rs/tests/common",
             "crates/wbfs-rs/src/gcwii",
