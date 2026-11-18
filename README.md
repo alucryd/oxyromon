@@ -348,7 +348,7 @@ Commands:
   download-dats       Download No-Intro and Redump DAT files and import them into oxyromon
   import-irds         Parse and import PlayStation 3 IRD files into oxyromon
   import-patches      Import patch files into oxyromon
-  import-keys         Import Wii, Wii U and Switch keys into oxyromon
+  import-keys         Import Wii, Wii U, Switch and 3DS keys into oxyromon
   import-clone-lists  Import Retool clone lists into oxyromon
   import-roms         Validate and import ROM files or directories into oxyromon
   purge-games         Move the files of games to the trash
@@ -549,7 +549,7 @@ Options:
 
 ### import-keys
 
-Imports the Wii, Wii U and Switch keys oxyROMon does not ship.
+Imports the Wii, Wii U, Switch and 3DS keys oxyROMon does not ship.
 Wii and Wii U keys, which exporting to WUA and compressing Wii discs to RVZ need, come from files in the format of Cemu's `keys.txt`: one 32-digit hex key per line, with anything after `#` or `;` ignored.
 Disc keys and the Wii U common key can share a file.
 A console's OTP dump, `otp.bin`, can be imported too: its Wii U and vWii common keys are taken from it, the vWii key serving the vWii titles a disc's update partition can carry.
@@ -560,11 +560,16 @@ It also imports Switch keys, which compressing NSPs holding NCAs needs, from `pr
 They are merged by name into `switch_keys.txt` in the data directory, a newer value replacing an older one, readable by its owner only.
 A `prod.keys` is checked first, as compressing will read it: one whose keys are not the real ones is refused, and nothing is written.
 
+It imports 3DS keys too, from Azahar's `aes_keys.txt`, known by its key slots' names (`slot0x2CKeyX`) and its generator constant.
+They are merged by name into `3ds_keys.txt` in the data directory, in the same format, a newer value replacing an older one, readable by its owner only.
+A key slot's key, `common0` to `common5` or the generator constant that is not 16 bytes is refused, and nothing is written.
+Nothing uses them yet: they are there for decrypting 3DS games to come.
+
 ```text
 Usage: oxyromon import-keys <KEYS>...
 
 Arguments:
-  <KEYS>...  Set the key files to import, as Cemu's keys.txt, a Wii's or a Wii U's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys
+  <KEYS>...  Set the key files to import, as Cemu's keys.txt, a Wii's or a Wii U's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys, or Azahar's aes_keys.txt
 
 Options:
   -h, --help  Print help
