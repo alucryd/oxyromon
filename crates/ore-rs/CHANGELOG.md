@@ -44,3 +44,5 @@
 - A cue sheet naming a track not beside it, in a directory below or by way of one, is refused, as `replace_cue` refuses it: the cue sheet is kept as it is and its tracks written beside it, so the set written back would not have read
 - A CD track's sector map is decoded as far as it goes and sized by what it holds, no longer allocating for the sectors its ORE claims, so a crafted ORE no longer asks for terabytes
 - Decompressing reports its progress a slice at a time, its cores kept busy a few slices ahead of what is written, rather than once every core's slice was decoded
+- `orers --parity` with `--store` writes more than one input, rather than waiting forever from the second on the store's lock, which the batch the first opened holds: the store is set up once, before the batch opens
+- `orers --store` checks a store given as an input after inputs written to it, rather than waiting forever on its lock, which their open batch holds: what they wrote is committed first
