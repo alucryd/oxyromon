@@ -39,7 +39,7 @@ fn cli() -> Command {
             Arg::new("profile")
                 .short('p')
                 .long("profile")
-                .help("stream: 1 MiB groups, quick to read; archive: 4 MiB groups, smaller")
+                .help("stream: 1 MiB groups, quick to read; archive: 4 MiB groups, smaller, to keep rather than play")
                 .value_parser(["stream", "archive"])
                 .default_value("stream"),
         )

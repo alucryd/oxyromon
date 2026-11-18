@@ -175,7 +175,7 @@ These environment variables change where things go:
 | `CHD_LD_HUNK_SIZE`                | CHD hunk size in bytes for LaserDiscs, `16` to `1048576`                                                 | auto      |
 | `CHD_LD_COMPRESSION_ALGORITHMS`   | CHD codecs for LaserDiscs: `none`, `avhu`                                                                | auto      |
 | `ORE_COMPRESSION_ALGORITHM`       | ORE codec: `auto`, `lzma2` for cartridges and `zstd` for discs; `zstd`, quicker to read; or `lzma2`, smaller                                                  | `auto`    |
-| `ORE_PROFILE`                     | ORE group size: `stream`, 1 MiB, quicker to read, or `archive`, 4 MiB, smaller                           | `stream`  |
+| `ORE_PROFILE`                     | ORE group size: `stream`, 1 MiB, quicker to read, or `archive`, 4 MiB, smaller, to keep rather than play | `stream`  |
 | `ORE_STORE`                       | Keep a system's OREs' chunks in one store, `.ore-store` in its directory, each game a thin ORE           | `false`   |
 | `ORE_STORE_BATCH`                 | How OREs go into the store: `run`, all of a conversion at once, or `game`, each committed alone          | `run`     |
 | `ORE_STORE_PARITY`                | Parity shards a store's segment gets against its 239 data shards, 0 to 16: 16 adds 6.7%, 8 3.2%, 0 nothing; a change applies to existing segments at the next `compact-roms` | `16`      |
