@@ -246,9 +246,9 @@ cargo test -p ore-rs
 
 The GameCube and Wii disc specifics live in oxyROMon's unpublished `gcwii`
 crate, shared with rvz-rs and wbfs-rs, and the CD-ROM ones in its `cd`
-crate, shared with chd-rs. `src/gcwii` and `src/cd` are symlinks to their
-sources, and so is `tests/common` to gcwii's synthetic discs; publishing
-copies them in, so this crate stands alone.
+crate, shared with chd-rs. `src/gcwii` and `src/cd` are copies of their
+sources, and so is `tests/common` of gcwii's synthetic discs, so this crate
+stands alone.
 
 ## Credits
 

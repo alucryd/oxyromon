@@ -36,8 +36,8 @@
 // unused rather than gated item by item; gate it if a host needs it smaller
 #![cfg_attr(not(feature = "write"), allow(dead_code))]
 
-// The CD-ROM specifics, shared with chd-rs: `src/cd` is a symlink to the cd
-// crate's source, which publishing copies in
+// The CD-ROM specifics, shared with chd-rs: `src/cd` is a copy of the cd
+// crate's source
 #[allow(dead_code, unused_imports)]
 #[path = "cd/lib.rs"]
 mod cd;
@@ -47,8 +47,7 @@ mod cdtrack;
 mod codec;
 mod format;
 // The GameCube and Wii disc specifics, shared with rvz-rs and wbfs-rs:
-// `src/gcwii` is a symlink to the gcwii crate's source, which publishing
-// copies in
+// `src/gcwii` is a copy of the gcwii crate's source
 #[allow(dead_code, unused_imports)]
 #[cfg(feature = "write")]
 #[path = "gcwii/lib.rs"]

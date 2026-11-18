@@ -21,8 +21,9 @@ fn every_cli_shares_one_ui() {
     }
 }
 
-/// Crates embedded rather than published, each symlinked into the source of
-/// the crates using it, by where each symlink sits.
+/// Crates embedded rather than published, each copied into the source of the
+/// crates using it, by where each copy sits: a symlink checks out on Windows as
+/// a text file.
 const EMBEDDED: &[(&str, &[&str])] = &[
     (
         "crates/cd",
@@ -41,22 +42,38 @@ const EMBEDDED: &[(&str, &[&str])] = &[
     ),
 ];
 
+/// Every file under `dir`, by its path relative to `dir`, and its bytes.
+fn files(dir: &std::path::Path) -> std::collections::BTreeMap<std::path::PathBuf, Vec<u8>> {
+    let mut files = std::collections::BTreeMap::new();
+    let mut dirs = vec![dir.to_path_buf()];
+    while let Some(at) = dirs.pop() {
+        for entry in std::fs::read_dir(&at).unwrap_or_else(|e| panic!("{}: {e}", at.display())) {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                dirs.push(path);
+            } else {
+                let bytes = std::fs::read(&path).unwrap();
+                files.insert(path.strip_prefix(dir).unwrap().to_path_buf(), bytes);
+            }
+        }
+    }
+    files
+}
+
 #[test]
-fn embedded_crates_are_symlinked_in() {
-    for (embedded, links) in EMBEDDED {
-        for link in *links {
-            let target = std::fs::read_link(link).unwrap_or_else(|e| panic!("{link}: {e}"));
-            let resolved = std::path::Path::new(link).parent().unwrap().join(&target);
-            let wanted = std::path::Path::new(embedded).join(if link.ends_with("common") {
+fn embedded_crates_are_copied_in() {
+    for (embedded, copies) in EMBEDDED {
+        for copy in *copies {
+            let source = std::path::Path::new(embedded).join(if copy.ends_with("common") {
                 "tests/common"
             } else {
                 "src"
             });
-            assert_eq!(
-                std::fs::canonicalize(&resolved).unwrap(),
-                std::fs::canonicalize(&wanted).unwrap(),
-                "{link} should link to {}",
-                wanted.display()
+            assert!(
+                files(&source) == files(std::path::Path::new(copy)),
+                "{copy} differs from {}: rm -r {copy} && cp -r {} {copy}",
+                source.display(),
+                source.display()
             );
         }
     }

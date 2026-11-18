@@ -8,8 +8,8 @@ description = "GameCube and Wii disc specifics shared by rvz-rs and wbfs-rs"
 # or later (LICENSE), what ore-rs's reader needs of it MIT OR Apache-2.0
 license = "GPL-2.0-or-later AND (MIT OR Apache-2.0)"
 repository.workspace = true
-# Never published: each crate using it embeds its source, symlinked into its
-# own, so that each publishes standalone
+# Never published: each crate using it embeds a copy of its source, so that
+# each publishes standalone
 publish = false
 
 [lib]

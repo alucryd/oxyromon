@@ -22,7 +22,7 @@
 //! [wit]: https://wit.wiimm.de
 
 // The GameCube and Wii disc specifics, shared with rvz-rs: `src/gcwii` is a
-// symlink to the gcwii crate's source, which publishing copies in
+// copy of the gcwii crate's source
 #[allow(dead_code, unused_imports)]
 #[path = "gcwii/lib.rs"]
 mod gcwii;
