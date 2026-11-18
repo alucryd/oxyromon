@@ -22,6 +22,7 @@
 - Fixed `import-dats` moving a cue sheet to `Trash` when an update renames the tracks it names, as Redump renames a game, which left the game incomplete; the cue sheet is now rewritten with the new names and kept when the DAT lists it
 - Converting CHDs converts a clone before the CHD it reads from, in ORE as in every other format, and leaves a CHD whose clones are still on disk alone: a clone imported from outside keeps its link to its parent in its header alone, and converting its parent first used to leave it unreadable
 - `check-roms`, `compact-roms` and committing a store's batch show their progress as they go, rather than a bar left at the last ORE's size that never moved, and extracting an ORE moves its bar steadily rather than in jumps of a hundred megabytes or so
+- Fixed `import-roms` leaving a game incomplete when its disc has the same track more than once, as Redump lists some: every copy in a CHD, an ORE or an archive took the first copy's ROM, and the others got none, and a loose copy matched every copy's ROM, so it was asked about or, with `--unattended skip`, skipped; each copy now takes a ROM of its own
 
 # 0.25.0
 
