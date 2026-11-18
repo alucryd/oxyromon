@@ -4,7 +4,7 @@
 //! its game's hashed and unhashed contents, its free space repeats; read
 //! back byte for byte, whole and at any offset.
 
-#[path = "wiiu_common/mod.rs"]
+#[path = "../../wiiu/tests/common/mod.rs"]
 mod wiiu_common;
 
 use std::path::Path;

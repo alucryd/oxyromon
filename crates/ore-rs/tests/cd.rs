@@ -10,9 +10,9 @@ use ore_rs::{Codec, Options, Profile, Reader, StoreOptions};
 use sha1::{Digest, Sha1};
 use tempfile::TempDir;
 
-// The cd crate the library embeds, to build sectors as a disc holds them
+// The cd crate the library builds in, to build sectors as a disc holds them
 #[allow(dead_code)]
-#[path = "../src/cd/lib.rs"]
+#[path = "../../cd/src/lib.rs"]
 mod cd;
 use cd::sector::{self, Kind, LEAD_IN, SECTOR};
 

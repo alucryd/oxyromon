@@ -8,8 +8,8 @@ description = "CD-ROM specifics shared by chd-rs and ore-rs: sectors, EDC and EC
 # host may embed it: chd-rs is BSD-3-Clause, ore-rs GPL-3.0-or-later
 license = "BSD-3-Clause"
 repository.workspace = true
-# Never published: each crate using it embeds its source, symlinked into its
-# own, so that each publishes standalone
+# Never published: each crate using it embeds a copy of its source, so that
+# each publishes standalone
 publish = false
 
 [lib]

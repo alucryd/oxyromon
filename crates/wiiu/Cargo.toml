@@ -6,8 +6,8 @@ rust-version.workspace = true
 description = "Wii U disc and title specifics shared by wux-rs and ore-rs"
 license = "GPL-3.0-or-later"
 repository.workspace = true
-# Never published: each crate using it embeds its source, symlinked into its
-# own, so that each publishes standalone
+# Never published: each crate using it embeds a copy of its source, so that
+# each publishes standalone
 publish = false
 
 [lib]

@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use ore_rs::{Options, Reader, StoreOptions};
 use tempfile::TempDir;
 
+#[path = "../../gcwii/tests/common/mod.rs"]
 mod common;
 use common::{COMMON_KEY, gamecube_disc, noise, wii_disc, write};
 
