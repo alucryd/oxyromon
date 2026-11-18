@@ -64,10 +64,15 @@ fn embedded_crates_are_copied_in() {
             } else {
                 "src"
             });
+            // Reading follows a symlink, which would then pass
+            assert!(
+                !std::path::Path::new(copy).is_symlink(),
+                "{copy} is a symlink: make it a copy of {}",
+                source.display()
+            );
             assert!(
                 files(&source) == files(std::path::Path::new(copy)),
-                "{copy} differs from {}: rm -r {copy} && cp -r {} {copy}",
-                source.display(),
+                "{copy} differs from {}: replace it with a fresh copy",
                 source.display()
             );
         }
