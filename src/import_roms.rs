@@ -3383,6 +3383,8 @@ mod test_nus_multi_version;
 #[cfg(test)]
 mod test_nus_multi_version_missing;
 #[cfg(test)]
+mod test_nus_multi_version_missing_ticket;
+#[cfg(test)]
 mod test_nus_unlisted_ticket;
 #[cfg(test)]
 mod test_ore;

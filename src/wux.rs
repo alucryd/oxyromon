@@ -794,6 +794,11 @@ pub fn is_tmd_name(name: &str) -> bool {
         })
 }
 
+/// The version of a ticket No-Intro names as the CDN does, `cetk.<version>`.
+fn ticket_version(name: &str) -> Option<u16> {
+    name.strip_prefix("cetk.")?.parse().ok()
+}
+
 /// Recompute the completion of a system's NUS titles whose DAT entry spans
 /// several versions, as No-Intro's CDN DAT lists them: each version's TMD, and
 /// every content any of them used. Nintendo's servers deliver the newest
@@ -820,7 +825,7 @@ pub async fn update_nus_games_completion(
         // the servers deliver the newest ticket too, when the entry has several
         let newest_ticket = roms
             .iter()
-            .filter_map(|rom| Some((rom.name.strip_prefix("cetk.")?.parse::<u16>().ok()?, rom.id)))
+            .filter_map(|rom| Some((ticket_version(&rom.name)?, rom.id)))
             .max_by_key(|(version, _)| *version)
             .map(|(_, id)| id);
         let Some(romfile_id) = newest.romfile_id else {
@@ -856,11 +861,7 @@ pub async fn update_nus_games_completion(
                 if is_tmd_name(&rom.name) {
                     return rom.id == newest.id;
                 }
-                if rom
-                    .name
-                    .strip_prefix("cetk.")
-                    .is_some_and(|v| v.parse::<u16>().is_ok())
-                {
+                if ticket_version(&rom.name).is_some() {
                     return Some(rom.id) == newest_ticket;
                 }
                 let name = rom.name.strip_suffix(".h3").unwrap_or(&rom.name);
