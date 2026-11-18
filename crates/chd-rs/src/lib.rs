@@ -14,8 +14,8 @@
 mod avhuff;
 mod avi;
 mod bitstream;
-// The CD-ROM specifics, shared with ore-rs: `src/cd` is a symlink to the cd
-// crate's source, which publishing copies in
+// The CD-ROM specifics, shared with ore-rs: `src/cd` is a copy of the cd
+// crate's source
 #[allow(dead_code, unused_imports)]
 #[path = "cd/lib.rs"]
 mod cd;

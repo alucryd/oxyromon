@@ -36,10 +36,10 @@
 // unused rather than gated item by item; gate it if a host needs it smaller
 #![cfg_attr(not(feature = "write"), allow(dead_code))]
 
-// The CD-ROM specifics, shared with chd-rs: `src/cd` is a symlink to the cd
-// crate's source, which publishing copies in
+// The CD-ROM specifics, shared with chd-rs: the cd crate's source, reached
+// outside this crate, which is never published
 #[allow(dead_code, unused_imports)]
-#[path = "cd/lib.rs"]
+#[path = "../../cd/src/lib.rs"]
 mod cd;
 #[cfg(feature = "write")]
 mod cdc;
@@ -47,16 +47,16 @@ mod cdtrack;
 mod codec;
 mod format;
 // The GameCube and Wii disc specifics, shared with rvz-rs and wbfs-rs:
-// `src/gcwii` is a symlink to the gcwii crate's source, which publishing
-// copies in
+// the gcwii crate's source, reached outside this crate
 #[allow(dead_code, unused_imports)]
 #[cfg(feature = "write")]
-#[path = "gcwii/lib.rs"]
+#[path = "../../gcwii/src/lib.rs"]
 mod gcwii;
 // Without the writer, only what reading needs of it, which excludes what is
 // ported from Dolphin, GPL-2.0-or-later: its disc model and file system
 #[cfg(not(feature = "write"))]
 #[allow(dead_code, unused_imports)]
+#[path = "../../gcwii/src"]
 mod gcwii {
     pub mod crypto;
     pub mod error;

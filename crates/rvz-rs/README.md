@@ -142,8 +142,8 @@ RVZ_RS_REAL=game.rvz cargo test --release -p rvz-rs -- --ignored
 
 The GameCube and Wii disc specifics, partitions, encryption, the file system,
 keys and scrubbing, live in oxyROMon's unpublished `gcwii` crate, shared with
-wbfs-rs. `src/gcwii` is a symlink to its source, and so is `tests/common` to
-its synthetic discs; publishing copies them in, so this crate stands alone.
+wbfs-rs. `src/gcwii` is a copy of its source, and so is `tests/common` of
+its synthetic discs, so this crate stands alone.
 
 ## Credits
 

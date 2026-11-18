@@ -4,9 +4,9 @@
 //! the generator that fills its padding.
 //!
 //! This crate is never published. rvz-rs and wbfs-rs embed it instead: each
-//! symlinks this `src` directory into its own as `src/gcwii` and declares it
-//! a private module, so that the crate it publishes holds a copy, and stands
-//! alone. So that it builds there as it builds here:
+//! keeps a copy of this `src` directory as `src/gcwii` and declares it a
+//! private module, so that the crate it publishes stands alone. So that it
+//! builds there as it builds here:
 //!
 //! - Paths within it go through `super::`, never `crate::`, as the crate
 //!   root is the embedding crate's.
