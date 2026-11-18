@@ -526,7 +526,8 @@ pub fn default_codec(input: &Path, platform: Option<&str>) -> Result<Codec> {
     if platform.is_some() {
         return Ok(Codec::Lzma2);
     }
-    if is_cue(input) {
+    // A Wii U title's folder, which reading as a ROM fails on
+    if is_cue(input) || input.is_dir() {
         return Ok(Codec::Zstd);
     }
     Ok(match cartridge_platform(&mut Iso::open(input)?)? {
