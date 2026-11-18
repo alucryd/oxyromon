@@ -110,7 +110,7 @@ pub enum Profile {
     /// 1 MiB groups: a read decodes little.
     #[default]
     Stream,
-    /// 4 MiB groups: smaller.
+    /// 4 MiB groups: smaller, to keep rather than play from.
     Archive,
 }
 
