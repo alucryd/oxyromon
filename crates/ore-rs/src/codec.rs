@@ -34,15 +34,22 @@ fn window_log(group: usize) -> u32 {
 const PROBE_LEVEL: i32 = 3;
 
 /// Compress a group with `codec`, or, for a codec of one kind of data,
-/// with Zstandard when a quick try of it does better: some discs flag data
-/// as XA audio, and a header can lie.
+/// with Zstandard when it does better: some discs flag data as XA audio, a
+/// header can lie, and some CDs keep data in audio tracks. A quick try of
+/// Zstandard picks the groups worth its full level, which codes about a
+/// quarter smaller.
 /// Returns the codec used.
 pub fn compress_best(codec: Codec, data: &[u8], group: usize) -> Result<(Codec, Vec<u8>)> {
     let stored = compress(codec, data, group)?;
-    if matches!(codec, Codec::Xa | Codec::Str | Codec::Vag | Codec::Pcm)
-        && zstd::bulk::compress(data, PROBE_LEVEL)?.len() < stored.len()
+    if matches!(
+        codec,
+        Codec::Flac | Codec::Xa | Codec::Str | Codec::Vag | Codec::Pcm
+    ) && zstd::bulk::compress(data, PROBE_LEVEL)?.len() < stored.len() + stored.len() / 4
     {
-        return Ok((Codec::Zstd, compress(Codec::Zstd, data, group)?));
+        let zstd = compress(Codec::Zstd, data, group)?;
+        if zstd.len() < stored.len() {
+            return Ok((Codec::Zstd, zstd));
+        }
     }
     Ok((codec, stored))
 }
@@ -265,6 +272,19 @@ mod tests {
     use super::*;
 
     #[test]
+    fn data_in_an_audio_group_takes_zstd() {
+        let data: Vec<u8> = b"ATARI APPROVED DATA HEADER ATRI "
+            .iter()
+            .cycle()
+            .take(64 * 2352)
+            .copied()
+            .collect();
+        let (codec, stored) = compress_best(Codec::Flac, &data, data.len()).unwrap();
+        assert_eq!(codec, Codec::Zstd);
+        assert_eq!(decompress(codec, &stored, data.len()).unwrap(), data);
+    }
+
+    #[test]
     fn every_codec_keeps_to_the_bomb_ratio_and_round_trips() {
         // A pattern every codec codes to a few bytes a MiB
         let data: Vec<u8> = (0..1 << 20).map(|i| (i % 4 * 64) as u8).collect();
@@ -298,3 +318,4 @@ mod tests {
         }
     }
 }
+
