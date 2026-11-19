@@ -842,48 +842,62 @@ pub async fn system_store(connection: &mut SqliteConnection, system: &System) ->
 /// What `romfiles` weigh on disk: their files, with a thin ORE's share of
 /// its store and a WUA's of the update partitions it keeps in its own. A
 /// store shared with other systems, as `GROUP_SUBSYSTEMS` gives, is split
-/// by game, so each system counts only its part.
+/// by game, so each system counts only its part. Reads every thin ORE's
+/// header and its store's index, and with WUAs every WUA's layout.
 pub async fn actual_size(connection: &mut SqliteConnection, romfiles: &[Romfile]) -> Result<u64> {
     let rom_directory = get_rom_directory(connection).await;
-    let mut size = 0;
-    let mut ores: HashMap<PathBuf, Vec<(PathBuf, u64)>> = HashMap::new();
-    let mut wuas = vec![];
-    for romfile in romfiles {
-        let path = rom_directory.join(&romfile.path);
-        let extension = path.extension().and_then(|extension| extension.to_str());
-        match (extension, ore_rs::find_store(&path)) {
-            (Some(ORE_EXTENSION), Some(store)) => {
-                ores.entry(store)
-                    .or_default()
-                    .push((path, romfile.size as u64));
-                continue;
+    let is_wua = |path: &Path| {
+        path.extension().and_then(|extension| extension.to_str()) == Some(WUA_EXTENSION)
+    };
+    let romfiles: Vec<(PathBuf, u64)> = romfiles
+        .iter()
+        .map(|romfile| (rom_directory.join(&romfile.path), romfile.size as u64))
+        .collect();
+    // every WUA the database knows, as they all split the partitions they share
+    let all_wuas: Vec<PathBuf> = match romfiles.iter().any(|(path, _)| is_wua(path)) {
+        true => crate::database::find_romfiles(connection)
+            .await
+            .into_iter()
+            .map(|romfile| rom_directory.join(&romfile.path))
+            .filter(|path| is_wua(path))
+            .collect(),
+        false => vec![],
+    };
+    Ok(spawn_blocking(move || {
+        let mut size = 0;
+        let mut ores: HashMap<PathBuf, Vec<(PathBuf, u64)>> = HashMap::new();
+        let mut wuas = vec![];
+        for (path, file_size) in romfiles {
+            let extension = path.extension().and_then(|extension| extension.to_str());
+            match (extension, ore_rs::find_store(&path)) {
+                (Some(ORE_EXTENSION), Some(store)) => {
+                    ores.entry(store).or_default().push((path, file_size));
+                    continue;
+                }
+                (Some(WUA_EXTENSION), _) => wuas.push(path),
+                _ => {}
             }
-            (Some(WUA_EXTENSION), _) => wuas.push(path),
-            _ => {}
+            size += file_size;
         }
-        size += romfile.size as u64;
-    }
-    for (store, ores) in ores {
-        let paths: Vec<&Path> = ores.iter().map(|(path, _)| path.as_path()).collect();
-        // an unreadable store or ORE counts as its files, this is a size, not a check
-        let shares = ore_rs::shares(&store, &paths).unwrap_or_default();
-        for (i, (_, file_size)) in ores.iter().enumerate() {
-            size += shares.get(i).copied().flatten().unwrap_or(*file_size);
+        for (store, ores) in ores {
+            let paths: Vec<&Path> = ores.iter().map(|(path, _)| path.as_path()).collect();
+            // an unreadable store or ORE counts as its files, this is a size, not a check
+            let shares = ore_rs::shares(&store, &paths).unwrap_or_default();
+            for (i, (_, file_size)) in ores.iter().enumerate() {
+                size += shares.get(i).copied().flatten().unwrap_or(*file_size);
+            }
         }
-    }
-    if !wuas.is_empty() {
-        size += wua_store_share(connection, &rom_directory, &wuas).await;
-    }
-    Ok(size)
+        if !wuas.is_empty() {
+            size += wua_store_share(&all_wuas, &wuas);
+        }
+        size
+    })
+    .await?)
 }
 
 /// The share of `wuas` in their update partition stores: each entry split
-/// among every WUA in the database that needs it.
-async fn wua_store_share(
-    connection: &mut SqliteConnection,
-    rom_directory: &Path,
-    wuas: &[PathBuf],
-) -> u64 {
+/// among every WUA of `all_wuas` that needs it.
+fn wua_store_share(all_wuas: &[PathBuf], wuas: &[PathBuf]) -> u64 {
     let entries = |wua: &Path| -> Vec<PathBuf> {
         let Some(store) = crate::wux::find_store(wua) else {
             return vec![];
@@ -894,20 +908,23 @@ async fn wua_store_share(
             .map(|name| store.join(name))
             .collect()
     };
-    let mut refs: HashMap<PathBuf, u64> = HashMap::new();
-    for romfile in crate::database::find_romfiles(connection).await {
-        let path = rom_directory.join(&romfile.path);
-        if path.extension().and_then(|extension| extension.to_str()) == Some(WUA_EXTENSION) {
-            for entry in entries(&path) {
-                *refs.entry(entry).or_default() += 1;
-            }
+    let mut entries_by_wua: HashMap<&Path, Vec<PathBuf>> = HashMap::new();
+    for wua in all_wuas.iter().chain(wuas) {
+        entries_by_wua
+            .entry(wua.as_path())
+            .or_insert_with(|| entries(wua));
+    }
+    let mut refs: HashMap<&Path, u64> = HashMap::new();
+    for wua in all_wuas {
+        for entry in &entries_by_wua[wua.as_path()] {
+            *refs.entry(entry.as_path()).or_default() += 1;
         }
     }
     let mut share = 0;
     for wua in wuas {
-        for entry in entries(wua) {
+        for entry in &entries_by_wua[wua.as_path()] {
             let len = entry.metadata().map_or(0, |metadata| metadata.len());
-            share += len / refs.get(&entry).copied().unwrap_or(1).max(1);
+            share += len / refs.get(entry.as_path()).copied().unwrap_or(1).max(1);
         }
     }
     share

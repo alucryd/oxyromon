@@ -97,6 +97,23 @@ async fn test() {
             .unwrap(),
         romfile.size as u64 + partition.metadata().unwrap().len()
     );
+    // and half of it once another WUA needs it too
+    let copy = system_directory.join("Test Game (Copy).wua");
+    std::fs::copy(&wua, &copy).unwrap();
+    create_romfile(
+        &mut connection,
+        copy.strip_prefix(&rom_directory).unwrap().to_str().unwrap(),
+        romfile.size as u64,
+        RomfileType::Romfile,
+    )
+    .await;
+    assert_eq!(
+        crate::ore::actual_size(&mut connection, &romfiles)
+            .await
+            .unwrap(),
+        romfile.size as u64 + partition.metadata().unwrap().len() / 2
+    );
+    std::fs::remove_file(&copy).unwrap();
     let info = wux_rs::disc_info(&wua).unwrap().unwrap();
     let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
     assert_eq!(Some(hex(&info.sha1)), roms[0].sha1);
