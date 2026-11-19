@@ -101,16 +101,59 @@ fn read(path: &Path, files: &[(String, u64, String)], out: &Path) -> ore_rs::Res
     Ok((reader.size(), hex(hasher.finalize().as_bytes())))
 }
 
+/// What ore-rs refuses each hostile vector with, so each is refused for
+/// the reason the manifest names: other readers word theirs their own way.
+const REFUSALS: [(&str, &str); 19] = [
+    ("area-kind.ore", "unknown variant `rax`"),
+    (
+        "dedup-forward.ore",
+        "a reference to a chunk not stored before it",
+    ),
+    ("envelope.ore", "the envelope of the group"),
+    ("group-crc.ore", "Data corruption detected"),
+    ("index-crc.ore", "index fails its CRC"),
+    ("index-tail.ore", "the index holds more than it describes"),
+    ("layout-2.ore", "an ORE of layout 2"),
+    (
+        "logical-hash.ore",
+        "does not match the hash it was written with",
+    ),
+    ("magic.ore", "expected ORE1, found RIFF"),
+    ("media-class.ore", "media class 255"),
+    ("meta-crc.ore", "metadata fails its CRC"),
+    ("objects.ore", "files of several objects"),
+    ("record-kind.ore", "record kind 3"),
+    ("record-len.ore", "a record of a bad length"),
+    ("required-flag.ore", "required flags 0x80000000"),
+    ("short-header.ore", "header of 128 bytes"),
+    (
+        "size.ore",
+        "metadata and header disagree on the disc's size",
+    ),
+    ("store-record.ore", "record kind 9"),
+    ("truncated.ore", "metadata lies past the end of the file"),
+];
+
 #[test]
 fn vectors_read_as_their_manifest_says() {
     let vectors_dir = vectors();
     let manifest = manifest();
     assert!(manifest.len() > 20, "{} vectors", manifest.len());
     for (path, vector) in &manifest {
+        // A vector gone would refuse as one that is not an ORE
+        assert!(vectors_dir.join(path).is_file(), "{path} is missing");
         let out = tempfile::TempDir::new().unwrap();
         let result = read(&vectors_dir.join(path), &vector.files, out.path());
         if !vector.ok {
-            assert!(result.is_err(), "{path} is read, not refused");
+            let error = match result {
+                Ok(_) => panic!("{path} is read, not refused"),
+                Err(e) => e.to_string(),
+            };
+            let (_, why) = REFUSALS
+                .iter()
+                .find(|(refused, _)| path.ends_with(refused))
+                .unwrap_or_else(|| panic!("{path}: no refusal expected of ore-rs"));
+            assert!(error.contains(why), "{path} is refused for {error:?}");
             continue;
         }
         let logical = result.unwrap_or_else(|e| panic!("{path}: {e}"));
@@ -545,12 +588,12 @@ mod write {
         pcm
     }
 
-    /// A CD's or GD-ROM's tracks, written beside their cue sheet in `dir`:
-    /// the cue sheet's path, and the files a reader writes back.
     /// A disc's cue sheet, its logical stream, and the files a reader
     /// writes back, each a name and its bytes.
     type CueDisc = (PathBuf, Vec<u8>, Vec<(String, Vec<u8>)>);
 
+    /// A CD's or GD-ROM's tracks, written beside their cue sheet in `dir`:
+    /// the cue sheet's path, and the files a reader writes back.
     fn cue_disc(dir: &Path, name: &str, tracks: &[(&str, Vec<u8>, &str)], sbi: bool) -> CueDisc {
         let mut cue = String::new();
         let mut files = Vec::new();

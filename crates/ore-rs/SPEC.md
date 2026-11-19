@@ -700,7 +700,7 @@ header and `ORE2` are refused.
 
 ## 15. Reserved for later
 
-The design draft 1.0 was finalized from specifies more than 1.0 builds. These keep their place, so that they
+The design draft this version was finalized from specifies more than 1.0 builds. These keep their place, so that they
 arrive as additions (§14):
 
 - **Fixity**: a BLAKE3 tree over the chunks, its root in `merkle_root`, in
