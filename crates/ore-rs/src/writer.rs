@@ -51,8 +51,9 @@ pub struct Options {
 }
 
 /// The cartridges a ROM can be named the ROM of, in [`Options::platform`].
-pub const CARTRIDGE_PLATFORMS: [&str; 30] = [
+pub const CARTRIDGE_PLATFORMS: [&str; 31] = [
     "32x",
+    "3ds",
     "a2600",
     "a5200",
     "a7800",
@@ -520,19 +521,19 @@ pub fn compress(
 
 /// The codec `input` is best written with when nothing says otherwise:
 /// LZMA2 for a cartridge's ROM, small and read whole, which Zstandard
-/// loses to 7z on by 7%; Zstandard for the rest, the quicker to read.
+/// loses to 7z on by 7%; Zstandard for the rest, the quicker to read,
+/// a 3DS card's included: up to 4 GiB, read as a disc is.
 /// `platform` is [`Options::platform`]: a ROM named a cartridge's is one.
 pub fn default_codec(input: &Path, platform: Option<&str>) -> Result<Codec> {
-    if platform.is_some() {
-        return Ok(Codec::Lzma2);
-    }
-    // A Wii U title's folder, which reading as a ROM fails on
-    if is_cue(input) || input.is_dir() {
-        return Ok(Codec::Zstd);
-    }
-    Ok(match cartridge_platform(&mut Iso::open(input)?)? {
-        Some(_) => Codec::Lzma2,
-        None => Codec::Zstd,
+    let platform = match platform {
+        Some(platform) => Some(platform),
+        // A Wii U title's folder, which reading as a ROM fails on
+        None if is_cue(input) || input.is_dir() => None,
+        None => cartridge_platform(&mut Iso::open(input)?)?,
+    };
+    Ok(match platform {
+        Some(platform) if platform != "3ds" => Codec::Lzma2,
+        _ => Codec::Zstd,
     })
 }
 
@@ -541,7 +542,10 @@ pub fn default_codec(input: &Path, platform: Option<&str>) -> Result<Codec> {
 /// whose header ORE does not check. A ROM named a cartridge's is taken
 /// either way; this tells a caller vouching for it what the header says.
 pub fn cartridge_header_matches(input: &Path, platform: &str) -> Result<Option<bool>> {
-    if !matches!(platform, "gb" | "gbc" | "gba" | "md" | "n64" | "nds") {
+    if !matches!(
+        platform,
+        "3ds" | "gb" | "gbc" | "gba" | "md" | "n64" | "nds"
+    ) {
         return Ok(None);
     }
     Ok(Some(match cartridge_platform(&mut Iso::open(input)?)? {
@@ -561,6 +565,17 @@ const GB_LOGO: [u8; 48] = [
 
 /// The largest cartridge ROM taken, past the DS's 512 MiB.
 const CARTRIDGE_MAX: u64 = 1 << 30;
+
+/// The largest 3DS card image taken: its cards hold 4 GiB at most.
+const CTR_MAX: u64 = 4 << 30;
+
+/// The largest ROM of `platform` taken.
+fn cartridge_max(platform: &str) -> u64 {
+    match platform {
+        "3ds" => CTR_MAX,
+        _ => CARTRIDGE_MAX,
+    }
+}
 
 /// The CRC-16 a DS checks its header with: polynomial 0xA001, reflected,
 /// from 0xFFFF.
@@ -586,15 +601,24 @@ fn crc16(bytes: &[u8]) -> u16 {
 /// - a Game Boy's Nintendo logo, `gbc` when it flags Game Boy Color
 ///   support;
 /// - a Game Boy Advance's fixed byte and header checksum;
-/// - a Mega Drive's `SEGA` at 0x100, which a 32X's has too.
+/// - a Mega Drive's `SEGA` at 0x100, which a 32X's has too;
+/// - a 3DS card's `NCSD` at 0x100, its image no larger than its header
+///   says, a trimmed one smaller.
 fn cartridge_platform(iso: &mut Iso) -> Result<Option<&'static str>> {
     let size = iso.size();
-    if !(0x150..=CARTRIDGE_MAX).contains(&size) {
+    if !(0x150..=CTR_MAX).contains(&size) {
         return Ok(None);
     }
     let mut header = [0; 0x200];
     iso.read_at(0, &mut header[..(size as usize).min(0x200)])?;
     let le16 = |at: usize| u16::from_le_bytes([header[at], header[at + 1]]);
+    let le32 = |at: usize| u32::from_le_bytes(header[at..at + 4].try_into().unwrap());
+    if size >= 0x200 && header[0x100..0x104] == *b"NCSD" && size <= u64::from(le32(0x104)) * 0x200 {
+        return Ok(Some("3ds"));
+    }
+    if size > CARTRIDGE_MAX {
+        return Ok(None);
+    }
     if size >= 0x200 && le16(0x15C) == 0xCF56 && le16(0x15E) == crc16(&header[..0x15E]) {
         return Ok(Some("nds"));
     }
@@ -808,9 +832,10 @@ fn encode(
         Some(platform) if !CARTRIDGE_PLATFORMS.contains(&platform) => {
             return Err(Error::Unsupported(format!("no cartridge named {platform}")));
         }
-        Some(_) if !(1..=CARTRIDGE_MAX).contains(&size) => {
+        Some(platform) if !(1..=cartridge_max(platform)).contains(&size) => {
             return Err(Error::Unsupported(format!(
-                "a ROM of {size} bytes, past 1 GiB or empty"
+                "a {platform} ROM of {size} bytes, past {} GiB or empty",
+                cartridge_max(platform) >> 30
             )));
         }
         Some(platform) => Some(platform),

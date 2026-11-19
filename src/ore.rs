@@ -501,6 +501,12 @@ pub fn cartridge_platform(system: &System) -> Option<&'static str> {
         "Nintendo - Game Boy Advance" => "gba",
         "Nintendo - Game Boy Color" => "gbc",
         "Nintendo - Nintendo 64" => "n64",
+        // A card image; the eShop's DATs list CIAs' contents
+        "Nintendo - Nintendo 3DS" | "Nintendo - New Nintendo 3DS"
+            if !system.name.contains("(Digital)") =>
+        {
+            "3ds"
+        }
         "Nintendo - Nintendo DS" => "nds",
         "Nintendo - Nintendo DSi" => "dsi",
         "Nintendo - Nintendo Entertainment System" => "nes",
@@ -1231,5 +1237,7 @@ pub async fn get_version() -> Result<String> {
     Ok(String::from("built-in"))
 }
 
+#[cfg(test)]
+mod test_cartridge_platform_3ds;
 #[cfg(test)]
 mod test_store_settings_base_system;

@@ -7,6 +7,8 @@
 //!   `keys.bin`. They all go to one file, as every key is tried.
 //! - The Switch's, from `prod.keys` and `title.keys`, merged by name into a
 //!   file of the same format.
+//! - The 3DS's, from Azahar's `aes_keys.txt`, merged by name into a file of
+//!   the same format.
 
 use super::common::to_hex;
 use super::config::*;
@@ -23,13 +25,16 @@ use std::path::{Path, PathBuf};
 pub const WIIU_KEYS_FILE: &str = "wiiu_keys.txt";
 /// The Switch keys in the data directory, `name = HEX` lines as in `prod.keys`.
 pub const SWITCH_KEYS_FILE: &str = "switch_keys.txt";
+/// The 3DS keys in the data directory, `name=HEX` lines as in Azahar's
+/// `aes_keys.txt`.
+pub const N3DS_KEYS_FILE: &str = "3ds_keys.txt";
 
 pub fn subcommand() -> Command {
     Command::new("import-keys")
-        .about("Import Wii, Wii U and Switch keys into oxyromon")
+        .about("Import Wii, Wii U, Switch and 3DS keys into oxyromon")
         .arg(
             Arg::new("KEYS")
-                .help("Set the key files to import, as Cemu's keys.txt, a Wii's or a Wii U's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys")
+                .help("Set the key files to import, as Cemu's keys.txt, a Wii's or a Wii U's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys, or Azahar's aes_keys.txt")
                 .required(true)
                 .num_args(1..)
                 .index(1)
@@ -47,9 +52,9 @@ pub async fn main(
 }
 
 /// Merge the keys in `paths` into the key files in `data_directory`: the Wii U
-/// and Wii keys keeping each key once, in the order first seen, the Switch keys
-/// by name, a newer value replacing an older one. Nothing is written unless
-/// every file was read.
+/// and Wii keys keeping each key once, in the order first seen, the Switch and
+/// 3DS keys by name, a newer value replacing an older one. Nothing is written
+/// unless every file was read.
 fn import_keys(
     progress_bar: &ProgressBar,
     paths: &[&PathBuf],
@@ -57,6 +62,7 @@ fn import_keys(
 ) -> Result<()> {
     let destination = data_directory.join(WIIU_KEYS_FILE);
     let switch_destination = data_directory.join(SWITCH_KEYS_FILE);
+    let n3ds_destination = data_directory.join(N3DS_KEYS_FILE);
     let mut keys: IndexSet<wux_rs::Key> = IndexSet::new();
     if destination.is_file() {
         keys.extend(
@@ -66,13 +72,33 @@ fn import_keys(
     }
     let mut switch_keys: IndexMap<String, String> = IndexMap::new();
     if switch_destination.is_file() {
-        switch_keys.extend(read_switch_keys(&switch_destination)?);
+        switch_keys.extend(read_named_keys(&switch_destination)?);
+    }
+    let mut n3ds_keys: IndexMap<String, String> = IndexMap::new();
+    if n3ds_destination.is_file() {
+        n3ds_keys.extend(read_named_keys(&n3ds_destination)?);
     }
     let before = keys.len();
     let switch_before = switch_keys.clone();
+    let n3ds_before = n3ds_keys.clone();
     for path in paths {
         print_action(progress_bar, &format!("Reading \"{}\"", path.display()));
-        let found = read_switch_keys(path)?;
+        let found = read_named_keys(path)?;
+        // Azahar's names, which no prod.keys has
+        if found.iter().any(|(name, _)| is_3ds_name(name)) {
+            if let Some((name, _)) = found
+                .iter()
+                .find(|(name, value)| is_3ds_aes_key(name) && value.len() != 32)
+            {
+                bail!(
+                    "Failed to read \"{}\": {} is not a 16-byte key",
+                    path.display(),
+                    name
+                );
+            }
+            n3ds_keys.extend(found);
+            continue;
+        }
         if !found.is_empty() {
             switch_keys.extend(found);
             continue;
@@ -85,7 +111,7 @@ fn import_keys(
                     .with_context(|| format!("Failed to read \"{}\"", path.display()));
             }
             (Err(_), Err(_)) => bail!(
-                "Failed to read \"{}\": expected Cemu's keys.txt, a Wii U's or a Wii's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys",
+                "Failed to read \"{}\": expected Cemu's keys.txt, a Wii U's or a Wii's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys, or Azahar's aes_keys.txt",
                 path.display()
             ),
             (wiiu, wii) => wiiu
@@ -98,7 +124,7 @@ fn import_keys(
             print_warning(
                 progress_bar,
                 &format!(
-                    "No keys found in \"{}\": expected Cemu's keys.txt, a Wii U's or a Wii's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys",
+                    "No keys found in \"{}\": expected Cemu's keys.txt, a Wii U's or a Wii's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys, or Azahar's aes_keys.txt",
                     path.display()
                 ),
             );
@@ -121,8 +147,13 @@ fn import_keys(
             .context("Failed to import the Switch keys")?;
     }
 
+    let n3ds_added = n3ds_keys
+        .iter()
+        .filter(|(name, value)| n3ds_before.get(*name) != Some(*value))
+        .count();
+
     let added = keys.len() - before;
-    if added == 0 && switch_added == 0 {
+    if added == 0 && switch_added == 0 && n3ds_added == 0 {
         print_skip(progress_bar, "No new keys");
         return Ok(());
     }
@@ -150,12 +181,29 @@ fn import_keys(
             ),
         );
     }
+    if n3ds_added > 0 {
+        write_lines(
+            n3ds_keys
+                .iter()
+                .map(|(name, value)| format!("{}={}", name, value)),
+            &n3ds_destination,
+        )
+        .with_context(|| format!("Failed to write \"{}\"", n3ds_destination.display()))?;
+        print_success(
+            progress_bar,
+            &format!(
+                "Imported {} new 3DS keys, {} in all",
+                n3ds_added,
+                n3ds_keys.len()
+            ),
+        );
+    }
     Ok(())
 }
 
-/// The `name = HEX` lines of a Switch keys file, as nsz-rs reads them; none
-/// when `path` is not text, or holds keys of another kind.
-fn read_switch_keys(path: &Path) -> Result<Vec<(String, String)>> {
+/// The `name = HEX` lines of a Switch or 3DS keys file, as nsz-rs and Azahar
+/// read them; none when `path` is not text, or holds keys of another kind.
+fn read_named_keys(path: &Path) -> Result<Vec<(String, String)>> {
     let bytes =
         std::fs::read(path).with_context(|| format!("Failed to read \"{}\"", path.display()))?;
     let Ok(text) = std::str::from_utf8(&bytes) else {
@@ -173,6 +221,26 @@ fn read_switch_keys(path: &Path) -> Result<Vec<(String, String)>> {
             .then(|| (name.to_string(), value.to_uppercase()))
         })
         .collect())
+}
+
+/// Whether `name` is one of Azahar's `aes_keys.txt`: a key slot's
+/// (`slot0x2CKeyX`), or the key scrambler's generator constant.
+fn is_3ds_name(name: &str) -> bool {
+    name == "generatorConstant"
+        || name.strip_prefix("slot0x").is_some_and(|rest| {
+            rest.len() == 6
+                && rest[..2].chars().all(|c| c.is_ascii_hexdigit())
+                && matches!(&rest[2..], "KeyX" | "KeyY" | "KeyN")
+        })
+}
+
+/// Whether the 3DS key `name` is an AES key, 16 bytes, rather than an RSA
+/// modulus or exponent or an NFC secret.
+fn is_3ds_aes_key(name: &str) -> bool {
+    is_3ds_name(name)
+        || name
+            .strip_prefix("common")
+            .is_some_and(|n| n.len() == 1 && n.as_bytes()[0].is_ascii_digit())
 }
 
 /// Whether `name` is a `title.keys` rights ID rather than a `prod.keys` name.
@@ -197,6 +265,10 @@ fn write_lines(lines: impl Iterator<Item = String>, destination: &Path) -> Resul
     Ok(())
 }
 
+#[cfg(test)]
+mod test_import_3ds;
+#[cfg(test)]
+mod test_import_3ds_bad_key;
 #[cfg(test)]
 mod test_import_keys;
 #[cfg(test)]
