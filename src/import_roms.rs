@@ -759,6 +759,7 @@ async fn import_nus<P: AsRef<Path>>(
             system,
             &HashSet::new(),
             &[],
+            &[],
             None,
             &hash_algorithm,
             unattended_mode,
@@ -1192,6 +1193,10 @@ async fn import_archive(
                 &hash,
                 system,
                 game_ids,
+                &roms_games_systems_archive_romfiles
+                    .iter()
+                    .map(|(rom, ..)| rom.id)
+                    .collect::<Vec<i64>>(),
                 game_names.as_slice(),
                 rom_name,
                 hash_algorithm,
@@ -1401,6 +1406,10 @@ async fn import_chd(
                         } else {
                             &new_game_ids
                         },
+                        &roms_games_systems
+                            .iter()
+                            .map(|(rom, _, _)| rom.id)
+                            .collect::<Vec<i64>>(),
                         &[chd_romfile
                             .romfile
                             .path
@@ -1514,6 +1523,7 @@ async fn import_chd(
                     &hash,
                     system,
                     game_ids,
+                    &[],
                     &[chd_romfile
                         .romfile
                         .path
@@ -1537,6 +1547,7 @@ async fn import_chd(
                         &chd_romfile.chd_sha1,
                         system,
                         game_ids,
+                        &[],
                         &[chd_romfile
                             .romfile
                             .path
@@ -1629,6 +1640,7 @@ async fn import_chd(
                     &hash,
                     system,
                     game_ids,
+                    &[],
                     &[chd_romfile
                         .romfile
                         .path
@@ -1652,6 +1664,7 @@ async fn import_chd(
                         &chd_romfile.chd_sha1,
                         system,
                         game_ids,
+                        &[],
                         &[chd_romfile
                             .romfile
                             .path
@@ -1753,6 +1766,7 @@ async fn import_chd(
                     &hash,
                     system,
                     game_ids,
+                    &[],
                     &[chd_romfile
                         .romfile
                         .path
@@ -1776,6 +1790,7 @@ async fn import_chd(
                         &chd_romfile.chd_sha1,
                         system,
                         game_ids,
+                        &[],
                         &[chd_romfile
                             .romfile
                             .path
@@ -1923,6 +1938,7 @@ async fn import_cia(
                 &hash,
                 system,
                 game_ids,
+                &[],
                 game_names.as_slice(),
                 rom_name,
                 &hash_algorithm,
@@ -2038,6 +2054,7 @@ async fn import_cso(
             &hash,
             system,
             game_ids,
+            &[],
             &[cso_romfile
                 .romfile
                 .path
@@ -2135,6 +2152,7 @@ async fn import_nsz(
             &hash,
             system,
             game_ids,
+            &[],
             &[nsz_romfile
                 .romfile
                 .path
@@ -2261,6 +2279,10 @@ async fn import_ore_cd(
                 } else {
                     &new_game_ids
                 },
+                &matches
+                    .iter()
+                    .map(|(rom, _, _)| rom.id)
+                    .collect::<Vec<i64>>(),
                 &[ore_stem],
                 ore_name,
                 hash_algorithm,
@@ -2362,6 +2384,7 @@ async fn import_rvz(
             &hash,
             system,
             game_ids,
+            &[],
             &[rvz_romfile
                 .romfile
                 .path
@@ -2463,6 +2486,7 @@ async fn import_disc<T: HashAndSize + GetRomfile>(
             &hash,
             system,
             game_ids,
+            &[],
             &[wux_romfile
                 .romfile()
                 .path
@@ -2578,6 +2602,7 @@ async fn import_zso(
             &hash,
             system,
             game_ids,
+            &[],
             &[zso_romfile
                 .romfile
                 .path
@@ -2713,6 +2738,7 @@ pub async fn import_other(
             &hash,
             system,
             game_ids,
+            &[],
             &[romfile.path.file_stem().unwrap().to_str().unwrap()],
             romfile.path.file_name().unwrap().to_str(),
             hash_algorithm,
@@ -2801,12 +2827,17 @@ async fn find_rom_by_size_and_hash(
     hash: &str,
     system: &Option<&System>,
     game_ids: &HashSet<i64>,
+    claimed: &[i64],
     game_names: &[&str],
     rom_name: Option<&str>,
     hash_algorithm: &HashAlgorithm,
     unattended_mode: UnattendedMode,
 ) -> Result<MatchResult> {
     let mut roms: Vec<Rom> = vec![];
+    // a ROM another file of the same CHD, ORE or archive took is not a candidate: their
+    // files are recorded together once all are matched, so a CD's identical tracks would
+    // all take the first
+    let unclaimed = |rom: &Rom| !claimed.contains(&rom.id);
 
     // first try matching with game and rom names
     if !game_names.is_empty()
@@ -2871,6 +2902,7 @@ async fn find_rom_by_size_and_hash(
             }
         };
     }
+    roms.retain(unclaimed);
 
     // then with game name only
     if roms.is_empty() && !game_names.is_empty() {
@@ -2928,6 +2960,7 @@ async fn find_rom_by_size_and_hash(
             }
         };
     }
+    roms.retain(unclaimed);
 
     // finally without any
     if roms.is_empty() {
@@ -2979,6 +3012,7 @@ async fn find_rom_by_size_and_hash(
             }
         };
     }
+    roms.retain(unclaimed);
 
     // abort if no match
     if roms.is_empty() {
@@ -3036,9 +3070,13 @@ async fn find_rom_by_size_and_hash(
 
     let mut rom_game_system: Option<(Rom, Game, System)> = None;
 
-    // select the first rom if there is only one
-    if roms.len() == 1 {
-        let rom = roms.remove(0);
+    // select the rom if there is only one, or if they are all one game's: the same bytes
+    // twice in a game, like a CD's identical tracks, so any is right, the file's namesake first
+    if roms.iter().all(|rom| rom.game_id == roms[0].game_id) {
+        let index = rom_name
+            .and_then(|rom_name| roms.iter().position(|rom| rom.name == rom_name))
+            .unwrap_or(0);
+        let rom = roms.remove(index);
         let game = find_game_by_id(connection, rom.game_id).await;
         let system = find_system_by_id(connection, game.system_id).await;
         print_success(progress_bar, &format!("Matches \"{}\"", rom.name));
@@ -3358,6 +3396,18 @@ mod test_cia;
 mod test_cso;
 #[cfg(test)]
 mod test_gb_ore;
+#[cfg(test)]
+mod test_identical_tracks_archive;
+#[cfg(test)]
+mod test_identical_tracks_chd;
+#[cfg(test)]
+mod test_identical_tracks_loose;
+#[cfg(test)]
+mod test_identical_tracks_loose_partial;
+#[cfg(test)]
+mod test_identical_tracks_ore;
+#[cfg(test)]
+mod test_identical_tracks_surplus;
 #[cfg(test)]
 mod test_iso_chd;
 #[cfg(test)]
