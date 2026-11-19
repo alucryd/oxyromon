@@ -22,6 +22,7 @@ use sha1::{Digest, Sha1};
 use sha2::Sha256;
 
 use crate::Stats;
+pub(crate) use crate::crypto::encrypt;
 use crate::crypto::{Key, cbc_decrypt};
 use crate::disc::{Fst, Source};
 use crate::error::{Error, Result, corrupt};
@@ -216,7 +217,7 @@ pub fn collect(
         }
         .ok_or_else(|| corrupt(format!("the title has no content {}", content.index)))?;
         let hashed = content.is_hashed();
-        if !content.size.is_multiple_of(if hashed { BLOCK } else { 16 }) {
+        if hashed && !content.size.is_multiple_of(BLOCK) {
             return Err(corrupt(format!(
                 "content {:08x} is {} bytes",
                 content.id, content.size
@@ -230,16 +231,19 @@ pub fn collect(
             iv[..2].copy_from_slice(&content.index.to_be_bytes());
             let mut encrypted = Vec::new();
             let mut offset = 0;
-            while offset < content.size {
-                let len = (content.size - offset).min(CHUNK) as usize;
+            // Its padding is decrypted with it, and kept as residue if not
+            // zeros; the TMD hashes its size alone
+            while offset < content.stored_size() {
+                let len = (content.stored_size() - offset).min(CHUNK) as usize;
                 let chunk = &mut buf[..len];
                 source.read_cluster(content.index, start, offset, chunk)?;
                 if content.index == 0 {
                     encrypted.extend_from_slice(chunk);
                 }
                 cbc_decrypt(key, &mut iv, chunk);
-                sha1.update(&*chunk);
-                sha256.update(&*chunk);
+                let hashed_len = (content.size.saturating_sub(offset) as usize).min(len);
+                sha1.update(&chunk[..hashed_len]);
+                sha256.update(&chunk[..hashed_len]);
                 if content.index != 0 {
                     scan(extents, content.index, offset, chunk, &mut residue);
                 }
@@ -395,7 +399,9 @@ pub fn wua_to_nus(
     }
     let total: u64 = tmds
         .iter()
-        .map(|tmd| nus::parse_tmd(tmd).map(|t| t.contents.iter().map(|c| c.size).sum::<u64>()))
+        .map(|tmd| {
+            nus::parse_tmd(tmd).map(|t| t.contents.iter().map(|c| c.stored_size()).sum::<u64>())
+        })
         .sum::<Result<u64>>()?;
     let input_size = std::fs::metadata(input)?.len();
 
@@ -577,7 +583,7 @@ impl Contents {
     ) -> Result<Vec<u8>> {
         if content.index == 0 {
             out(&self.content0)?;
-            report(content.size);
+            report(content.stored_size());
             return Ok(Vec::new());
         }
         let none_extents = Vec::new();
@@ -597,12 +603,13 @@ impl Contents {
             let mut iv = [0; 16];
             iv[..2].copy_from_slice(&content.index.to_be_bytes());
             let mut offset = 0;
-            while offset < content.size {
-                let len = (content.size - offset).min(CHUNK) as usize;
+            while offset < content.stored_size() {
+                let len = (content.stored_size() - offset).min(CHUNK) as usize;
                 let chunk = &mut buf[..len];
                 fill(reader, extents, residue, offset, chunk)?;
-                sha1.update(&*chunk);
-                sha256.update(&*chunk);
+                let hashed_len = (content.size.saturating_sub(offset) as usize).min(len);
+                sha1.update(&chunk[..hashed_len]);
+                sha256.update(&chunk[..hashed_len]);
                 encrypt(key, &mut iv, chunk);
                 out(chunk)?;
                 offset += len as u64;
@@ -649,19 +656,5 @@ impl Contents {
         )
         .map_err(|e| corrupt(format!("{}: {e}", self.folder)))?;
         Ok(h3)
-    }
-}
-
-/// Encrypt `buf` in place with AES-128-CBC, continuing the chain from `iv`.
-pub(crate) fn encrypt(key: &Key, iv: &mut [u8; 16], buf: &mut [u8]) {
-    use aes::Aes128;
-    use aes::cipher::{BlockCipherEncrypt, KeyInit};
-    let cipher = Aes128::new(key.into());
-    for block in buf.as_chunks_mut::<16>().0 {
-        for (b, c) in block.iter_mut().zip(iv.iter()) {
-            *b ^= c;
-        }
-        cipher.encrypt_block(block.into());
-        *iv = *block;
     }
 }

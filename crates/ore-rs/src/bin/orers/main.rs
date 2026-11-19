@@ -12,9 +12,12 @@ use ore_rs::{Codec, Options, Profile, StoreBatch};
 fn cli() -> Command {
     Command::new("orers")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("ORE compression and decompression: GameCube, Wii, PlayStation 2 and PSP ISOs, cartridge ROMs and CD and GD-ROM cue sheets are compressed, OREs decompressed, stores checked and repaired")
+        .about("ORE compression and decompression: GameCube, Wii, Wii U, PlayStation 2 and PSP ISOs, Wii U WUDs, WUXs and NUS folders, cartridge ROMs and CD and GD-ROM cue sheets are compressed, OREs decompressed, stores checked and repaired")
         .after_help(format!(
-            "Writing an ORE from a Wii ISO needs the Wii common key among the keys; orers ships none.\n\n\
+            "Writing an ORE from a Wii ISO needs the Wii common key among the keys, from a Wii U disc its\n\
+             disc key and the Wii U common key, and the vWii common key for its vWii titles to be decrypted;\n\
+             orers ships none. A Wii U NUS folder's contents are decrypted with its ticket, and kept as they\n\
+             are without one; its ticket is written back beside them.\n\n\
              A CD is given as its cue sheet, its tracks a file each; an SBI of the cue sheet's name beside it\n\
              is kept, and written back beside the cue sheet with the tracks.\n\n\
              A thin ORE finds its store as the nearest .ore-store up from its folder: keep the store in the\n\
@@ -23,7 +26,7 @@ fn cli() -> Command {
         ))
         .arg(
             Arg::new("INPUTS")
-                .help("ISOs and cue sheets to compress, OREs to decompress, stores to check and repair")
+                .help("ISOs, WUXs, cue sheets and NUS folders to compress, OREs to decompress, stores to check and repair")
                 .required(true)
                 .num_args(1..)
                 .value_parser(value_parser!(PathBuf)),
@@ -91,7 +94,7 @@ fn cli() -> Command {
         .arg(
             Arg::new("keys")
                 .long("keys")
-                .help("Keys file holding the Wii common key: text, a BootMii keys.bin, or an otp.bin")
+                .help("Keys file: text, as Cemu's keys.txt, a BootMii keys.bin, or an otp.bin")
                 .value_parser(value_parser!(PathBuf)),
         )
 }
@@ -134,14 +137,20 @@ fn convert(
     batch: &mut Option<StoreBatch>,
 ) -> Result<String, String> {
     let options = options(matches, input);
-    if input.is_dir() {
+    // A folder is a store to check, or a Wii U title to compress
+    let title = ore_rs::is_title_folder(input);
+    if input.is_dir() && !title {
         // Checking a store takes its lock, which an open batch holds
         if let Some(open) = batch.take() {
             commit(open, input)?;
         }
         return store(input, matches, &options);
     }
-    let size = std::fs::metadata(input).map_err(|e| e.to_string())?.len();
+    let size = match title {
+        true => folder_size(input),
+        false => std::fs::metadata(input).map(|m| m.len()),
+    }
+    .map_err(|e| e.to_string())?;
     let dir = ui::output_dir(input, matches)?;
     let store = matches.get_one::<PathBuf>("store");
     // Before the batch opens: once open, it holds the store's lock until
@@ -166,9 +175,17 @@ fn convert(
             result.map_err(|e| e.to_string())?;
             return Ok(ui::wrote(&output));
         }
-        // A CD comes back as its cue sheet, its tracks beside it; a ROM
-        // with the extension it had
+        // A CD comes back as its cue sheet, its tracks beside it; a title
+        // as its folder; a ROM with the extension it had
         let reader = ore_rs::Reader::inspect(input).ok();
+        if reader.as_ref().is_some_and(|reader| reader.is_title()) {
+            let output = outputs.claim(dir.join(input.file_stem().unwrap_or_default()))?;
+            let bar = ui::progress_bar(size, "Decompressing", input);
+            let result = ore_rs::decompress(input, &output, &mut |n| bar.inc(n));
+            bar.finish_and_clear();
+            result.map_err(|e| e.to_string())?;
+            return Ok(ui::wrote(&output));
+        }
         let rom = reader.as_ref().and_then(|reader| reader.file_name());
         let extension = match (&reader, rom.and_then(|name| Path::new(name).extension())) {
             (Some(reader), _) if reader.is_cd() => "cue",
@@ -187,7 +204,15 @@ fn convert(
         Some(path) => ore_rs::load_keys(path).map_err(|e| format!("{}: {e}", path.display()))?,
         None => Vec::new(),
     };
-    let output = outputs.claim(ui::output_path(&dir, input, "ore"))?;
+    // A folder's name may hold a dot, which is not an extension
+    let output = match title {
+        true => dir.join(format!(
+            "{}.ore",
+            input.file_name().unwrap_or_default().to_string_lossy()
+        )),
+        false => ui::output_path(&dir, input, "ore"),
+    };
+    let output = outputs.claim(output)?;
     let bar = ui::progress_bar(size, "Compressing", input);
     let result = match store {
         Some(store) => {
@@ -204,6 +229,18 @@ fn convert(
         ui::wrote(&output),
         stats.ratio_percent()
     ))
+}
+
+/// The bytes of the files in the folder `dir`.
+fn folder_size(dir: &Path) -> std::io::Result<u64> {
+    let mut size = 0;
+    for entry in std::fs::read_dir(dir)? {
+        let entry = entry?;
+        if entry.file_type()?.is_file() {
+            size += entry.metadata()?.len();
+        }
+    }
+    Ok(size)
 }
 
 /// The batch writing to `store`, opened by the first input to need it.

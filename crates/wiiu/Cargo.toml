@@ -1,0 +1,23 @@
+[package]
+name = "wiiu"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "Wii U disc and title specifics shared by wux-rs and ore-rs"
+license = "GPL-3.0-or-later"
+repository.workspace = true
+# Never published: each crate using it embeds a copy of its source, so that
+# each publishes standalone
+publish = false
+
+[lib]
+name = "wiiu"
+path = "src/lib.rs"
+
+[dependencies]
+aes = "0.9"
+sha1.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

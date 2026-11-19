@@ -526,7 +526,8 @@ pub fn default_codec(input: &Path, platform: Option<&str>) -> Result<Codec> {
     if platform.is_some() {
         return Ok(Codec::Lzma2);
     }
-    if is_cue(input) {
+    // A Wii U title's folder, which reading as a ROM fails on
+    if is_cue(input) || input.is_dir() {
         return Ok(Codec::Zstd);
     }
     Ok(match cartridge_platform(&mut Iso::open(input)?)? {
@@ -777,6 +778,10 @@ impl Drop for StoreBatch {
     }
 }
 
+// A Wii U disc, laid out by wiiu's plan, or eShop title
+mod wiiu_disc;
+pub use wiiu_disc::is_title_folder;
+
 fn encode(
     input: &Path,
     part: &Path,
@@ -787,6 +792,12 @@ fn encode(
 ) -> Result<Stats> {
     if is_cue(input) {
         return encode_cd(input, part, options, store, progress);
+    }
+    if wiiu_disc::is_title_folder(input) {
+        return wiiu_disc::encode_title(input, part, options, keys, store, progress);
+    }
+    if wiiu_disc::is_wiiu(input) {
+        return wiiu_disc::encode(input, part, options, keys, store, progress);
     }
     let mut iso = Iso::open(input)?;
     let size = iso.size();
@@ -903,8 +914,8 @@ fn encode(
                     }
                     segmenter.finish(&mut |run| encoder.push(run));
                 }
-                AreaKind::CdData | AreaKind::CdAudio => {
-                    unreachable!("a disc image's plan has no CD track")
+                AreaKind::CdData | AreaKind::CdAudio | AreaKind::Wiiu | AreaKind::Repeat => {
+                    unreachable!("a disc image's plan has no CD track nor Wii U region")
                 }
             }
             exception_count += exceptions.len() as u64;
@@ -920,6 +931,8 @@ fn encode(
                 title_key: plan.key.map(|key| key.to_vec()),
                 codec: plan.codec,
                 exceptions,
+                wiiu: None,
+                period: None,
             });
         }
 
@@ -952,6 +965,7 @@ fn encode(
             media: Media {
                 cue: None,
                 sbi: None,
+                ticket: None,
                 size,
                 areas,
                 class: if cartridge.is_some() {
@@ -969,20 +983,7 @@ fn encode(
                 identity("md5", md5.finalize().to_vec()),
                 identity("crc-32", crc32.finalize().to_be_bytes().to_vec()),
             ],
-            // Filled in as the ORE is finished
-            provenance: Provenance {
-                tool: String::new(),
-                params: Params {
-                    codec: options.codec,
-                    group: 0,
-                    level: 0,
-                    chunker: Chunker {
-                        max: 0,
-                        min: 0,
-                        name: String::new(),
-                    },
-                },
-            },
+            provenance: placeholder_provenance(options.codec),
         };
         Ok(Stats {
             input_size: size,
@@ -1379,6 +1380,8 @@ fn encode_cd(
                 title_key: None,
                 codec: None,
                 exceptions: Vec::new(),
+                wiiu: None,
+                period: None,
             });
             start += len;
         }
@@ -1410,6 +1413,7 @@ fn encode_cd(
             media: Media {
                 cue: Some(cue_bytes.clone()),
                 sbi: sbi.clone(),
+                ticket: None,
                 size,
                 areas,
                 class: match (gd_rom, audio) {
@@ -1426,20 +1430,7 @@ fn encode_cd(
                 step("mincdc-dedup", Some(encoder.deduped)),
             ],
             identity,
-            // Filled in as the ORE is finished
-            provenance: Provenance {
-                tool: String::new(),
-                params: Params {
-                    codec: options.codec,
-                    group: 0,
-                    level: 0,
-                    chunker: Chunker {
-                        max: 0,
-                        min: 0,
-                        name: String::new(),
-                    },
-                },
-            },
+            provenance: placeholder_provenance(options.codec),
         };
         Ok(Stats {
             input_size: size,
@@ -1521,6 +1512,23 @@ fn file_identity(name: &str, crc32: crc32fast::Hasher, md5: Md5, sha1: Sha1) -> 
         identity("md5", md5.finalize().to_vec()),
         identity("crc-32", crc32.finalize().to_be_bytes().to_vec()),
     ]
+}
+
+/// A Provenance filled in as the ORE is finished.
+fn placeholder_provenance(codec: Codec) -> Provenance {
+    Provenance {
+        tool: String::new(),
+        params: Params {
+            codec,
+            group: 0,
+            level: 0,
+            chunker: Chunker {
+                max: 0,
+                min: 0,
+                name: String::new(),
+            },
+        },
+    }
 }
 
 fn step(id: &str, bytes: Option<u64>) -> Step {

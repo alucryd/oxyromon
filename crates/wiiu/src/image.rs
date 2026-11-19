@@ -4,9 +4,9 @@ use std::fs::File;
 use std::io::{self, Read, Seek, SeekFrom};
 use std::path::Path;
 
-use crate::error::{Error, Result, corrupt};
-use crate::io::read_exact_at;
-use crate::wux::{HEADER_SIZE, Header, MAGIC};
+use super::error::{Error, Result, corrupt};
+use super::io::read_exact_at;
+use super::wux::{HEADER_SIZE, Header, MAGIC};
 
 /// A WUD or WUX, opened for reading its uncompressed bytes. It implements
 /// [`Read`] and [`Seek`] over those bytes, and [`Image::read_exact_at`] reads
@@ -119,7 +119,7 @@ impl Image {
     }
 
     /// Which stored sector each sector of the disc is, `None` for a WUD.
-    pub(crate) fn table(&self) -> Option<&[u32]> {
+    pub fn table(&self) -> Option<&[u32]> {
         self.wux.as_ref().map(|wux| wux.table.as_slice())
     }
 }

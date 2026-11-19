@@ -112,6 +112,8 @@ struct Built {
     clusters: Vec<Vec<u8>>,
     /// Each raw cluster's plaintext, as long as the cluster; empty if hashed.
     plain: Vec<Vec<u8>>,
+    /// Each cluster's bytes up to the end of its last file.
+    lens: Vec<usize>,
     hashed: Vec<bool>,
 }
 
@@ -235,6 +237,7 @@ fn build(tree: &[Node], key: &[u8; 16], hashed: &[bool], blocks: bool) -> Built 
         fst_plain: fst,
         clusters,
         plain,
+        lens: streams.iter().map(Vec::len).collect(),
         hashed: hashed.to_vec(),
     }
 }
@@ -422,7 +425,8 @@ pub fn nus(dir: &std::path::Path) -> Vec<(String, Vec<u8>)> {
                 <title_version type=\"hexBinary\" length=\"2\">0030</title_version>\n  \
                 <title_id type=\"hexBinary\" length=\"8\">0005000E10101010</title_id>\n</app>\n"
             .to_vec();
-    let rpx = noise(50_000, 7);
+    // Its code cluster ends off the AES block, as a CDN content may
+    let rpx = noise(50_001, 7);
     let data = noise(0xFC00 + 99, 8);
     let tree = vec![
         Dir(
@@ -445,16 +449,26 @@ pub fn nus(dir: &std::path::Path) -> Vec<(String, Vec<u8>)> {
     }];
     let mut files = vec![built.fst.clone()];
     for (index, cluster) in built.clusters.iter().enumerate().skip(1) {
-        let hash = match built.hashed[index] {
-            true => Sha1::digest(h3(cluster.len())).into(),
-            false => Sha1::digest(&built.plain[index]).into(),
+        // A raw content is as long as its files, its file padded to the AES
+        // block, which the TMD's size and hash leave out
+        let (size, file, hash) = match built.hashed[index] {
+            true => (
+                cluster.len(),
+                cluster.clone(),
+                Sha1::digest(h3(cluster.len())).into(),
+            ),
+            false => {
+                let size = built.lens[index];
+                let file = cluster[..size.next_multiple_of(16)].to_vec();
+                (size, file, Sha1::digest(&built.plain[index][..size]).into())
+            }
         };
         contents.push(Content {
-            size: cluster.len() as u64,
+            size: size as u64,
             hashed: built.hashed[index],
             hash,
         });
-        files.push(cluster.clone());
+        files.push(file);
     }
     for (index, file) in files.iter().enumerate() {
         std::fs::write(dir.join(format!("{:08x}.app", 0x10 + index)), file).unwrap();
@@ -666,38 +680,4 @@ pub fn wud_and_hashed(disc_key: &[u8; 16]) -> (Vec<u8>, usize) {
         disc.extend(bytes);
     }
     (disc, hashed)
-}
-
-/// Every file in the ZArchive at `path`, with its contents, read with an
-/// independent reader, sorted by path.
-pub fn archive_files(path: &std::path::Path) -> Vec<(String, Vec<u8>)> {
-    use zarust::{ArchiveReader, ROOT_NODE};
-    let mut reader = ArchiveReader::open(path).unwrap();
-    assert!(reader.verify_integrity().unwrap());
-    let mut files = Vec::new();
-    let mut dirs = vec![(String::new(), ROOT_NODE)];
-    while let Some((prefix, handle)) = dirs.pop() {
-        let entries: Vec<_> = reader
-            .directory_entries(handle)
-            .unwrap()
-            .iter()
-            .map(|e| {
-                (
-                    String::from_utf8(e.name.to_vec()).unwrap(),
-                    e.is_file(),
-                    e.handle,
-                )
-            })
-            .collect();
-        for (name, is_file, handle) in entries {
-            let path = format!("{prefix}{name}");
-            if is_file {
-                files.push((path, reader.read_file_to_end(handle).unwrap()));
-            } else {
-                dirs.push((format!("{path}/"), handle));
-            }
-        }
-    }
-    files.sort();
-    files
 }

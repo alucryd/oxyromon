@@ -28,19 +28,20 @@
 use std::collections::HashMap;
 use std::io::Write;
 use std::path::Path;
-use std::rc::Rc;
 
 use md5::Md5;
 use sha1::{Digest, Sha1};
 
-use crate::crypto::{Key, cbc_decrypt, decrypt_block};
-use crate::disc::{self, Fst, Mode, PartitionSource, SECTOR};
+use crate::crypto::Key;
+use crate::disc::SECTOR;
 use crate::error::{Error, Result, corrupt};
 use crate::image::Image;
 use crate::io::{Scaled, finish};
-use crate::nus;
-use crate::revert::encrypt;
-use crate::wua::{self, DiscGame, parse_ticket, ticket_iv, tree};
+// The disc's layout, wiiu's since ore-rs writes discs from it too
+pub(crate) use crate::wiiu::plan::{
+    Kind, Plan, Region, Step, Tickets, TitleKeys, Transform, common_by_sha1, pieces, plan,
+    read_plain, steps, stream_offsets, ticket_key, title_crypt,
+};
 use crate::zarchive::{self, Writer};
 
 /// The root folder of a WUA holding what rebuilds its disc.
@@ -58,7 +59,6 @@ const ENTRY_LEVEL: i32 = 19;
 pub(crate) const ENTRY_WINDOW_LOG: u32 = 27;
 /// A 64 KiB block, of a hashed or blocks cluster, or of a hashed content.
 const BLOCK: u64 = 0x10000;
-const HASHES: usize = 0x400;
 /// How much is read, decrypted or written at a time.
 const CHUNK: u64 = 16 * BLOCK;
 
@@ -69,33 +69,6 @@ pub struct DiscInfo {
     pub crc32: u32,
     pub md5: [u8; 16],
     pub sha1: [u8; 20],
-}
-
-/// Where a region's bytes come from, and how they are encrypted on the disc.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Kind {
-    /// The game's content of this index, from the WUA.
-    Content(u16),
-    /// The stream, as it is on the disc.
-    Plain,
-    /// The stream, one CBC stream under the disc key, its IV the index.
-    Raw(u16),
-    /// The stream, in 64 KiB CBC blocks under the disc key.
-    Blocks(u16),
-}
-
-/// A region: its first sector in its partition, and its length in bytes.
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct Region {
-    pub start: u64,
-    pub len: u64,
-    pub kind: Kind,
-}
-
-impl Region {
-    pub fn sectors(&self) -> u64 {
-        self.len.div_ceil(SECTOR)
-    }
 }
 
 /// Where a partition's stream is.
@@ -133,93 +106,23 @@ pub(crate) struct Layout {
     pub patches: Vec<u64>,
 }
 
-/// Tickets, and their title keys, by where they are in a stream.
-pub(crate) type Tickets = HashMap<(u64, u32), Vec<u8>>;
-pub(crate) type TitleKeys = HashMap<(u64, u32), Key>;
 /// Sectors kept whole, by index.
 type Patches = Vec<(u64, Vec<u8>)>;
-
-/// A title's content, in a stream decrypted with its title key: where it
-/// is, what it is, where its ticket is, which holds that key, and the SHA-1
-/// of the common key that key is encrypted with: the Wii U's, or for a vWii
-/// title, the vWii's, which a rebuild finds among its keys by that SHA-1.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct Transform {
-    pub offset: u64,
-    pub len: u64,
-    pub hashed: bool,
-    pub index: u16,
-    pub ticket: (u64, u32),
-    pub common: [u8; 20],
-}
-
-/// What makes up a partition, sector by sector: its header, its regions,
-/// and runs repeating the region before them.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Step {
-    Header,
-    Region(usize),
-    /// `count` sectors, each the one `period` sectors before it; `None` if
-    /// nothing comes before, which only patches can fill.
-    Fill {
-        count: u64,
-        period: Option<u64>,
-    },
-}
 
 impl PartitionLayout {
     /// The partition's steps, covering it whole.
     pub fn steps(&self) -> Result<Vec<Step>> {
-        let size = self.end - self.start;
-        let mut steps = Vec::new();
-        let mut cursor = self.header_sectors;
-        let mut period = None;
-        if self.header_sectors > 0 {
-            steps.push(Step::Header);
-            period = Some(self.header_sectors);
-        }
-        for (i, region) in self.regions.iter().enumerate() {
-            if region.start < cursor || region.start + region.sectors() > size {
-                return Err(corrupt(format!(
-                    "partition {}'s regions overlap or overflow it",
-                    self.name
-                )));
-            }
-            if region.start > cursor {
-                steps.push(Step::Fill {
-                    count: region.start - cursor,
-                    period,
-                });
-            }
-            steps.push(Step::Region(i));
-            cursor = region.start + region.sectors();
-            if region.sectors() > 0 {
-                period = Some(region.sectors());
-            }
-        }
-        if size > cursor {
-            steps.push(Step::Fill {
-                count: size - cursor,
-                period,
-            });
-        }
-        Ok(steps)
+        steps(
+            &self.name,
+            self.header_sectors,
+            &self.regions,
+            self.end - self.start,
+        )
     }
 
     /// Each stream region's offset in the stream, by region index.
     pub fn stream_offsets(&self) -> Vec<Option<u64>> {
-        let mut at = 0;
-        self.regions
-            .iter()
-            .map(|region| match region.kind {
-                Kind::Content(_) => None,
-                _ => {
-                    let offset = at;
-                    at += region.len;
-                    Some(offset)
-                }
-            })
-            .collect()
+        stream_offsets(&self.regions)
     }
 }
 
@@ -435,145 +338,6 @@ pub(crate) fn parse_transforms(bytes: &[u8]) -> Result<Vec<Transform>> {
         .collect()
 }
 
-/// A region's bytes split where its titles' contents start and end, each
-/// piece with the transform it is under, if any: `(offset in the region,
-/// length, transform)`.
-pub(crate) fn pieces(
-    region_offset: u64,
-    len: u64,
-    transforms: &[Transform],
-) -> Result<Vec<(u64, u64, Option<usize>)>> {
-    let first = transforms.partition_point(|t| t.offset < region_offset);
-    let mut pieces = Vec::new();
-    let mut at = 0;
-    for (i, t) in transforms.iter().enumerate().skip(first) {
-        if t.offset >= region_offset + len {
-            break;
-        }
-        let start = t.offset - region_offset;
-        if start < at || start + t.len > len {
-            return Err(corrupt("a title's content overlaps its region's end"));
-        }
-        if start > at {
-            pieces.push((at, start - at, None));
-        }
-        pieces.push((start, t.len, Some(i)));
-        at = start + t.len;
-    }
-    if len > at {
-        pieces.push((at, len - at, None));
-    }
-    Ok(pieces)
-}
-
-/// Decrypt, or encrypt, `buf`, which is `at` bytes into the content `t`,
-/// with its title key. `iv` carries a raw content's chain from one call to
-/// the next; a hashed content is decrypted a block at a time, each block's
-/// data with its hash as IV, so `at` and `buf` are whole blocks.
-pub(crate) fn title_crypt(
-    t: &Transform,
-    key: &Key,
-    at: u64,
-    buf: &mut [u8],
-    iv: &mut [u8; 16],
-    decrypting: bool,
-) {
-    if !t.hashed {
-        if at == 0 {
-            *iv = disc::block_iv(t.index, 0);
-        }
-        match decrypting {
-            true => cbc_decrypt(key, iv, buf),
-            false => encrypt(key, iv, buf),
-        }
-        return;
-    }
-    for (i, block) in buf.chunks_mut(BLOCK as usize).enumerate() {
-        let slot = ((at / BLOCK + i as u64) % 16) as usize * 20;
-        let (area, data) = block.split_at_mut(HASHES);
-        if decrypting {
-            cbc_decrypt(key, &mut [0; 16], area);
-            let mut iv: [u8; 16] = area[slot..slot + 16].try_into().unwrap();
-            cbc_decrypt(key, &mut iv, data);
-        } else {
-            let mut iv: [u8; 16] = area[slot..slot + 16].try_into().unwrap();
-            encrypt(key, &mut [0; 16], area);
-            encrypt(key, &mut iv, data);
-        }
-    }
-}
-
-/// The title key in a ticket, a Wii U's or a vWii's, decrypted with
-/// `common`.
-pub(crate) fn ticket_key(ticket: &[u8], common: &Key) -> Result<Key> {
-    if ticket.len() < 0x1F2 {
-        return Err(corrupt("the ticket is cut short"));
-    }
-    let title_id = u64::from_be_bytes(ticket[0x1DC..0x1E4].try_into().unwrap());
-    let encrypted: [u8; 16] = ticket[0x1BF..0x1CF].try_into().unwrap();
-    Ok(decrypt_block(common, &ticket_iv(title_id), &encrypted))
-}
-
-/// The key among `keys` whose SHA-1 is `sha1`: the common key a title's
-/// ticket was encrypted with, as its transforms record it.
-pub(crate) fn common_by_sha1(keys: &[Key], sha1: &[u8; 20]) -> Result<Key> {
-    keys.iter()
-        .find(|key| Sha1::digest(key).as_slice() == sha1)
-        .copied()
-        .ok_or_else(|| {
-            Error::MissingKey(
-                "the common key of a title in the update partition, \
-                 the vWii common key for a vWii title"
-                    .into(),
-            )
-        })
-}
-
-/// Read `buf` of a region at `offset` in it, decrypted if the disc key
-/// encrypts it. `offset` and `buf`'s length are multiples of 16.
-fn read_plain(
-    image: &Image,
-    region_at: u64,
-    kind: Kind,
-    key: &Key,
-    offset: u64,
-    buf: &mut [u8],
-) -> Result<()> {
-    let iv_before = |at: u64| -> Result<[u8; 16]> {
-        let mut iv = [0; 16];
-        image.read_exact_at(&mut iv, region_at + at - 16)?;
-        Ok(iv)
-    };
-    match kind {
-        Kind::Content(_) | Kind::Plain => image.read_exact_at(buf, region_at + offset),
-        Kind::Raw(index) => {
-            let mut iv = match offset {
-                0 => disc::block_iv(index, 0),
-                _ => iv_before(offset)?,
-            };
-            image.read_exact_at(buf, region_at + offset)?;
-            cbc_decrypt(key, &mut iv, buf);
-            Ok(())
-        }
-        Kind::Blocks(index) => {
-            let mut done = 0;
-            while done < buf.len() {
-                let at = offset + done as u64;
-                let take = ((BLOCK - at % BLOCK) as usize).min(buf.len() - done);
-                let mut iv = match at % BLOCK {
-                    0 => disc::block_iv(index, at / BLOCK),
-                    _ => iv_before(at)?,
-                };
-                let chunk = &mut buf[done..done + take];
-                image.read_exact_at(chunk, region_at + at)?;
-                cbc_decrypt(key, &mut iv, chunk);
-                done += take;
-            }
-            Ok(())
-        }
-    }
-}
-
 /// A partition being collected: its layout, its titles' contents, and the
 /// title keys of their tickets.
 struct Part {
@@ -595,139 +359,33 @@ pub(crate) fn write<W: Write>(
     store: Option<&Path>,
     report: &mut dyn FnMut(u64),
 ) -> Result<()> {
-    let image = Rc::new(Image::open(disc_path)?);
-    disc::check_magic(&image)?;
-    if !image.size().is_multiple_of(SECTOR) {
-        return Err(Error::Unsupported(
-            "a disc whose size is not whole sectors".into(),
-        ));
-    }
-    let disc_key = disc::find_disc_key(&image, keys)?;
-    let partitions = disc::partitions(&image, &disc_key)?;
-    let game = DiscGame::open(disc_path, keys)?;
-    let common = {
-        let location = disc::fst_location(&image, &partitions[game.index])?;
-        let ticket = game.si_file("title.tik")?;
-        let (title_id, encrypted) = parse_ticket(&ticket)?;
-        wua::common_key(
-            &disc::read_fst(&image, location)?,
-            title_id,
-            &encrypted,
-            keys,
-        )?
-    };
-
-    let total = image.size() / SECTOR;
+    let Plan {
+        image,
+        disc_key,
+        header_sectors: first,
+        partitions,
+        ..
+    } = plan(disc_path, keys)?;
     let mut parts = Vec::with_capacity(partitions.len());
-    for (i, partition) in partitions.iter().enumerate() {
-        if !partition.offset.is_multiple_of(SECTOR) {
-            return Err(Error::Unsupported("a partition off a sector".into()));
-        }
-        let start = partition.offset / SECTOR;
-        let end = partitions
-            .get(i + 1)
-            .map_or(total, |next| next.offset / SECTOR);
-        if end < start || parts.last().is_some_and(|p: &Part| p.layout.end > start) {
-            return Err(Error::Unsupported("partitions out of order".into()));
-        }
-        let header = disc::partition_header(&image, partition)?;
+    for partition in partitions {
         let mut part = Part {
             layout: PartitionLayout {
-                name: partition.name.clone(),
-                start,
-                end,
-                header_sectors: header.sectors,
-                storage: Storage::Embedded,
+                name: partition.name,
+                start: partition.start,
+                end: partition.end,
+                header_sectors: partition.header_sectors,
+                storage: match partition.game {
+                    true => Storage::None,
+                    false => Storage::Embedded,
+                },
                 stream_sha1: [0; 20],
                 stream_len: 0,
-                regions: Vec::new(),
+                regions: partition.regions,
             },
-            transforms: Vec::new(),
-            keys: HashMap::new(),
-            tickets: HashMap::new(),
+            transforms: partition.transforms,
+            keys: partition.keys,
+            tickets: partition.tickets,
         };
-        let source = PartitionSource {
-            image: image.clone(),
-            offset: partition.offset,
-        };
-        if i == game.index {
-            part.layout.storage = Storage::None;
-            part.layout.regions = content_regions(
-                &game.fst,
-                &game.si_file("title.tmd")?,
-                header.sectors,
-                Kind::Content,
-            )?;
-        } else if header.disc_key {
-            let fst = Fst::open_in(
-                &partition.name,
-                disc::read_fst(&image, header.fst)?,
-                header.fst.1,
-                disc_key,
-                header.hashed,
-            )?;
-            let mut regions = vec![Region {
-                start: header.sectors,
-                len: u64::from(header.fst.1).div_ceil(SECTOR) * SECTOR,
-                kind: Kind::Raw(0),
-            }];
-            // Which region each cluster is, to place its files in the stream.
-            let mut cluster_regions = HashMap::new();
-            for (index, (offset, sectors, mode)) in fst.clusters().enumerate() {
-                if sectors == 0 {
-                    continue;
-                }
-                cluster_regions.insert(index as u16, regions.len());
-                regions.push(Region {
-                    start: offset / SECTOR,
-                    len: sectors * SECTOR,
-                    kind: match mode {
-                        Mode::Raw => Kind::Raw(index as u16),
-                        Mode::Blocks => Kind::Blocks(index as u16),
-                        // Hashed under the disc key: kept as it is.
-                        Mode::Hashed => Kind::Plain,
-                    },
-                });
-            }
-            let mut order: Vec<usize> = (0..regions.len()).collect();
-            order.sort_by_key(|&r| regions[r].start);
-            let sorted: Vec<Region> = order.iter().map(|&r| regions[r]).collect();
-            part.layout.regions = sorted;
-            let offsets = part.layout.stream_offsets();
-            let cluster_stream = |cluster: u16| {
-                let region = *cluster_regions.get(&cluster)?;
-                let sorted = order.iter().position(|&r| r == region)?;
-                offsets[sorted]
-            };
-            (part.transforms, part.keys, part.tickets) =
-                find_transforms(&fst, &source, &cluster_stream, &common, keys)?;
-        } else {
-            // Another game partition: its regions as they are.
-            let ticket = si_file(&game, i, "title.tik");
-            let tmd = si_file(&game, i, "title.tmd");
-            let regions = match (ticket, tmd) {
-                (Some(ticket), Some(tmd)) => {
-                    let title_key = ticket_key(&ticket, &common)?;
-                    Fst::open(
-                        &partition.name,
-                        disc::read_fst(&image, header.fst)?,
-                        header.fst.1,
-                        title_key,
-                    )
-                    .and_then(|fst| content_regions(&fst, &tmd, header.sectors, |_| Kind::Plain))
-                    .ok()
-                }
-                _ => None,
-            };
-            // Without its title's TMD, the whole partition is kept.
-            part.layout.regions = regions.unwrap_or_else(|| {
-                vec![Region {
-                    start: header.sectors,
-                    len: (end - start - header.sectors) * SECTOR,
-                    kind: Kind::Plain,
-                }]
-            });
-        }
         part.layout.steps()?;
         part.layout.stream_len = part
             .layout
@@ -738,7 +396,6 @@ pub(crate) fn write<W: Write>(
             .sum();
         parts.push(part);
     }
-    let first = partitions.first().map_or(total, |p| p.offset / SECTOR);
 
     let (info, patches) = check(&image, first, &parts, report)?;
 
@@ -966,217 +623,6 @@ fn emit(
         }
     }
     Ok(())
-}
-
-/// A partition's regions, from the TMD of its title and its FST: content 0,
-/// the FST, where the partition's header says, the others at their
-/// clusters, each as long as the TMD says.
-fn content_regions(
-    fst: &Fst,
-    tmd: &[u8],
-    fst_sector: u64,
-    kind: impl Fn(u16) -> Kind,
-) -> Result<Vec<Region>> {
-    let tmd = nus::parse_tmd(tmd)?;
-    let mut regions = tmd
-        .contents
-        .iter()
-        .map(|content| {
-            let start = match content.index {
-                0 => fst_sector,
-                index => {
-                    fst.cluster_offset(index)
-                        .ok_or_else(|| corrupt(format!("the FST has no cluster {index}")))?
-                        / SECTOR
-                }
-            };
-            Ok(Region {
-                start,
-                len: content.size,
-                kind: kind(content.index),
-            })
-        })
-        .collect::<Result<Vec<_>>>()?;
-    regions.sort_by_key(|r| r.start);
-    Ok(regions)
-}
-
-fn si_file(game: &DiscGame, index: usize, name: &str) -> Option<Vec<u8>> {
-    let path = format!("{index:02x}/{name}");
-    let file = game.si_fst.find(&path)?;
-    game.si_fst.read(&game.si_source, file).ok()
-}
-
-/// The titles in a partition whose contents can be decrypted with their
-/// title key: those whose folder holds their TMD and ticket, and `.app`s
-/// as long as the TMD says. `stream` places a cluster in the stream.
-fn find_transforms(
-    fst: &Fst,
-    source: &PartitionSource,
-    stream: &dyn Fn(u16) -> Option<u64>,
-    common: &Key,
-    candidates: &[Key],
-) -> Result<(Vec<Transform>, TitleKeys, Tickets)> {
-    let items = tree(fst);
-    let mut by_dir: HashMap<usize, HashMap<Vec<u8>, usize>> = HashMap::new();
-    for item in items.iter().filter(|i| !i.is_dir) {
-        by_dir
-            .entry(item.parent)
-            .or_default()
-            .insert(fst.name(item.entry)?.to_ascii_lowercase(), item.entry);
-    }
-    let place = |entry: usize| -> Option<u64> {
-        let (cluster, offset, _) = fst.extent(entry);
-        Some(stream(cluster)? + offset)
-    };
-    let mut transforms = Vec::new();
-    let mut keys = HashMap::new();
-    let mut tickets = HashMap::new();
-    // The vWii common key, once a vWii title has shown which it is.
-    let mut vwii: Option<Key> = None;
-    for files in by_dir.values() {
-        let (Some(&tmd), Some(&tik)) = (files.get(&b"title.tmd"[..]), files.get(&b"title.tik"[..]))
-        else {
-            continue;
-        };
-        let (Ok(tmd_bytes), Ok(ticket)) = (fst.read(source, tmd), fst.read(source, tik)) else {
-            continue;
-        };
-        // A vWii title's ticket names the vWii common key, its TMD a Wii's.
-        let is_vwii = ticket.get(0x1F1) == Some(&2);
-        let tmd = match is_vwii {
-            true => nus::parse_wii_tmd(&tmd_bytes),
-            false => nus::parse_tmd(&tmd_bytes),
-        };
-        let (Ok(tmd), Some(ticket_at)) = (tmd, place(tik)) else {
-            continue;
-        };
-        if ticket.len() < 0x1F2
-            || tmd.title_id != u64::from_be_bytes(ticket[0x1DC..0x1E4].try_into().unwrap())
-        {
-            continue;
-        }
-        let common = match is_vwii {
-            false => *common,
-            true => match find_vwii_common(fst, source, files, &tmd, &ticket, vwii, candidates)? {
-                Some(key) => {
-                    vwii = Some(key);
-                    key
-                }
-                // Without it, the title is kept as it is.
-                None => continue,
-            },
-        };
-        let key = ticket_key(&ticket, &common)?;
-        let common_sha1: [u8; 20] = Sha1::digest(common).into();
-        let mut found = Vec::new();
-        let mut valid = true;
-        for content in &tmd.contents {
-            let name = format!("{:08x}.app", content.id).into_bytes();
-            let Some(&entry) = files.get(&name) else {
-                continue;
-            };
-            let hashed = content.is_hashed();
-            let size = fst.extent(entry).2;
-            let Some(at) = place(entry) else { continue };
-            // A raw content's file is padded to the AES block size.
-            let expected = match hashed {
-                true => content.size,
-                false => content.size.next_multiple_of(16),
-            };
-            if size != expected
-                || size == 0
-                || !size.is_multiple_of(if hashed { BLOCK } else { 16 })
-                || !at.is_multiple_of(16)
-            {
-                continue;
-            }
-            // A hashed content's first block must check against its hash
-            // once decrypted, or the key isn't its title's.
-            if hashed {
-                let mut block = Vec::with_capacity(BLOCK as usize);
-                let mut first = true;
-                fst.read_with(source, entry, &mut |chunk| {
-                    if first {
-                        let take = (BLOCK as usize - block.len()).min(chunk.len());
-                        block.extend_from_slice(&chunk[..take]);
-                        first = block.len() < BLOCK as usize;
-                    }
-                    Ok(())
-                })?;
-                let (area, data) = block.split_at_mut(HASHES);
-                cbc_decrypt(&key, &mut [0; 16], area);
-                let mut iv: [u8; 16] = area[..16].try_into().unwrap();
-                cbc_decrypt(&key, &mut iv, data);
-                if Sha1::digest(&*data).as_slice() != &area[..20] {
-                    valid = false;
-                    break;
-                }
-            }
-            found.push(Transform {
-                offset: at,
-                len: size,
-                hashed,
-                index: content.index,
-                ticket: (ticket_at, ticket.len() as u32),
-                common: common_sha1,
-            });
-        }
-        if valid && !found.is_empty() {
-            let at = (ticket_at, ticket.len() as u32);
-            keys.insert(at, key);
-            tickets.insert(at, ticket);
-            transforms.extend(found);
-        }
-    }
-    transforms.sort_by_key(|t| t.offset);
-    Ok((transforms, keys, tickets))
-}
-
-/// The vWii common key among `candidates`, `known` first: the one whose
-/// title key, from the vWii title's `ticket`, decrypts the title's smallest
-/// content to what its Wii TMD hashes.
-fn find_vwii_common(
-    fst: &Fst,
-    source: &PartitionSource,
-    files: &HashMap<Vec<u8>, usize>,
-    tmd: &nus::Tmd,
-    ticket: &[u8],
-    known: Option<Key>,
-    candidates: &[Key],
-) -> Result<Option<Key>> {
-    let smallest = tmd
-        .contents
-        .iter()
-        .filter(|c| c.size > 0)
-        .filter_map(|c| {
-            let entry = *files.get(format!("{:08x}.app", c.id).as_bytes())?;
-            Some((c, entry))
-        })
-        .min_by_key(|(c, _)| c.size);
-    let Some((content, entry)) = smallest else {
-        return Ok(None);
-    };
-    let encrypted = fst.read(source, entry)?;
-    if (encrypted.len() as u64) < content.size || !encrypted.len().is_multiple_of(16) {
-        return Ok(None);
-    }
-    let opens = |common: &Key| -> Result<bool> {
-        let title_key = ticket_key(ticket, common)?;
-        let mut plain = encrypted.clone();
-        cbc_decrypt(
-            &title_key,
-            &mut disc::block_iv(content.index, 0),
-            &mut plain,
-        );
-        Ok(Sha1::digest(&plain[..content.size as usize]).as_slice() == &content.hash[..20])
-    };
-    for common in known.iter().chain(candidates) {
-        if opens(common)? {
-            return Ok(Some(*common));
-        }
-    }
-    Ok(None)
 }
 
 /// Read the disc through: its hashes, and the sectors the layout gets

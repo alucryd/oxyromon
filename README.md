@@ -256,6 +256,7 @@ On the Game Boy libraries this was 11-34% under their 7z files, against about th
 ISOs and cartridge ROMs, loose or in an archive, are written straight into the store, compressed once; a game is checked and its original replaced once its batch is committed, the whole run's with `ORE_STORE_BATCH` at `run`, each game's with `game`, which writes far more as the store's last segment is copied each time, so a run that fails before leaves the originals and the database as they were.
 CD games and CHDs are converted to standalone OREs first, then attached, which takes about twice as long.
 Turning `ORE_STORE` off makes the run's OREs standalone again.
+With `GROUP_SUBSYSTEMS` on, systems sharing a directory share its store, and its settings, `ORE_STORE`, `ORE_STORE_PARITY`, `ORE_STORE_BATCH` and `ORE_PROFILE`, are those of the base system, the one named as the directory is (`Nintendo - Wii U` for `Nintendo - Wii U (Digital) (CDN)`); a subsystem without its base system imported keeps its own.
 A thin ORE reads only beneath its store's directory, which `sort-roms`' folders are; `export-roms --format ORE` detaches it.
 
 Wii U discs are WUDs, which Redump lists as ISOs, so that is what converting back to the original gives; a `.wud` found in the wild is matched and renamed all the same.

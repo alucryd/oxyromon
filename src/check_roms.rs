@@ -63,6 +63,8 @@ pub async fn main(
         Some(system_names) => resolve_systems_by_name_like(connection, system_names).await,
         None => prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?,
     };
+    // A directory shared by systems holds one store, checked once
+    let mut checked_stores = HashSet::new();
     for system in systems {
         print_header(progress_bar, &format!("Checking \"{}\"", system.name));
         let games = select_games(connection, matches, system.id).await?;
@@ -81,7 +83,7 @@ pub async fn main(
         .await?;
         // The store its thin OREs share, whole, its parity repairing it
         let store = system_store(connection, &system).await?;
-        if store.is_dir() {
+        if store.is_dir() && checked_stores.insert(store.clone()) {
             check_store(progress_bar, &store).await?;
         }
         print_separator(progress_bar);

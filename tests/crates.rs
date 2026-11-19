@@ -35,6 +35,10 @@ const EMBEDDED: &[(&str, &[&str])] = &[
             "crates/wbfs-rs/tests/common",
         ],
     ),
+    (
+        "crates/wiiu",
+        &["crates/wux-rs/src/wiiu", "crates/wux-rs/tests/common"],
+    ),
 ];
 
 /// Every file under `dir`, by its path relative to `dir`, and its bytes.

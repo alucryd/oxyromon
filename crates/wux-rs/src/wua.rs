@@ -5,16 +5,16 @@
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
-use std::rc::Rc;
 
 use crate::Stats;
-use crate::crypto::{Key, decrypt_block};
-use crate::disc::{self, Fst, PartitionSource, Source};
+use crate::crypto::Key;
+use crate::disc::{Fst, Source};
 use crate::error::{Error, Result, corrupt};
 use crate::image::Image;
 use crate::io::{Scaled, finish, part};
 use crate::nus::{self, NusSource, Tmd};
 use crate::revert::{self, Meta, REVERT_DIR};
+pub(crate) use crate::wiiu::plan::{DiscGame, Item, parse_ticket, title_key, tree};
 use crate::zarchive::{self, Writer};
 
 /// Convert `inputs` to one WUA at `output`, a folder per title. Each input is
@@ -91,7 +91,7 @@ pub fn to_wua_with_tickets(
         total += nus::parse_tmd(&title.meta.tmd)?
             .contents
             .iter()
-            .map(|c| c.size)
+            .map(|c| c.stored_size())
             .sum::<u64>();
     }
     // The disc read through, then its partitions' streams.
@@ -187,83 +187,6 @@ pub fn title_id(input: &Path, keys: &[Key]) -> Result<(u64, u16)> {
     }
     let title = open_disc(input, keys)?;
     Ok((title.title_id, title.version))
-}
-
-/// A disc's game partition, opened: its SI partition, which holds its TMD,
-/// ticket and certificates, and its FST, with the title key its files
-/// decrypt with. Like Cemu, the first game (GM) partition.
-pub(crate) struct DiscGame {
-    pub si_fst: Fst,
-    pub si_source: PartitionSource,
-    /// The game partition's index, which names its folder in the SI partition.
-    pub index: usize,
-    pub fst: Fst,
-    /// Where the FST starts in the game partition: content 0, which the FST
-    /// itself places at the partition's start.
-    pub fst_start: u64,
-    pub source: PartitionSource,
-    pub title_key: Key,
-}
-
-impl DiscGame {
-    pub fn open(input: &Path, keys: &[Key]) -> Result<DiscGame> {
-        let image = Rc::new(Image::open(input)?);
-        disc::check_magic(&image)?;
-        let disc_key = disc::find_disc_key(&image, keys)?;
-        let partitions = disc::partitions(&image, &disc_key)?;
-        let find = |prefix: &str| {
-            partitions
-                .iter()
-                .position(|p| p.name.starts_with(prefix))
-                .ok_or_else(|| corrupt(format!("the disc has no {prefix} partition")))
-        };
-        let (si, gm) = (find("SI")?, find("GM")?);
-
-        let header = disc::partition_header(&image, &partitions[si])?;
-        let si_fst = Fst::open_in(
-            "the SI partition",
-            disc::read_fst(&image, header.fst)?,
-            header.fst.1,
-            disc_key,
-            header.hashed,
-        )?;
-        let si_source = PartitionSource {
-            image: image.clone(),
-            offset: partitions[si].offset,
-        };
-        let ticket = si_file(&si_fst, &si_source, gm, "title.tik")?;
-        let (title_id, encrypted_key) = parse_ticket(&ticket)?;
-        let location = disc::fst_location(&image, &partitions[gm])?;
-        let encrypted = disc::read_fst(&image, location)?;
-        let title_key = title_key(&encrypted, title_id, &encrypted_key, keys)?;
-        let fst = Fst::open("the game partition", encrypted, location.1, title_key)?;
-        Ok(DiscGame {
-            si_fst,
-            si_source,
-            index: gm,
-            fst,
-            fst_start: location.0 - partitions[gm].offset,
-            source: PartitionSource {
-                image,
-                offset: partitions[gm].offset,
-            },
-            title_key,
-        })
-    }
-
-    /// The game partition's file `name` in the SI partition: its `title.tmd`,
-    /// `title.tik` or `title.cert`.
-    pub fn si_file(&self, name: &str) -> Result<Vec<u8>> {
-        si_file(&self.si_fst, &self.si_source, self.index, name)
-    }
-}
-
-fn si_file(fst: &Fst, source: &PartitionSource, index: usize, name: &str) -> Result<Vec<u8>> {
-    let path = format!("{index:02x}/{name}");
-    let file = fst
-        .find(&path)
-        .ok_or_else(|| corrupt(format!("the SI partition has no {path}")))?;
-    fst.read(source, file)
 }
 
 /// A disc's game, named after its code/app.xml, as Cemu names it.
@@ -395,52 +318,6 @@ pub fn ticket_title_id(ticket: &[u8]) -> Result<u64> {
     Ok(parse_ticket(ticket)?.0)
 }
 
-/// The title ID and encrypted title key in a ticket.
-pub(crate) fn parse_ticket(ticket: &[u8]) -> Result<(u64, [u8; 16])> {
-    if ticket.len() < 0x1E8 {
-        return Err(corrupt("the ticket is cut short"));
-    }
-    let title_id = u64::from_be_bytes(ticket[0x1DC..0x1E4].try_into().unwrap());
-    if title_id >> 48 != 5 {
-        return Err(corrupt(format!("the ticket's title ID is {title_id:016x}")));
-    }
-    Ok((title_id, ticket[0x1BF..0x1CF].try_into().unwrap()))
-}
-
-/// The title key, decrypted by whichever of `keys` is the common key: the one
-/// whose title key decrypts the title's FST.
-pub(crate) fn title_key(
-    fst: &[u8],
-    title_id: u64,
-    encrypted_key: &[u8; 16],
-    keys: &[Key],
-) -> Result<Key> {
-    let common = common_key(fst, title_id, encrypted_key, keys)?;
-    Ok(decrypt_block(&common, &ticket_iv(title_id), encrypted_key))
-}
-
-/// Which of `keys` is the Wii U common key: the one whose title key, from
-/// the ticket, decrypts the title's FST.
-pub(crate) fn common_key(
-    fst: &[u8],
-    title_id: u64,
-    encrypted_key: &[u8; 16],
-    keys: &[Key],
-) -> Result<Key> {
-    let iv = ticket_iv(title_id);
-    keys.iter()
-        .find(|common| disc::opens_fst(fst, &decrypt_block(common, &iv, encrypted_key)))
-        .copied()
-        .ok_or_else(|| Error::MissingKey("none of the keys is the Wii U common key".into()))
-}
-
-/// The IV a title key is encrypted with: the title ID.
-pub(crate) fn ticket_iv(title_id: u64) -> [u8; 16] {
-    let mut iv = [0; 16];
-    iv[..8].copy_from_slice(&title_id.to_be_bytes());
-    iv
-}
-
 /// The hex value of `<tag ...>value</tag>` in an app.xml.
 fn xml_hex(xml: &str, tag: &str) -> Result<u64> {
     let missing = || corrupt(format!("code/app.xml has no {tag}"));
@@ -449,42 +326,6 @@ fn xml_hex(xml: &str, tag: &str) -> Result<u64> {
     let value = &rest[rest.find('>').ok_or_else(missing)? + 1..];
     let value = value[..value.find('<').ok_or_else(missing)?].trim();
     u64::from_str_radix(value, 16).map_err(|_| corrupt(format!("code/app.xml's {tag} is {value}")))
-}
-
-/// An FST entry to write, under the directory at FST index `parent` (0 for
-/// the root).
-pub(crate) struct Item {
-    pub entry: usize,
-    pub parent: usize,
-    pub is_dir: bool,
-}
-
-/// The FST's entries in order, links and what's under them left out.
-pub(crate) fn tree(fst: &Fst) -> Vec<Item> {
-    let mut items = Vec::new();
-    // Directories we're in: their index and the index past their end.
-    let mut stack = vec![(0, fst.entries.len())];
-    let mut i = 1;
-    while i < fst.entries.len() {
-        while i >= stack.last().unwrap().1 {
-            stack.pop();
-        }
-        let entry = &fst.entries[i];
-        if entry.is_link() {
-            i = if entry.is_dir() { entry.end() } else { i + 1 };
-            continue;
-        }
-        items.push(Item {
-            entry: i,
-            parent: stack.last().unwrap().0,
-            is_dir: entry.is_dir(),
-        });
-        if entry.is_dir() {
-            stack.push((i, entry.end()));
-        }
-        i += 1;
-    }
-    items
 }
 
 #[cfg(test)]

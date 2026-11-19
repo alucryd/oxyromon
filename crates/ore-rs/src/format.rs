@@ -32,6 +32,9 @@ pub const MEDIA_CD_MIXED: u16 = 33;
 /// sector 45,000, of 2352-byte sectors as a CD's.
 pub const MEDIA_GD_ROM: u16 = 48;
 pub const MEDIA_DVD_2048: u16 = 64;
+/// A title as a CDN delivers it, its files: a Wii U eShop game, update or
+/// DLC as a NUS folder.
+pub const MEDIA_CDN_TITLE: u16 = 97;
 
 /// Index record kinds.
 pub const KIND_ZERO: u8 = 2;
@@ -252,6 +255,7 @@ impl Header {
             MEDIA_CD_MIXED,
             MEDIA_GD_ROM,
             MEDIA_DVD_2048,
+            MEDIA_CDN_TITLE,
         ]
         .contains(&header.media_class)
         {
@@ -396,10 +400,22 @@ pub struct Media {
     /// ones, as the dump has it.
     #[serde(default, skip_serializing_if = "Option::is_none", with = "serde_bytes")]
     pub sbi: Option<Vec<u8>>,
+    /// An eShop title's ticket, as its folder has it: what opens its
+    /// contents, which no DAT lists.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ticket: Option<Sidecar>,
     pub size: u64,
     pub areas: Vec<Area>,
     pub class: u16,
     pub platform: String,
+}
+
+/// A file kept beside a title's own, under its name.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Sidecar {
+    pub name: String,
+    #[serde(with = "serde_bytes")]
+    pub bytes: Vec<u8>,
 }
 
 /// A stretch of the disc, the areas tiling it, listed in the order their
@@ -432,6 +448,60 @@ pub struct Area {
     /// A partition's hash blocks recomputing does not give back.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub exceptions: Vec<Exception>,
+    /// A Wii U region's encryption, its bytes stored decrypted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wiiu: Option<Wiiu>,
+    /// A repeat's period: the disc as it is this many bytes before, a
+    /// whole number of Wii U sectors.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub period: Option<u64>,
+}
+
+/// A Wii U disc's sector, which its repeats count in.
+pub const WIIU_SECTOR: u64 = 0x8000;
+
+/// How a Wii U region is encrypted: by the disc key, the whole region, and
+/// by title keys, the titles' contents within it, the latter first.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct Wiiu {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub outer: Option<Layer>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub pieces: Vec<Piece>,
+}
+
+/// A title's content within a region, from `offset` in it, `len` long.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Piece {
+    pub offset: u64,
+    pub len: u64,
+    pub layer: Layer,
+}
+
+/// One AES-128-CBC encryption: its key, how it chains, and the cluster or
+/// content index its IVs start from.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Layer {
+    pub mode: LayerMode,
+    #[serde(with = "serde_bytes")]
+    pub key: Vec<u8>,
+    pub index: u16,
+    /// A chain's IV at each 64 KiB from its start but the first: the
+    /// ciphertext block before it, so a read starts at any of them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty", with = "serde_bytes")]
+    pub ivs: Vec<u8>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum LayerMode {
+    /// One chain, from the index's IV.
+    Chain,
+    /// 64 KiB blocks, each a chain of its own from its IV.
+    Blocks,
+    /// 64 KiB blocks of 1 KiB of hashes, a chain from a zero IV, then data,
+    /// a chain from the block's own hash.
+    Hashed,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -447,6 +517,11 @@ pub enum AreaKind {
     CdData,
     /// A CD audio track: its PCM.
     CdAudio,
+    /// A Wii U region, stored decrypted: its `wiiu` encrypts it back.
+    Wiiu,
+    /// The disc as it is `period` bytes before: a Wii U disc's mastering
+    /// fills a partition's free space with the region before it.
+    Repeat,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

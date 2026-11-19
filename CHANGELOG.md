@@ -6,6 +6,11 @@
 - ORE takes Dreamcast GD-ROMs, from their Redump cue sheet or CHD
 - ORE takes PlayStation 2 DVDs too, and converts from CHD: a DVD's ISO, or a CD's tracks with its cue sheet; a disc of another system is skipped rather than failing the run
 - ORE takes PSP UMDs, from their ISO or CHD, as it takes PlayStation 2 DVDs
+- ORE takes Wii U discs, from their ISO, WUD, WUX or lossless WUA, and back as the ISO their DAT names; and Wii U eShop titles, games, updates and DLC, from their NUS folder, loose or in an archive, and back as that folder. Each is stored decrypted, so it compresses and, in a store, an update partition is kept once whatever the disc and version; a title's ticket goes in its ORE, the one `import-roms` kept for it when its folder has none, and a title without one is kept as it is. Converting needs the Wii U keys `import-keys` stores; reading an ORE back needs none
+- With `GROUP_SUBSYSTEMS`, a subsystem sharing its base system's directory, and so its ORE store, follows the base system's `ORE_STORE`, `ORE_STORE_PARITY`, `ORE_STORE_BATCH` and `ORE_PROFILE`, so systems set apart no longer set the store back to their own each run
+- `check-roms` checks an ORE store shared by systems, as `GROUP_SUBSYSTEMS` gives a system's DATs, once a run rather than once a system
+- `convert-roms --format ORE --recompress` writes a Wii U title's ORE again through its NUS folder, taking the ticket `import-roms` kept for it since when the ORE has none, so a DLC converted without its ticket is decrypted once it has one
+- `import-roms` imports a Wii U title's ORE made elsewhere, matched by the NUS folder it holds as that folder is, by its TMD then its files within the game, and renamed after it; a disc's ORE already imported
 - ORE takes Game Boy, Game Boy Color, Game Boy Advance, DS, N64 and Mega Drive ROMs, loose or in an archive, and gives them back under their name
 - ORE takes every ROM of 30 cartridge systems, known by their DAT's name, NES, SNES, PC Engine, Master System and Atari's among them, headerless or not, BIOSes included; a Game Boy, Game Boy Advance, DS, N64 or Mega Drive ROM whose header disagrees is taken with a warning
 - With `ORE_STORE` on, ISOs and cartridge ROMs are written straight into the store, compressed once rather than twice, each game checked and persisted once its batch is committed
@@ -18,6 +23,7 @@
 
 ## Fixes
 
+- A Wii U update or DLC with a content of a size off the AES block, as *Nintendo Land*'s update has, converts to WUA, where wux-rs refused it as corrupt
 - A Wii U update whose CDN DAT entry lists an older version's ticket besides the newest, as *Mario Kart 8*'s, *Splatoon*'s and *Super Smash Bros.*'s do, counts as complete with its newest TMD and ticket, which are all Nintendo's servers deliver; the older ticket was required and the update stayed incomplete
 - Fixed `import-dats` moving a cue sheet to `Trash` when an update renames the tracks it names, as Redump renames a game, which left the game incomplete; the cue sheet is now rewritten with the new names and kept when the DAT lists it
 - Converting CHDs converts a clone before the CHD it reads from, in ORE as in every other format, and leaves a CHD whose clones are still on disk alone: a clone imported from outside keeps its link to its parent in its header alone, and converting its parent first used to leave it unreadable

@@ -75,6 +75,13 @@ mod segment;
 mod store;
 mod vag;
 mod video;
+// The Wii U disc specifics, shared with wux-rs: the wiiu crate's source,
+// GPL-3.0-or-later, which only writing needs, reached outside this crate
+#[allow(dead_code, unused_imports)]
+#[cfg(feature = "write")]
+#[path = "../../wiiu/src/lib.rs"]
+mod wiiu;
+mod wiiu_crypt;
 #[cfg(feature = "write")]
 mod writer;
 mod xa;
@@ -95,5 +102,5 @@ pub use store::{STORE_DIR, StoreChecked, StoreOptions, check_store, find_store, 
 #[cfg(feature = "write")]
 pub use writer::{
     CARTRIDGE_PLATFORMS, Options, StoreBatch, attach, cartridge_header_matches, compress,
-    compress_to_store, default_codec, detach, replace_cue,
+    compress_to_store, default_codec, detach, is_title_folder, replace_cue,
 };

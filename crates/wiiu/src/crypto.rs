@@ -37,3 +37,17 @@ pub fn decrypt_block(key: &Key, iv: &[u8; 16], block: &[u8; 16]) -> [u8; 16] {
     cbc_decrypt(key, &mut iv.clone(), &mut out);
     out
 }
+
+/// Encrypt `buf` in place with AES-128-CBC, continuing the chain from `iv`.
+pub fn encrypt(key: &Key, iv: &mut [u8; 16], buf: &mut [u8]) {
+    use aes::Aes128;
+    use aes::cipher::{BlockCipherEncrypt, KeyInit};
+    let cipher = Aes128::new(key.into());
+    for block in buf.as_chunks_mut::<16>().0 {
+        for (b, c) in block.iter_mut().zip(iv.iter()) {
+            *b ^= c;
+        }
+        cipher.encrypt_block(block.into());
+        *iv = *block;
+    }
+}

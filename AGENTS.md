@@ -148,8 +148,8 @@ repository checked out there, ignored by this one), under GPL-3.0+ but
 for its reader, what it builds without its default `write` feature, MIT OR
 Apache-2.0 file by file (SPDX headers), so smelt can be linked anywhere:
 keep GPL code, and code ported from GPL projects, out of those files;
-used by oxyromon for GameCube, Wii, PlayStation 2 and PSP discs, CDs, GD-ROMs
-and cartridge ROMs,
+used by oxyromon for GameCube, Wii, Wii U, PlayStation 2 and PSP discs, Wii U
+eShop titles, CDs, GD-ROMs and cartridge ROMs,
 an ORE a disc, but its CLI not
 shipped by `dist.sh` while the format is a draft. Every crate follows these, and a new one must too:
 
@@ -207,8 +207,11 @@ format crates, lives in a small crate of its own that is never published:
 `gcwii`, the GameCube and Wii disc specifics shared by `rvz-rs`,
 `wbfs-rs` and `ore-rs`, and `cd`, the CD-ROM sector model, EDC and ECC,
 cue sheets and ISO 9660, embedded by `chd-rs` and `ore-rs`, BSD-3-Clause
-so every host may embed it. Each format crate embeds it, so that the crate it publishes holds
-a copy and stands alone:
+so every host may embed it, and `wiiu`, the Wii U disc model, its crypto,
+TMDs, tickets, keys, the WUD and WUX image and a disc's layout, embedded by
+`wux-rs` and `ore-rs`, under its GPL-3.0+, which only ore-rs's writer
+embeds. Each format crate embeds it, so that the crate it publishes
+holds a copy and stands alone:
 
 - **Copied, not depended on.** `crates/<host>/src/<embedded>` is a copy of
   `crates/<embedded>/src`, declared in the host's `lib.rs` as

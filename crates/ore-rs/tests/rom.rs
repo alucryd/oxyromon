@@ -417,3 +417,16 @@ fn a_stores_parity_is_changed_and_its_segments_sealed_again_by_a_compaction() {
     }
     assert!(ore_rs::set_parity(&store, 17).is_err());
 }
+
+#[test]
+fn a_folder_takes_zstd() {
+    // Enough names that the folder's size passes for a cartridge's
+    let dir = tempfile::tempdir().unwrap();
+    for i in 0..64 {
+        std::fs::write(dir.path().join(format!("{i:08x}.h3")), []).unwrap();
+    }
+    assert_eq!(
+        ore_rs::default_codec(dir.path(), None).unwrap(),
+        ore_rs::Codec::Zstd
+    );
+}

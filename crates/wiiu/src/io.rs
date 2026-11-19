@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use crate::error::Result;
+use super::error::Result;
 
 /// Where `output` is written until it is complete: next to it, so that moving
 /// it into place is a rename, and an existing file is only ever replaced by a
@@ -114,7 +114,7 @@ pub fn read_exact_at(file: &File, buf: &mut [u8], offset: u64) -> io::Result<()>
 }
 
 /// Bytes reported as a share of `budget`, their sum being `total`.
-pub(crate) struct Scaled<'a> {
+pub struct Scaled<'a> {
     report: &'a mut dyn FnMut(u64),
     total: u64,
     budget: u64,
@@ -123,7 +123,7 @@ pub(crate) struct Scaled<'a> {
 }
 
 impl<'a> Scaled<'a> {
-    pub(crate) fn new(report: &'a mut dyn FnMut(u64), total: u64, budget: u64) -> Self {
+    pub fn new(report: &'a mut dyn FnMut(u64), total: u64, budget: u64) -> Self {
         Scaled {
             report,
             total,
@@ -133,7 +133,7 @@ impl<'a> Scaled<'a> {
         }
     }
 
-    pub(crate) fn add(&mut self, n: u64) {
+    pub fn add(&mut self, n: u64) {
         self.done = (self.done + n).min(self.total);
         let scaled = (u128::from(self.done) * u128::from(self.budget)
             / u128::from(self.total.max(1))) as u64;
@@ -142,7 +142,7 @@ impl<'a> Scaled<'a> {
     }
 
     /// Report whatever is left of the budget: all of it when nothing was added.
-    pub(crate) fn finish(&mut self) {
+    pub fn finish(&mut self) {
         (self.report)(self.budget - self.reported);
         self.reported = self.budget;
     }

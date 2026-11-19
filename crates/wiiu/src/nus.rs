@@ -9,9 +9,9 @@
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
-use crate::disc::Source;
-use crate::error::{Result, corrupt};
-use crate::io::read_at;
+use super::disc::Source;
+use super::error::{Result, corrupt};
+use super::io::read_at;
 
 /// A content's flag: its file is made of hashed blocks.
 pub const HASHED: u16 = 0x0002;
@@ -33,6 +33,15 @@ impl Content {
     /// Whether its file is made of hashed blocks, and has an H3 file.
     pub fn is_hashed(&self) -> bool {
         self.flags & HASHED != 0
+    }
+
+    /// The bytes its file holds: an unhashed content padded to the AES
+    /// block, as its TMD size need not be a multiple of 16.
+    pub fn stored_size(&self) -> u64 {
+        match self.is_hashed() {
+            true => self.size,
+            false => self.size.next_multiple_of(16),
+        }
     }
 }
 

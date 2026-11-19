@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Reading an ORE as the disc it holds.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
@@ -24,6 +24,7 @@ use super::wii::{
     self, BLOCK_DATA_SIZE, BLOCK_TOTAL_SIZE, BLOCKS_PER_GROUP, BlockData, GROUP_DATA_SIZE,
     GROUP_TOTAL_SIZE, HashBlock,
 };
+use super::wiiu_crypt::Layers;
 
 /// What a core decodes at a time when writing a disc out: four Wii groups.
 const SLICE: u64 = 4 * GROUP_TOTAL_SIZE;
@@ -60,6 +61,10 @@ struct AreaIndex {
     map: Option<Arc<SectorMap>>,
     key: Option<Key>,
     exceptions: HashMap<u64, HashBlock>,
+    /// A Wii U region's encryption.
+    wiiu: Option<Arc<Layers>>,
+    /// A repeat's period.
+    period: u64,
     /// Where each record starts in the area's stored stream, and where the
     /// last ends.
     starts: Vec<u64>,
@@ -115,6 +120,8 @@ pub struct Reader {
     store: Option<StoreReader>,
     /// The Wii group last encrypted: its area, its number, its bytes.
     wii: Option<(usize, u64, Vec<u8>)>,
+    /// The Wii U span last encrypted: its area, where it starts, its bytes.
+    wiiu: Option<(usize, u64, Vec<u8>)>,
 }
 
 fn corrupt(what: &str) -> Error {
@@ -251,8 +258,28 @@ impl Reader {
                 (AreaKind::CdData, None) => return Err(corrupt("a CD data track without its map")),
                 _ => None,
             };
+            let wiiu = match (area.kind, &area.wiiu) {
+                (AreaKind::Wiiu, Some(wiiu)) => Some(Arc::new(Layers::new(wiiu, area.len)?)),
+                (AreaKind::Wiiu, None) => return Err(corrupt("a Wii U region without its layers")),
+                _ => None,
+            };
+            // A repeat reads the disc a whole number of sectors before it,
+            // never itself
+            let period = match (area.kind, area.period) {
+                (AreaKind::Repeat, Some(period))
+                    if period > 0
+                        && period.is_multiple_of(WIIU_SECTOR)
+                        && period <= area.start
+                        && area.records == 0 =>
+                {
+                    period
+                }
+                (AreaKind::Repeat, _) => return Err(corrupt("a repeat of a bad period")),
+                _ => 0,
+            };
             let stored_len = match area.kind {
-                AreaKind::Raw | AreaKind::CdAudio => area.len,
+                AreaKind::Raw | AreaKind::CdAudio | AreaKind::Wiiu => area.len,
+                AreaKind::Repeat => 0,
                 AreaKind::CdData => map.as_ref().unwrap().stored_len(),
                 AreaKind::WiiPartition => {
                     if !area.len.is_multiple_of(BLOCK_TOTAL_SIZE) {
@@ -262,7 +289,14 @@ impl Reader {
                 }
             };
             let key = match (area.kind, &area.title_key) {
-                (AreaKind::Raw | AreaKind::CdData | AreaKind::CdAudio, _) => None,
+                (
+                    AreaKind::Raw
+                    | AreaKind::CdData
+                    | AreaKind::CdAudio
+                    | AreaKind::Wiiu
+                    | AreaKind::Repeat,
+                    _,
+                ) => None,
                 (AreaKind::WiiPartition, Some(key)) => Some(
                     Key::try_from(key.as_slice())
                         .map_err(|_| corrupt("a title key not of 16 bytes"))?,
@@ -339,6 +373,8 @@ impl Reader {
                 map,
                 key,
                 exceptions,
+                wiiu,
+                period,
                 starts,
                 records,
             });
@@ -408,6 +444,7 @@ impl Reader {
             cache: Cache::default(),
             store: None,
             wii: None,
+            wiiu: None,
         })
     }
 
@@ -428,6 +465,7 @@ impl Reader {
                 .as_ref()
                 .map(|store| StoreReader::new(store.dir().to_path_buf(), store.index.clone())),
             wii: None,
+            wiiu: None,
         })
     }
 
@@ -590,6 +628,12 @@ impl Reader {
         self.meta.media.cue.is_some()
     }
 
+    /// Whether it holds a title's files, a Wii U eShop title's NUS folder,
+    /// which [`decompress`] writes into its output, a folder.
+    pub fn is_title(&self) -> bool {
+        self.meta.media.class == MEDIA_CDN_TITLE
+    }
+
     /// A CD's tracks, as its cue sheet and its areas give them, in order;
     /// none for what is not a CD.
     pub fn tracks(&self) -> Result<Vec<Track>> {
@@ -678,6 +722,9 @@ impl Reader {
         &self,
         output: &Path,
     ) -> Result<(Vec<(PathBuf, u64, u64)>, Vec<(PathBuf, Vec<u8>)>)> {
+        if self.is_title() {
+            return self.title_outputs(output);
+        }
         let Some(cue) = &self.meta.media.cue else {
             return Ok((vec![(output.to_path_buf(), 0, self.size())], Vec::new()));
         };
@@ -705,6 +752,43 @@ impl Reader {
         Ok((tracks, whole))
     }
 
+    /// A title's files in the folder `output`, each from where its areas
+    /// start to where they end, and its ticket, written whole.
+    #[allow(clippy::type_complexity)]
+    fn title_outputs(
+        &self,
+        output: &Path,
+    ) -> Result<(Vec<(PathBuf, u64, u64)>, Vec<(PathBuf, Vec<u8>)>)> {
+        let mut files: Vec<(PathBuf, u64, u64)> = Vec::new();
+        let mut names = HashSet::new();
+        // A file in the folder, and nowhere else, once
+        let mut path = |name: &str| {
+            let plain = Path::new(name)
+                .file_name()
+                .is_some_and(|plain| plain == std::ffi::OsStr::new(name));
+            if !plain || !names.insert(name.to_owned()) {
+                return Err(Error::Corrupt(format!("a title's file name: {name:?}")));
+            }
+            Ok(output.join(name))
+        };
+        let mut areas: Vec<&Area> = self.meta.media.areas.iter().collect();
+        areas.sort_by_key(|area| area.start);
+        for area in areas {
+            let name = area.file.as_deref().unwrap_or_default();
+            match files.last_mut() {
+                Some((last, _, len)) if last.file_name() == Some(std::ffi::OsStr::new(name)) => {
+                    *len += area.len
+                }
+                _ => files.push((path(name)?, area.start, area.len)),
+            }
+        }
+        let mut whole = Vec::new();
+        if let Some(ticket) = &self.meta.media.ticket {
+            whole.push((path(&ticket.name)?, ticket.bytes.clone()));
+        }
+        Ok((files, whole))
+    }
+
     /// Read the disc at `offset`, failing past its end.
     pub fn read_at(&mut self, mut offset: u64, mut buf: &mut [u8]) -> Result<()> {
         if offset
@@ -728,6 +812,27 @@ impl Reader {
                     self.read_stored(index, within, &mut buf[..length])?
                 }
                 AreaKind::CdData => self.read_sectors(index, within, &mut buf[..length])?,
+                AreaKind::Wiiu => {
+                    let to = within + length as u64;
+                    if !matches!(&self.wiiu, Some((a, lo, bytes))
+                        if *a == index && *lo <= within && lo + bytes.len() as u64 >= to)
+                    {
+                        let bytes = self.encrypt_span(index, within, to)?;
+                        self.wiiu = Some((index, bytes.0, bytes.1));
+                    }
+                    let (_, lo, bytes) = self.wiiu.as_ref().unwrap();
+                    let from = (within - lo) as usize;
+                    buf[..length].copy_from_slice(&bytes[from..from + length]);
+                }
+                AreaKind::Repeat => {
+                    // The disc a period before, at most a period at a time
+                    let period = area.period;
+                    let length = length.min(period as usize);
+                    self.read_at(offset - period, &mut buf[..length])?;
+                    buf = &mut buf[length..];
+                    offset += length as u64;
+                    continue;
+                }
                 AreaKind::WiiPartition => {
                     let group = within / GROUP_TOTAL_SIZE;
                     if !matches!(&self.wii, Some((a, g, _)) if *a == index && *g == group) {
@@ -782,6 +887,24 @@ impl Reader {
             out += length;
         }
         Ok(())
+    }
+
+    /// A Wii U region's bytes from `from` to `to`, encrypted as the disc
+    /// has them, and the outer layer's 64 KiB blocks around them: where
+    /// they start, and their bytes.
+    fn encrypt_span(&mut self, area: usize, from: u64, to: u64) -> Result<(u64, Vec<u8>)> {
+        let layers = self.areas[area]
+            .wiiu
+            .clone()
+            .expect("a Wii U region has its layers");
+        let span = layers.span(self.areas[area].len, from, to);
+        let mut bytes = vec![0; (span.hi - span.lo) as usize];
+        self.read_stored(area, span.lo, &mut bytes)?;
+        layers.encrypt(&span, &mut bytes);
+        // What the inner blocks needed around it is the pieces' alone
+        bytes.truncate((span.to - span.lo) as usize);
+        bytes.drain(..(span.from - span.lo) as usize);
+        Ok((span.from, bytes))
     }
 
     /// A Wii group as the disc holds it: its data hashed, the exceptions put
@@ -863,7 +986,11 @@ impl Reader {
         let area = &self.areas[area];
         match area.kind {
             AreaKind::Raw => area.start,
-            AreaKind::WiiPartition | AreaKind::CdData | AreaKind::CdAudio => 0,
+            AreaKind::WiiPartition
+            | AreaKind::CdData
+            | AreaKind::CdAudio
+            | AreaKind::Wiiu
+            | AreaKind::Repeat => 0,
         }
     }
 
@@ -888,6 +1015,11 @@ pub fn decompress(input: &Path, output: &Path, progress: &mut dyn FnMut(u64)) ->
     // A reader a core, each decoding slices of the disc, written in order
     let first = Reader::open(input)?;
     let (files, whole) = first.outputs(output)?;
+    // A title goes in a folder, made for it and gone if it fails
+    let made = first.is_title() && !output.exists();
+    if made {
+        std::fs::create_dir_all(output)?;
+    }
     let (size, logical_hash) = (first.size(), first.header.logical_hash);
     let mut readers = vec![];
     for _ in 1..rayon::current_num_threads() {
@@ -978,6 +1110,9 @@ pub fn decompress(input: &Path, output: &Path, progress: &mut dyn FnMut(u64)) ->
     if result.is_err() {
         for path in &paths {
             let _ = std::fs::remove_file(io::part(path));
+        }
+        if made {
+            let _ = std::fs::remove_dir(output);
         }
     }
     result
