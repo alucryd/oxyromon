@@ -3267,6 +3267,7 @@ async fn to_ore(
             .iter()
             .any(|(_, source)| source.path.parent() != Some(folder.as_path()))
         {
+            print_skip(progress_bar, "Title files not in one folder, skipping");
             continue;
         }
         let ore_romfile = title_to_ore(

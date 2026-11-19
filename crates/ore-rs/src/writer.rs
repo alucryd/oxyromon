@@ -983,20 +983,7 @@ fn encode(
                 identity("md5", md5.finalize().to_vec()),
                 identity("crc-32", crc32.finalize().to_be_bytes().to_vec()),
             ],
-            // Filled in as the ORE is finished
-            provenance: Provenance {
-                tool: String::new(),
-                params: Params {
-                    codec: options.codec,
-                    group: 0,
-                    level: 0,
-                    chunker: Chunker {
-                        max: 0,
-                        min: 0,
-                        name: String::new(),
-                    },
-                },
-            },
+            provenance: placeholder_provenance(options.codec),
         };
         Ok(Stats {
             input_size: size,
@@ -1443,20 +1430,7 @@ fn encode_cd(
                 step("mincdc-dedup", Some(encoder.deduped)),
             ],
             identity,
-            // Filled in as the ORE is finished
-            provenance: Provenance {
-                tool: String::new(),
-                params: Params {
-                    codec: options.codec,
-                    group: 0,
-                    level: 0,
-                    chunker: Chunker {
-                        max: 0,
-                        min: 0,
-                        name: String::new(),
-                    },
-                },
-            },
+            provenance: placeholder_provenance(options.codec),
         };
         Ok(Stats {
             input_size: size,
@@ -1538,6 +1512,23 @@ fn file_identity(name: &str, crc32: crc32fast::Hasher, md5: Md5, sha1: Sha1) -> 
         identity("md5", md5.finalize().to_vec()),
         identity("crc-32", crc32.finalize().to_be_bytes().to_vec()),
     ]
+}
+
+/// A Provenance filled in as the ORE is finished.
+fn placeholder_provenance(codec: Codec) -> Provenance {
+    Provenance {
+        tool: String::new(),
+        params: Params {
+            codec,
+            group: 0,
+            level: 0,
+            chunker: Chunker {
+                max: 0,
+                min: 0,
+                name: String::new(),
+            },
+        },
+    }
 }
 
 fn step(id: &str, bytes: Option<u64>) -> Step {

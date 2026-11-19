@@ -435,20 +435,7 @@ pub(super) fn encode(
             identity("md5", md5.finalize().to_vec()),
             identity("crc-32", crc32.finalize().to_be_bytes().to_vec()),
         ],
-        // Filled in as the ORE is finished
-        provenance: Provenance {
-            tool: String::new(),
-            params: Params {
-                codec: options.codec,
-                group: 0,
-                level: 0,
-                chunker: Chunker {
-                    max: 0,
-                    min: 0,
-                    name: String::new(),
-                },
-            },
-        },
+        provenance: placeholder_provenance(options.codec),
     };
     Ok(Stats {
         input_size: size,
@@ -629,20 +616,7 @@ pub(super) fn encode_title(
             step("mincdc-dedup", Some(encoder.deduped)),
         ],
         identity,
-        // Filled in as the ORE is finished
-        provenance: Provenance {
-            tool: String::new(),
-            params: Params {
-                codec: options.codec,
-                group: 0,
-                level: 0,
-                chunker: Chunker {
-                    max: 0,
-                    min: 0,
-                    name: String::new(),
-                },
-            },
-        },
+        provenance: placeholder_provenance(options.codec),
     };
     Ok(Stats {
         input_size: size,

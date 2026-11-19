@@ -621,8 +621,11 @@ pub async fn wiiu_to_ore(
     sink: Option<&mut StoreSink>,
 ) -> Result<OreRomfile> {
     let size = match source.is_dir() {
+        // files only, as orers counts them
         true => std::fs::read_dir(source)?
-            .map(|entry| entry.and_then(|entry| entry.metadata()).map(|m| m.len()))
+            .map(|entry| entry.and_then(|entry| entry.metadata()))
+            .filter(|metadata| metadata.as_ref().map_or(true, |m| m.is_file()))
+            .map(|metadata| metadata.map(|m| m.len()))
             .sum::<std::io::Result<u64>>()?,
         false => source.metadata()?.len(),
     };
