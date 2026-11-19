@@ -29,7 +29,7 @@
 - Converting CHDs converts a clone before the CHD it reads from, in ORE as in every other format, and leaves a CHD whose clones are still on disk alone: a clone imported from outside keeps its link to its parent in its header alone, and converting its parent first used to leave it unreadable
 - `check-roms`, `compact-roms` and committing a store's batch show their progress as they go, rather than a bar left at the last ORE's size that never moved, and extracting an ORE moves its bar steadily rather than in jumps of a hundred megabytes or so
 - Fixed `import-roms` leaving a game incomplete when its disc has the same track more than once, as Redump lists some: every copy in a CHD, an ORE or an archive took the first copy's ROM, and the others got none, and a loose copy matched every copy's ROM, so it was asked about or, with `--unattended skip`, skipped; each copy now takes a ROM of its own, so a CHD or an ORE with more copies than its DAT lists is no longer imported as the game, but handled as one with a track the DAT doesn't list
-- The web UI's and MCP's actual size of a system counts its ORE store, where its thin OREs keep their bytes, rather than the thin OREs alone; its one-region actual size still leaves the store out, as the store's bytes are shared across regions
+- The web UI's and MCP's actual sizes of a system, total and one-region, count each thin ORE's share of its store and each WUA's of the update partitions it keeps in `.update-partitions`, rather than their files alone, which only reference them; a store shared by grouped subsystems is split between them by game
 
 # 0.25.0
 

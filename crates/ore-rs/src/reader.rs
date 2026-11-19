@@ -103,6 +103,20 @@ pub struct Sizes {
     pub standalone: u64,
 }
 
+/// The [`Sizes::share`] of each ORE at `paths` in the store at `store`, its
+/// index loaded once for them all; `None` for one that can't be read. A
+/// standalone ORE's, or one of another store's, is its file's size.
+pub fn shares(store: &Path, paths: &[&Path]) -> Result<Vec<Option<u64>>> {
+    let index = Index::load(store)?;
+    Ok(paths
+        .iter()
+        .map(|path| {
+            let reader = Reader::inspect(path).ok()?;
+            Some(reader.sizes_in(Some(&index)).share)
+        })
+        .collect())
+}
+
 /// An ORE, read as the disc it holds.
 pub struct Reader {
     file: File,
@@ -496,10 +510,14 @@ impl Reader {
 
     /// What the game weighs.
     pub fn sizes(&self) -> Sizes {
+        self.sizes_in(self.store.as_ref().map(|store| &*store.index))
+    }
+
+    /// What the game weighs, its chunks counted in `index`.
+    fn sizes_in(&self, index: Option<&Index>) -> Sizes {
         let file = self.file_size;
         let (mut own, mut share, mut standalone) = (file as f64, file as f64, file as f64);
-        if let Some(store) = &self.store {
-            let index = &store.index;
+        if let Some(index) = index {
             for id in self.store_ids(&index.uuid).unwrap_or_default() {
                 let chunk = &index.chunks[id as usize];
                 let weight = index.weight(chunk);

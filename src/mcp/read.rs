@@ -41,32 +41,33 @@ async fn system_size(
     one_region: bool,
 ) -> Result<i64, String> {
     let sorting = if one_region { "AND g.sorting = 1" } else { "" };
-    let sql = if actual {
-        format!(
-            "SELECT COALESCE(SUM(rf.size), 0) FROM romfiles AS rf WHERE rf.id IN (
+    let error = |e: &dyn std::fmt::Display| format!("failed to compute sizes: {e}");
+    if actual {
+        let sql = format!(
+            "SELECT * FROM romfiles AS rf WHERE rf.id IN (
                  SELECT DISTINCT(r.romfile_id) FROM roms AS r
                  JOIN games AS g ON r.game_id = g.id
                  WHERE r.romfile_id IS NOT NULL {sorting} AND g.system_id = {system_id})"
-        )
-    } else {
-        format!(
-            "SELECT COALESCE(SUM(r.size), 0) FROM roms AS r
-             JOIN games AS g ON r.game_id = g.id
-             WHERE r.romfile_id IS NOT NULL {sorting} AND g.system_id = {system_id}"
-        )
-    };
+        );
+        let romfiles: Vec<Romfile> = sqlx::query_as(AssertSqlSafe(sql.as_str()))
+            .fetch_all(&mut *connection)
+            .await
+            .map_err(|e| error(&e))?;
+        return crate::ore::actual_size(connection, &romfiles)
+            .await
+            .map(|size| size as i64)
+            .map_err(|e| error(&e));
+    }
+    let sql = format!(
+        "SELECT COALESCE(SUM(r.size), 0) FROM roms AS r
+         JOIN games AS g ON r.game_id = g.id
+         WHERE r.romfile_id IS NOT NULL {sorting} AND g.system_id = {system_id}"
+    );
     let row: (i64,) = sqlx::query_as(AssertSqlSafe(sql.as_str()))
         .fetch_one(&mut *connection)
         .await
-        .map_err(|e| format!("failed to compute sizes: {e}"))?;
-    // thin OREs hold only references, their bytes are in the store
-    let store_size = match actual && !one_region {
-        true => crate::ore::system_store_size(connection, system_id)
-            .await
-            .map_err(|e| format!("failed to compute sizes: {e}"))? as i64,
-        false => 0,
-    };
-    Ok(row.0 + store_size)
+        .map_err(|e| error(&e))?;
+    Ok(row.0)
 }
 
 /// Build the status payload; shared by the `status` tool and the

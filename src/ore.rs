@@ -16,6 +16,7 @@ use anyhow::{Context, Result, bail};
 use indicatif::{HumanBytes, ProgressBar};
 use ore_rs::{Codec, Options, Profile, Reader, StoreBatch, StoreOptions};
 use sqlx::SqliteConnection;
+use std::collections::HashMap;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -838,17 +839,78 @@ pub async fn system_store(connection: &mut SqliteConnection, system: &System) ->
         .join(ore_rs::STORE_DIR))
 }
 
-/// The size of the store a system's thin OREs share, 0 without one: the
-/// bytes its romfiles' sizes leave out.
-pub async fn system_store_size(connection: &mut SqliteConnection, system_id: i64) -> Result<u64> {
-    let Some(system) = crate::database::find_system_by_id_opt(connection, system_id).await else {
-        return Ok(0);
+/// What `romfiles` weigh on disk: their files, with a thin ORE's share of
+/// its store and a WUA's of the update partitions it keeps in its own. A
+/// store shared with other systems, as `GROUP_SUBSYSTEMS` gives, is split
+/// by game, so each system counts only its part.
+pub async fn actual_size(connection: &mut SqliteConnection, romfiles: &[Romfile]) -> Result<u64> {
+    let rom_directory = get_rom_directory(connection).await;
+    let mut size = 0;
+    let mut ores: HashMap<PathBuf, Vec<(PathBuf, u64)>> = HashMap::new();
+    let mut wuas = vec![];
+    for romfile in romfiles {
+        let path = rom_directory.join(&romfile.path);
+        let extension = path.extension().and_then(|extension| extension.to_str());
+        match (extension, ore_rs::find_store(&path)) {
+            (Some(ORE_EXTENSION), Some(store)) => {
+                ores.entry(store)
+                    .or_default()
+                    .push((path, romfile.size as u64));
+                continue;
+            }
+            (Some(WUA_EXTENSION), _) => wuas.push(path),
+            _ => {}
+        }
+        size += romfile.size as u64;
+    }
+    for (store, ores) in ores {
+        let paths: Vec<&Path> = ores.iter().map(|(path, _)| path.as_path()).collect();
+        // an unreadable store or ORE counts as its files, this is a size, not a check
+        let shares = ore_rs::shares(&store, &paths).unwrap_or_default();
+        for (i, (_, file_size)) in ores.iter().enumerate() {
+            size += shares.get(i).copied().flatten().unwrap_or(*file_size);
+        }
+    }
+    if !wuas.is_empty() {
+        size += wua_store_share(connection, &rom_directory, &wuas).await;
+    }
+    Ok(size)
+}
+
+/// The share of `wuas` in their update partition stores: each entry split
+/// among every WUA in the database that needs it.
+async fn wua_store_share(
+    connection: &mut SqliteConnection,
+    rom_directory: &Path,
+    wuas: &[PathBuf],
+) -> u64 {
+    let entries = |wua: &Path| -> Vec<PathBuf> {
+        let Some(store) = crate::wux::find_store(wua) else {
+            return vec![];
+        };
+        wux_rs::store_entries(wua)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|name| store.join(name))
+            .collect()
     };
-    let store = system_store(connection, &system).await?;
-    Ok(match store.is_dir() {
-        true => ore_rs::store_size(&store)?,
-        false => 0,
-    })
+    let mut refs: HashMap<PathBuf, u64> = HashMap::new();
+    for romfile in crate::database::find_romfiles(connection).await {
+        let path = rom_directory.join(&romfile.path);
+        if path.extension().and_then(|extension| extension.to_str()) == Some(WUA_EXTENSION) {
+            for entry in entries(&path) {
+                *refs.entry(entry).or_default() += 1;
+            }
+        }
+    }
+    let mut share = 0;
+    for wua in wuas {
+        for entry in entries(wua) {
+            let len = entry.metadata().map_or(0, |metadata| metadata.len());
+            share += len / refs.get(&entry).copied().unwrap_or(1).max(1);
+        }
+    }
+    share
 }
 
 /// Bring the OREs among `romfiles` in line with the system's `ORE_STORE`:

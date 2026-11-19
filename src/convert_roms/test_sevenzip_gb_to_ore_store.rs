@@ -78,6 +78,12 @@ async fn test() {
     assert!(reads_back(&ore_path));
     let romfiles = find_romfiles(&mut connection).await;
     assert_eq!(romfiles.len(), 1);
+    // and it weighs its share of the store, not its file alone
+    let size = crate::ore::actual_size(&mut connection, &romfiles)
+        .await
+        .unwrap();
+    assert_eq!(size, ore_rs::Reader::open(&ore_path).unwrap().sizes().share);
+    assert!(size > romfiles[0].size as u64);
     let matches = check_roms::subcommand().get_matches_from(["check-roms", "-a"]);
     check_roms::main(&mut connection, &matches, &progress_bar)
         .await

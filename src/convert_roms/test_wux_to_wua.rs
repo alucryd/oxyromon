@@ -89,6 +89,14 @@ async fn test() {
             .join(&entries[0])
             .is_file()
     );
+    // and it weighs its file and the partition, which only it needs
+    let partition = system_directory.join(wux_rs::STORE_DIR).join(&entries[0]);
+    assert_eq!(
+        crate::ore::actual_size(&mut connection, &romfiles)
+            .await
+            .unwrap(),
+        romfile.size as u64 + partition.metadata().unwrap().len()
+    );
     let info = wux_rs::disc_info(&wua).unwrap().unwrap();
     let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
     assert_eq!(Some(hex(&info.sha1)), roms[0].sha1);
