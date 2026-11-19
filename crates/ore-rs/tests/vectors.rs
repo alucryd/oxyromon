@@ -1010,30 +1010,34 @@ mod write {
                 },
             )
         });
-        later("meta-order.ore", "metadata keys not in canonical order", &|b| {
-            *b = relaid(
-                b,
-                |_| {},
-                |meta| {
-                    // The media map's keys reversed: the order writers
-                    // used before canonical encoding, which still reads
-                    let mut value: ciborium::Value = ciborium::from_reader(&meta[..]).unwrap();
-                    let ciborium::Value::Map(top) = &mut value else {
-                        unreachable!("the metadata is one map")
-                    };
-                    let media = top
-                        .iter_mut()
-                        .find(|(key, _)| key.as_text() == Some("media"))
-                        .unwrap();
-                    let ciborium::Value::Map(keys) = &mut media.1 else {
-                        unreachable!("media is a map")
-                    };
-                    keys.reverse();
-                    *meta = Vec::new();
-                    ciborium::into_writer(&value, meta).unwrap();
-                },
-            )
-        });
+        later(
+            "meta-order.ore",
+            "metadata keys not in canonical order",
+            &|b| {
+                *b = relaid(
+                    b,
+                    |_| {},
+                    |meta| {
+                        // The media map's keys reversed: the order writers
+                        // used before canonical encoding, which still reads
+                        let mut value: ciborium::Value = ciborium::from_reader(&meta[..]).unwrap();
+                        let ciborium::Value::Map(top) = &mut value else {
+                            unreachable!("the metadata is one map")
+                        };
+                        let media = top
+                            .iter_mut()
+                            .find(|(key, _)| key.as_text() == Some("media"))
+                            .unwrap();
+                        let ciborium::Value::Map(keys) = &mut media.1 else {
+                            unreachable!("media is a map")
+                        };
+                        keys.reverse();
+                        *meta = Vec::new();
+                        ciborium::into_writer(&value, meta).unwrap();
+                    },
+                )
+            },
+        );
 
         // What a reader refuses (§13)
         let mut refused = |name: &str, why: &str, edit: &dyn Fn(&mut Vec<u8>)| {
