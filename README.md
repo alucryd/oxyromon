@@ -174,7 +174,7 @@ These environment variables change where things go:
 | `CHD_HD_COMPRESSION_ALGORITHMS`   | Up to 4 CHD codecs for hard disks: `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd`                        | auto      |
 | `CHD_LD_HUNK_SIZE`                | CHD hunk size in bytes for LaserDiscs, `16` to `1048576`                                                 | auto      |
 | `CHD_LD_COMPRESSION_ALGORITHMS`   | CHD codecs for LaserDiscs: `none`, `avhu`                                                                | auto      |
-| `ORE_COMPRESSION_ALGORITHM`       | ORE codec: `auto`, `lzma2` for cartridges and `zstd` for discs; `zstd`, quicker to read; or `lzma2`, smaller                                                  | `auto`    |
+| `ORE_COMPRESSION_ALGORITHM`       | ORE codec: `auto`, `lzma2` for cartridges and `zstd` for discs and 3DS cards; `zstd`, quicker to read; or `lzma2`, smaller                                                  | `auto`    |
 | `ORE_PROFILE`                     | ORE group size: `stream`, 1 MiB, quicker to read, or `archive`, 4 MiB, smaller, to keep rather than play | `stream`  |
 | `ORE_STORE`                       | Keep a system's OREs' chunks in one store, `.ore-store` in its directory, each game a thin ORE           | `false`   |
 | `ORE_STORE_BATCH`                 | How OREs go into the store: `run`, all of a conversion at once, or `game`, each committed alone          | `run`     |
@@ -682,7 +682,7 @@ Converts ROM files between lossless formats and back to their originals:
 - CUE/BIN and ISO to and from CHD, with CHDs restored to their original split CUE/BIN.
 - ISO to and from CSO, ZSO and RVZ.
 - GameCube, Wii, PlayStation 2 and PSP ISOs, CUE/BIN and CHD to and from ORE, with OREs restored to their cue sheet and tracks; an ISO of another system is skipped.
-- Cartridge ROMs, loose or in an archive, to and from ORE, restored under their name: every ROM of a cartridge system ORE knows by its DAT's name, the Atari consoles, ColecoVision, Odyssey 2, PC Engine and SuperGrafx, the Nintendo handhelds and consoles from the NES to the DS, the NeoGeo Pocket, the Sega consoles from the SG-1000 to the 32X, and the WonderSwan, headerless or not, BIOSes included; in any other system, Game Boy, Game Boy Advance, DS, N64 and Mega Drive ROMs ORE recognises by their header, the rest skipped.
+- Cartridge ROMs, loose or in an archive, to and from ORE, restored under their name: every ROM of a cartridge system ORE knows by its DAT's name, the Atari consoles, ColecoVision, Odyssey 2, PC Engine and SuperGrafx, the Nintendo handhelds and consoles from the NES to the 3DS, its cards but not its eShop's CIAs, the NeoGeo Pocket, the Sega consoles from the SG-1000 to the 32X, and the WonderSwan, headerless or not, BIOSes included; in any other system, Game Boy, Game Boy Advance, DS, 3DS, N64 and Mega Drive ROMs ORE recognises by their header, the rest skipped.
 - NSP to and from NSZ.
 - Wii U discs between ISO, WUX and lossless WUA.
 

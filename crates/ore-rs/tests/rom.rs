@@ -66,6 +66,18 @@ fn md(rom: &mut [u8]) {
     rom[0x100..0x110].copy_from_slice(b"SEGA MEGA DRIVE ");
 }
 
+/// A 3DS card, `units` of 512 bytes as its NCSD header says.
+fn ctr_of(units: u32) -> impl Fn(&mut [u8]) {
+    move |rom| {
+        rom[0x100..0x104].copy_from_slice(b"NCSD");
+        rom[0x104..0x108].copy_from_slice(&units.to_le_bytes());
+    }
+}
+
+fn ctr(rom: &mut [u8]) {
+    ctr_of(512)(rom)
+}
+
 fn none(_: &mut [u8]) {}
 
 fn gba(rom: &mut [u8]) {
@@ -85,6 +97,7 @@ fn a_game_boy_and_a_game_boy_advance_rom_round_trip_under_their_names() {
         ("Game (Japan).nds", nds),
         ("Game (USA).z64", n64),
         ("Game (Europe).md", md),
+        ("Game (Europe).3ds", ctr),
     ] {
         let input = rom(dir.path(), name, header);
         let ore = dir.path().join("game.ore");
@@ -121,7 +134,9 @@ fn a_rom_whose_header_does_not_check_is_refused() {
         gba(rom);
         rom[0xBD] = rom[0xBD].wrapping_add(1);
     });
-    for input in [bad_gb, bad_gba] {
+    // A 3DS card larger than its header says it is
+    let bad_3ds = rom(dir.path(), "a.3ds", ctr_of(511));
+    for input in [bad_gb, bad_gba, bad_3ds] {
         let ore = dir.path().join("a.ore");
         assert!(ore_rs::compress(&input, &ore, &Options::default(), &[], &mut |_| {}).is_err());
         assert!(!ore.exists());
@@ -428,5 +443,24 @@ fn a_folder_takes_zstd() {
     assert_eq!(
         ore_rs::default_codec(dir.path(), None).unwrap(),
         ore_rs::Codec::Zstd
+    );
+}
+
+#[test]
+fn a_3ds_card_takes_zstd_and_a_trimmed_one_is_one() {
+    let dir = TempDir::new().unwrap();
+    // 256 KiB of a card its header says is 512 KiB, its padding trimmed
+    let trimmed = rom(dir.path(), "Game (Europe).3ds", ctr_of(1024));
+    let gba = rom(dir.path(), "Game (Europe).gba", gba);
+    for (input, platform, codec) in [
+        (&trimmed, None, ore_rs::Codec::Zstd),
+        (&trimmed, Some("3ds"), ore_rs::Codec::Zstd),
+        (&gba, None, ore_rs::Codec::Lzma2),
+    ] {
+        assert_eq!(ore_rs::default_codec(input, platform).unwrap(), codec);
+    }
+    assert_eq!(
+        ore_rs::cartridge_header_matches(&trimmed, "3ds").unwrap(),
+        Some(true)
     );
 }
