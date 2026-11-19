@@ -245,7 +245,7 @@ Reading an RVZ, or rewriting one, needs no key, and neither does a GameCube disc
 WBFS files are those `wit copy --wbfs` writes: only what the disc points to is kept, so a WBFS is no longer the original disc, which is why it is an export format only.
 Exporting an RVZ to WBFS needs no key and decodes no ISO on the way; exporting a Wii ISO needs the Wii common key, as compressing it to RVZ does.
 
-ORE is oxyROMon's own format, a draft: an ORE written now may not open in a later version, so keep your originals, or another format, until it is final.
+ORE is oxyROMon's own format, specified as ORE 1.0 in [crates/ore-rs/SPEC.md](crates/ore-rs/SPEC.md) with conformance vectors: an ORE this version writes opens in every later one.
 An ORE holds a GameCube, Wii, PlayStation 2 or PSP disc, a cartridge's ROM, or a CD or a Dreamcast GD-ROM as its cue sheet and tracks, an ORE a disc: the cue sheet is inside it, so a CD is one file, which every ROM of the game points to.
 Importing a CD ORE needs every track it holds to match the DAT; when its cue sheet is not the DAT's, import the DAT's, and it goes into the ORE in its place, its metadata alone written again.
 Like RVZ, compressing a Wii ISO needs the Wii common key, and reading an ORE needs none.

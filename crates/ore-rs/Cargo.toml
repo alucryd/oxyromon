@@ -22,6 +22,8 @@ include = [
     "LICENSE-MIT",
     "README.md",
     "CHANGELOG.md",
+    "SPEC.md",
+    "spec/**/*",
 ]
 
 [lib]
