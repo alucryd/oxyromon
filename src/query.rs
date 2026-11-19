@@ -21,15 +21,16 @@ async fn system_size(
     one_region: bool,
 ) -> Result<i64> {
     let pool = ctx.data_unchecked::<SqlitePool>();
+    let mut connection = pool.acquire().await.unwrap();
     let sorting = if one_region {
         "AND g.sorting = 1\n                    "
     } else {
         ""
     };
-    let sql = if actual {
-        format!(
+    if actual {
+        let sql = format!(
             "
-                SELECT COALESCE(SUM(rf.size), 0)
+                SELECT *
                 FROM romfiles AS rf
                 WHERE rf.id IN (
                     SELECT DISTINCT(r.romfile_id) FROM roms AS r
@@ -39,21 +40,24 @@ async fn system_size(
                 );
             ",
             sorting, system_id
-        )
-    } else {
-        format!(
-            "
-                SELECT COALESCE(SUM(r.size), 0)
-                FROM roms AS r
-                JOIN games AS g ON r.game_id = g.id
-                WHERE r.romfile_id IS NOT NULL
-                {}AND g.system_id = {};
-            ",
-            sorting, system_id
-        )
-    };
+        );
+        let romfiles: Vec<Romfile> = sqlx::query_as(AssertSqlSafe(sql.as_str()))
+            .fetch_all(&mut *connection)
+            .await?;
+        return Ok(crate::ore::actual_size(&mut connection, &romfiles).await? as i64);
+    }
+    let sql = format!(
+        "
+            SELECT COALESCE(SUM(r.size), 0)
+            FROM roms AS r
+            JOIN games AS g ON r.game_id = g.id
+            WHERE r.romfile_id IS NOT NULL
+            {}AND g.system_id = {};
+        ",
+        sorting, system_id
+    );
     let row: (i64,) = sqlx::query_as(AssertSqlSafe(sql.as_str()))
-        .fetch_one(&mut *pool.acquire().await.unwrap())
+        .fetch_one(&mut *connection)
         .await?;
     Ok(row.0)
 }

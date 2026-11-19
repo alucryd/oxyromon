@@ -103,6 +103,20 @@ pub struct Sizes {
     pub standalone: u64,
 }
 
+/// The [`Sizes::share`] of each ORE at `paths` in the store at `store`, its
+/// index loaded once for them all; `None` for one that can't be read. A
+/// standalone ORE's, or one of another store's, is its file's size.
+pub fn shares(store: &Path, paths: &[&Path]) -> Result<Vec<Option<u64>>> {
+    let index = Index::load(store)?;
+    Ok(paths
+        .iter()
+        .map(|path| {
+            let reader = Reader::inspect(path).ok()?;
+            Some(reader.sizes_in(Some(&index))?.share)
+        })
+        .collect())
+}
+
 /// An ORE, read as the disc it holds.
 pub struct Reader {
     file: File,
@@ -496,12 +510,21 @@ impl Reader {
 
     /// What the game weighs.
     pub fn sizes(&self) -> Sizes {
+        self.sizes_in(self.store.as_ref().map(|store| &*store.index))
+            .expect("attach_store checked every chunk is in the store")
+    }
+
+    /// What the game weighs, its chunks counted in `index`; `None` when one
+    /// of them is not in it, as `attach_store` would refuse.
+    fn sizes_in(&self, index: Option<&Index>) -> Option<Sizes> {
         let file = self.file_size;
         let (mut own, mut share, mut standalone) = (file as f64, file as f64, file as f64);
-        if let Some(store) = &self.store {
-            let index = &store.index;
+        if let Some(index) = index {
             for id in self.store_ids(&index.uuid).unwrap_or_default() {
-                let chunk = &index.chunks[id as usize];
+                let chunk = index
+                    .chunks
+                    .get(id as usize)
+                    .filter(|chunk| chunk.group != NOWHERE)?;
                 let weight = index.weight(chunk);
                 if chunk.refs <= 1 {
                     own += weight;
@@ -510,12 +533,12 @@ impl Reader {
                 standalone += weight;
             }
         }
-        Sizes {
+        Some(Sizes {
             uncompressed: self.size(),
             own: own as u64,
             share: share as u64,
             standalone: standalone as u64,
-        }
+        })
     }
 
     /// Every record as the run it was written from, in order, with how many
