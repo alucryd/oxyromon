@@ -3407,6 +3407,8 @@ mod test_identical_tracks_loose_partial;
 #[cfg(test)]
 mod test_identical_tracks_ore;
 #[cfg(test)]
+mod test_identical_tracks_surplus;
+#[cfg(test)]
 mod test_iso_chd;
 #[cfg(test)]
 mod test_mame;
