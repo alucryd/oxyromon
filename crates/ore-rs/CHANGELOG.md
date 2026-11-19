@@ -2,6 +2,7 @@
 
 ## Features
 
+- Added `SPEC.md`, ORE 1.0's specification, its codecs `xa`, `vag` and `str` among it, and its conformance vectors in `spec/vectors`: every media class, record kind and codec, a store and its thin OREs, what a later writer adds and what a reader refuses
 - Added `shares`, the `Sizes::share` of many OREs of one store, its index loaded once for them all
 - Added 3DS card images, `3ds` among `CARTRIDGE_PLATFORMS`: a ROM whose NCSD header says it is no larger than the card, a trimmed one too, up to 4 GiB; `default_codec` gives Zstandard for one, read as a disc is rather than whole
 - Added Wii U eShop titles, games, updates and DLC as NUS folders, CDN or downloader named: their files end to end, each content stored decrypted by its title key when the folder holds its ticket, kept as it is otherwise, the ticket kept beside them as an SBI is beside a cue sheet, each file's hashes recorded as a DAT lists them; decompressed back to the folder, file for file. `is_title_folder` tells such a folder, and orers compresses one

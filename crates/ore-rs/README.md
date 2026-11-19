@@ -21,9 +21,9 @@ ore_rs::decompress(ore, Path::new("out.iso"), &mut |_| {}).unwrap();
 
 ## The format
 
-The specification, and the GameCube and Wii profile this crate writes,
-where every choice below is measured, are unpublished while the format is a
-draft. In short:
+The format is ORE 1.0, specified in [SPEC.md](SPEC.md), with conformance
+vectors in [`spec/vectors`](spec/vectors) that `tests/vectors.rs` holds this
+crate to. In short:
 
 - **What RVZ does**: Wii partitions stored decrypted and without their
   hashes, those recomputing would not give back kept as exceptions; padding
@@ -284,3 +284,7 @@ emulator of any license can link it, as smelt does, keeping those notices; the w
 model ported from Dolphin for them, are GPL-3.0-or-later and
 GPL-2.0-or-later, so the default build is GPL-3.0-or-later as a whole
 ([LICENSE](LICENSE)).
+
+The specification, [SPEC.md](SPEC.md), is CC BY 4.0, and its conformance
+vectors, [`spec/vectors`](spec/vectors), are CC0 1.0: implement ORE, and
+copy the vectors into your tests, under any license.

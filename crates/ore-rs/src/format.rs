@@ -371,8 +371,9 @@ pub struct Group {
     pub stored_len: u64,
 }
 
-// The metadata, as canonical CBOR: every map's keys are declared shortest
-// first, then in byte order, as that is the order they are written in.
+// The metadata, as CBOR, each map's keys written in the order they are
+// declared, which SPEC.md §7 lists; readers take them in any order and skip
+// those they do not know.
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Meta {

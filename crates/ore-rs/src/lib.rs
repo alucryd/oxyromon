@@ -28,8 +28,8 @@
 //! ore_rs::decompress(ore, Path::new("out.iso"), &mut |_| {}).unwrap();
 //! ```
 //!
-//! The format's specification and its profiles are unpublished while the
-//! format is a draft.
+//! The format is ORE 1.0, specified in the crate's `SPEC.md`, its
+//! conformance vectors in `spec/vectors`.
 
 // shortcut: without the writer, what only encoding uses (the codecs'
 // encoders, the CD map's writer, the store index's saving) is compiled and

@@ -1,0 +1,70 @@
+# SPEC.md §16: vector <path> ok|refuse <logical size> <logical BLAKE3> <what>
+#              file <path> <output file> <size> <SHA-1>
+vector	rom-zstd.ore	ok	524288	db3fc64a4a29a0a89feb7df1e718971cc37e0b4086f0384580f412a4edca233b	class 17, zstd, CHUNK, DEDUP, ZERO, fill
+file	rom-zstd.ore	Vector.gb	524288	d2131bc89c3e469664c48d3a58c0fc082e42f518
+vector	rom-lzma2.ore	ok	524288	db3fc64a4a29a0a89feb7df1e718971cc37e0b4086f0384580f412a4edca233b	class 17, lzma2, archive profile
+file	rom-lzma2.ore	Vector.nes	524288	d2131bc89c3e469664c48d3a58c0fc082e42f518
+vector	gamecube.ore	ok	2097152	fdd33d5f4ce0520eff9c864041295b2258368e2a16dfe41b90c0b51d02ce42d6	class 64, gc-wii-filler-prng
+file	gamecube.ore	Vector (GameCube).iso	2097152	aa27cdeb8f5d84093ce8a62da4c5c9fc33fa919d
+vector	wii.ore	ok	6029312	47fb1d3815abdc456c47bdffe49c187310631eff4d91f794e359b36b013b299c	class 64, wii-partition, a hash exception
+file	wii.ore	Vector (Wii).iso	6029312	d674f9a398a6925a52827324fbd3bf048597d185
+vector	cd.ore	ok	221088	f30b81b0df9669566ccb57da668ffeb3e58342cdab40db46d7e7ff02058b1989	class 33, cd-data of every plane and sector kind, cd-audio, flac, xa, str of v2 and v3 frames, an SBI
+file	cd.ore	Vector (Track 1).bin	89376	3bcd35da64e02630bdcebbb5cc1cd95da05ea9c5
+file	cd.ore	Vector (Track 2).bin	37632	b6959db96eae465165d8c03cf7cd797059769298
+file	cd.ore	Vector (Track 3).bin	94080	beb1146ed71ad6881574e5f0b43e4c5de69f3e56
+file	cd.ore	Vector.cue	264	3512c06a022bb4e0e3f3408703b4867ea5780015
+file	cd.ore	Vector.sbi	18	c8c66511e22340da91b6467f6a67143bd7c8e53a
+vector	cd-data.ore	ok	37632	b0fcdb9669f2dc23d05624bd8724463f1678b3514b001ea9bd7099b1173401c1	class 32, a Mode 1 track
+file	cd-data.ore	Vector (Track 1).bin	37632	381f11f8d77e5751f1400c095ae1809c23b178a7
+file	cd-data.ore	Vector.cue	82	eaccf870e29379b4ca2218cb25d46984f9906de0
+vector	gd-rom.ore	ok	341040	7f06fd6804dc0637e2494603922690c97ab033d98b2dd847160a8fd177f2efa6	class 48, a GD-ROM's single- and high-density areas
+file	gd-rom.ore	Vector (Track 1).bin	70560	29c9fb2c38104e1ff11d726373ac06ba4e1a0727
+file	gd-rom.ore	Vector (Track 2).bin	176400	4a10a38a5fc13eb6d4c410e4184f7b37c13e6476
+file	gd-rom.ore	Vector (Track 3).bin	94080	49013c9de82d6816caa71a8db9540e25a003adae
+file	gd-rom.ore	Vector.cue	312	60b438662a2d7efa3e0c5ca2fabdd67961442424
+vector	ps2.ore	ok	1228800	f651883675524f6b09928c25e672b5bbbbfb8db425f1ee5e48e3c07a5947718b	class 64, areas out of disc order, pcm, vag
+file	ps2.ore	Vector (PS2).iso	1228800	b2ae4cd6be2de645b1c7622fc0457fbd88dbee6e
+vector	wiiu-disc.ore	ok	1867776	ac4fb2dcc6b6515a4b6a0dc7799977dc7fa419a54c70dea83325019878190149	class 64, wiiu of every layer mode, repeat
+file	wiiu-disc.ore	Vector (Wii U).wud	1867776	aaa81b7227717bd344e36b425e922c24896948cf
+vector	wiiu-title.ore	ok	184568	11450d9a8d9dfd4398784355d2dde9ecf544a8f1a793dde865c747b86926dc79	class 97, a title's files, its ticket
+file	wiiu-title.ore	Vector (Wii U Title)/00000010.app	272	7cedfce588a9f1f22ef8379b9b370e7cf3738fe1
+file	wiiu-title.ore	Vector (Wii U Title)/00000011.app	50240	74068ec288b08ecf5be6b758ec2e495e287c00d2
+file	wiiu-title.ore	Vector (Wii U Title)/00000012.app	131072	2ab4956749a5bdbe9aa53c26fbfd3c00b4272298
+file	wiiu-title.ore	Vector (Wii U Title)/00000012.h3	20	6d25feffb97232a68a85e7127509d7e06086f2c9
+file	wiiu-title.ore	Vector (Wii U Title)/title.tik	676	c37351d72cf3600b67eb1ca377f3b79ef32e60d5
+file	wiiu-title.ore	Vector (Wii U Title)/title.tmd	2964	23965a0591fa923b34333ba30f09aaf0cec564ce
+vector	store/Vector A.ore	ok	524288	a61f6baf393f3202d494cc07ba1e95d24fc5c43c9017c6977289cc2e72d6059e	a thin ORE, STORE records, a sealed segment's parity
+file	store/Vector A.ore	Vector A.gb	524288	4282acbe81c5a533fa85d6c69c93f63f6c7a7eaa
+vector	store/Vector B.ore	ok	524288	ae0ca82e4934266454cf83c780cd5533caec544886ae021363402d0bba55dee2	a thin ORE, STORE records, a sealed segment's parity
+file	store/Vector B.ore	Vector B.gb	524288	375812474baddb8357b0c7cb4d339d3356fa98d2
+vector	compat/spec-version.ore	ok	524288	db3fc64a4a29a0a89feb7df1e718971cc37e0b4086f0384580f412a4edca233b	a higher spec_version
+file	compat/spec-version.ore	Vector.gb	524288	d2131bc89c3e469664c48d3a58c0fc082e42f518
+vector	compat/optional-flag.ore	ok	524288	db3fc64a4a29a0a89feb7df1e718971cc37e0b4086f0384580f412a4edca233b	an unknown flags_optional bit
+file	compat/optional-flag.ore	Vector.gb	524288	d2131bc89c3e469664c48d3a58c0fc082e42f518
+vector	compat/reserved.ore	ok	524288	db3fc64a4a29a0a89feb7df1e718971cc37e0b4086f0384580f412a4edca233b	filled reserved fields
+file	compat/reserved.ore	Vector.gb	524288	d2131bc89c3e469664c48d3a58c0fc082e42f518
+vector	compat/long-header.ore	ok	524288	db3fc64a4a29a0a89feb7df1e718971cc37e0b4086f0384580f412a4edca233b	a header of 256 bytes
+file	compat/long-header.ore	Vector.gb	524288	d2131bc89c3e469664c48d3a58c0fc082e42f518
+vector	compat/appended.ore	ok	524288	db3fc64a4a29a0a89feb7df1e718971cc37e0b4086f0384580f412a4edca233b	bytes after the metadata
+file	compat/appended.ore	Vector.gb	524288	d2131bc89c3e469664c48d3a58c0fc082e42f518
+vector	compat/meta-key.ore	ok	524288	db3fc64a4a29a0a89feb7df1e718971cc37e0b4086f0384580f412a4edca233b	an unknown metadata key
+file	compat/meta-key.ore	Vector.gb	524288	d2131bc89c3e469664c48d3a58c0fc082e42f518
+vector	hostile/layout-2.ore	refuse	-	-	the magic of a later layout, ORE2
+vector	hostile/magic.ore	refuse	-	-	not an ORE's magic
+vector	hostile/required-flag.ore	refuse	-	-	an unknown flags_required bit
+vector	hostile/short-header.ore	refuse	-	-	a header_len under 192
+vector	hostile/media-class.ore	refuse	-	-	an unknown media class
+vector	hostile/objects.ore	refuse	-	-	an object_count of 2
+vector	hostile/size.ore	refuse	-	-	a logical_size the metadata does not have
+vector	hostile/logical-hash.ore	refuse	-	-	a logical_hash the stream does not have
+vector	hostile/index-crc.ore	refuse	-	-	an index failing its CRC
+vector	hostile/meta-crc.ore	refuse	-	-	metadata failing its CRC
+vector	hostile/truncated.ore	refuse	-	-	regions past the end of the file
+vector	hostile/envelope.ore	refuse	-	-	a group's envelope of the wrong magic
+vector	hostile/group-crc.ore	refuse	-	-	a group failing its CRC
+vector	hostile/index-tail.ore	refuse	-	-	an index holding more than it describes
+vector	hostile/record-kind.ore	refuse	-	-	a record of a reserved kind, 3
+vector	hostile/record-len.ore	refuse	-	-	a record of length 0
+vector	hostile/dedup-forward.ore	refuse	-	-	a DEDUP of a chunk not stored before it
+vector	hostile/store-record.ore	refuse	-	-	a STORE record in a standalone ORE
+vector	hostile/area-kind.ore	refuse	-	-	an unknown area kind

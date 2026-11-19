@@ -4,7 +4,7 @@
 
 - ORE takes 3DS card images, of the 3DS and New 3DS DATs, decrypted or not, trimmed or not, Zstandard by default as for a disc; an eShop DAT's CIAs are left out
 - `import-keys` imports 3DS keys from Azahar's `aes_keys.txt`, merged by name into `3ds_keys.txt` in the data directory, for decrypting 3DS games to come
-- Added ORE, oxyROMon's own format, from the new ore-rs crate: import, check and convert GameCube and Wii discs and CUE/BIN to and from ORE, RVZs included, through the ISO they hold, a CD's cue sheet inside its ORE with its tracks, set by `ORE_COMPRESSION_ALGORITHM` (`zstd` or `lzma2`) and `ORE_PROFILE` (`stream` or `archive`); the format is a draft, and an ORE written now may not open in a later version
+- Added ORE, oxyROMon's own format, from the new ore-rs crate: import, check and convert GameCube and Wii discs and CUE/BIN to and from ORE, RVZs included, through the ISO they hold, a CD's cue sheet inside its ORE with its tracks, set by `ORE_COMPRESSION_ALGORITHM` (`zstd` or `lzma2`) and `ORE_PROFILE` (`stream` or `archive`); the format is ORE 1.0, specified in `crates/ore-rs/SPEC.md` with conformance vectors, and an ORE written now opens in every later version
 - ORE takes Dreamcast GD-ROMs, from their Redump cue sheet or CHD
 - ORE takes PlayStation 2 DVDs too, and converts from CHD: a DVD's ISO, or a CD's tracks with its cue sheet; a disc of another system is skipped rather than failing the run
 - ORE takes PSP UMDs, from their ISO or CHD, as it takes PlayStation 2 DVDs
