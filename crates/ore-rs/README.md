@@ -284,3 +284,7 @@ emulator of any license can link it, as smelt does, keeping those notices; the w
 model ported from Dolphin for them, are GPL-3.0-or-later and
 GPL-2.0-or-later, so the default build is GPL-3.0-or-later as a whole
 ([LICENSE](LICENSE)).
+
+The specification, [SPEC.md](SPEC.md), is CC BY 4.0, and its conformance
+vectors, [`spec/vectors`](spec/vectors), are CC0 1.0: implement ORE, and
+copy the vectors into your tests, under any license.

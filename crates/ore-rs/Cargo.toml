@@ -6,7 +6,7 @@ rust-version.workspace = true
 description = "ORE, oxyROMon's ROM enclosure: GameCube, Wii, PlayStation 2 and PSP discs, CDs, GD-ROMs and cartridge ROMs deduped in content-defined chunks and compressed in groups, bit-exact"
 # Each file says its own in an SPDX header; built without `write`, only
 # the MIT OR Apache-2.0 and BSD-3-Clause ones are compiled
-license = "GPL-3.0-or-later AND GPL-2.0-or-later AND (MIT OR Apache-2.0) AND BSD-3-Clause"
+license = "GPL-3.0-or-later AND GPL-2.0-or-later AND (MIT OR Apache-2.0) AND BSD-3-Clause AND CC-BY-4.0 AND CC0-1.0"
 repository.workspace = true
 # Never published: only oxyROMon uses ORE, and smelt, which is not published
 # either; its `#[path]`s reach the cd and gcwii crates' sources outside it

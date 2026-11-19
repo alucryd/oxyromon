@@ -715,8 +715,11 @@ mod write {
     #[ignore = "writes the vectors in spec/vectors, which are committed"]
     fn write_vectors() {
         let dir = vectors();
+        // Everything again, but their license
+        let license = std::fs::read(dir.join("LICENSE")).unwrap();
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("LICENSE"), license).unwrap();
         let tmp = tempfile::TempDir::new().unwrap();
         let tmp = tmp.path();
         let mut v = Vectors {

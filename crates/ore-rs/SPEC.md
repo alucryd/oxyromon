@@ -11,6 +11,7 @@ the store a library of them can share their chunks in.
 | Date | 2026-11-19 |
 | Reference implementation | ore-rs, `crates/ore-rs` of [oxyROMon](https://github.com/alucryd/oxyromon) |
 | Conformance vectors | [`spec/vectors`](spec/vectors), §16 |
+| License | this text [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); the vectors [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
 
 An ORE written by ore-rs since this version reads in every later reader of
 this layout (§14). The key words MUST, MUST NOT, SHOULD and MAY are as
