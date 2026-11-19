@@ -49,6 +49,8 @@ vector	compat/appended.ore	ok	524288	db3fc64a4a29a0a89feb7df1e718971cc37e0b4086f
 file	compat/appended.ore	Vector.gb	524288	d2131bc89c3e469664c48d3a58c0fc082e42f518
 vector	compat/meta-key.ore	ok	524288	db3fc64a4a29a0a89feb7df1e718971cc37e0b4086f0384580f412a4edca233b	an unknown metadata key
 file	compat/meta-key.ore	Vector.gb	524288	d2131bc89c3e469664c48d3a58c0fc082e42f518
+vector	compat/meta-order.ore	ok	524288	db3fc64a4a29a0a89feb7df1e718971cc37e0b4086f0384580f412a4edca233b	metadata keys not in canonical order
+file	compat/meta-order.ore	Vector.gb	524288	d2131bc89c3e469664c48d3a58c0fc082e42f518
 vector	hostile/layout-2.ore	refuse	-	-	the magic of a later layout, ORE2
 vector	hostile/magic.ore	refuse	-	-	not an ORE's magic
 vector	hostile/required-flag.ore	refuse	-	-	an unknown flags_required bit

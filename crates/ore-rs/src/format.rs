@@ -371,9 +371,15 @@ pub struct Group {
     pub stored_len: u64,
 }
 
-// The metadata, as CBOR, each map's keys written in the order they are
-// declared, which SPEC.md §7 lists; readers take them in any order and skip
-// those they do not know.
+// The metadata, as CBOR, each map's keys written in the RFC 8949 §4.2.1
+// core deterministic order — text keys shortest first, then bytewise —
+// which SPEC.md §7 lists; readers take them in any order and skip those
+// they do not know. The fields below are therefore declared in that order:
+// ciborium writes a struct's fields as its map writes its keys, integers
+// in their shortest form, lengths definite and no tags, so the output is
+// canonical. A field added to one of these structs goes where its name
+// sorts, not where it is handiest; the test at the bottom of this file
+// says when it does not.
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Meta {
@@ -401,13 +407,13 @@ pub struct Media {
     /// ones, as the dump has it.
     #[serde(default, skip_serializing_if = "Option::is_none", with = "serde_bytes")]
     pub sbi: Option<Vec<u8>>,
+    pub size: u64,
+    pub areas: Vec<Area>,
+    pub class: u16,
     /// An eShop title's ticket, as its folder has it: what opens its
     /// contents, which no DAT lists.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ticket: Option<Sidecar>,
-    pub size: u64,
-    pub areas: Vec<Area>,
-    pub class: u16,
     pub platform: String,
 }
 
@@ -429,16 +435,23 @@ pub struct Area {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file: Option<String>,
     pub kind: AreaKind,
-    /// A CD track's first sector, in frames from 00:00:00.
+    /// A Wii U region's encryption, its bytes stored decrypted.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub frame: Option<u64>,
-    pub start: u64,
-    /// Index records it takes, in order after the previous area's.
-    pub records: u64,
+    pub wiiu: Option<Wiiu>,
     /// The codec its chunks' groups take, when not the ORE's own: a
     /// PlayStation 2 DVD's audio streams.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub codec: Option<Codec>,
+    /// A CD track's first sector, in frames from 00:00:00.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frame: Option<u64>,
+    pub start: u64,
+    /// A repeat's period: the disc as it is this many bytes before, a
+    /// whole number of Wii U sectors.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub period: Option<u64>,
+    /// Index records it takes, in order after the previous area's.
+    pub records: u64,
     /// A CD data track's sectors: their kinds and subheaders, Zstandard
     /// compressed (see [`super::cdtrack`]).
     #[serde(default, skip_serializing_if = "Option::is_none", with = "serde_bytes")]
@@ -449,13 +462,6 @@ pub struct Area {
     /// A partition's hash blocks recomputing does not give back.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub exceptions: Vec<Exception>,
-    /// A Wii U region's encryption, its bytes stored decrypted.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub wiiu: Option<Wiiu>,
-    /// A repeat's period: the disc as it is this many bytes before, a
-    /// whole number of Wii U sectors.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub period: Option<u64>,
 }
 
 /// A Wii U disc's sector, which its repeats count in.
@@ -474,23 +480,23 @@ pub struct Wiiu {
 /// A title's content within a region, from `offset` in it, `len` long.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Piece {
-    pub offset: u64,
     pub len: u64,
     pub layer: Layer,
+    pub offset: u64,
 }
 
 /// One AES-128-CBC encryption: its key, how it chains, and the cluster or
 /// content index its IVs start from.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Layer {
-    pub mode: LayerMode,
-    #[serde(with = "serde_bytes")]
-    pub key: Vec<u8>,
-    pub index: u16,
     /// A chain's IV at each 64 KiB from its start but the first: the
     /// ciphertext block before it, so a read starts at any of them.
     #[serde(default, skip_serializing_if = "Vec::is_empty", with = "serde_bytes")]
     pub ivs: Vec<u8>,
+    #[serde(with = "serde_bytes")]
+    pub key: Vec<u8>,
+    pub mode: LayerMode,
+    pub index: u16,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -599,4 +605,136 @@ pub enum Run<'a> {
     /// Padding: its length and the seed, big endian.
     Padding(u64, [u8; SEED_BYTES]),
     Chunk(&'a [u8]),
+}
+
+#[cfg(test)]
+mod canonical {
+    //! The metadata writes as RFC 8949 §4.2.1 core deterministic CBOR:
+    //! every map's keys shortest first, then bytewise. A field declared
+    //! in the wrong place fails this test.
+
+    use super::*;
+
+    fn layer(mode: LayerMode) -> Layer {
+        Layer {
+            ivs: vec![0x22; 32],
+            key: vec![0x11; 16],
+            mode,
+            index: 3,
+        }
+    }
+
+    fn area(kind: AreaKind) -> Area {
+        Area {
+            len: 0x8000,
+            file: Some("Vector (Track 1).bin".into()),
+            kind,
+            wiiu: Some(Wiiu {
+                outer: Some(layer(LayerMode::Chain)),
+                pieces: vec![Piece {
+                    len: 1 << 20,
+                    layer: layer(LayerMode::Hashed),
+                    offset: WIIU_SECTOR,
+                }],
+            }),
+            codec: Some(Codec::Flac),
+            frame: Some(45_000),
+            start: 0,
+            period: Some(WIIU_SECTOR * 4),
+            records: 4,
+            sectors: Some(vec![0x01; 8]),
+            title_key: Some(vec![0x33; 16]),
+            exceptions: vec![Exception {
+                block: 2,
+                hashes: vec![0x44; 64],
+            }],
+        }
+    }
+
+    /// Every map's keys sorted by their encoded byte strings, which for
+    /// text keys is shortest first, then bytewise.
+    fn deterministic(value: &ciborium::Value, path: &str) {
+        match value {
+            ciborium::Value::Array(items) => {
+                for (i, item) in items.iter().enumerate() {
+                    deterministic(item, &format!("{path}[{i}]"));
+                }
+            }
+            ciborium::Value::Map(entries) => {
+                for pair in entries.windows(2) {
+                    let (before, after) = (
+                        pair[0].0.as_text().expect("every key is text"),
+                        pair[1].0.as_text().expect("every key is text"),
+                    );
+                    assert!(
+                        (before.len(), before.as_bytes()) < (after.len(), after.as_bytes()),
+                        "{path}: {before:?} is written before {after:?}",
+                    );
+                }
+                for (key, value) in entries {
+                    let key = key.as_text().expect("every key is text");
+                    deterministic(value, &format!("{path}.{key}"));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    #[test]
+    fn metadata_keys_sort_deterministically() {
+        let meta = Meta {
+            media: Media {
+                cue: Some(b"FILE \"Vector.bin\" BINARY\r\n".to_vec()),
+                sbi: Some(b"SBI\0\x00\x02\x10\x01".to_vec()),
+                size: 1 << 24,
+                areas: [
+                    AreaKind::Raw,
+                    AreaKind::WiiPartition,
+                    AreaKind::CdData,
+                    AreaKind::CdAudio,
+                    AreaKind::Wiiu,
+                    AreaKind::Repeat,
+                ]
+                .into_iter()
+                .map(area)
+                .collect(),
+                class: 64,
+                ticket: Some(Sidecar {
+                    name: "title.tik".into(),
+                    bytes: vec![0x55; 64],
+                }),
+                platform: "wiiu".into(),
+            },
+            store: Some(StoreRef {
+                uuid: vec![0x66; 16],
+            }),
+            ledger: vec![Step {
+                id: "zero".into(),
+                bytes: Some(4096),
+                verified: true,
+            }],
+            identity: vec![Identity {
+                algo: "blake3".into(),
+                view: "logical".into(),
+                value: vec![0x77; 32],
+            }],
+            provenance: Provenance {
+                tool: "ore-rs 0.1.0".into(),
+                params: Params {
+                    codec: Codec::Zstd,
+                    group: 1 << 20,
+                    level: 19,
+                    chunker: Chunker {
+                        max: 24 << 10,
+                        min: 8 << 10,
+                        name: "mincdc".into(),
+                    },
+                },
+            },
+        };
+        let bytes = to_cbor(&meta);
+        let value: ciborium::Value =
+            ciborium::from_reader(&bytes[..]).expect("what was written reads back");
+        deterministic(&value, "meta");
+    }
 }
