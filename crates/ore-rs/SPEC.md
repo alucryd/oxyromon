@@ -39,6 +39,10 @@ a bug in one of them, to be reported.
 - Appendix A: the GameCube and Wii padding generator
 - Appendix B: CD sectors
 - Appendix C: a store segment's parity
+- Appendix D: the range coder
+- Appendix E: `xa`
+- Appendix F: `vag`
+- Appendix G: `str`
 
 ## 1. Conventions
 
@@ -208,16 +212,13 @@ bytes only; a decoder needs none of them but what follows.
   then sample `i` of the second. Then come the `logical_len − whole` bytes
   past the last whole period, as they are, then zeros, which a writer pads
   with.
-- **`xa`**, **`str`**, **`vag`**: lossless models of PlayStation audio and
+- **`xa`**, **`vag`**, **`str`**: lossless models of PlayStation audio and
   video, each an adaptive binary range coder over what the group's format
-  holds. A group of `xa` is records of 2,328 bytes, each a sector's first
-  subheader copy and its 2,324 bytes of data (§8.4); of `str`, video
-  sectors' data, 2,048 bytes a Form 1 sector, 2,324 a Form 2; of `vag`,
-  16-byte SPU ADPCM blocks, a stream's 48-byte `VAGp` header included. In
-  1.0 their bitstreams are defined by ore-rs's source, `src/xa.rs`,
-  `src/video.rs` and `src/vag.rs`, which the conformance vectors exercise;
-  their written definition is to follow, and will not change a bit of what
-  they decode.
+  holds, every byte kept, so that any bytes go through. A group of `xa` is
+  records of 2,328 bytes, each a sector's first subheader copy and its
+  2,324 bytes of data (§8.4); of `vag`, 16-byte SPU ADPCM blocks, a stream's
+  48-byte `VAGp` header included; of `str`, video sectors' data, 2,048
+  bytes a Form 1 sector, 2,324 a Form 2. Appendices D to G define them.
 
 A writer MAY store any group with `zstd` or `lzma2` instead of the codec its
 area suggests (§7): ore-rs does when Zstandard codes a group of audio
@@ -624,8 +625,10 @@ in no group any more, its id kept for when it comes back.
 
 A thin ORE's `STORE` record names a chunk by its id, its number in the
 table. A reader MUST refuse an id the table does not hold, a chunk in no
-group, or one whose `len` is not the record's, and SHOULD check a chunk's
-bytes against its `digest`.
+group, or one whose `len` is not the record's. It MAY check a chunk's bytes
+against its `digest` where it reads a game whole, as a check or a
+conversion does: a group's CRC already finds damage to its bytes, and the
+logical BLAKE3 a whole game's, so a read for an emulator need not.
 
 ### 12.2 Segments
 
@@ -817,3 +820,260 @@ alone. It is written twice, the second copy right after the first.
 
 A block that fails both tables' CRCs is an erasure in its row, and a row
 that has no more of them than `p` is rebuilt by the code.
+
+## Appendix D: the range coder
+
+`xa`, `vag` and `str` code a group with one adaptive binary range coder,
+LZMA's, its probabilities each the mean of a fast and a slow estimate. This
+appendix and the next three define what a group decodes to; an encoder is
+free in its choices wherever the decoder is told them, and conforms when
+its output decodes to the group. Integers below are two's complement; `>>`
+of a signed integer is arithmetic, rounding towards minus infinity; `/`
+rounds towards zero; `clamp(x, a, b)` is `min(max(x, a), b)`.
+
+**A probability** is two 16-bit integers, `fast` and `slow`, both 32,768 at
+first: `p = clamp((fast + slow) >> 1, 32, 65,504)` is the chance of a 0, in
+65,536ths. Coding bit `b` with it updates it: for a 0, `fast += (65,535 −
+fast) >> 4` and `slow += (65,535 − slow) >> 7`; for a 1, `fast −= fast >> 4`
+and `slow −= slow >> 7`. Every probability of a model starts afresh with
+each group.
+
+**The decoder** has a 32-bit `range`, `0xFFFFFFFF`, and a 32-bit `code`,
+the group's first 5 bytes, shifted in one at a time, `code = code << 8 |
+byte`, in 32 bits; a byte past the stored bytes is 0. To decode a bit with
+probability `p`: `bound = (range >> 16) × p`; if `code < bound`, the bit is
+0 and `range = bound`; otherwise it is 1, `code −= bound` and `range −=
+bound`. Then `p` is updated, and while `range < 2²⁴`, `range <<= 8` and
+`code = code << 8 | next byte`.
+
+**A tree** of `n` bits, an array of `2ⁿ` probabilities, codes a value of
+`n` bits high bit first: `node = 1`; `n` times, `node = node × 2 + bit`,
+the bit decoded with probability `node`; the value is `node − 2ⁿ`. A
+*byte tree* is a tree of 8 bits.
+
+**A number** of a 64-probability array `P`, a value `v` below 2¹⁶, is its
+bit length `c` in unary, then its bits below its top one. The unary is, for
+`i` = 0, 1, …, a bit of `P[i]`, 1 while `i < c`, ending at its first 0 or
+after 16 ones. Then, for `c` above 1, `v`'s `c − 1` bits below its top one,
+high bit first, each of `P[32 + c]`. So 0 is `0`, 1 is `1 0`, 5 is `1 1 1 0`
+then `0 1`.
+
+The ore-rs encoder is LZMA's: a 64-bit `low`, a cache byte and a count of
+pending `FF` bytes, flushed with 5 shifts at the end.
+
+## Appendix E: `xa`
+
+A group is records of 2,328 bytes, a sector's 4-byte subheader then its
+2,324 bytes of data, and whatever bytes follow the last whole record.
+
+**The model**, afresh each group: 4 byte trees for the subheader's 4
+bytes; 256 byte trees for a sound unit's parameter, by the channel's last;
+a probability for the copies; a byte tree for raw bytes; 192 trees of 4
+bits for the samples; a probability for the tail. And the channels, by key,
+each made when first met: XA's last two samples `old` and `older`, 0;
+`last_param`, 0; the predictor's 11 inputs and 11 weights, 0; and `error`,
+512.
+
+**The predictor.** Its inputs are the channel's last 8 samples, newest
+first, then 3 of the other channel's. It predicts `predicted =
+clamp((Σ inputᵢ × weightᵢ) >> 16, −65,536, 65,536)`, in 64 bits. Learning a
+sample `s` it predicted: `energy = max(Σ inputᵢ², 2²⁰)`; `factor = ((6,554 ×
+(s − predicted)) << 16) / energy`; each `weightᵢ = clamp(weightᵢ + (factor ×
+inputᵢ) / 65,536, −2²⁰, 2²⁰)`; then its own 8 inputs shift down, the oldest
+dropped, `s` the newest, and `older = old`, `old = s`. Its last 3 inputs
+change only as set below.
+
+**A record.** Its 4 subheader bytes, each with its byte tree. A record is
+ADPCM when the subheader's third byte has bit `0x04` and its fourth has
+neither bit of `0x30`; one that is not is its 2,324 bytes, each with the
+raw byte tree. An ADPCM record is stereo when its fourth byte's low 2 bits
+are 1; its channels' keys are `byte0 << 16 | byte1 << 8`, plus 1 for a
+stereo record's odd sound units, its right channel.
+
+The data is 18 sound groups of 128 bytes, then a tail of 20. A sound
+group's bytes 4 to 11 are its 8 units' parameters, bytes 0 to 3 and 12 to
+15 their copies, and bytes 16 to 127 its 28 words of 4 bytes, the samples:
+unit `u`'s sample `j` the nibble of byte `16 + 4j + u / 2`, the low one for
+an even `u`. For each sound group:
+
+1. For each unit `u`, 0 to 7, its parameter, byte `4 + u`, with the
+   parameter tree of its channel's `last_param`, which it then becomes.
+2. A bit of the copies' probability: 1 when bytes 0-3 are bytes 4-7 and
+   bytes 12-15 bytes 8-11, which they are set to; 0, then bytes 0-3 and
+   12-15, each with the raw byte tree.
+3. For each unit `u`, 0 to 7, its channel `ch`, its parameter's `shift`,
+   its low 4 bits, taken as 9 above 12, and `filter`, bits 4-5; then for
+   each sample `j`, 0 to 27:
+   - for a right channel, its inputs 8 to 10 are `left[min(max(j + d − 1,
+     0), 27)]` for `d` = 0, 1, 2;
+   - `pred = (ch.old × K0[filter] + ch.older × K1[filter] + 32) >> 6`, with
+     `K0 = [0, 60, 115, 98]` and `K1 = [0, 0, −52, −55]`;
+   - `predicted` the channel's prediction, `expected = ((predicted − pred)
+     << shift) >> 4`;
+   - the nibble, with the sample tree `(clamp((expected + 64) >> 7, −16, 15)
+     + 16) × 6 + min(ch.error >> 7, 5)`;
+   - `t` the nibble sign-extended from 4 bits, the sample `s =
+     clamp(((t << 12) >> shift) + pred, −32,768, 32,767)`;
+   - `ch.error = (ch.error × 9 + min(|(t << 8) − expected|, 4,096)) / 10`;
+   - the channel learns `s` (above); and `left[j] = s` for a mono record or
+     an even unit.
+
+After the 18 sound groups, a bit of the tail's probability: 1 when the 20
+tail bytes are zeros; 0, then each with the raw byte tree.
+
+The bytes after the last whole record are each of the raw byte tree.
+
+## Appendix F: `vag`
+
+A group is 16-byte SPU ADPCM blocks, each its parameter, its flags, then 28
+samples of 4 bits, low nibble first, and `VAGp` headers among them.
+
+**The model**, afresh each group: a probability for headers; 256 byte trees
+for a block's parameter, by the last; 256 for its flags, by the last; a
+byte tree for raw bytes; 192 trees of 4 bits for the samples. One channel
+as `xa`'s, whose 3 inputs of the other channel stay 0; a last parameter and
+last flags, 0.
+
+From the group's start, `at`, while a block of 16 bytes is left:
+
+1. If 48 bytes are left, a bit of the header probability: 1 is a header,
+   48 bytes with the raw byte tree, its first 4 then set to `VAGp`; the
+   channel, last parameter and last flags start again, and `at` moves 48.
+2. Otherwise, the block: its parameter with the parameter tree of the last,
+   its flags with the flags tree of the last, both then the last; `shift`
+   the parameter's low 4 bits, taken as 9 above 12, `filter` its high 4,
+   taken as 0 above 4. Its 28 samples are coded as `xa`'s, step 3, its
+   nibble `j` that of byte `2 + j / 2`, the low one for an even `j`, with
+   `K0 = [0, 60, 115, 98, 122]` and `K1 = [0, 0, −52, −55, −60]`, and no
+   other channel. `at` moves 16.
+
+The bytes after the last block are each of the raw byte tree.
+
+## Appendix G: `str`
+
+A group is STR video sectors' data, as a CD data track's video plane holds
+them (§8.4): 2,048 bytes a Form 1 sector, 2,324 a Form 2 one. A frame's
+sectors are gathered, its MDEC bitstream parsed into its codes, and the
+codes coded in context of the frame before's.
+
+### G.1 The bitstream
+
+A frame's bitstream, after an 8-byte BS header, is 16-bit little-endian
+words, each read high bit first. The BS header's version, its bytes 6-7, is
+1 or 2, both read as v2, or 3. A frame of `m` macroblocks holds `6m`
+blocks, each macroblock's Cr, Cb, Y1, Y2, Y3 and Y4; a block is a DC, then
+AC codes, then the end of block, `10`:
+
+- **v2's DC** is 10 bits, two's complement.
+- **v3's DC** is MPEG-1's: a size class `k`, by its code, chroma's `00 01
+  10 110 1110 11110 111110 1111110 11111110` or luma's `100 00 01 101 110
+  1110 11110 111110 1111110` for classes 0 to 8, then `k` bits `v`, the
+  difference `v` if its top bit is 1, `v − 2ᵏ + 1` if 0, 0 for class 0.
+  The DC is the sum of the frame's differences so far of its kind, Cr's,
+  Cb's or the four lumas', and 4 times it lies within −512 to 511.
+- **An AC code** is MPEG-1 video's `dct_coeff_next` code of its run and
+  level (ISO/IEC 11172-2 Annex B; MPEG-2's Table B.14), then a sign bit, 1
+  negative; or the escape, `000001`, its run in 6 bits and its
+  level in 10, two's complement. A block's codes reach no further than its
+  64th coefficient: each moves `run + 1` from the DC.
+
+A code is *escaped* when it is written as the escape though the table has
+its run and level. Writing codes back: the BS header's 8 bytes; each code
+as above, a v3 DC as its difference from its kind's last, of the class of
+that difference's bit length, at most 8; then the frame's *tail*, the bits
+after the codes to the frame's end; and the bits, high bit first, made
+16-bit little-endian words again.
+
+### G.2 The model
+
+Afresh each group: a tree of 3 bits for what comes next; a 64-probability
+number for a frame's sectors; *fields* for the sectors' headers of each
+frame kind, 32, 8 and 32 bytes, and for the BS header, 8; a byte tree for
+raw bytes; probabilities for the camera, whether a frame is parsed, its
+padding, and its tail's zeros; a byte tree for the padding; 11 tail
+probabilities; and for the codes, 4 *same* probabilities, 24 64-probability
+numbers and 24 sign probabilities for DCs, 4,096 end-of-block probabilities,
+128 numbers for runs, 2,048 numbers for levels, and a sign and an escape
+probability.
+
+*Fields* of `n` bytes code `n` bytes in place: for each position `i`, a bit
+of its `same` probability, 1 when the byte is the last coded at `i`; 0, then
+the byte with its byte tree. The last at each position starts 0.
+
+`bucket(v)` is 0 for 0, 1 for 1, 2 for 2 and 3, and 3 above.
+
+### G.3 A group
+
+`last`, the frame before, starts with no blocks. From the group's start,
+while 2,048 bytes are left, a value of the 3-bit tree says what comes next:
+
+- **1, a standard frame**, of Form 1 sectors, 32-byte headers; **2, a Final
+  Fantasy VIII frame**, `SMJ\1`, of Form 1 sectors, 8-byte headers; **3, a
+  Final Fantasy IX frame**, of Form 2 sectors, 32-byte headers;
+- **4, a Form 2 sector of no frame**, 2,324 bytes, and **any other value, a
+  Form 1 sector of no frame**, 2,048: each byte with the raw byte tree.
+
+A frame: its sectors' count, a number above 0, the sectors within the
+group; each sector's header, in
+order, with its kind's fields. A Final Fantasy IX frame's sectors are then
+taken last first. The first sector taken gives the frame's size: for a
+standard frame, `used`, its header's 32-bit little-endian word at 12, and
+`m = ⌈w / 16⌉ × ⌈h / 16⌉`, `w` and `h` its 16-bit words at 16 and 18; a
+Final Fantasy IX frame's `used` is 4 times its word at 12, its `m` as a
+standard frame's; a Final Fantasy VIII frame's `used` is all of it, and its
+`m` 280. The frame's payload is its sectors' bytes after their headers, in
+the order taken; its first `used` bytes, at most all of them, are coded as
+G.4 says, then the rest, its padding: a bit of the padding probability, 1
+when it is one byte over and over, that byte with the padding tree, 0 when
+there is none; 0, then each byte with the raw byte tree.
+
+The bytes after the last item are each of the raw byte tree.
+
+### G.4 A frame's bytes
+
+1. A bit of the camera probability: 1 when the first 40 bytes are Final
+   Fantasy VII's camera data, each then with the raw byte tree.
+2. A bit of the parsed probability: 0, then the rest, the bitstream, each
+   byte with the raw byte tree, and `last` stays as it was; 1, it is coded
+   as its codes:
+3. Its BS header, with the BS header's fields. The bitstream is at least 8
+   bytes, of an even length, at least `3m` bytes, `m` above 0, its version
+   known, or the group is corrupt.
+4. Its `6m` blocks' codes (G.5), against `last`.
+5. Its tail, of as many bits as the codes written back leave: its first 10
+   bits, each with its tail probability `i`; then, if more are left, a bit
+   of the tail's zeros probability: 1, they are zeros; 0, each with tail
+   probability 10.
+6. The codes and the tail, written back as G.1 says, are the bitstream;
+   `last` is now this frame.
+
+### G.5 A frame's blocks
+
+`comparable` is whether `last` has as many blocks. `dc[3]`, the last DC of
+each kind, Cr, Cb and luma, `class[3]` and `left` start 0. For each block
+`b`: `luma` is 1 for Y1 to Y4, `kind` its DC's, `before` block `b` of
+`last`, none if it has no such block.
+
+1. If `comparable`, a bit of `same[luma × 2 + left]`, which `left` then is:
+   1, the block is `before`, and `dc[kind]` its DC.
+2. Otherwise, from `before`: `size = bucket(max(codes − 2, 0))`, its codes
+   counted with its DC and end; `there[i]`, the magnitude of its AC level at
+   position `i`, 0 to 63, positions counted from the DC, `run + 1` each, past
+   63 at 63; and `later[i]`, whether `there` has a non-zero level at `i` or
+   past it.
+3. The DC: `ctx = kind × 8 + class[kind]`; a magnitude, the DC number
+   `ctx`; for one above 0, a bit of the DC sign `ctx`, 1 negative; the DC
+   is `dc[kind]` plus or minus it, which `dc[kind]` then is;
+   `class[kind]` is the magnitude's bit length, at most 7.
+4. Its codes, `position`, `coded` and `previous` starting 0:
+   - The end, at position 63 or past without a bit; otherwise a bit of
+     end-of-block `((((luma × 64 + position) × 4 + bucket(coded)) × 4 +
+     size) × 2 + later[position + 1])`, 1 the end.
+   - The run, the run number `(luma × 16 + min(position, 15)) × 4 +
+     bucket(previous)`, at most `62 − position`; `position` moves `run + 1`.
+   - The level's magnitude, the level number `((luma × 64 + position) × 4 +
+     bucket(previous)) × 4 + bucket(there[position])`, at most 512; for one
+     above 0, a bit of the sign probability, 1 negative.
+   - Whether it is escaped: a bit of the escape probability when the table
+     has its run and magnitude, escaped without a bit when it has not.
+   - `coded` counts it, and `previous` is its magnitude.

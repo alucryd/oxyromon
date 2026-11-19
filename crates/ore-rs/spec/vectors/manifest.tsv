@@ -8,9 +8,9 @@ vector	gamecube.ore	ok	2097152	fdd33d5f4ce0520eff9c864041295b2258368e2a16dfe41b9
 file	gamecube.ore	Vector (GameCube).iso	2097152	aa27cdeb8f5d84093ce8a62da4c5c9fc33fa919d
 vector	wii.ore	ok	6029312	47fb1d3815abdc456c47bdffe49c187310631eff4d91f794e359b36b013b299c	class 64, wii-partition, a hash exception
 file	wii.ore	Vector (Wii).iso	6029312	d674f9a398a6925a52827324fbd3bf048597d185
-vector	cd.ore	ok	216384	368c17c19de8d511fd038d5320d225fe8dd830bfeba0bc5ff2a76e48a92cdde5	class 33, cd-data of every plane and sector kind, cd-audio, flac, xa, str, an SBI
-file	cd.ore	Vector (Track 1).bin	84672	1d3121e8f525c1da093e935d15da1a8f956e491b
-file	cd.ore	Vector (Track 2).bin	37632	4efeecfa3acd952eaf36e7aee709504c139d2e80
+vector	cd.ore	ok	221088	f30b81b0df9669566ccb57da668ffeb3e58342cdab40db46d7e7ff02058b1989	class 33, cd-data of every plane and sector kind, cd-audio, flac, xa, str of v2 and v3 frames, an SBI
+file	cd.ore	Vector (Track 1).bin	89376	3bcd35da64e02630bdcebbb5cc1cd95da05ea9c5
+file	cd.ore	Vector (Track 2).bin	37632	b6959db96eae465165d8c03cf7cd797059769298
 file	cd.ore	Vector (Track 3).bin	94080	beb1146ed71ad6881574e5f0b43e4c5de69f3e56
 file	cd.ore	Vector.cue	264	3512c06a022bb4e0e3f3408703b4867ea5780015
 file	cd.ore	Vector.sbi	18	c8c66511e22340da91b6467f6a67143bd7c8e53a

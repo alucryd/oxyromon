@@ -320,6 +320,137 @@ mod write {
         data
     }
 
+    /// A block of an MDEC bitstream: its DC, then AC codes, each a run, a
+    /// level and whether it is written as the escape.
+    type Block = (i32, Vec<(u32, i32, bool)>);
+
+    /// Bits, high first, then as the bitstream's 16-bit little-endian words.
+    #[derive(Default)]
+    struct Bits(Vec<bool>);
+
+    impl Bits {
+        fn put(&mut self, value: u32, n: u32) {
+            self.0.extend((0..n).rev().map(|i| value >> i & 1 == 1));
+        }
+
+        fn words(&self) -> Vec<u8> {
+            let mut bytes: Vec<u8> = self
+                .0
+                .chunks(8)
+                .map(|b| b.iter().fold(0u8, |a, &bit| a << 1 | bit as u8) << (8 - b.len()))
+                .collect();
+            if bytes.len() % 2 == 1 {
+                bytes.push(0);
+            }
+            bytes.chunks(2).flat_map(|w| [w[1], w[0]]).collect()
+        }
+    }
+
+    /// A v3 frame of 2 macroblocks, 32x16, as one standard video sector:
+    /// its DCs as MPEG-1's differences, its AC codes from the table and
+    /// escaped, `frame` its number.
+    fn mdec_frame(frame: u32, blocks: &[Block]) -> Vec<u8> {
+        const CHROMA: [(u32, u32); 9] = [
+            (0b00, 2),
+            (0b01, 2),
+            (0b10, 2),
+            (0b110, 3),
+            (0b1110, 4),
+            (0b11110, 5),
+            (0b111110, 6),
+            (0b1111110, 7),
+            (0b11111110, 8),
+        ];
+        const LUMA: [(u32, u32); 9] = [
+            (0b100, 3),
+            (0b00, 2),
+            (0b01, 2),
+            (0b101, 3),
+            (0b110, 3),
+            (0b1110, 4),
+            (0b11110, 5),
+            (0b111110, 6),
+            (0b1111110, 7),
+        ];
+        // Some of MPEG-1's dct_coeff_next codes: run, level, code, length
+        const TABLE: [(u32, i32, u32, u32); 4] = [
+            (0, 1, 0b11, 2),
+            (1, 1, 0b011, 3),
+            (0, 2, 0b0100, 4),
+            (2, 1, 0b0101, 4),
+        ];
+        let mut bits = Bits::default();
+        let mut previous = [0i32; 3];
+        for (b, (dc, acs)) in blocks.iter().enumerate() {
+            let kind = [0, 1, 2, 2, 2, 2][b % 6];
+            let diff = dc - previous[kind];
+            previous[kind] = *dc;
+            let size = 32 - diff.unsigned_abs().leading_zeros();
+            let (code, n) = if b % 6 < 2 { CHROMA } else { LUMA }[size as usize];
+            bits.put(code, n);
+            if size > 0 {
+                let v = if diff < 0 {
+                    diff + (1 << size) - 1
+                } else {
+                    diff
+                };
+                bits.put(v as u32, size);
+            }
+            for &(run, level, escaped) in acs {
+                match TABLE.iter().find(|t| t.0 == run && t.1 == level.abs()) {
+                    Some(&(_, _, code, n)) if !escaped => {
+                        bits.put(code, n);
+                        bits.put((level < 0) as u32, 1);
+                    }
+                    _ => {
+                        bits.put(0b000001, 6);
+                        bits.put(run, 6);
+                        bits.put(level as u32 & 0x3FF, 10);
+                    }
+                }
+            }
+            bits.put(0b10, 2);
+        }
+        // The BS header: its codes' count, 0x3800, the quantiser, v3
+        let mut bs = vec![0x40, 0x01, 0x00, 0x38, 0x02, 0x00, 0x03, 0x00];
+        bs.extend(bits.words());
+        let mut data = vec![0; 2048];
+        data[..4].copy_from_slice(&0x8001_0160u32.to_le_bytes());
+        data[6] = 1;
+        data[8..12].copy_from_slice(&frame.to_le_bytes());
+        data[12..16].copy_from_slice(&(bs.len() as u32).to_le_bytes());
+        data[16] = 32;
+        data[18] = 16;
+        data[32..32 + bs.len()].copy_from_slice(&bs);
+        data
+    }
+
+    /// Two v3 frames, the second's even blocks its first's: every code of
+    /// the bitstream, and blocks the same as the frame before's.
+    fn mdec_frames() -> [Vec<u8>; 2] {
+        let first: Vec<Block> = (0..12)
+            .map(|b: i32| {
+                let acs = [
+                    (0, if b % 2 == 0 { 1 } else { -2 }, false),
+                    (1, 1, b == 3),
+                    (2, -1, false),
+                    (5, 100, false),
+                    (0, -37, false),
+                ];
+                ((b * 13) % 61 - 30, acs[..(b as usize % 5 + 1)].to_vec())
+            })
+            .collect();
+        let second: Vec<Block> = first
+            .iter()
+            .enumerate()
+            .map(|(b, block)| match b % 2 {
+                0 => block.clone(),
+                _ => (block.0 + 7, vec![(3, 2, false), (0, 1, true)]),
+            })
+            .collect();
+        [mdec_frame(2, &first), mdec_frame(3, &second)]
+    }
+
     fn sectors(first: u32, kinds: &[(Kind, [u8; 8], Vec<u8>)]) -> Vec<u8> {
         let mut track = Vec::new();
         for (i, (kind, subheader, data)) in kinds.iter().enumerate() {
@@ -364,6 +495,9 @@ mod write {
                 [1, 1, 0x48, 0, 1, 1, 0x48, 0],
                 still(i / 4, (i % 4) as u16),
             ));
+        }
+        for data in mdec_frames() {
+            kinds.push((Kind::Form1, [1, 1, 0x48, 0, 1, 1, 0x48, 0], data));
         }
         let mut track = sectors(frame, &kinds);
         track.extend_from_slice(&[0; SECTOR]);
@@ -665,7 +799,7 @@ mod write {
         v.compress(&cue, "cd.ore", &Options::default(), &[]);
         v.ok(
             "cd.ore",
-            "class 33, cd-data of every plane and sector kind, cd-audio, flac, xa, str, an SBI",
+            "class 33, cd-data of every plane and sector kind, cd-audio, flac, xa, str of v2 and v3 frames, an SBI",
             &logical,
             &files,
         );
