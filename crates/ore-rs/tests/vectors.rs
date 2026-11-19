@@ -1018,8 +1018,9 @@ mod write {
                     b,
                     |_| {},
                     |meta| {
-                        // The media map's keys reversed: the order writers
-                        // used before canonical encoding, which still reads
+                        // The media map's keys in reversed canonical
+                        // order: a permutation no writer emits, which
+                        // the reader must still take
                         let mut value: ciborium::Value = ciborium::from_reader(&meta[..]).unwrap();
                         let ciborium::Value::Map(top) = &mut value else {
                             unreachable!("the metadata is one map")
