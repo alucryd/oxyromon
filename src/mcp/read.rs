@@ -59,7 +59,14 @@ async fn system_size(
         .fetch_one(&mut *connection)
         .await
         .map_err(|e| format!("failed to compute sizes: {e}"))?;
-    Ok(row.0)
+    // thin OREs hold only references, their bytes are in the store
+    let store_size = match actual && !one_region {
+        true => crate::ore::system_store_size(connection, system_id)
+            .await
+            .map_err(|e| format!("failed to compute sizes: {e}"))? as i64,
+        false => 0,
+    };
+    Ok(row.0 + store_size)
 }
 
 /// Build the status payload; shared by the `status` tool and the

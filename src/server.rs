@@ -38,6 +38,9 @@ use tokio_util::io::ReaderStream;
 use tokio_util::sync::CancellationToken;
 #[cfg(debug_assertions)]
 use tower_http::cors::{Any, CorsLayer};
+// CORS is for the dev server only, but cargo can't gate a dependency on the profile
+#[cfg(not(debug_assertions))]
+use tower_http as _;
 
 #[derive(RustEmbed)]
 #[folder = "target/assets"]

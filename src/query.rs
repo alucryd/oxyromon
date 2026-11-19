@@ -52,10 +52,16 @@ async fn system_size(
             sorting, system_id
         )
     };
+    let mut connection = pool.acquire().await.unwrap();
     let row: (i64,) = sqlx::query_as(AssertSqlSafe(sql.as_str()))
-        .fetch_one(&mut *pool.acquire().await.unwrap())
+        .fetch_one(&mut *connection)
         .await?;
-    Ok(row.0)
+    // thin OREs hold only references, their bytes are in the store
+    let store_size = match actual && !one_region {
+        true => crate::ore::system_store_size(&mut connection, system_id).await? as i64,
+        false => 0,
+    };
+    Ok(row.0 + store_size)
 }
 
 #[ComplexObject]

@@ -4,7 +4,6 @@ categories = ["command-line-utilities", "games"]
 description = "Rusty ROM OrgaNizer"
 edition = "2024"
 exclude = [".github/", "crates/", "dist/", "tests/"]
-homepage = "https://github.com/alucryd/oxyromon"
 keywords = ["cli", "rom", "tool"]
 license = "GPL-3.0+"
 name = "oxyromon"

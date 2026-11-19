@@ -838,6 +838,19 @@ pub async fn system_store(connection: &mut SqliteConnection, system: &System) ->
         .join(ore_rs::STORE_DIR))
 }
 
+/// The size of the store a system's thin OREs share, 0 without one: the
+/// bytes its romfiles' sizes leave out.
+pub async fn system_store_size(connection: &mut SqliteConnection, system_id: i64) -> Result<u64> {
+    let Some(system) = crate::database::find_system_by_id_opt(connection, system_id).await else {
+        return Ok(0);
+    };
+    let store = system_store(connection, &system).await?;
+    Ok(match store.is_dir() {
+        true => ore_rs::store_size(&store)?,
+        false => 0,
+    })
+}
+
 /// Bring the OREs among `romfiles` in line with the system's `ORE_STORE`:
 /// standalone ones attached to its store when it is on, thin ones detached
 /// when it is off. An ORE turns thin only once its batch is committed, a

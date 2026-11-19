@@ -82,6 +82,13 @@ async fn test() -> Result<()> {
 
     let system = find_systems(&mut connection).await.remove(0);
 
+    // a store thin OREs would share, counted in the actual total only
+    let store = crate::ore::system_store(&mut connection, &system)
+        .await
+        .unwrap();
+    fs::create_dir_all(&store).await.unwrap();
+    fs::write(store.join("segment"), [0u8; 100]).await.unwrap();
+
     // when
     let matches = subcommand().get_matches_from(["server"]);
     let server = async move {
@@ -215,7 +222,7 @@ async fn test() -> Result<()> {
                 {
                     "totalOriginalSize": 512,
                     "oneRegionOriginalSize": 256,
-                    "totalActualSize": 512,
+                    "totalActualSize": 612,
                     "oneRegionActualSize": 256,
                 }
             )
