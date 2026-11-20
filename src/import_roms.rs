@@ -1122,9 +1122,9 @@ async fn import_jbfolder<P: AsRef<Path>>(
                     // asking: nobody is there to answer, and inside a jukebox
                     // folder the file name is the only thing to go on.
                     } else if unattended_mode != UnattendedMode::None {
-                        // order roms by distance to the file name
+                        // order roms by similarity to the file name, the closest first
                         roms.sort_by(|a, b| {
-                            let a_distance = jaro_winkler(
+                            let a_similarity = jaro_winkler(
                                 &entry
                                     .path()
                                     .file_name()
@@ -1134,7 +1134,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
                                     .to_lowercase(),
                                 &a.name.to_lowercase(),
                             );
-                            let b_distance = jaro_winkler(
+                            let b_similarity = jaro_winkler(
                                 &entry
                                     .path()
                                     .file_name()
@@ -1144,7 +1144,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
                                     .to_lowercase(),
                                 &b.name.to_lowercase(),
                             );
-                            a_distance.partial_cmp(&b_distance).unwrap()
+                            b_similarity.partial_cmp(&a_similarity).unwrap()
                         });
                         rom = roms.first();
                     } else {
@@ -3193,14 +3193,14 @@ async fn find_rom_by_size_and_hash(
         let system = find_system_by_id(connection, game.system_id).await;
         print_success(progress_bar, &format!("Matches \"{}\"", rom.name));
         rom_game_system = Some((rom, game, system));
-    // select the first rom by distance to the file name if unattended mode is first
+    // select the rom closest to the file name if unattended mode is first
     } else if unattended_mode == UnattendedMode::First
         && let Some(rom_name) = rom_name
     {
         roms.sort_by(|a, b| {
-            let a_distance = jaro_winkler(&rom_name.to_lowercase(), &a.name.to_lowercase());
-            let b_distance = jaro_winkler(&rom_name.to_lowercase(), &b.name.to_lowercase());
-            a_distance.partial_cmp(&b_distance).unwrap()
+            let a_similarity = jaro_winkler(&rom_name.to_lowercase(), &a.name.to_lowercase());
+            let b_similarity = jaro_winkler(&rom_name.to_lowercase(), &b.name.to_lowercase());
+            b_similarity.partial_cmp(&a_similarity).unwrap()
         });
         let rom = roms.remove(0);
         let game = find_game_by_id(connection, rom.game_id).await;
@@ -3574,6 +3574,8 @@ mod test_sevenzip_single_file;
 mod test_sevenzip_single_file_headered;
 #[cfg(test)]
 mod test_single_track_chd;
+#[cfg(test)]
+mod test_unattended_first_closest;
 #[cfg(test)]
 mod test_unknown_system;
 #[cfg(test)]

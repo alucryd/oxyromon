@@ -37,6 +37,7 @@
 - `check-roms`, `compact-roms` and committing a store's batch show their progress as they go, rather than a bar left at the last ORE's size that never moved, and extracting an ORE moves its bar steadily rather than in jumps of a hundred megabytes or so
 - Fixed `import-roms` leaving a game incomplete when its disc has the same track more than once, as Redump lists some: every copy in a CHD, an ORE or an archive took the first copy's ROM, and the others got none, and a loose copy matched every copy's ROM, so it was asked about or, with `--unattended skip`, skipped; each copy now takes a ROM of its own, so a CHD or an ORE with more copies than its DAT lists is no longer imported as the game, but handled as one with a track the DAT doesn't list
 - The web UI's and MCP's actual sizes of a system, total and one-region, count each thin ORE's share of its store and each WUA's of the update partitions it keeps in `.update-partitions`, rather than their files alone, which only reference them; a store shared by grouped subsystems is split between them by game
+- Fixed `import-roms --unattended first`, which the web UI's and MCP's imports use, taking the ROM whose name is least like the file's when the file matches ROMs of several games: Jaro-Winkler scores similarity, not distance, and the candidates were sorted least similar first; the closest now comes first, in a JB folder too
 
 # 0.25.0
 
