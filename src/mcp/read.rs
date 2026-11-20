@@ -129,7 +129,7 @@ impl OxyromonMcp {
     }
 
     #[tool(
-        description = "One system with its stats: game counts, completion, the expected vs actual size of its imported ROMs, all and 1G1R only, and, when its ROMs live in an ORE store, what the store's dedup saved and its parity costs.",
+        description = "One system with its stats: game counts, completion, the expected vs actual size of its imported ROMs, all and 1G1R only, and, when its ROMs live in a readable ORE store, what the store's dedup saved and its parity costs.",
         annotations(read_only_hint = true)
     )]
     async fn get_system(

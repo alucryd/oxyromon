@@ -187,10 +187,12 @@ pub(crate) struct SystemDetailOut {
     pub total_actual_size: i64,
     /// Same, counting only the 1G1R selection.
     pub one_region_actual_size: i64,
-    /// What the system's ORE store saved by dedup, absent when it uses none.
+    /// What the system's ORE store saved by dedup, absent when it uses none
+    /// or the store cannot be read.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub store_dedup_saved: Option<i64>,
-    /// What the system's ORE store's parity costs, absent when it uses none.
+    /// What the system's ORE store's parity costs, absent when it uses none
+    /// or the store cannot be read.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub store_parity_cost: Option<i64>,
 }

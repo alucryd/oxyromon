@@ -743,6 +743,9 @@ fn StatsCard() -> impl IntoView {
         })
     };
     let sized = move |value: fn(&Sizes) -> i64| Signal::derive(move || state.sizes.with(value));
+    let sized_opt = move |value: fn(&Sizes) -> Option<i64>| {
+        Signal::derive(move || state.sizes.with(value).unwrap_or_default())
+    };
 
     view! {
         <div class="panel" style="flex: none;">
@@ -794,22 +797,12 @@ fn StatsCard() -> impl IntoView {
                 >
                     <SizeTile
                         label="Dedup Saved (Store)"
-                        bytes=Signal::derive(move || {
-                            state
-                                .sizes
-                                .with(|sizes| sizes.store_dedup_saved)
-                                .unwrap_or_default()
-                        })
+                        bytes=sized_opt(|sizes| sizes.store_dedup_saved)
                         loading=state.loading_sizes
                     />
                     <SizeTile
                         label="Parity Cost (Store)"
-                        bytes=Signal::derive(move || {
-                            state
-                                .sizes
-                                .with(|sizes| sizes.store_parity_cost)
-                                .unwrap_or_default()
-                        })
+                        bytes=sized_opt(|sizes| sizes.store_parity_cost)
                         loading=state.loading_sizes
                     />
                 </Show>
