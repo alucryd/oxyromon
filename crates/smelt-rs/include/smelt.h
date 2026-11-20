@@ -82,9 +82,14 @@ typedef enum smelt_track_mode {
 typedef struct smelt_ingot smelt_ingot;
 
 /**
- * Options to [`smelt_open`]; none yet, so pass NULL.
+ * Options to [`smelt_open`]; pass NULL to take every default.
  */
 typedef struct smelt_open_opts {
+  /**
+   * Bytes of decoded groups the ingot keeps in memory; 0 is the
+   * default, 32 MiB. Android frontends over a slow share want less.
+   */
+  uint32_t cache_bytes;
   /**
    * Reserved: 0.
    */
@@ -144,7 +149,8 @@ const char *smelt_last_error(void);
 
 /**
  * Open the ORE at `path`, UTF-8, and if it is thin, the store its chunks
- * lie in, the nearest `.ore-store` up from its folder. `opts` is NULL.
+ * lie in, the nearest `.ore-store` up from its folder. `opts` is NULL
+ * for the defaults or options this build knows.
  *
  * # Safety
  *
