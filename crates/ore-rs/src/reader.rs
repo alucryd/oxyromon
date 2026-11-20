@@ -228,6 +228,9 @@ impl Reader {
         if meta.media.size != header.logical_size {
             return Err(corrupt("metadata and header disagree on the disc's size"));
         }
+        if meta.media.class != header.media_class {
+            return Err(corrupt("metadata and header disagree on the media class"));
+        }
         let thin = header.flags_required & REQ_LIBRARY != 0;
         if thin != meta.store.is_some()
             || meta

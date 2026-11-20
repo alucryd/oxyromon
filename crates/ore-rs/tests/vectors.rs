@@ -103,8 +103,9 @@ fn read(path: &Path, files: &[(String, u64, String)], out: &Path) -> ore_rs::Res
 
 /// What ore-rs refuses each hostile vector with, so each is refused for
 /// the reason the manifest names: other readers word theirs their own way.
-const REFUSALS: [(&str, &str); 19] = [
+const REFUSALS: [(&str, &str); 20] = [
     ("area-kind.ore", "unknown variant `rax`"),
+    ("hostile/class.ore", "disagree on the media class"),
     (
         "dedup-forward.ore",
         "a reference to a chunk not stored before it",
@@ -1065,6 +1066,9 @@ mod write {
         });
         refused("media-class.ore", "an unknown media class", &|b| {
             b[18..20].copy_from_slice(&255u16.to_be_bytes())
+        });
+        refused("class.ore", "a header class the metadata denies", &|b| {
+            b[18..20].copy_from_slice(&64u16.to_be_bytes())
         });
         refused("objects.ore", "an object_count of 2", &|b| {
             b[44..48].copy_from_slice(&2u32.to_be_bytes())

@@ -56,6 +56,7 @@ vector	hostile/magic.ore	refuse	-	-	not an ORE's magic
 vector	hostile/required-flag.ore	refuse	-	-	an unknown flags_required bit
 vector	hostile/short-header.ore	refuse	-	-	a header_len under 192
 vector	hostile/media-class.ore	refuse	-	-	an unknown media class
+vector	hostile/class.ore	refuse	-	-	a header class the metadata denies
 vector	hostile/objects.ore	refuse	-	-	an object_count of 2
 vector	hostile/size.ore	refuse	-	-	a logical_size the metadata does not have
 vector	hostile/logical-hash.ore	refuse	-	-	a logical_hash the stream does not have

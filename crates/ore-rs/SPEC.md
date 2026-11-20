@@ -120,6 +120,8 @@ A reader:
   `flags_optional`.
 - MUST refuse a `media_class` it does not know, an `object_count` other than
   1, and an `index_kind` other than 2 for a thin ORE and 0 otherwise.
+- MUST refuse a metadata whose `class` is not the header's `media_class`,
+  §13.
 
 ### 3.1 Flags
 
@@ -317,7 +319,7 @@ media = {
   ? sbi:      bytes,                      ; a CD's SBI, as its dump has it
   size:       uint,                       ; = logical_size
   areas:      [ area ],                   ; in the order their records come
-  class:      uint,                       ; = media_class
+  class:      uint,                       ; must equal the header's media_class, §13
   ? ticket:   { name: text, bytes: bytes },   ; an eShop title's ticket, a file of its folder
   platform:   text,                       ; §11
 }
@@ -665,7 +667,8 @@ holds, when:
 
 - a region, the index or the metadata, lies past the end of the file, fails
   its CRC, or, for the metadata, is above 16 MiB;
-- the metadata's `size` is not `logical_size`, a thin ORE names no store or
+- the metadata's `size` is not `logical_size`, its `class` is not
+  `media_class`, a thin ORE names no store or
   a standalone one names one, or a uuid is not 16 bytes;
 - the areas do not tile the logical stream, or one fails §8's rules;
 - a record is of an unknown kind or generator, of length 0 or above 16 MiB,
