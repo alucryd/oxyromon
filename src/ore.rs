@@ -12,11 +12,9 @@ use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 #[cfg(feature = "server")]
-use super::query::StoreIndexLoader;
+use super::query::StoreIndex;
 use super::util::*;
 use anyhow::{Context, Result, bail};
-#[cfg(feature = "server")]
-use async_graphql::dataloader::DataLoader;
 use indicatif::{HumanBytes, ProgressBar};
 use ore_rs::{Codec, Options, Profile, Reader, StoreBatch, StoreOptions};
 use sqlx::SqliteConnection;
@@ -876,17 +874,25 @@ pub async fn actual_size(connection: &mut SqliteConnection, romfiles: &[Romfile]
     .await
 }
 
-/// The same weight, with the stores' indexes asked of the request's
-/// loader: one query reading several sizes of one system parses each
-/// index once, whatever the number of fields that need it.
+/// The same weight, with the system's store index already in hand — asked
+/// of the request's loader by the field before it weighed anything. The
+/// preload answers its own store; a thin ORE beneath a different one reads
+/// that index itself, as a query reading several sizes of one system parses
+/// each index once, whatever the number of fields that need it.
 #[cfg(feature = "server")]
 pub async fn actual_size_loaded(
     connection: &mut SqliteConnection,
     romfiles: &[Romfile],
-    loader: &DataLoader<StoreIndexLoader>,
+    store: Option<Arc<StoreIndex>>,
 ) -> Result<u64> {
-    actual_size_in(connection, romfiles, |store| async move {
-        loader.load_one(store).await.ok().flatten()
+    actual_size_in(connection, romfiles, |path| async {
+        match &store {
+            Some(store) => store.index_for(&path).await,
+            None => spawn_blocking(move || ore_rs::Index::load(&path).ok().map(Arc::new))
+                .await
+                .ok()
+                .flatten(),
+        }
     })
     .await
 }

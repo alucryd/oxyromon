@@ -1,0 +1,5 @@
+# CI test running (cargo llvm-cov nextest).
+[profile.default]
+# A test still running after a minute is the outlier worth naming; flag it
+# at the first period, fail it after the second.
+slow-timeout = { period = "60s", terminate-after = 2 }

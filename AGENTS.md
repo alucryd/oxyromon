@@ -40,18 +40,21 @@ cargo sqlx prepare -- --all-targets --features server  # after any query change;
 Helper scripts at the root: `build.sh`, `desktop.sh`, `dist.sh`, `docker.sh`,
 `test.sh` (the test suite under `cargo llvm-cov`).
 
-CI runs four parallel jobs. **Format** checks `cargo fmt` in all four
+CI runs six parallel jobs. **Format** checks `cargo fmt` in all four
 workspaces. **Web UI** builds it with trunk, lints it, and uploads it as an
-artifact. **Lint and test** runs the two root clippy invocations and the
-workspace tests under `cargo llvm-cov`, against an empty UI, then smelt's
-clippy and tests in its own workspace, cbindgen installed for its header
-check. **Release build
+artifact. **Lint** runs the two root clippy invocations. **Test** runs the
+workspace tests under `cargo llvm-cov nextest`, against an empty UI, and
+uploads the coverage. **Smelt** runs its clippy and tests in its own
+workspace, cbindgen installed for its header check. **Release build
 and desktop** waits for the web UI, then builds the release binary with it
 through `desktop/scripts/stage-sidecar.sh` and lints the desktop shell, which
 `tauri-build` refuses to compile until that sidecar exists. Only that job
-installs the webkit2gtk and xdo development packages, and only the test job
-installs `mame-tools`, `ffmpeg` and `xdelta3`, as reference tools for the
-format crates' tests. Each runs `apt-get update` first: the runner's package
+installs the webkit2gtk and xdo development packages. The format crates'
+reference tools (`mame-tools`, `ffmpeg`, `xdelta3`) are not installed in CI
+at all: the interop tests that compare against them skip themselves without
+the tools, and a separate **Interop** workflow installs the tools and runs
+those tests on PRs touching chd-rs or xdelta-rs, weekly, and on demand.
+Jobs that install packages run `apt-get update` first: the runner's package
 lists go stale within days and installs then 404.
 
 ## Invariants

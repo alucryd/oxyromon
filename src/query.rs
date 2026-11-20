@@ -13,7 +13,7 @@ use sqlx::sqlite::SqliteRow;
 use sqlx::{AssertSqlSafe, FromRow, SqlitePool};
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tokio::task::spawn_blocking;
@@ -25,13 +25,25 @@ async fn system_size(
     one_region: bool,
 ) -> Result<i64> {
     let pool = ctx.data_unchecked::<SqlitePool>();
-    let mut connection = pool.acquire().await.unwrap();
     let sorting = if one_region {
         "AND g.sorting = 1\n                    "
     } else {
         ""
     };
     if actual {
+        // The store's index is asked for before anything else — before a
+        // connection, above all: the batch that serves the key needs one,
+        // and a field holding the pool's five while it waits would starve
+        // the batch into the acquire timeout. The key still goes in on the
+        // field's first poll, so every size field of a request reaches the
+        // loader in the same breath and one read serves them all.
+        let store = ctx
+            .data_unchecked::<DataLoader<StoreIndexLoader>>()
+            .load_one(system_id)
+            .await
+            .ok()
+            .flatten();
+        let mut connection = pool.acquire().await.unwrap();
         let sql = format!(
             "
                 SELECT *
@@ -48,13 +60,9 @@ async fn system_size(
         let romfiles: Vec<Romfile> = sqlx::query_as(AssertSqlSafe(sql.as_str()))
             .fetch_all(&mut *connection)
             .await?;
-        return Ok(crate::ore::actual_size_loaded(
-            &mut connection,
-            &romfiles,
-            ctx.data_unchecked::<DataLoader<StoreIndexLoader>>(),
-        )
-        .await? as i64);
+        return Ok(crate::ore::actual_size_loaded(&mut connection, &romfiles, store).await? as i64);
     }
+    let mut connection = pool.acquire().await.unwrap();
     let sql = format!(
         "
             SELECT COALESCE(SUM(r.size), 0)
@@ -73,19 +81,15 @@ async fn system_size(
 
 /// The advanced stats of the system's ORE store, `None` when it uses none:
 /// what its dedup saved and what its parity costs, read off its index.
+/// Like the sizes, the field asks for the store by system id and asks
+/// first: one request's stats fields share the one index read.
 async fn store_stats_of(ctx: &Context<'_>, system_id: i64) -> Option<ore_rs::StoreStats> {
-    let pool = ctx.data_unchecked::<SqlitePool>();
-    let mut connection = pool.acquire().await.ok()?;
-    let system = find_system_by_id_opt(&mut *connection, system_id).await?;
-    let store = crate::ore::system_store(&mut connection, &system)
-        .await
-        .ok()?;
-    let index = ctx
+    let store = ctx
         .data_unchecked::<DataLoader<StoreIndexLoader>>()
-        .load_one(store)
+        .load_one(system_id)
         .await
         .ok()?;
-    Some(index?.stats())
+    Some(store?.index.stats())
 }
 
 #[ComplexObject]
@@ -252,41 +256,110 @@ impl<T: TableRow + 'static> Loader<i64> for IdLoader<T> {
     }
 }
 
-/// A store's index, loaded once per GraphQL request: a sizes query reads
-/// the same store through every one of its fields, and a big store's
-/// index is no small read. A key that fails to load — a system with no
-/// store beneath it above all — simply has no value, as the sizes and
-/// the stats treat an unreadable store as an absent one.
-#[derive(Clone, Default)]
+/// A system's store index, loaded once per GraphQL request: a sizes query
+/// reads the same store through every one of its fields, and a big store's
+/// index is no small read. Keyed by system, with the store's location
+/// resolved here: a field holding its id needs no round trip before it can
+/// submit its key, and submitting before any other await is what lets a
+/// request batch the reads of all its fields into one. A key that fails to
+/// load — a system with no store beneath it above all — simply has no
+/// value, as the sizes and the stats treat an unreadable store as an absent one.
+#[derive(Clone)]
 pub struct StoreIndexLoader {
+    pool: SqlitePool,
     /// Indexes read from disk: requests only add to it, the tests below
     /// read it to prove they asked for the same store only once.
     #[cfg_attr(not(test), allow(dead_code))]
     loads: Arc<AtomicUsize>,
+    /// Reads the preload served: proves the sizes found the index they
+    /// asked for early, not a store whose path disagreed with the system's.
+    #[cfg_attr(not(test), allow(dead_code))]
+    hits: Arc<AtomicUsize>,
 }
 
 impl StoreIndexLoader {
+    pub fn new(pool: SqlitePool) -> Self {
+        Self {
+            pool,
+            loads: Arc::new(AtomicUsize::new(0)),
+            hits: Arc::new(AtomicUsize::new(0)),
+        }
+    }
+
     /// How many indexes this loader read from disk: one per store, however
     /// many resolvers of the request asked for it.
     #[cfg(test)]
     pub fn loads(&self) -> usize {
         self.loads.load(Ordering::Relaxed)
     }
+
+    /// How many times the sizes took the preloaded index: once is enough
+    /// to prove a store's read served more than the field that asked for it.
+    #[cfg(test)]
+    pub fn hits(&self) -> usize {
+        self.hits.load(Ordering::Relaxed)
+    }
 }
 
-impl Loader<PathBuf> for StoreIndexLoader {
-    type Value = Arc<ore_rs::Index>;
+/// A store's index, with the store it was read from: sizes that find a
+/// different store than the system names read that one themselves.
+pub struct StoreIndex {
+    pub store: PathBuf,
+    pub index: Arc<ore_rs::Index>,
+    hits: Arc<AtomicUsize>,
+}
+
+impl StoreIndex {
+    /// The index of `store` when it is the preloaded one, the disk's
+    /// otherwise: a thin ORE beneath another system's store — a grouped
+    /// subsystem, or a misplaced file — weighs what lies before it.
+    pub async fn index_for(&self, store: &Path) -> Option<Arc<ore_rs::Index>> {
+        if self.store == store {
+            self.hits.fetch_add(1, Ordering::Relaxed);
+            return Some(self.index.clone());
+        }
+        let store = store.to_path_buf();
+        spawn_blocking(move || ore_rs::Index::load(&store).ok().map(Arc::new))
+            .await
+            .ok()
+            .flatten()
+    }
+}
+
+impl Loader<i64> for StoreIndexLoader {
+    type Value = Arc<StoreIndex>;
     type Error = Error;
 
-    async fn load(&self, stores: &[PathBuf]) -> Result<HashMap<PathBuf, Self::Value>, Self::Error> {
-        let stores = stores.to_vec();
+    async fn load(&self, systems: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
+        let mut connection = self.pool.acquire().await?;
+        let mut stores = Vec::new();
+        for system_id in systems.iter().unique() {
+            if let Some(system) = find_system_by_id_opt(&mut connection, *system_id).await
+                && let Ok(store) = crate::ore::system_store(&mut connection, &system).await
+            {
+                stores.push((*system_id, store));
+            }
+        }
+        // The parse reads no database: the connection goes back to the pool
+        // before the multi-second read, not after it. Failing the batch is
+        // graceful too — the fields treat a refused index as an absent one
+        // and read their stores off disk.
+        drop(connection);
         let loads = self.loads.clone();
+        let hits = self.hits.clone();
         Ok(spawn_blocking(move || {
             let mut indexes = HashMap::new();
-            for store in stores {
+            for (system_id, store) in stores {
                 if let Ok(index) = ore_rs::Index::load(&store) {
                     loads.fetch_add(1, Ordering::Relaxed);
-                    indexes.insert(store, Arc::new(index));
+                    indexes.insert(
+                        system_id,
+                        Arc::new(StoreIndex {
+                            store,
+                            index: Arc::new(index),
+                            hits: hits.clone(),
+                        }),
+                    );
                 }
             }
             indexes

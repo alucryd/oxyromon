@@ -176,6 +176,15 @@ path = "src/main.rs"
 [profile.dev.package."*"]
 opt-level = 3
 
+# ... but that glob never covers workspace members, and the codecs moved into
+# members. Every convert, export and import test ran its compression and
+# hashing at opt-level 0; the profile sets them all to 2 so the suites
+# measure the logic, not the debug penalty — and so the members added
+# tomorrow are optimised the day they join, not the day someone remembers
+# to list them.
+[profile.dev]
+opt-level = 2
+
 [profile.release]
 lto = "thin"
 strip = true
