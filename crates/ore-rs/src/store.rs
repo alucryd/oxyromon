@@ -111,7 +111,7 @@ pub(super) struct Chunk {
 /// one, and what it can answer is read through its methods, so a store's
 /// index is loaded once and shared by everything that needs it.
 pub struct Index {
-    pub uuid: [u8; 16],
+    pub(crate) uuid: [u8; 16],
     id_bits: u8,
     /// Parity shards a segment sealed from now on is given.
     parity: u8,
