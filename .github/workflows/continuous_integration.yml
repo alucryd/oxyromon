@@ -13,6 +13,9 @@ env:
   # target/assets empty, which is all clippy and the tests need.
   SKIP_TRUNK: "true"
   TRUNK_VERSION: "0.21.14"
+  # The nextest release the test step installs; pinned like trunk, so an
+  # upstream release cannot change CI's behaviour without a commit here.
+  NEXTEST_VERSION: "0.9.152"
 
 # The runner image ships apt lists baked at image-build time, which go stale
 # within days. Ubuntu rolls superseded .debs out of the pool when a newer point
@@ -123,7 +126,7 @@ jobs:
       # nextest runs each test binary's tests in parallel and reports time
       # per test; the suites add up no more, the slowest one does.
       - name: Install nextest
-        run: curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C "$CARGO_HOME/bin"
+        run: curl -LsSf https://get.nexte.st/${{ env.NEXTEST_VERSION }}/linux | tar zxf - -C "$CARGO_HOME/bin"
       # chd-rs and xdelta-rs compare against chdman, xdelta3 and ffmpeg and
       # skip themselves without them; the interop workflow installs them and
       # runs those tests where they count.

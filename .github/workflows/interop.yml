@@ -19,7 +19,9 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  SKIP_TRUNK: "true"
+
+permissions:
+  contents: read
 
 jobs:
   interop:
