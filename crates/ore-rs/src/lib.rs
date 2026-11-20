@@ -99,6 +99,7 @@ pub use reader::{Reader, Sizes, Stats, Track, TrackMode, decompress, is_ore, sha
 #[cfg(feature = "write")]
 pub use store::{Compacted, compact, create_store, set_parity};
 pub use store::{STORE_DIR, StoreChecked, StoreOptions, check_store, find_store, store_size};
+pub use store::{StoreStats, store_stats};
 #[cfg(feature = "write")]
 pub use writer::{
     CARTRIDGE_PLATFORMS, Options, StoreBatch, attach, cartridge_header_matches, compress,

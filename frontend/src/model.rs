@@ -71,7 +71,8 @@ pub struct Info {
     pub rom_count: i64,
 }
 
-/// The four aggregate sizes reported for a system.
+/// The four aggregate sizes reported for a system, and the two its ORE
+/// store adds when it uses one.
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Sizes {
@@ -79,6 +80,8 @@ pub struct Sizes {
     pub one_region_original_size: i64,
     pub total_actual_size: i64,
     pub one_region_actual_size: i64,
+    pub store_dedup_saved: Option<i64>,
+    pub store_parity_cost: Option<i64>,
 }
 
 /// Notification shown in the bell dropdown / toast.

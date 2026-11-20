@@ -6,6 +6,7 @@
 
 ## Features
 
+- Added `store_stats`, what a store's tricks get it and what they cost it: its distinct chunks and what they weigh where they lie, the bytes its dedup kept from being stored twice, and the footers of parity over its segments, all read off its index alone, no data
 - Added `SPEC.md`, ORE 1.0's specification, its codecs `xa`, `vag` and `str` among it, and its conformance vectors in `spec/vectors`: every media class, record kind and codec, a store and its thin OREs, what a later writer adds and what a reader refuses
 - Added `shares`, the `Sizes::share` of many OREs of one store, its index loaded once for them all
 - Added 3DS card images, `3ds` among `CARTRIDGE_PLATFORMS`: a ROM whose NCSD header says it is no larger than the card, a trimmed one too, up to 4 GiB; `default_codec` gives Zstandard for one, read as a disc is rather than whole

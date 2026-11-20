@@ -549,6 +549,50 @@ pub fn store_size(store: &Path) -> Result<u64> {
     Ok(size)
 }
 
+/// What a store weighs besides its data: what its chunks weigh, what
+/// dedup keeps from being stored twice, and what parity adds, as
+/// [`store_stats`] gives them, in bytes. Each follows the same ledger as
+/// [`Sizes::share`]: bytes on disk, divided by the compression of the
+/// group holding them and scaled up by the parity covering the segment.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct StoreStats {
+    /// The distinct chunks it holds.
+    pub chunks: u64,
+    /// What they weigh where they lie.
+    pub stored: u64,
+    /// What storing each chunk again for every game past the first would
+    /// have added: the saving of dedup.
+    pub dedup_saved: u64,
+    /// What the footers of parity add to the segments.
+    pub parity: u64,
+}
+
+/// What the store at `store` saves by dedup and what its parity costs:
+/// its index read, its chunks and segments counted, no data.
+pub fn store_stats(store: &Path) -> Result<StoreStats> {
+    let index = Index::load(store)?;
+    let mut stored = 0f64;
+    let mut dedup_saved = 0f64;
+    for chunk in &index.chunks {
+        let weight = index.weight(chunk);
+        stored += weight;
+        if chunk.refs > 1 {
+            dedup_saved += weight * (f64::from(chunk.refs - 1) / f64::from(chunk.refs));
+        }
+    }
+    let parity = index
+        .segments
+        .iter()
+        .map(|segment| Layout::new(segment.len, segment.parity).footer_len())
+        .sum();
+    Ok(StoreStats {
+        chunks: index.chunks.len() as u64,
+        stored: stored.round() as u64,
+        dedup_saved: dedup_saved.round() as u64,
+        parity,
+    })
+}
+
 /// Check the store at `store` whole: every segment against its CRCs, and
 /// with `repair`, what fails them rebuilt from parity, in place; then
 /// every group decoded, checked against its CRC, and every chunk against

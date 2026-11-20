@@ -222,7 +222,7 @@ pub async fn fetch_sizes(notifier: Notifier, system_id: i64) -> Sizes {
         return Sizes::default();
     }
     let query = format!(
-        "{{ totalOriginalSize(systemId: {id}) oneRegionOriginalSize(systemId: {id}) totalActualSize(systemId: {id}) oneRegionActualSize(systemId: {id}) }}",
+        "{{ totalOriginalSize(systemId: {id}) oneRegionOriginalSize(systemId: {id}) totalActualSize(systemId: {id}) oneRegionActualSize(systemId: {id}) storeDedupSaved(systemId: {id}) storeParityCost(systemId: {id}) }}",
         id = system_id
     );
     match graphql::<Sizes>(&query, Value::Null).await {

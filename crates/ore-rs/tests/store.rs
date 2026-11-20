@@ -128,6 +128,55 @@ fn games_share_their_chunks_and_round_trip() {
 }
 
 #[test]
+fn store_stats_tell_the_dedup_from_the_parity() {
+    let library = Library::new(&StoreOptions::default());
+    let discs = discs();
+    let a = library.add("a.ore", &discs[0], &[]);
+    let one = ore_rs::store_stats(&library.store).unwrap();
+    let b = library.add("1G1R/b.ore", &discs[1], &[]);
+    let both = ore_rs::store_stats(&library.store).unwrap();
+
+    // The second game adds chunks, its own file's among them, yet less
+    // than half again what the store weighed: the shared file is stored
+    // once and the discs' zeros still more so
+    assert!(both.chunks > one.chunks);
+    let added = both.stored - one.stored;
+    assert!(added < both.stored / 2, "added {added} to {}", both.stored);
+
+    // The shared 1 MiB weighs about what it lies, halved by the two games
+    // using it: the saving of dedup is at least that half, and never more
+    // than what the store holds
+    assert!(
+        both.dedup_saved > 0x100000 / 2,
+        "dedup saved only {}",
+        both.dedup_saved
+    );
+    assert!(both.dedup_saved < both.stored, "saved more than stored");
+
+    // Sixteen shards over two hundred thirty-nine, whole blocks: about
+    // a sixteenth of what lies, felt more by small segments
+    assert!(
+        both.parity * 25 > both.stored && both.parity * 8 < both.stored,
+        "parity {} against {} stored",
+        both.parity,
+        both.stored
+    );
+
+    // The same ledger the games read: their shares, the OREs' own files
+    // subtracted, are the store's chunks
+    let shares: u64 = [&a, &b]
+        .map(|ore| Reader::open(ore).unwrap().sizes().share)
+        .iter()
+        .sum();
+    let files = len(&a) + len(&b);
+    assert!(
+        (shares - files).abs_diff(both.stored) < 0x400,
+        "{shares} less {files} against {}",
+        both.stored
+    );
+}
+
+#[test]
 fn a_wii_disc_round_trips_through_a_store() {
     let library = Library::new(&StoreOptions::default());
     let disc = wii_disc();

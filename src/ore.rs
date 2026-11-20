@@ -845,6 +845,17 @@ pub async fn system_store(connection: &mut SqliteConnection, system: &System) ->
         .join(ore_rs::STORE_DIR))
 }
 
+/// What the system's store saves by dedup and what its parity costs,
+/// `None` when the system uses no store, or it cannot be read: the stats
+/// are an extra, no flow fails without them.
+pub async fn system_store_stats(
+    connection: &mut SqliteConnection,
+    system: &System,
+) -> Option<ore_rs::StoreStats> {
+    let store = system_store(connection, system).await.ok()?;
+    ore_rs::store_stats(&store).ok()
+}
+
 /// What `romfiles` weigh on disk: their files, with a thin ORE's share of
 /// its store and a WUA's of the update partitions it keeps in its own. A
 /// store shared with other systems, as `GROUP_SUBSYSTEMS` gives, is split
@@ -1056,6 +1067,19 @@ pub async fn check_store(progress_bar: &ProgressBar, store: &Path) -> Result<()>
     .await
     .with_context(|| format!("Failed to check \"{}\"", store.display()))?;
     stop_action(progress_bar);
+    // The store is whole: what its dedup saved and what its parity costs,
+    // the numbers its size alone cannot tell
+    if let Ok(stats) = ore_rs::store_stats(store) {
+        print_info(
+            progress_bar,
+            &format!(
+                "{} chunk(s): dedup saved {}, parity costs {}",
+                stats.chunks,
+                HumanBytes(stats.dedup_saved),
+                HumanBytes(stats.parity),
+            ),
+        );
+    }
     if checked.repaired > 0 {
         print_warning(
             progress_bar,

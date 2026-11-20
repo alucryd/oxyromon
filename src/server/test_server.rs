@@ -199,7 +199,7 @@ async fn test() -> Result<()> {
         );
 
         let string = client.post("http://127.0.0.1:8000/graphql")
-            .body(r#"{"query":"{ totalOriginalSize(systemId: 1), oneRegionOriginalSize(systemId: 1), totalActualSize(systemId: 1), oneRegionActualSize(systemId: 1) }"}"#)
+            .body(r#"{"query":"{ totalOriginalSize(systemId: 1), oneRegionOriginalSize(systemId: 1), totalActualSize(systemId: 1), oneRegionActualSize(systemId: 1), storeDedupSaved(systemId: 1), storeParityCost(systemId: 1) }"}"#)
             .header("Content-Type", "application/json")
             .send()
             .await
@@ -217,6 +217,9 @@ async fn test() -> Result<()> {
                     "oneRegionOriginalSize": 256,
                     "totalActualSize": 512,
                     "oneRegionActualSize": 256,
+                    // No store beneath this system: its two are absent
+                    "storeDedupSaved": null,
+                    "storeParityCost": null,
                 }
             )
         );
