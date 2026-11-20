@@ -5,7 +5,7 @@ use super::import_patches::{import_patch, parse_patch};
 use super::mcp::WRITE_LOCK;
 use super::mutation::Mutation;
 use super::progress::*;
-use super::query::{GameLoader, QueryRoot, RomfileLoader, SystemLoader};
+use super::query::{GameLoader, QueryRoot, RomfileLoader, StoreIndexLoader, SystemLoader};
 use anyhow::{Result, bail};
 use async_graphql::dataloader::DataLoader;
 use async_graphql::{EmptySubscription, Schema};
@@ -174,18 +174,15 @@ async fn shutdown_signal(pool: SqlitePool, cancel: CancellationToken) {
     cancel.cancel();
 }
 
-pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> Result<()> {
-    // Create broadcast channel for SSE
-    let (sse_tx, _) = broadcast::channel::<SseMessage>(100);
-    let cancel = CancellationToken::new();
-
-    let state = AppState {
-        pool: pool.clone(),
-        sse_tx: sse_tx.clone(),
-        cancel: cancel.clone(),
-    };
-
-    let schema = Schema::build(QueryRoot, Mutation, EmptySubscription)
+/// The GraphQL schema: a loader per row type, one store index loader
+/// shared by every request so a sizes query parses a store's index once,
+/// the pool and the SSE channel.
+fn build_schema(
+    pool: SqlitePool,
+    sse_tx: broadcast::Sender<SseMessage>,
+    store_index_loader: StoreIndexLoader,
+) -> Schema<QueryRoot, Mutation, EmptySubscription> {
+    Schema::build(QueryRoot, Mutation, EmptySubscription)
         .data(DataLoader::new(
             SystemLoader::new(pool.clone()),
             tokio::task::spawn,
@@ -198,9 +195,24 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> Result<()> {
             RomfileLoader::new(pool.clone()),
             tokio::task::spawn,
         ))
-        .data(pool.clone())
-        .data(sse_tx.clone())
-        .finish();
+        .data(DataLoader::new(store_index_loader, tokio::task::spawn))
+        .data(pool)
+        .data(sse_tx)
+        .finish()
+}
+
+pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> Result<()> {
+    // Create broadcast channel for SSE
+    let (sse_tx, _) = broadcast::channel::<SseMessage>(100);
+    let cancel = CancellationToken::new();
+
+    let state = AppState {
+        pool: pool.clone(),
+        sse_tx: sse_tx.clone(),
+        cancel: cancel.clone(),
+    };
+
+    let schema = build_schema(pool.clone(), sse_tx.clone(), StoreIndexLoader::default());
 
     let app = Router::new()
         .route("/graphql", post_service(GraphQL::new(schema)))
@@ -1121,5 +1133,7 @@ mod test_mutations;
 mod test_queries;
 #[cfg(test)]
 mod test_server;
+#[cfg(test)]
+mod test_store_index;
 #[cfg(test)]
 mod test_uploads;

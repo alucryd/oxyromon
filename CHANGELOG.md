@@ -24,6 +24,10 @@
 - ORE codes a PlayStation 2 DVD's audio as audio: its `VAGp` streams' SPU ADPCM and its 16-bit PCM, found by their headers, so a disc full of sound no longer loses to its CHD
 - Importing a cue sheet for a game whose tracks are in an ORE puts it in the ORE, in place of the dump's, writing the ORE's metadata alone again
 
+## Improvements
+
+- A web request reads a store's index once rather than once per size it answers: the two stats and the two actual sizes of a system parse their shared store together, where a refresh had parsed it four times
+
 ## Fixes
 
 - A Wii U update or DLC with a content of a size off the AES block, as *Nintendo Land*'s update has, converts to WUA, where wux-rs refused it as corrupt

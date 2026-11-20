@@ -107,14 +107,22 @@ pub struct Sizes {
 /// index loaded once for them all; `None` for one that can't be read. A
 /// standalone ORE's, or one of another store's, is its file's size.
 pub fn shares(store: &Path, paths: &[&Path]) -> Result<Vec<Option<u64>>> {
-    let index = Index::load(store)?;
-    Ok(paths
-        .iter()
-        .map(|path| {
-            let reader = Reader::inspect(path).ok()?;
-            Some(reader.sizes_in(Some(&index))?.share)
-        })
-        .collect())
+    Ok(Index::load(store)?.shares(paths))
+}
+
+impl Index {
+    /// The [`Sizes::share`] of each ORE at `paths` in the store this is
+    /// the index of; `None` for one that can't be read: what [`shares`]
+    /// answers, for a caller that already holds the index.
+    pub fn shares(&self, paths: &[&Path]) -> Vec<Option<u64>> {
+        paths
+            .iter()
+            .map(|path| {
+                let reader = Reader::inspect(path).ok()?;
+                Some(reader.sizes_in(Some(self))?.share)
+            })
+            .collect()
+    }
 }
 
 /// An ORE, read as the disc it holds.

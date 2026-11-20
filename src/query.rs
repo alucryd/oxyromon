@@ -13,6 +13,10 @@ use sqlx::sqlite::SqliteRow;
 use sqlx::{AssertSqlSafe, FromRow, SqlitePool};
 use std::collections::HashMap;
 use std::marker::PhantomData;
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use tokio::task::spawn_blocking;
 
 async fn system_size(
     ctx: &Context<'_>,
@@ -44,7 +48,12 @@ async fn system_size(
         let romfiles: Vec<Romfile> = sqlx::query_as(AssertSqlSafe(sql.as_str()))
             .fetch_all(&mut *connection)
             .await?;
-        return Ok(crate::ore::actual_size(&mut connection, &romfiles).await? as i64);
+        return Ok(crate::ore::actual_size_loaded(
+            &mut connection,
+            &romfiles,
+            ctx.data_unchecked::<DataLoader<StoreIndexLoader>>(),
+        )
+        .await? as i64);
     }
     let sql = format!(
         "
@@ -68,7 +77,15 @@ async fn store_stats_of(ctx: &Context<'_>, system_id: i64) -> Option<ore_rs::Sto
     let pool = ctx.data_unchecked::<SqlitePool>();
     let mut connection = pool.acquire().await.ok()?;
     let system = find_system_by_id_opt(&mut *connection, system_id).await?;
-    crate::ore::system_store_stats(&mut connection, &system).await
+    let store = crate::ore::system_store(&mut connection, &system)
+        .await
+        .ok()?;
+    let index = ctx
+        .data_unchecked::<DataLoader<StoreIndexLoader>>()
+        .load_one(store)
+        .await
+        .ok()?;
+    Some(index?.stats())
 }
 
 #[ComplexObject]
@@ -232,6 +249,49 @@ impl<T: TableRow + 'static> Loader<i64> for IdLoader<T> {
             .map_ok(|row: T| (row.row_id(), row))
             .try_collect()
             .await?)
+    }
+}
+
+/// A store's index, loaded once per GraphQL request: a sizes query reads
+/// the same store through every one of its fields, and a big store's
+/// index is no small read. A key that fails to load — a system with no
+/// store beneath it above all — simply has no value, as the sizes and
+/// the stats treat an unreadable store as an absent one.
+#[derive(Clone, Default)]
+pub struct StoreIndexLoader {
+    /// Indexes read from disk: requests only add to it, the tests below
+    /// read it to prove they asked for the same store only once.
+    #[cfg_attr(not(test), allow(dead_code))]
+    loads: Arc<AtomicUsize>,
+}
+
+impl StoreIndexLoader {
+    /// How many indexes this loader read from disk: one per store, however
+    /// many resolvers of the request asked for it.
+    #[cfg(test)]
+    pub fn loads(&self) -> usize {
+        self.loads.load(Ordering::Relaxed)
+    }
+}
+
+impl Loader<PathBuf> for StoreIndexLoader {
+    type Value = Arc<ore_rs::Index>;
+    type Error = Error;
+
+    async fn load(&self, stores: &[PathBuf]) -> Result<HashMap<PathBuf, Self::Value>, Self::Error> {
+        let stores = stores.to_vec();
+        let loads = self.loads.clone();
+        Ok(spawn_blocking(move || {
+            let mut indexes = HashMap::new();
+            for store in stores {
+                if let Ok(index) = ore_rs::Index::load(&store) {
+                    loads.fetch_add(1, Ordering::Relaxed);
+                    indexes.insert(store, Arc::new(index));
+                }
+            }
+            indexes
+        })
+        .await?)
     }
 }
 
