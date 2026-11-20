@@ -176,6 +176,52 @@ path = "src/main.rs"
 [profile.dev.package."*"]
 opt-level = 3
 
+# ... but that glob never covers workspace members, and the codecs moved into
+# members. Every convert, export and import test ran its compression and
+# hashing at opt-level 0; these run at 2 so the suites measure the logic,
+# not the debug penalty.
+[profile.dev.package.oxyromon]
+opt-level = 2
+
+[profile.dev.package.cd]
+opt-level = 2
+
+[profile.dev.package.chd-rs]
+opt-level = 2
+
+[profile.dev.package.cia-rs]
+opt-level = 2
+
+[profile.dev.package.gcwii]
+opt-level = 2
+
+[profile.dev.package.gdi-rs]
+opt-level = 2
+
+[profile.dev.package.nsz-rs]
+opt-level = 2
+
+[profile.dev.package.ore-rs]
+opt-level = 2
+
+[profile.dev.package.rvz-rs]
+opt-level = 2
+
+[profile.dev.package.wbfs-rs]
+opt-level = 2
+
+[profile.dev.package.wux-rs]
+opt-level = 2
+
+[profile.dev.package.xdelta-rs]
+opt-level = 2
+
+[profile.dev.package.xps-rs]
+opt-level = 2
+
+[profile.dev.package.xso-rs]
+opt-level = 2
+
 [profile.release]
 lto = "thin"
 strip = true
