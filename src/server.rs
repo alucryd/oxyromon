@@ -212,7 +212,11 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> Result<()> {
         cancel: cancel.clone(),
     };
 
-    let schema = build_schema(pool.clone(), sse_tx.clone(), StoreIndexLoader::default());
+    let schema = build_schema(
+        pool.clone(),
+        sse_tx.clone(),
+        StoreIndexLoader::new(pool.clone()),
+    );
 
     let app = Router::new()
         .route("/graphql", post_service(GraphQL::new(schema)))

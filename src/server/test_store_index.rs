@@ -66,7 +66,7 @@ async fn test() {
         .unwrap();
 
     // when one request asks for every size of the system
-    let store_index_loader = StoreIndexLoader::default();
+    let store_index_loader = StoreIndexLoader::new(pool.clone());
     let counted = store_index_loader.clone();
     let (sse_tx, _) = broadcast::channel::<SseMessage>(100);
     let schema = build_schema(pool.clone(), sse_tx, store_index_loader);
@@ -77,6 +77,13 @@ async fn test() {
 
     // then the index was read once, whatever the four fields made of it
     assert_eq!(counted.loads(), 1);
+
+    // and it served the sizes: the preload was used, not a store whose path
+    // disagreed with the system's and fell back to the disk
+    assert!(
+        counted.hits() > 0,
+        "the sizes took the preloaded index, not their own read"
+    );
 
     // and the answer is still the store's own
     let data = response.data.into_json().unwrap();
