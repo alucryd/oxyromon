@@ -292,9 +292,14 @@ CBOR byte strings; lengths are definite.
 A reader MUST ignore keys it does not know, which is how later versions add
 to it (§14), and MUST refuse a value it does not know where this section
 gives the values a field takes, an area kind or a codec, say. It MUST NOT
-depend on the order of keys. A writer SHOULD write keys in the order given
-here, which is ore-rs's, so that two encodes of the same input are the
-same bytes, and leaves out an optional key without a value.
+depend on the order of keys: OREs written before ore-rs wrote them in
+canonical order are 1.0 files too. A writer SHOULD write the metadata in
+RFC 8949 §4.2.1 core deterministic encoding, as ore-rs does from this
+change on, so that two encodes of the same input are the same bytes:
+integers in their shortest form, lengths definite, no tags, and each
+map's keys in bytewise order, which for text keys puts the shorter key
+first. A writer leaves out an optional key without a value. The listings
+below give the keys in that order.
 
 Below, `?` marks an optional key, `[ ]` an array.
 
@@ -310,10 +315,10 @@ meta = {
 media = {
   ? cue:      bytes,                      ; a CD's cue sheet, as its dump has it
   ? sbi:      bytes,                      ; a CD's SBI, as its dump has it
-  ? ticket:   { name: text, bytes: bytes },   ; an eShop title's ticket, a file of its folder
   size:       uint,                       ; = logical_size
   areas:      [ area ],                   ; in the order their records come
   class:      uint,                       ; = media_class
+  ? ticket:   { name: text, bytes: bytes },   ; an eShop title's ticket, a file of its folder
   platform:   text,                       ; §11
 }
 
@@ -321,18 +326,19 @@ area = {
   len:          uint,                     ; bytes of the logical stream it covers, > 0
   ? file:       text,                     ; the file it is, or part of, §10
   kind:         "raw" / "wii-partition" / "cd-data" / "cd-audio" / "wiiu" / "repeat",
+  ? wiiu:       { ? outer: layer, ? pieces: [ { len: uint, layer: layer, offset: uint } ] },
+  ? codec:      codec name,               ; what its groups were meant for, informational
   ? frame:      uint,                     ; a CD track's first sector, frames from 00:00:00
   start:        uint,                     ; where it starts in the logical stream
+  ? period:     uint,                     ; a repeat's, §8.7
   records:      uint,                     ; the index records it takes
-  ? codec:      codec name,               ; what its groups were meant for, informational
   ? sectors:    bytes,                    ; a CD data track's sector map, §8.4
   ? title_key:  bytes(16),                ; a Wii partition's, decrypted
   ? exceptions: [ { block: uint, hashes: bytes(1024) } ],   ; a Wii partition's, §8.5
-  ? wiiu:       { ? outer: layer, ? pieces: [ { offset: uint, len: uint, layer: layer } ] },
-  ? period:     uint,                     ; a repeat's, §8.7
 }
 
-layer = { mode: "chain" / "blocks" / "hashed", key: bytes(16), index: uint (< 65536), ? ivs: bytes }
+layer = { ? ivs: bytes, key: bytes(16), mode: "chain" / "blocks" / "hashed",
+          index: uint (< 65536) }
 
 step       = { id: text, ? bytes: uint, verified: bool }
 identity   = { algo: text, view: text, value: bytes }

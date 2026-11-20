@@ -1,5 +1,9 @@
 # 0.1.0
 
+## Changes
+
+- The metadata writes as RFC 8949 §4.2.1 core deterministic CBOR, every map's keys shortest first and then bytewise, where they were written in declaration order: what a reader takes back is unchanged, keys of any order still read, and once the metadata's bytes must be one encoding — for signing, or for two writers agreeing — there now is one; SPEC.md §7 says so, `format.rs` holds a test that a field declared out of order fails, and a `compat` vector keeps the old order readable
+
 ## Features
 
 - Added `SPEC.md`, ORE 1.0's specification, its codecs `xa`, `vag` and `str` among it, and its conformance vectors in `spec/vectors`: every media class, record kind and codec, a store and its thin OREs, what a later writer adds and what a reader refuses
