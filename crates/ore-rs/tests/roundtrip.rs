@@ -125,6 +125,41 @@ fn reads_anywhere_and_records_the_disc_hashes() {
 }
 
 #[test]
+fn a_sweep_of_the_disc_decodes_a_group_once() {
+    let dir = TempDir::new().unwrap();
+    let mut disc = gamecube_disc(0x580000);
+    // Incompressible, so the disc is really six 1 MiB groups rather
+    // than one zero chunk repeated
+    disc[0x10000..].copy_from_slice(&noise(0x570000, 7));
+    let options = Options {
+        profile: Profile::Stream,
+        codec: Codec::Zstd,
+        platform: None,
+    };
+    round_trip(dir.path(), &disc, &options, &[]);
+    let mut reader = Reader::open(&dir.path().join("disc.ore")).unwrap();
+    let mut sweep = |reader: &mut Reader| {
+        let mut buf = vec![0; 2048];
+        let mut offset = 0;
+        while offset < disc.len() {
+            let length = buf.len().min(disc.len() - offset);
+            reader.read_at(offset as u64, &mut buf[..length]).unwrap();
+            assert!(buf[..length] == disc[offset..offset + length]);
+            offset += length;
+        }
+    };
+    sweep(&mut reader);
+    // 5.5 MiB of disc in 1 MiB groups: one decode each, not one per sector
+    assert_eq!(reader.group_decodes(), 6);
+    sweep(&mut reader);
+    assert_eq!(
+        reader.group_decodes(),
+        6,
+        "the second sweep found every group already held"
+    );
+}
+
+#[test]
 fn a_damaged_ore_fails() {
     let dir = TempDir::new().unwrap();
     let ore = round_trip(dir.path(), &repeating_disc(), &Options::default(), &[]);

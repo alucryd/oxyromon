@@ -389,17 +389,35 @@ pub(super) struct StoreReader {
     dir: PathBuf,
     pub index: Arc<Index>,
     files: HashMap<u32, File>,
-    cache: Cache,
+    /// Shared with every clone of the reader this store belongs to.
+    cache: Arc<Cache>,
 }
 
 impl StoreReader {
-    pub fn new(dir: PathBuf, index: Arc<Index>) -> Self {
+    pub fn new(dir: PathBuf, index: Arc<Index>, cache_bytes: usize) -> Self {
         Self {
             dir,
             index,
             files: HashMap::new(),
-            cache: Cache::default(),
+            cache: Cache::shared(cache_bytes),
         }
+    }
+
+    /// Another reader of the same store, sharing its index and its
+    /// decoded groups; its segment files open as it needs them.
+    pub fn shared(&self) -> Self {
+        Self {
+            dir: self.dir.clone(),
+            index: self.index.clone(),
+            files: HashMap::new(),
+            cache: self.cache.clone(),
+        }
+    }
+
+    /// The groups decoded from this store, counted once for all the
+    /// readers sharing its cache.
+    pub fn decodes(&self) -> u64 {
+        self.cache.decodes()
     }
 
     pub fn dir(&self) -> &Path {
@@ -418,7 +436,7 @@ impl StoreReader {
                 }
                 self.index = Arc::new(index);
                 self.files.clear();
-                self.cache = Cache::default();
+                self.cache.clear();
                 self.chunk_in_index(id)
             }
             result => result,

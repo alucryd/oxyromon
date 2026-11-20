@@ -137,7 +137,9 @@ pub struct Reader {
     by_start: Vec<usize>,
     chunks: Vec<ChunkAt>,
     groups: Vec<GroupAt>,
-    cache: Cache,
+    /// Shared with every clone of this reader, and with its read-ahead
+    /// worker once it has one.
+    cache: Arc<Cache>,
     /// The store a thin ORE's chunks lie in, once found.
     store: Option<StoreReader>,
     /// The Wii group last encrypted: its area, its number, its bytes.
@@ -154,7 +156,15 @@ impl Reader {
     /// Open the ORE at `path`, and if it is thin, the store its chunks lie
     /// in: the nearest `.ore-store` up from its folder.
     pub fn open(path: &Path) -> Result<Self> {
-        let mut reader = Self::inspect(path)?;
+        Self::open_with(path, 0)
+    }
+
+    /// [`Reader::open`] with a byte budget for the groups it keeps
+    /// decoded; 0 asks for the default. An Android frontend over a slow
+    /// share wants less than a desktop; the budget bounds the cache, not
+    /// the reading.
+    pub fn open_with(path: &Path, cache_bytes: usize) -> Result<Self> {
+        let mut reader = Self::inspect_with(path, cache_bytes)?;
         if let Some(uuid) = reader.store_uuid() {
             let missing = |found: String| {
                 Error::Io(std::io::Error::new(
@@ -167,7 +177,7 @@ impl Reader {
             if index.uuid != uuid {
                 return Err(missing(format!("not {}", dir.display())));
             }
-            reader.attach_store(StoreReader::new(dir, Arc::new(index)))?;
+            reader.attach_store(StoreReader::new(dir, Arc::new(index), cache_bytes))?;
         }
         Ok(reader)
     }
@@ -197,6 +207,12 @@ impl Reader {
     /// The ORE at `path`, without the store it may need: enough for its
     /// identity and the store it needs, not to read a thin one's disc.
     pub fn inspect(path: &Path) -> Result<Self> {
+        Self::inspect_with(path, 0)
+    }
+
+    /// [`Self::inspect`] with a byte budget for the groups it keeps
+    /// decoded; 0 asks for the default.
+    fn inspect_with(path: &Path, cache_bytes: usize) -> Result<Self> {
         let file = File::open(path)?;
         let file_size = file.metadata()?.len();
         let mut bytes = [0; HEADER_LEN];
@@ -466,14 +482,15 @@ impl Reader {
             by_start,
             chunks,
             groups,
-            cache: Cache::default(),
+            cache: Cache::shared(cache_bytes),
             store: None,
             wii: None,
             wiiu: None,
         })
     }
 
-    /// Another reader of the same ORE, sharing its store's index.
+    /// Another reader of the same ORE, sharing its store's index and the
+    /// groups both have decoded.
     pub fn try_clone(&self) -> Result<Self> {
         Ok(Self {
             file: self.file.try_clone()?,
@@ -484,11 +501,8 @@ impl Reader {
             by_start: self.by_start.clone(),
             chunks: self.chunks.clone(),
             groups: self.groups.clone(),
-            cache: Cache::default(),
-            store: self
-                .store
-                .as_ref()
-                .map(|store| StoreReader::new(store.dir().to_path_buf(), store.index.clone())),
+            cache: self.cache.clone(),
+            store: self.store.as_ref().map(StoreReader::shared),
             wii: None,
             wiiu: None,
         })
@@ -1026,6 +1040,13 @@ impl Reader {
             | AreaKind::Wiiu
             | AreaKind::Repeat => 0,
         }
+    }
+
+    /// The groups decoded since this ORE opened: its own and its store's
+    /// together, what a reader chasing a stutter counts against the
+    /// sectors it has served.
+    pub fn group_decodes(&self) -> u64 {
+        self.cache.decodes() + self.store.as_ref().map_or(0, StoreReader::decodes)
     }
 
     /// A group, decoded and checked against its envelope.
