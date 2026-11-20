@@ -62,6 +62,15 @@ async fn system_size(
     Ok(row.0)
 }
 
+/// The advanced stats of the system's ORE store, `None` when it uses none:
+/// what its dedup saved and what its parity costs, read off its index.
+async fn store_stats_of(ctx: &Context<'_>, system_id: i64) -> Option<ore_rs::StoreStats> {
+    let pool = ctx.data_unchecked::<SqlitePool>();
+    let mut connection = pool.acquire().await.ok()?;
+    let system = find_system_by_id_opt(&mut *connection, system_id).await?;
+    crate::ore::system_store_stats(&mut connection, &system).await
+}
+
 #[ComplexObject]
 impl System {
     async fn header(&self, ctx: &Context<'_>) -> Result<Option<Header>> {
@@ -385,5 +394,17 @@ impl QueryRoot {
 
     async fn one_region_actual_size(&self, ctx: &Context<'_>, system_id: i64) -> Result<i64> {
         system_size(ctx, system_id, true, true).await
+    }
+
+    async fn store_dedup_saved(&self, ctx: &Context<'_>, system_id: i64) -> Result<Option<i64>> {
+        Ok(store_stats_of(ctx, system_id)
+            .await
+            .map(|stats| stats.dedup_saved as i64))
+    }
+
+    async fn store_parity_cost(&self, ctx: &Context<'_>, system_id: i64) -> Result<Option<i64>> {
+        Ok(store_stats_of(ctx, system_id)
+            .await
+            .map(|stats| stats.parity as i64))
     }
 }

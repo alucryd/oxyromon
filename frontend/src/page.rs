@@ -787,6 +787,32 @@ fn StatsCard() -> impl IntoView {
                     bytes=sized(|sizes| sizes.one_region_actual_size)
                     loading=state.loading_sizes
                 />
+                // The store's two, shown when the system uses one: what
+                // its dedup saved and what its parity costs
+                <Show
+                    when=move || state.sizes.with(|sizes| sizes.store_dedup_saved.is_some())
+                >
+                    <SizeTile
+                        label="Dedup Saved (Store)"
+                        bytes=Signal::derive(move || {
+                            state
+                                .sizes
+                                .with(|sizes| sizes.store_dedup_saved)
+                                .unwrap_or_default()
+                        })
+                        loading=state.loading_sizes
+                    />
+                    <SizeTile
+                        label="Parity Cost (Store)"
+                        bytes=Signal::derive(move || {
+                            state
+                                .sizes
+                                .with(|sizes| sizes.store_parity_cost)
+                                .unwrap_or_default()
+                        })
+                        loading=state.loading_sizes
+                    />
+                </Show>
             </div>
         </div>
     }

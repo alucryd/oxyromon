@@ -2,6 +2,7 @@
 
 ## Features
 
+- A store tells what its tricks cost and save: `check-roms` on one ends with its chunk count, what its dedup saved and what its parity costs, the web statistics show the same two tiles when a system's ROMs live in a store, and MCP's `system-detail` names them beside the four sizes
 - ORE takes 3DS card images, of the 3DS and New 3DS DATs, decrypted or not, trimmed or not, Zstandard by default as for a disc; an eShop DAT's CIAs are left out
 - `import-keys` imports 3DS keys from Azahar's `aes_keys.txt`, merged by name into `3ds_keys.txt` in the data directory, for decrypting 3DS games to come
 - Added ORE, oxyROMon's own format, from the new ore-rs crate: import, check and convert GameCube and Wii discs and CUE/BIN to and from ORE, RVZs included, through the ISO they hold, a CD's cue sheet inside its ORE with its tracks, set by `ORE_COMPRESSION_ALGORITHM` (`zstd` or `lzma2`) and `ORE_PROFILE` (`stream` or `archive`); the format is ORE 1.0, specified in `crates/ore-rs/SPEC.md` with conformance vectors, and an ORE written now opens in every later version

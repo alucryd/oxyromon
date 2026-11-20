@@ -129,7 +129,7 @@ impl OxyromonMcp {
     }
 
     #[tool(
-        description = "One system with its stats: game counts, completion, and the expected vs actual size of its imported ROMs, all and 1G1R only.",
+        description = "One system with its stats: game counts, completion, the expected vs actual size of its imported ROMs, all and 1G1R only, and, when its ROMs live in an ORE store, what the store's dedup saved and its parity costs.",
         annotations(read_only_hint = true)
     )]
     async fn get_system(
@@ -144,6 +144,7 @@ impl OxyromonMcp {
                 params.system_id
             )));
         };
+        let stats = crate::ore::system_store_stats(connection, &system).await;
         let detail = SystemDetailOut {
             system: SystemOut::from_system(&system),
             total_original_size: system_size(connection, system.id, false, false)
@@ -158,6 +159,8 @@ impl OxyromonMcp {
             one_region_actual_size: system_size(connection, system.id, true, true)
                 .await
                 .map_err(internal)?,
+            store_dedup_saved: stats.map(|stats| stats.dedup_saved as i64),
+            store_parity_cost: stats.map(|stats| stats.parity as i64),
         };
         Ok(ok_json(&detail))
     }
