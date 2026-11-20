@@ -11,8 +11,12 @@ use super::config::*;
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
+#[cfg(feature = "server")]
+use super::query::StoreIndexLoader;
 use super::util::*;
 use anyhow::{Context, Result, bail};
+#[cfg(feature = "server")]
+use async_graphql::dataloader::DataLoader;
 use indicatif::{HumanBytes, ProgressBar};
 use ore_rs::{Codec, Options, Profile, Reader, StoreBatch, StoreOptions};
 use sqlx::SqliteConnection;
@@ -20,6 +24,7 @@ use std::collections::HashMap;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::sync::Arc;
 use strum::{Display, EnumString, VariantNames};
 use tokio::task::spawn_blocking;
 
@@ -862,6 +867,43 @@ pub async fn system_store_stats(
 /// by game, so each system counts only its part. Reads every thin ORE's
 /// header and its store's index, and with WUAs every WUA's layout.
 pub async fn actual_size(connection: &mut SqliteConnection, romfiles: &[Romfile]) -> Result<u64> {
+    actual_size_in(connection, romfiles, |store| async move {
+        spawn_blocking(move || ore_rs::Index::load(&store).ok().map(Arc::new))
+            .await
+            .ok()
+            .flatten()
+    })
+    .await
+}
+
+/// The same weight, with the stores' indexes asked of the request's
+/// loader: one query reading several sizes of one system parses each
+/// index once, whatever the number of fields that need it.
+#[cfg(feature = "server")]
+pub async fn actual_size_loaded(
+    connection: &mut SqliteConnection,
+    romfiles: &[Romfile],
+    loader: &DataLoader<StoreIndexLoader>,
+) -> Result<u64> {
+    actual_size_in(connection, romfiles, |store| async move {
+        loader.load_one(store).await.ok().flatten()
+    })
+    .await
+}
+
+/// The weight of `romfiles`, with every store's index obtained through
+/// `index_of` — read off disk by [`actual_size`], handed over by the
+/// request's loader by [`actual_size_loaded`] — so a caller that reads
+/// the same store many times parses it once.
+async fn actual_size_in<F, Fut>(
+    connection: &mut SqliteConnection,
+    romfiles: &[Romfile],
+    index_of: F,
+) -> Result<u64>
+where
+    F: Fn(PathBuf) -> Fut,
+    Fut: Future<Output = Option<Arc<ore_rs::Index>>>,
+{
     let rom_directory = get_rom_directory(connection).await;
     let is_wua = |path: &Path| {
         path.extension().and_then(|extension| extension.to_str()) == Some(WUA_EXTENSION)
@@ -880,8 +922,10 @@ pub async fn actual_size(connection: &mut SqliteConnection, romfiles: &[Romfile]
             .collect(),
         false => vec![],
     };
-    Ok(spawn_blocking(move || {
-        let mut size = 0;
+    // what weighs alone, what shares a store, what keeps its own: the
+    // thin OREs grouped by the store holding their chunks
+    let (alone, ores, wuas) = spawn_blocking(move || {
+        let mut alone = 0;
         let mut ores: HashMap<PathBuf, Vec<(PathBuf, u64)>> = HashMap::new();
         let mut wuas = vec![];
         for (path, file_size) in romfiles {
@@ -894,12 +938,28 @@ pub async fn actual_size(connection: &mut SqliteConnection, romfiles: &[Romfile]
                 (Some(WUA_EXTENSION), _) => wuas.push(path),
                 _ => {}
             }
-            size += file_size;
+            alone += file_size;
         }
+        (alone, ores, wuas)
+    })
+    .await?;
+    // one index per store, however the caller chose to obtain it; a store
+    // that cannot be read keeps none, as it counts as its files
+    let mut indexes: HashMap<PathBuf, Arc<ore_rs::Index>> = HashMap::new();
+    for store in ores.keys() {
+        if let Some(index) = index_of(store.clone()).await {
+            indexes.insert(store.clone(), index);
+        }
+    }
+    Ok(spawn_blocking(move || {
+        let mut size = alone;
         for (store, ores) in ores {
-            let paths: Vec<&Path> = ores.iter().map(|(path, _)| path.as_path()).collect();
             // an unreadable store or ORE counts as its files, this is a size, not a check
-            let shares = ore_rs::shares(&store, &paths).unwrap_or_default();
+            let paths: Vec<&Path> = ores.iter().map(|(path, _)| path.as_path()).collect();
+            let shares = indexes
+                .get(&store)
+                .map(|index| index.shares(&paths))
+                .unwrap_or_default();
             for (i, (_, file_size)) in ores.iter().enumerate() {
                 size += shares.get(i).copied().flatten().unwrap_or(*file_size);
             }

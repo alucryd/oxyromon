@@ -128,6 +128,24 @@ fn games_share_their_chunks_and_round_trip() {
 }
 
 #[test]
+fn a_loaded_index_answers_for_its_store() {
+    let library = Library::new(&StoreOptions::default());
+    let discs = discs();
+    let a = library.add("a.ore", &discs[0], &[]);
+    let b = library.add("1G1R/b.ore", &discs[1], &[]);
+
+    // the index read once answers, alone, what the store answers to
+    // whoever loads it afresh: the same stats, the same shares
+    let index = ore_rs::Index::load(&library.store).unwrap();
+    assert_eq!(index.stats(), ore_rs::store_stats(&library.store).unwrap());
+    let paths = [a.as_path(), b.as_path()];
+    assert_eq!(
+        index.shares(&paths),
+        ore_rs::shares(&library.store, &paths).unwrap()
+    );
+}
+
+#[test]
 fn store_stats_tell_the_dedup_from_the_parity() {
     let library = Library::new(&StoreOptions::default());
     let discs = discs();

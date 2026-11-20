@@ -107,17 +107,19 @@ pub(super) struct Chunk {
 }
 
 /// `store.index`: every chunk by its id, the groups they lie in, and the
-/// segments those lie in.
-pub(super) struct Index {
-    pub uuid: [u8; 16],
+/// segments those lie in. Opaque outside the crate: [`Index::load`] reads
+/// one, and what it can answer is read through its methods, so a store's
+/// index is loaded once and shared by everything that needs it.
+pub struct Index {
+    pub(crate) uuid: [u8; 16],
     id_bits: u8,
     /// Parity shards a segment sealed from now on is given.
     parity: u8,
     segment_size: u64,
     next_segment: u32,
-    pub segments: Vec<Segment>,
-    pub groups: Vec<StoreGroup>,
-    pub chunks: Vec<Chunk>,
+    pub(crate) segments: Vec<Segment>,
+    pub(crate) groups: Vec<StoreGroup>,
+    pub(crate) chunks: Vec<Chunk>,
 }
 
 fn corrupt(what: &str) -> Error {
@@ -311,7 +313,7 @@ impl Index {
     /// What a chunk weighs: its part of its group's stored bytes, in
     /// proportion to its length, and of its segment's parity, in
     /// proportion to those.
-    pub fn weight(&self, chunk: &Chunk) -> f64 {
+    pub(crate) fn weight(&self, chunk: &Chunk) -> f64 {
         let at = &self.groups[chunk.group as usize];
         let group = &at.group;
         // Segments stay in the order of their numbers
@@ -570,27 +572,35 @@ pub struct StoreStats {
 /// What the store at `store` saves by dedup and what its parity costs:
 /// its index read, its chunks and segments counted, no data.
 pub fn store_stats(store: &Path) -> Result<StoreStats> {
-    let index = Index::load(store)?;
-    let mut stored = 0f64;
-    let mut dedup_saved = 0f64;
-    for chunk in &index.chunks {
-        let weight = index.weight(chunk);
-        stored += weight;
-        if chunk.refs > 1 {
-            dedup_saved += weight * (f64::from(chunk.refs - 1) / f64::from(chunk.refs));
+    Ok(Index::load(store)?.stats())
+}
+
+impl Index {
+    /// What the store this is the index of saves by dedup and what its
+    /// parity costs, counted off the index alone: what [`store_stats`]
+    /// answers, for a caller that already holds the index.
+    pub fn stats(&self) -> StoreStats {
+        let mut stored = 0f64;
+        let mut dedup_saved = 0f64;
+        for chunk in &self.chunks {
+            let weight = self.weight(chunk);
+            stored += weight;
+            if chunk.refs > 1 {
+                dedup_saved += weight * (f64::from(chunk.refs - 1) / f64::from(chunk.refs));
+            }
+        }
+        let parity = self
+            .segments
+            .iter()
+            .map(|segment| Layout::new(segment.len, segment.parity).footer_len())
+            .sum();
+        StoreStats {
+            chunks: self.chunks.len() as u64,
+            stored: stored.round() as u64,
+            dedup_saved: dedup_saved.round() as u64,
+            parity,
         }
     }
-    let parity = index
-        .segments
-        .iter()
-        .map(|segment| Layout::new(segment.len, segment.parity).footer_len())
-        .sum();
-    Ok(StoreStats {
-        chunks: index.chunks.len() as u64,
-        stored: stored.round() as u64,
-        dedup_saved: dedup_saved.round() as u64,
-        parity,
-    })
 }
 
 /// Check the store at `store` whole: every segment against its CRCs, and
