@@ -4,11 +4,13 @@
 
 use super::super::config::{MUTEX, set_bool, set_rom_directory, set_string, set_tmp_directory};
 use super::super::convert_roms;
+use super::super::database::find_romfiles;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::super::sort_roms;
 use super::super::util::get_system_directory;
 use super::*;
+use sqlx::AssertSqlSafe;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
@@ -87,10 +89,10 @@ async fn test() {
 
     // and the answer is still the store's own
     let data = response.data.into_json().unwrap();
-    let store = get_system_directory(&mut connection, &system)
+    let system_directory = get_system_directory(&mut connection, &system)
         .await
-        .unwrap()
-        .join(ore_rs::STORE_DIR);
+        .unwrap();
+    let store = system_directory.join(ore_rs::STORE_DIR);
     let stats = ore_rs::store_stats(&store).unwrap();
     assert_eq!(data["storeDedupSaved"], stats.dedup_saved as i64);
     assert_eq!(data["storeParityCost"], stats.parity as i64);
@@ -98,5 +100,65 @@ async fn test() {
     assert_eq!(
         data["totalActualSize"], data["oneRegionActualSize"],
         "one game, one region: the two actual sizes weigh the same"
+    );
+
+    // when the store moves out from under the system, its ORE with it, and
+    // the system gets an empty store of its own: the ORE now lives beneath
+    // a store the system no longer names, which the preload cannot answer
+    // for and the sizes must read off disk
+    let original_size = data["totalActualSize"].as_i64().unwrap();
+    let romfiles = find_romfiles(&mut connection).await;
+    let ore = romfiles
+        .iter()
+        .find(|romfile| romfile.path.ends_with(".ore"))
+        .unwrap()
+        .path
+        .clone();
+    let ore_name = Path::new(&ore)
+        .file_name()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_owned();
+    tokio::fs::rename(&store, rom_directory.path().join(ore_rs::STORE_DIR))
+        .await
+        .unwrap();
+    tokio::fs::rename(
+        rom_directory.path().join(&ore),
+        rom_directory.path().join(&ore_name),
+    )
+    .await
+    .unwrap();
+    sqlx::query(AssertSqlSafe(
+        format!("UPDATE romfiles SET path = '{ore_name}';").as_str(),
+    ))
+    .execute(&mut *connection)
+    .await
+    .unwrap();
+    ore_rs::create_store(&store, &ore_rs::StoreOptions::default()).unwrap();
+
+    // and a fresh request asks the sizes of the system again, through a
+    // loader that has never seen it: its preload is the system's new, empty
+    // store, and the ORE's own is the moved one
+    let store_index_loader = StoreIndexLoader::new(pool.clone());
+    let counted = store_index_loader.clone();
+    let (sse_tx, _) = broadcast::channel::<SseMessage>(100);
+    let schema = build_schema(pool.clone(), sse_tx, store_index_loader);
+    let response = schema.execute("{ totalActualSize(systemId: 1) }").await;
+    assert!(response.errors.is_empty(), "{:?}", response.errors);
+
+    // then the ORE still weighs its share of the store before it: the same
+    // weight as when the system named that store, read off disk rather
+    // than counted as its file, and never from the mismatched preload
+    let data = response.data.into_json().unwrap();
+    assert_eq!(
+        data["totalActualSize"].as_i64().unwrap(),
+        original_size,
+        "the ORE followed its store: the same share, read off disk"
+    );
+    assert_eq!(
+        counted.hits(),
+        0,
+        "a store the system does not name is weighed off disk, not from its preload"
     );
 }

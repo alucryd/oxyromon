@@ -3,7 +3,6 @@ use super::download_dats::find_redump_systems;
 use super::model::*;
 use async_graphql::dataloader::{DataLoader, Loader};
 use async_graphql::{ComplexObject, Context, Error, Object, Result};
-use futures::join;
 use futures::stream::TryStreamExt;
 use itertools::Itertools;
 use num_traits::FromPrimitive;
@@ -32,13 +31,19 @@ async fn system_size(
         ""
     };
     if actual {
-        // The store's index is asked for before anything else, and awaited
-        // beside the romfile query: a field submits its key on its first
-        // poll, whatever it awaits after, so every size field of a request
-        // reaches the loader in the same breath and one read serves them all.
-        let loader = ctx.data_unchecked::<DataLoader<StoreIndexLoader>>();
-        let (connection, store) = join!(pool.acquire(), loader.load_one(system_id));
-        let mut connection = connection.unwrap();
+        // The store's index is asked for before anything else — before a
+        // connection, above all: the batch that serves the key needs one,
+        // and a field holding the pool's five while it waits would starve
+        // the batch into the acquire timeout. The key still goes in on the
+        // field's first poll, so every size field of a request reaches the
+        // loader in the same breath and one read serves them all.
+        let store = ctx
+            .data_unchecked::<DataLoader<StoreIndexLoader>>()
+            .load_one(system_id)
+            .await
+            .ok()
+            .flatten();
+        let mut connection = pool.acquire().await.unwrap();
         let sql = format!(
             "
                 SELECT *
@@ -55,10 +60,7 @@ async fn system_size(
         let romfiles: Vec<Romfile> = sqlx::query_as(AssertSqlSafe(sql.as_str()))
             .fetch_all(&mut *connection)
             .await?;
-        return Ok(
-            crate::ore::actual_size_loaded(&mut connection, &romfiles, store.ok().flatten()).await?
-                as i64,
-        );
+        return Ok(crate::ore::actual_size_loaded(&mut connection, &romfiles, store).await? as i64);
     }
     let mut connection = pool.acquire().await.unwrap();
     let sql = format!(
@@ -329,7 +331,7 @@ impl Loader<i64> for StoreIndexLoader {
     type Error = Error;
 
     async fn load(&self, systems: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        let mut connection = self.pool.acquire().await.unwrap();
+        let mut connection = self.pool.acquire().await?;
         let mut stores = Vec::new();
         for system_id in systems.iter().unique() {
             if let Some(system) = find_system_by_id_opt(&mut connection, *system_id).await
@@ -338,6 +340,11 @@ impl Loader<i64> for StoreIndexLoader {
                 stores.push((*system_id, store));
             }
         }
+        // The parse reads no database: the connection goes back to the pool
+        // before the multi-second read, not after it. Failing the batch is
+        // graceful too — the fields treat a refused index as an absent one
+        // and read their stores off disk.
+        drop(connection);
         let loads = self.loads.clone();
         let hits = self.hits.clone();
         Ok(spawn_blocking(move || {
