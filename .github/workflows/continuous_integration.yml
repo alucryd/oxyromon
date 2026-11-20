@@ -77,30 +77,22 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  test:
-    name: Lint and test
+  lint:
+    name: Lint
     runs-on: ubuntu-26.04
-    timeout-minutes: 60
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
-      - name: Install dependencies
-        # only for the crates' tests, which compare against chdman and xdelta3,
-        # make the LaserDisc AVIs with ffmpeg, and skip without them
-        run: |
-          sudo apt-get -o Acquire::Retries=3 update
-          sudo apt-get -o Acquire::Retries=3 install mame-tools xdelta3 ffmpeg
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          components: clippy, llvm-tools-preview
+          components: clippy
       - name: Use the installed toolchain
         run: rustup default stable
       - name: Configure rust cache
         uses: Swatinem/rust-cache@v2
-      - name: Install llvm-cov
-        run: cargo install cargo-llvm-cov
       # The whole workspace: oxyromon and the format crates under crates/. A
       # feature has to name its package once several are selected.
       - name: Run clippy
@@ -109,8 +101,55 @@ jobs:
       # feature combination on its own.
       - name: Run clippy (MCP without server)
         run: cargo clippy --no-default-features --features use-rustls,mcp --all-targets
+
+  test:
+    name: Test
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: llvm-tools-preview
+      - name: Use the installed toolchain
+        run: rustup default stable
+      - name: Configure rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: Install llvm-cov
+        run: cargo install cargo-llvm-cov
+      # nextest runs each test binary's tests in parallel and reports time
+      # per test; the suites add up no more, the slowest one does.
+      - name: Install nextest
+        run: curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C "$CARGO_HOME/bin"
+      # chd-rs and xdelta-rs compare against chdman, xdelta3 and ffmpeg and
+      # skip themselves without them; the interop workflow installs them and
+      # runs those tests where they count.
       - name: Test
-        run: cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info
+        run: cargo llvm-cov nextest --workspace --features oxyromon/server --lcov --output-path lcov.info
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
+
+  smelt:
+    name: Smelt
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: clippy
+      - name: Use the installed toolchain
+        run: rustup default stable
+      - name: Configure rust cache
+        uses: Swatinem/rust-cache@v2
       # smelt, a workspace of its own so ore-rs's GPL writer stays out of
       # libsmelt; cbindgen for its test that smelt.h is current
       - name: Install cbindgen
@@ -119,10 +158,6 @@ jobs:
         run: cargo clippy --manifest-path crates/smelt-rs/Cargo.toml --all-targets
       - name: Test smelt
         run: cargo test --manifest-path crates/smelt-rs/Cargo.toml
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v7
-        with:
-          token: ${{secrets.CODECOV_TOKEN}}
 
   release:
     name: Release build and desktop

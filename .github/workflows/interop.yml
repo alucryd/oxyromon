@@ -1,0 +1,46 @@
+name: Interop
+
+# The codec crates' tests compare their output against the reference tools
+# (chdman, xdelta3, ffmpeg) and skip themselves when the tools are absent,
+# so the main CI job leaves them out entirely. This workflow installs the
+# tools and runs them: on PRs that touch the two crates, weekly to catch a
+# toolchain drift on the runners, and on demand.
+
+on:
+  pull_request:
+    branches: [master, develop]
+    paths:
+      - crates/chd-rs/**
+      - crates/xdelta-rs/**
+      - .github/workflows/interop.yml
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  SKIP_TRUNK: "true"
+
+jobs:
+  interop:
+    name: Codec interop
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install dependencies
+        # chdman lives in mame-tools; the tests skip what is still missing
+        run: |
+          sudo apt-get -o Acquire::Retries=3 update
+          sudo apt-get -o Acquire::Retries=3 install mame-tools xdelta3 ffmpeg
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - name: Use the installed toolchain
+        run: rustup default stable
+      - name: Configure rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: Test chd-rs and xdelta-rs
+        run: cargo test -p chd-rs -p xdelta-rs
