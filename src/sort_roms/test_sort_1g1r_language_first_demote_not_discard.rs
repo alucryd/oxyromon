@@ -60,7 +60,7 @@ async fn test() {
         &one_regions,
         &[],
         &[],
-        &[],
+        &["Fr"],
         &[],
         &[],
         &[],

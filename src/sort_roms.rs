@@ -1136,7 +1136,7 @@ fn trim_ignored_names(
                     if let NoIntroToken::Languages(_) = token
                         && !languages.is_empty()
                     {
-                        let clean_parsed_languages = clean_languages(&game.name);
+                        let clean_parsed_languages = clean_languages(&name);
                         if !clean_parsed_languages.is_empty()
                             && !clean_parsed_languages
                                 .iter()
@@ -1180,26 +1180,21 @@ fn trim_ignored_names(
     }
 }
 
-/// The languages of a No-Intro name, tags that don't look like language codes
-/// dropped, shared by the language filter and the language-first ranking
-fn clean_languages(name: &str) -> Vec<String> {
-    NoIntroName::try_parse(name)
-        .map(|name| {
-            name.iter()
-                .filter_map(|token| match token {
-                    NoIntroToken::Languages(languages) => Some(languages),
-                    _ => None,
-                })
-                .flatten()
-                .filter(|language| {
-                    LANGUAGE_REGEX.is_match(language.code)
-                        && (language.variant.is_none()
-                            || VARIANT_REGEX.is_match(language.variant.unwrap()))
-                })
-                .map(|language| language.code.to_string())
-                .collect()
+/// The languages of a parsed No-Intro name, tags that don't look like language
+/// codes dropped, shared by the language filter and the language-first ranking
+fn clean_languages(name: &NoIntroName) -> Vec<String> {
+    name.iter()
+        .filter_map(|token| match token {
+            NoIntroToken::Languages(languages) => Some(languages),
+            _ => None,
         })
-        .unwrap_or_default()
+        .flatten()
+        .filter(|language| {
+            LANGUAGE_REGEX.is_match(language.code)
+                && (language.variant.is_none() || VARIANT_REGEX.is_match(language.variant.unwrap()))
+        })
+        .map(|language| language.code.to_string())
+        .collect()
 }
 
 /// Where a game's languages rank among `preferred_languages`: the best rank
@@ -1208,7 +1203,9 @@ fn clean_languages(name: &str) -> Vec<String> {
 /// preferred languages' worth of none. Unknown beats known-absent: a release
 /// that doesn't say may still be preferred, one that says otherwise isn't
 fn language_rank(game: &Game, preferred_languages: &[&str]) -> usize {
-    let languages = clean_languages(&game.name);
+    let languages = NoIntroName::try_parse(&game.name)
+        .map(|name| clean_languages(&name))
+        .unwrap_or_default();
     if languages.is_empty() {
         return preferred_languages.len();
     }
