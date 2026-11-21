@@ -273,6 +273,23 @@ fn a_precached_ingot_reports_its_progress_and_reads_from_ram() {
         unsafe { smelt_open(c(&ore).as_ptr(), &opts, &mut ingot) },
         SmeltErr::SmeltOk
     );
+    // A clone of the ingot sees the same run: a frontend may poll its
+    // bar on the handle it reads on, not the one it opened on. And
+    // closing this clone stops nothing — the run below must still fill.
+    let mut twin = ptr::null_mut();
+    assert_eq!(unsafe { smelt_clone(ingot, &mut twin) }, SmeltErr::SmeltOk);
+    let (mut twin_done, mut twin_total, mut twin_running) = (0u64, 0u64, 0i32);
+    assert_eq!(
+        unsafe {
+            smelt_precache_progress(twin, &mut twin_done, &mut twin_total, &mut twin_running)
+        },
+        SmeltErr::SmeltOk
+    );
+    assert!(
+        twin_total > 0,
+        "the clone sees the run it was cloned from: 0 of {twin_total}"
+    );
+    unsafe { smelt_close(twin) };
     let (mut done, mut total, mut running) = (0u64, 0u64, 1i32);
     for _ in 0..300 {
         assert_eq!(

@@ -88,6 +88,84 @@ fn an_ingot_without_a_precache_has_no_progress_to_poll() {
     assert_eq!(reader.precache_hits(), 0, "no thread, no bytes, no hits");
 }
 
+/// A 64 MiB incompressible disc: eight 8 MiB batches of groups, so a
+/// run cannot read the whole of it before a truncation reaches it.
+fn big_ore(dir: &Path) -> PathBuf {
+    let (iso, ore) = (dir.join("big.iso"), dir.join("big.ore"));
+    let mut disc = gamecube_disc(64 << 20);
+    disc[0x10000..].copy_from_slice(&noise((64 << 20) - 0x10000, 11));
+    write(&iso, &disc);
+    let options = Options {
+        profile: Profile::Stream,
+        codec: Codec::Zstd,
+        platform: None,
+    };
+    ore_rs::compress(&iso, &ore, &options, &[], &mut |_| {}).unwrap();
+    ore
+}
+
+/// The word a frontend waits on to stop waiting: a run that loses the
+/// file mid-way reports itself over (`running` false) at whatever it
+/// managed (`done` short of `total`), never `running` forever. Every
+/// other test here ends `done == total`; nothing else pins the dying
+/// path, and a refactor that turns it into a hang would ship green.
+#[test]
+fn a_run_that_dies_mid_file_reports_itself_over_undone() {
+    let dir = TempDir::new().unwrap();
+    let ore = big_ore(dir.path());
+    let reader = Reader::open_opts(&ore, 0, READ_AHEAD_OFF, true).unwrap();
+    // Cut the file under the run until the thread gives up: from the
+    // second batch on, every read meets an EOF, and the first error
+    // ends the run.
+    let start = Instant::now();
+    loop {
+        let short = std::fs::OpenOptions::new().write(true).open(&ore).unwrap();
+        short.set_len(1 << 20).unwrap();
+        drop(short);
+        let progress = reader.precache_progress().expect("opened with a precache");
+        if !progress.running {
+            assert!(
+                progress.total > 0 && progress.done < progress.total,
+                "a run that died is over at what it managed, not the whole: \
+                 {} of {}",
+                progress.done,
+                progress.total
+            );
+            return;
+        }
+        assert!(
+            start.elapsed() < Duration::from_secs(15),
+            "the run never reported itself over: still running after the file died"
+        );
+        std::thread::sleep(Duration::from_millis(2));
+    }
+}
+
+/// A clone of a precached ingot polls the same run — a frontend may
+/// show its bar on the handle it reads on, not the one it opened on —
+/// and a clone's close stops nothing: only the ingot the run was
+/// opened on speaks.
+#[test]
+fn a_clone_polls_the_run_and_its_close_leaves_it_filling() {
+    let dir = TempDir::new().unwrap();
+    let ore = big_ore(dir.path());
+    let reader = Reader::open_opts(&ore, 0, READ_AHEAD_OFF, true).unwrap();
+    let clone = reader.try_clone().unwrap();
+    let seen = clone
+        .precache_progress()
+        .expect("a clone of a precached ingot sees the run");
+    drop(clone);
+    // The clone is gone; the run it witnessed fills to its end.
+    let progress = finished(&reader);
+    assert!(
+        seen.total > 0 && progress.done == seen.total && progress.total == seen.total,
+        "closing a clone stopped nothing: {} of {} came in after a clone saw {}",
+        progress.done,
+        progress.total,
+        seen.total
+    );
+}
+
 #[test]
 fn a_thin_ingot_precaches_its_store_groups_and_no_others() {
     let dir = TempDir::new().unwrap();

@@ -240,10 +240,14 @@ pub struct Reader {
     /// The compressed bytes of this ingot's own groups a precache
     /// thread has brought in; `None` when nothing was asked to precache.
     warm: Option<Arc<Warm>>,
-    /// The precache run's counters, on the ingot opened with one: its
-    /// clones and workers see the bytes but not the run, so closing one
-    /// never stops a precache a brother still reads.
+    /// The precache run's counters, shared with every clone of the
+    /// ingot opened with one: a frontend may poll the progress from
+    /// the handle it reads on.
     precache: Option<Arc<PrecacheRun>>,
+    /// Whether this reader is the one the run was started on: the only
+    /// close that stops it, so a clone or a worker ending never stops
+    /// a precache a brother still reads.
+    precache_opener: bool,
     /// The store a thin ORE's chunks lie in, once found.
     store: Option<StoreReader>,
     /// The Wii group last encrypted: its area, its number, its bytes.
@@ -257,8 +261,9 @@ impl Drop for Reader {
         // A closed ingot should not leave a thread reading its whole
         // file over the network behind it: the precache notices the
         // stop between batches and gives up, unjoined, like its
-        // read-ahead brother.
-        if let Some(run) = &self.precache {
+        // read-ahead brother. Only the ingot the run was opened on
+        // speaks; a clone closing says nothing.
+        if let (true, Some(run)) = (self.precache_opener, &self.precache) {
             run.stop.store(true, Ordering::Relaxed);
         }
     }
@@ -643,6 +648,7 @@ impl Reader {
             ahead: Ahead::off(),
             warm: None,
             precache: None,
+            precache_opener: false,
             store: None,
             wii: None,
             wiiu: None,
@@ -652,7 +658,9 @@ impl Reader {
     /// Another reader of the same ORE, sharing its store's index and the
     /// groups both have decoded. The clone read-aheads on its own terms:
     /// the same window, detection from its own reads, and its own worker
-    /// once those reads run sequential.
+    /// once those reads run sequential. It sees a precache run in flight
+    /// (and never stops its precache): the run belongs to the ingot it
+    /// was opened on.
     pub fn try_clone(&self) -> Result<Self> {
         Ok(Self {
             file: self.file.try_clone()?,
@@ -669,7 +677,8 @@ impl Reader {
                 ..Ahead::off()
             },
             warm: self.warm.clone(),
-            precache: None,
+            precache: self.precache.clone(),
+            precache_opener: false,
             store: self.store.as_ref().map(StoreReader::shared),
             wii: None,
             wiiu: None,
@@ -1232,10 +1241,12 @@ impl Reader {
     }
 
     /// What a precache in flight has done: `None` for an ingot opened
-    /// without one. The run counts groups, the ingot's own and its
-    /// store's together; a run that died is over and its `done` is all
-    /// that ever came — a frontend waiting on completion can stop
-    /// waiting when `running` says so.
+    /// without one, and for its clones alike only in that case — a clone
+    /// of an ingot that was opened with one polls the same run. The run
+    /// counts groups, the ingot's own and its store's together; a run
+    /// that died is over and its `done` is all that ever came — a
+    /// frontend waiting on completion can stop waiting when `running`
+    /// says so.
     pub fn precache_progress(&self) -> Option<Progress> {
         let run = self.precache.as_ref()?;
         Some(Progress {
@@ -1275,9 +1286,8 @@ impl Reader {
     fn clone_for_worker(&self) -> Result<Self> {
         let mut worker = self.try_clone()?;
         worker.ahead = Ahead::off();
-        // The run belongs to the ingot it was opened on: a worker that
-        // ended must not stop a precache still filling it.
-        worker.precache = None;
+        // The run belongs to the ingot it was opened on: try_clone hands
+        // a worker the counters but never the stop.
         Ok(worker)
     }
 
@@ -1330,6 +1340,7 @@ impl Reader {
             store.warm = warm_store;
         }
         self.precache = Some(run);
+        self.precache_opener = true;
     }
 
     /// The thread's work: the ingot's own groups first, in file order,
@@ -1387,7 +1398,13 @@ impl Reader {
                     end = plan[upto].1 + plan[upto].2;
                     upto += 1;
                 }
-                let Ok(file) = store.store.as_mut().unwrap().file_for(segment) else {
+                // A store that vanished mid-run ends the run like a
+                // failed read would: this thread has no watcher, so it
+                // gets no panic path either.
+                let Some(st) = store.store.as_mut() else {
+                    break;
+                };
+                let Ok(file) = st.file_for(segment) else {
                     break;
                 };
                 let mut bytes = vec![0u8; (end - start) as usize];

@@ -220,7 +220,10 @@ enum smelt_err smelt_logical_size(const struct smelt_ingot *ingot, uint64_t *out
  * set out to bring — the ingot's own and its store's together — and
  * `*running` 1 while the thread is still at it, 0 when the run is over
  * or died trying: `*done` is then all that ever came. An ingot opened
- * without a precache answers 0, 0, 0.
+ * without a precache answers 0, 0, 0. A `smelt_clone`d ingot answers
+ * for the run of the ingot it was cloned from; the run belongs to
+ * that one, and closing it stops the run whatever a clone is still
+ * polling.
  *
  * # Safety
  *
