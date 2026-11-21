@@ -15,8 +15,9 @@ use rayon::prelude::*;
 use super::error::{Error, Result};
 use super::format::*;
 use super::io;
-use super::pack::{Cache, read_group};
+use super::pack::{Cache, decode_group, read_group};
 use super::parity::{self, Layout};
+use super::precache::Warm;
 use super::reader::Reader;
 use super::reader::is_ore;
 
@@ -391,6 +392,10 @@ pub(super) struct StoreReader {
     files: HashMap<u32, File>,
     /// Shared with every clone of the reader this store belongs to.
     cache: Arc<Cache>,
+    /// The compressed bytes a precache thread has brought in for this
+    /// store, shared with every clone too; `None` when nothing was
+    /// asked to precache.
+    pub(super) warm: Option<Arc<Warm>>,
 }
 
 impl StoreReader {
@@ -400,6 +405,7 @@ impl StoreReader {
             index,
             files: HashMap::new(),
             cache: Cache::shared(cache_bytes),
+            warm: None,
         }
     }
 
@@ -411,6 +417,7 @@ impl StoreReader {
             index: self.index.clone(),
             files: HashMap::new(),
             cache: self.cache.clone(),
+            warm: self.warm.clone(),
         }
     }
 
@@ -424,6 +431,12 @@ impl StoreReader {
     /// waking a prefetch for it.
     pub(super) fn holds(&self, group: u32) -> bool {
         self.cache.holds(group)
+    }
+
+    /// The groups of this store served from precached bytes rather than
+    /// from a segment: a debug counter, summed by the reader's own.
+    pub(super) fn warm_hits(&self) -> u64 {
+        self.warm.as_ref().map_or(0, |w| w.hits())
     }
 
     pub fn dir(&self) -> &Path {
@@ -443,6 +456,11 @@ impl StoreReader {
                 self.index = Arc::new(index);
                 self.files.clear();
                 self.cache.clear();
+                if let Some(warm) = &self.warm {
+                    // The groups moved; the positions they left hold
+                    // other bytes now, or nothing.
+                    warm.clear();
+                }
                 self.chunk_in_index(id)
             }
             result => result,
@@ -452,15 +470,52 @@ impl StoreReader {
     fn chunk_in_index(&mut self, id: u64) -> Result<(Arc<Vec<u8>>, usize)> {
         let chunk = self.index.chunks[id as usize];
         let at = &self.index.groups[chunk.group as usize];
+        let warm = self.warm.clone();
         if !self.files.contains_key(&at.segment) {
             let file = open_segment(&self.dir, &self.index.uuid, at.segment)?;
             self.files.insert(at.segment, file);
         }
         let file = &self.files[&at.segment];
         let group = self.cache.get(chunk.group, || {
-            read_group(file, at.offset, at.envelope_len(), &at.group)
+            match warm.as_ref().and_then(|w| w.get((at.segment, at.offset))) {
+                Some(bytes) => decode_group(&bytes, at.offset, at.envelope_len(), &at.group),
+                None => read_group(file, at.offset, at.envelope_len(), &at.group),
+            }
         })?;
         Ok((group, chunk.offset as usize))
+    }
+
+    /// The groups the chunks at `ids` lie in, each once, in the order a
+    /// precache thread would cross them: segment first, position second.
+    /// Ids the index no longer holds are skipped — a thread catches no
+    /// ghosts, and a reader of such an id takes its chance at the file.
+    pub(crate) fn precache_plan(&self, ids: &[u64]) -> Vec<(u32, u64, u64)> {
+        let mut plan: Vec<(u32, u64, u64)> = ids
+            .iter()
+            .filter_map(|&id| {
+                let chunk = self.index.chunks.get(id as usize)?;
+                let at = self.index.groups.get(chunk.group as usize)?;
+                Some((
+                    at.segment,
+                    at.offset,
+                    at.envelope_len() + at.group.stored_len,
+                ))
+            })
+            .collect();
+        plan.sort_unstable();
+        plan.dedup();
+        plan
+    }
+
+    /// A handle on a segment's file for a precache thread to read
+    /// through: the store opens it once, on the thread's own reader,
+    /// and every call after hands out a fresh clone of it.
+    pub(crate) fn file_for(&mut self, segment: u32) -> Result<File> {
+        if !self.files.contains_key(&segment) {
+            let file = open_segment(&self.dir, &self.index.uuid, segment)?;
+            self.files.insert(segment, file);
+        }
+        Ok(self.files[&segment].try_clone()?)
     }
 }
 

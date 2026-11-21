@@ -115,6 +115,18 @@ impl Packer {
 pub fn read_group(file: &File, offset: u64, envelope_len: u64, group: &Group) -> Result<Vec<u8>> {
     let mut bytes = vec![0; (envelope_len + group.stored_len) as usize];
     io::read_exact_at(file, &mut bytes, offset)?;
+    decode_group(&bytes, offset, envelope_len, group)
+}
+
+/// Decode a group from its envelope and stored bytes, checked against its
+/// envelope. `offset` only names the group when it is broken: these bytes
+/// came from the precache, whose holder has no file to consult.
+pub fn decode_group(
+    bytes: &[u8],
+    offset: u64,
+    envelope_len: u64,
+    group: &Group,
+) -> Result<Vec<u8>> {
     let (envelope, stored) = bytes.split_at(envelope_len as usize);
     let mut cursor = Cursor::new(envelope);
     if cursor.take(2)? != ENVELOPE_MAGIC

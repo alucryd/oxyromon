@@ -107,6 +107,16 @@ typedef struct smelt_open_opts {
    */
   uint32_t read_ahead;
   /**
+   * 1 brings the whole ingot's compressed groups into memory on a
+   * background thread after the open, so a game that seeks pays its
+   * round trips once rather than per group. Memory grows by about
+   * the file's size, not the disc's, and decoding still runs through
+   * the cache; a thin ORE brings the store groups its chunks lie in
+   * and no others. Poll it with `smelt_precache_progress`. 0, the
+   * default, starts nothing.
+   */
+  uint32_t precache;
+  /**
    * Reserved: 0.
    */
   uint32_t reserved;
@@ -204,6 +214,22 @@ void smelt_close(struct smelt_ingot *ingot);
  * `ingot` is an open ingot, `out` valid.
  */
 enum smelt_err smelt_logical_size(const struct smelt_ingot *ingot, uint64_t *out);
+
+/**
+ * Poll the ingot's precache: `*done` groups brought in of `*total` it
+ * set out to bring — the ingot's own and its store's together — and
+ * `*running` 1 while the thread is still at it, 0 when the run is over
+ * or died trying: `*done` is then all that ever came. An ingot opened
+ * without a precache answers 0, 0, 0.
+ *
+ * # Safety
+ *
+ * `ingot` is an open ingot, `done`, `total` and `running` valid.
+ */
+enum smelt_err smelt_precache_progress(const struct smelt_ingot *ingot,
+                                       uint64_t *done,
+                                       uint64_t *total,
+                                       int32_t *running);
 
 /**
  * The platform the ORE was written as, NUL-terminated: `gamecube`, `ps2`,
