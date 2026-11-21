@@ -25,6 +25,11 @@
 #define SMELT_SECTOR 2352
 
 /**
+ * An `OpenOptions.read_ahead` that starts no worker.
+ */
+#define SMELT_READ_AHEAD_OFF UINT32_MAX
+
+/**
  * What a call came to.
  */
 typedef enum smelt_err {
@@ -92,6 +97,15 @@ typedef struct smelt_open_opts {
    * frontends over a slow share want less.
    */
   uint32_t cache_bytes;
+  /**
+   * Groups the read-ahead worker keeps decoded past sequential reads,
+   * so an FMV or a music track crosses into bytes that already came
+   * back. 0 is the default, 4. SMELT_READ_AHEAD_OFF reads with the
+   * caller's thread alone: the worker calls the read path from a
+   * thread of its own, and a frontend whose reads go through callbacks
+   * it cannot answer twice — a VFS — wants this.
+   */
+  uint32_t read_ahead;
   /**
    * Reserved: 0.
    */

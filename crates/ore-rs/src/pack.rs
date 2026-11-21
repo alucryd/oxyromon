@@ -273,6 +273,13 @@ impl Cache {
         Ok(data)
     }
 
+    /// Whether the group this id is held, without claiming it or ticking
+    /// its recency: a guesser checking whether a prefetch would be worth
+    /// a wake-up at all.
+    pub fn holds(&self, index: u32) -> bool {
+        self.inner.lock().unwrap().groups.contains_key(&index)
+    }
+
     /// Drops every group: a store whose index was reloaded holds groups
     /// that no longer mean what they did. Decodes claimed before this
     /// land nowhere but with their own reader.

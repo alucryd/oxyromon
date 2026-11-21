@@ -12,6 +12,12 @@
 //! it decodes, so every read changes it. [`smelt_clone`] gives another
 //! thread an ingot of its own over the same file and store, rather than a
 //! lock inside serialising an emulator's drive thread against the rest.
+//! One thread, that is, of yours: an ingot runs a read-ahead worker of its
+//! own once reads run sequential, decoding the groups ahead into the shared
+//! cache so an FMV crosses into bytes that already came back. The worker
+//! shares nothing with the caller but the cache, and dies when the ingot
+//! closes; a frontend whose reads go through callbacks it cannot answer
+//! twice asks [`OpenOptions`] for [`SMELT_READ_AHEAD_OFF`].
 //!
 //! No ABI is stable before ORE's specification is; [`smelt_version`] says
 //! which build a host has.
@@ -94,9 +100,19 @@ pub struct OpenOptions {
     /// memory can reach twice this. 0 is the default, 32 MiB. Android
     /// frontends over a slow share want less.
     pub cache_bytes: u32,
+    /// Groups the read-ahead worker keeps decoded past sequential reads,
+    /// so an FMV or a music track crosses into bytes that already came
+    /// back. 0 is the default, 4. SMELT_READ_AHEAD_OFF reads with the
+    /// caller's thread alone: the worker calls the read path from a
+    /// thread of its own, and a frontend whose reads go through callbacks
+    /// it cannot answer twice — a VFS — wants this.
+    pub read_ahead: u32,
     /// Reserved: 0.
     pub reserved: u32,
 }
+
+/// An `OpenOptions.read_ahead` that starts no worker.
+pub const SMELT_READ_AHEAD_OFF: u32 = u32::MAX;
 
 /// A sector's frame from 00:00:00, and the 10 bytes of Q its SBI gives it.
 type Replacement = (u64, [u8; 10]);
@@ -220,19 +236,21 @@ pub unsafe extern "C" fn smelt_open(
         if path.is_null() || out.is_null() {
             return fail(SmeltErrArgument, "a NULL argument");
         }
-        let cache_bytes = if opts.is_null() {
-            0
+        let (cache_bytes, read_ahead) = if opts.is_null() {
+            (0, 0)
         } else {
             if unsafe { (*opts).reserved } != 0 {
                 return fail(SmeltErrArgument, "options this build does not know");
             }
-            (unsafe { (*opts).cache_bytes }) as usize
+            (unsafe { (*opts).cache_bytes }, unsafe {
+                (*opts).read_ahead
+            })
         };
         let Ok(path) = unsafe { CStr::from_ptr(path) }.to_str() else {
             return fail(SmeltErrArgument, "a path not UTF-8");
         };
         let path = Path::new(path);
-        let reader = match Reader::open_with(path, cache_bytes) {
+        let reader = match Reader::open_ahead(path, cache_bytes as usize, read_ahead) {
             Ok(reader) => reader,
             // The ORE reads, but not the store it needs
             Err(Error::Io(error))

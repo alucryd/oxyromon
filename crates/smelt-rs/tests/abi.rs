@@ -194,12 +194,30 @@ fn what_is_no_ore_or_no_argument_is_refused() {
     ore_rs::compress(&input, &ore, &options(), &[], &mut |_| {}).unwrap();
     let opts = OpenOptions {
         cache_bytes: 0,
+        read_ahead: 0,
         reserved: 1,
     };
     assert_eq!(
         unsafe { smelt_open(c(&ore).as_ptr(), &opts, &mut ingot) },
         SmeltErr::SmeltErrArgument
     );
+    // A window the build does understand: two groups of read-ahead, and
+    // the disc still comes back byte for byte
+    let opts = OpenOptions {
+        cache_bytes: 0,
+        read_ahead: 2,
+        reserved: 0,
+    };
+    assert_eq!(
+        unsafe { smelt_open(c(&ore).as_ptr(), &opts, &mut ingot) },
+        SmeltErr::SmeltOk
+    );
+    let mut back = vec![0u8; 64 << 10];
+    assert_eq!(
+        unsafe { smelt_read(ingot, 0, back.as_mut_ptr(), back.len()) },
+        SmeltErr::SmeltOk
+    );
+    unsafe { smelt_close(ingot) };
     let mut size = 0;
     assert_eq!(
         unsafe { smelt_logical_size(ptr::null(), &mut size) },
@@ -218,6 +236,7 @@ fn a_cache_budget_smaller_than_a_group_still_reads() {
     // and the disc still comes back byte for byte
     let opts = OpenOptions {
         cache_bytes: 4 << 10,
+        read_ahead: SMELT_READ_AHEAD_OFF,
         reserved: 0,
     };
     let mut ingot = ptr::null_mut();

@@ -86,6 +86,104 @@ struct GroupAt {
     group: Group,
 }
 
+/// The read-ahead default: how many groups the worker keeps decoded ahead
+/// of sequential reads. Two hides a slow Wi-Fi round trip at twice CD
+/// speed; four is the same comfort with memory to spare.
+pub const DEFAULT_READ_AHEAD: u32 = 4;
+
+/// The read-ahead that keeps the ingot on one thread: reads plain and
+/// wakes no worker. The answer for a frontend whose read callbacks cannot
+/// answer a second thread, a VFS one day.
+pub const READ_AHEAD_OFF: u32 = u32::MAX;
+
+/// How far past the end of the last read a read may start and still be
+/// sequential: a drive's reads overlap, and a track skips a few bytes.
+const SEQUENTIAL_GAP: u64 = 64 << 10;
+
+/// Sequential reads in a row before read-ahead engages: the third says
+/// this is a playhead, not a seek passing through.
+const SEQUENTIAL_HITS: u32 = 3;
+
+/// The sectors of CD space a group of the data plane weighs: the window
+/// a guess sweeps ahead. The video and XA planes weigh less per sector,
+/// but the walk runs on until their groups fill, wherever they lie.
+const SECTORS_PER_GROUP: usize = 512;
+
+/// A group the read-ahead worker is told to have decoded: one of the
+/// ORE's own, or a chunk whose group lies in the store. The store names
+/// a chunk and not a group: fetching it through `StoreReader::chunk`
+/// carries the reload a compaction demands with it.
+#[derive(Clone, Copy)]
+enum Fetch {
+    Own(u32),
+    Store(u64),
+}
+
+/// Read-ahead: the tracker deciding whether the reads are sequential,
+/// and the worker that follows when they are. The worker works off a
+/// queue of one guess, the newest read replacing the pending one and a
+/// full queue dropping the send rather than waiting: it is the reader's
+/// own read that computes the next guess, so a worker that falls behind
+/// cannot fall behind forever. The sender dies with the reader: the
+/// worker wakes to a dead channel, finishes the group in hand, and ends
+/// without being joined, since `smelt_close` has no business waiting on
+/// a group half-read over the network.
+struct Ahead {
+    /// The groups to keep ahead, 0 for never.
+    window: usize,
+    /// Where the last read ended, `None` until the first.
+    last_end: Option<u64>,
+    /// The reads since the last seek that started where the last ended.
+    hits: u32,
+    /// Whether the reads are sequential enough to be worth guessing at.
+    on: bool,
+    tx: Option<mpsc::SyncSender<Vec<Fetch>>>,
+}
+
+impl Ahead {
+    fn off() -> Self {
+        Self {
+            window: 0,
+            last_end: None,
+            hits: 0,
+            on: false,
+            tx: None,
+        }
+    }
+
+    /// Takes note of the read at `offset` for `len`: read-ahead should
+    /// guess at what follows it now, if the answer is yes. A read that
+    /// overlaps or trails the last by less than a track skip is
+    /// sequential; anything else is a seek, and read-ahead starts
+    /// counting again.
+    fn watch(&mut self, offset: u64, len: u64) -> bool {
+        if self.window == 0 || len == 0 {
+            return false;
+        }
+        let end = offset + len;
+        let sequential = self
+            .last_end
+            .is_some_and(|last| offset <= last + SEQUENTIAL_GAP && end >= last);
+        self.hits = if sequential {
+            (self.hits + 1).min(SEQUENTIAL_HITS)
+        } else {
+            0
+        };
+        let was = self.on;
+        self.on = self.hits >= SEQUENTIAL_HITS;
+        if was && !self.on {
+            // The worker's pending guess lies behind the seek. Its group
+            // in hand lands in the cache whatever happens, where a stale
+            // one is fenced and a live one is only early.
+            if let Some(tx) = &self.tx {
+                let _ = tx.try_send(Vec::new());
+            }
+        }
+        self.last_end = Some(end);
+        self.on
+    }
+}
+
 /// What a game weighs, in bytes. A standalone ORE's own, share and
 /// standalone sizes are its file's; a thin one's count its chunks in the
 /// store, each its part of its group's bytes, plus its file.
@@ -140,6 +238,8 @@ pub struct Reader {
     /// Shared with every clone of this reader, and with its read-ahead
     /// worker once it has one.
     cache: Arc<Cache>,
+    /// The sequential-read tracker and the worker it may have started.
+    ahead: Ahead,
     /// The store a thin ORE's chunks lie in, once found.
     store: Option<StoreReader>,
     /// The Wii group last encrypted: its area, its number, its bytes.
@@ -164,7 +264,19 @@ impl Reader {
     /// share wants less than a desktop; the budget bounds the cache, not
     /// the reading. A thin ORE holds two caches, its groups' and its
     /// store's, each at this: the reader's total can reach twice it.
+    /// Read-ahead runs at its default; [`Reader::open_ahead`] sets it.
     pub fn open_with(path: &Path, cache_bytes: usize) -> Result<Self> {
+        Self::open_ahead(path, cache_bytes, 0)
+    }
+
+    /// [`Reader::open`] with a byte budget and a read-ahead window: the
+    /// groups a background thread keeps decoded ahead of sequential
+    /// reads, so the reads cross into bytes that already came back. 0
+    /// asks for the default, [`DEFAULT_READ_AHEAD`]; [`READ_AHEAD_OFF`]
+    /// reads with the caller's thread alone, which a frontend whose read
+    /// callbacks cannot answer twice wants. The worker is internal to
+    /// this reader: an ORE is still one caller's thread at a time.
+    pub fn open_ahead(path: &Path, cache_bytes: usize, read_ahead: u32) -> Result<Self> {
         let mut reader = Self::inspect_with(path, cache_bytes)?;
         if let Some(uuid) = reader.store_uuid() {
             let missing = |found: String| {
@@ -180,6 +292,13 @@ impl Reader {
             }
             reader.attach_store(StoreReader::new(dir, Arc::new(index), cache_bytes))?;
         }
+        reader.ahead.window = match read_ahead {
+            0 => DEFAULT_READ_AHEAD as usize,
+            READ_AHEAD_OFF => 0,
+            // The cap keeps a fanciful window out of the sector
+            // arithmetic, and no playhead outruns sixteen groups.
+            groups => groups.clamp(1, 16) as usize,
+        };
         Ok(reader)
     }
 
@@ -484,6 +603,7 @@ impl Reader {
             chunks,
             groups,
             cache: Cache::shared(cache_bytes),
+            ahead: Ahead::off(),
             store: None,
             wii: None,
             wiiu: None,
@@ -491,7 +611,9 @@ impl Reader {
     }
 
     /// Another reader of the same ORE, sharing its store's index and the
-    /// groups both have decoded.
+    /// groups both have decoded. The clone read-aheads on its own terms:
+    /// the same window, detection from its own reads, and its own worker
+    /// once those reads run sequential.
     pub fn try_clone(&self) -> Result<Self> {
         Ok(Self {
             file: self.file.try_clone()?,
@@ -503,6 +625,10 @@ impl Reader {
             chunks: self.chunks.clone(),
             groups: self.groups.clone(),
             cache: self.cache.clone(),
+            ahead: Ahead {
+                window: self.ahead.window,
+                ..Ahead::off()
+            },
             store: self.store.as_ref().map(StoreReader::shared),
             wii: None,
             wiiu: None,
@@ -838,8 +964,11 @@ impl Reader {
         Ok((files, whole))
     }
 
-    /// Read the disc at `offset`, failing past its end.
-    pub fn read_at(&mut self, mut offset: u64, mut buf: &mut [u8]) -> Result<()> {
+    /// Read the disc at `offset`, failing past its end. Reads that go on
+    /// where the last left off switch on a read-ahead worker, decoding
+    /// the groups after them into the shared cache before they are
+    /// asked for: [`Reader::open_ahead`].
+    pub fn read_at(&mut self, offset: u64, buf: &mut [u8]) -> Result<()> {
         if offset
             .checked_add(buf.len() as u64)
             .is_none_or(|end| end > self.size())
@@ -849,6 +978,17 @@ impl Reader {
                 buf.len()
             )));
         }
+        let ahead = self.ahead.watch(offset, buf.len() as u64);
+        self.read_from(offset, buf)?;
+        if ahead {
+            self.prefetch(offset + buf.len() as u64);
+        }
+        Ok(())
+    }
+
+    /// The read itself: [`Self::read_at`] without the watcher, so a
+    /// repeat's leap a period back is not mistaken for a seek.
+    fn read_from(&mut self, mut offset: u64, mut buf: &mut [u8]) -> Result<()> {
         while !buf.is_empty() {
             let index = self.by_start[self
                 .by_start
@@ -877,7 +1017,7 @@ impl Reader {
                     // The disc a period before, at most a period at a time
                     let period = area.period;
                     let length = length.min(period as usize);
-                    self.read_at(offset - period, &mut buf[..length])?;
+                    self.read_from(offset - period, &mut buf[..length])?;
                     buf = &mut buf[length..];
                     offset += length as u64;
                     continue;
@@ -1058,6 +1198,178 @@ impl Reader {
             read_group(file, at.offset, at.envelope_len, &at.group)
         })
     }
+
+    /// The clone the read-ahead worker reads through: its own file
+    /// handle, the cache shared with its reader, and no read-ahead of
+    /// its own.
+    fn clone_for_worker(&self) -> Result<Self> {
+        let mut worker = self.try_clone()?;
+        worker.ahead = Ahead::off();
+        Ok(worker)
+    }
+
+    /// Tells the worker to have decoded, as far as it gets, the groups
+    /// the next read is likely to want. The worker starts with the first
+    /// time read-ahead engages; a thread that will not start puts
+    /// read-ahead to sleep rather than the read to trouble.
+    fn prefetch(&mut self, end: u64) {
+        let targets = self.guess(end);
+        if targets.is_empty() {
+            return;
+        }
+        if self.ahead.tx.is_none() {
+            let (tx, rx) = mpsc::sync_channel(1);
+            let Ok(worker) = self.clone_for_worker() else {
+                self.ahead.window = 0;
+                return;
+            };
+            if std::thread::Builder::new()
+                .name("ore-read-ahead".into())
+                .spawn(move || {
+                    let mut worker = worker;
+                    while let Ok(targets) = rx.recv() {
+                        for fetch in targets {
+                            // A failed guess says no more than that the
+                            // guess was wrong: the reader who asked for
+                            // the group reports its own failures.
+                            match fetch {
+                                Fetch::Own(group) => {
+                                    let _ = worker.group(group);
+                                }
+                                Fetch::Store(chunk) => {
+                                    if let Some(store) = &mut worker.store {
+                                        let _ = store.chunk(chunk);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                })
+                .is_err()
+            {
+                self.ahead.window = 0;
+                return;
+            }
+            self.ahead.tx = Some(tx);
+        }
+        // A full queue means the worker is still through its last batch:
+        // the next read will guess again, and guess nearer the truth.
+        let _ = self.ahead.tx.as_ref().unwrap().try_send(targets);
+    }
+
+    /// The groups the next read after `end` will want, near enough: the
+    /// groups of the stored stream beyond it, up to the window, in
+    /// logical space. A CD data track's next group in file order is
+    /// often not its next group in use, so the guess starts from the
+    /// sectors that follow and takes each plane of theirs, the records
+    /// of their ranges, and the groups behind those. Groups already held
+    /// count for nothing: a reader catching up on the worker's head
+    /// start should guess nothing.
+    fn guess(&self, end: u64) -> Vec<Fetch> {
+        let mut out = Vec::new();
+        let mut seen: Vec<(bool, u32)> = Vec::new();
+        if end >= self.size() {
+            return out;
+        }
+        let index = self.by_start[self
+            .by_start
+            .partition_point(|&i| self.areas[i].start + self.areas[i].len <= end)];
+        let within = end - self.areas[index].start;
+        match self.areas[index].kind {
+            AreaKind::Raw | AreaKind::CdAudio | AreaKind::Wiiu => {
+                self.guess_stored(index, within, &mut seen, &mut out)
+            }
+            AreaKind::CdData => {
+                let map = self.areas[index]
+                    .map
+                    .as_ref()
+                    .expect("a CD data track has its map");
+                let from = (within / SECTOR as u64) as usize;
+                if from < map.sectors() {
+                    let to = (from + self.ahead.window * SECTORS_PER_GROUP).min(map.sectors());
+                    // Each plane its window: the three advance as one
+                    // sector stream, and the data plane's group ahead
+                    // holds none of what the XA plane plays over it.
+                    for range in map.ranges(from..to) {
+                        self.guess_stored(index, range.start, &mut seen, &mut out);
+                    }
+                }
+            }
+            AreaKind::WiiPartition => {
+                // The next whole group's data starts here in the stream;
+                // the hashing and encryption after it are the reader's
+                // to do, the stored groups behind are the worker's.
+                let group = within / GROUP_TOTAL_SIZE;
+                self.guess_stored(index, group * GROUP_DATA_SIZE, &mut seen, &mut out);
+            }
+            AreaKind::Repeat => {}
+        }
+        out
+    }
+
+    /// The groups of `area`'s stored stream from `from` onward, walking
+    /// the records forward: the ORE's own chunks' groups, and store
+    /// chunks' groups in the store. A group once, and only if none
+    /// holds it yet, until the window of them are gathered.
+    fn guess_stored(
+        &self,
+        area: usize,
+        from: u64,
+        seen: &mut Vec<(bool, u32)>,
+        out: &mut Vec<Fetch>,
+    ) {
+        let area = &self.areas[area];
+        let Some(&stream_end) = area.starts.last() else {
+            return;
+        };
+        if from >= stream_end {
+            return;
+        }
+        // The starts begin at zero: the record `from` lies in is the one
+        // before the first start past it, whatever it holds.
+        let mut record = area.starts.partition_point(|&start| start <= from) - 1;
+        let want = out.len() + self.ahead.window;
+        while record < area.records.len() && out.len() < want {
+            let (store_side, group, fetch) = match &area.records[record] {
+                Record::Chunk(id) => {
+                    let group = self.chunks[*id as usize].group;
+                    (false, group, Fetch::Own(group))
+                }
+                Record::Store(id) => {
+                    let id = *id;
+                    let Some(chunk) = self
+                        .store
+                        .as_ref()
+                        .and_then(|s| s.index.chunks.get(id as usize))
+                    else {
+                        break;
+                    };
+                    if chunk.group == NOWHERE {
+                        record += 1;
+                        continue;
+                    }
+                    (true, chunk.group, Fetch::Store(id))
+                }
+                _ => {
+                    record += 1;
+                    continue;
+                }
+            };
+            record += 1;
+            if seen.contains(&(store_side, group)) {
+                continue;
+            }
+            seen.push((store_side, group));
+            let held = if store_side {
+                self.store.as_ref().is_some_and(|s| s.holds(group))
+            } else {
+                self.cache.holds(group)
+            };
+            if !held {
+                out.push(fetch);
+            }
+        }
+    }
 }
 
 /// Write an ORE out as the disc it holds, checking it against the hash it
@@ -1068,8 +1380,10 @@ impl Reader {
 /// `progress` is called with the input bytes consumed since the last call.
 pub fn decompress(input: &Path, output: &Path, progress: &mut dyn FnMut(u64)) -> Result<Stats> {
     let input_size = std::fs::metadata(input)?.len();
-    // A reader a core, each decoding slices of the disc, written in order
-    let first = Reader::open(input)?;
+    // A reader a core, each decoding slices of the disc, written in order.
+    // No read-ahead: a reader per core already covers the drive, and a
+    // worker per one would only race them for the cache.
+    let first = Reader::open_ahead(input, 0, READ_AHEAD_OFF)?;
     let (files, whole) = first.outputs(output)?;
     // A title goes in a folder, made for it and gone if it fails
     let made = first.is_title() && !output.exists();

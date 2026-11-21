@@ -95,7 +95,10 @@ pub use error::{Error, Result};
 pub use format::{Codec, Profile};
 #[cfg(feature = "write")]
 pub use keys::{is_bootmii, load_keys, parse_key_file, parse_keys, parse_otp};
-pub use reader::{Reader, Sizes, Stats, Track, TrackMode, decompress, is_ore, shares};
+pub use reader::{
+    DEFAULT_READ_AHEAD, READ_AHEAD_OFF, Reader, Sizes, Stats, Track, TrackMode, decompress, is_ore,
+    shares,
+};
 pub use store::Index;
 #[cfg(feature = "write")]
 pub use store::{Compacted, compact, create_store, set_parity};
