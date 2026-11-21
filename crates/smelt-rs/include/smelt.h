@@ -86,8 +86,10 @@ typedef struct smelt_ingot smelt_ingot;
  */
 typedef struct smelt_open_opts {
   /**
-   * Bytes of decoded groups the ingot keeps in memory; 0 is the
-   * default, 32 MiB. Android frontends over a slow share want less.
+   * Bytes each cache of decoded groups the ingot keeps in memory: a
+   * thin ORE caches its own groups and its store's apart, so the
+   * memory can reach twice this. 0 is the default, 32 MiB. Android
+   * frontends over a slow share want less.
    */
   uint32_t cache_bytes;
   /**

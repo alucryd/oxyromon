@@ -162,7 +162,8 @@ impl Reader {
     /// [`Reader::open`] with a byte budget for the groups it keeps
     /// decoded; 0 asks for the default. An Android frontend over a slow
     /// share wants less than a desktop; the budget bounds the cache, not
-    /// the reading.
+    /// the reading. A thin ORE holds two caches, its groups' and its
+    /// store's, each at this: the reader's total can reach twice it.
     pub fn open_with(path: &Path, cache_bytes: usize) -> Result<Self> {
         let mut reader = Self::inspect_with(path, cache_bytes)?;
         if let Some(uuid) = reader.store_uuid() {

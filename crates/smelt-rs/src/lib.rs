@@ -89,8 +89,10 @@ use SmeltErr::*;
 /// Options to [`smelt_open`]; pass NULL to take every default.
 #[repr(C)]
 pub struct OpenOptions {
-    /// Bytes of decoded groups the ingot keeps in memory; 0 is the
-    /// default, 32 MiB. Android frontends over a slow share want less.
+    /// Bytes each cache of decoded groups the ingot keeps in memory: a
+    /// thin ORE caches its own groups and its store's apart, so the
+    /// memory can reach twice this. 0 is the default, 32 MiB. Android
+    /// frontends over a slow share want less.
     pub cache_bytes: u32,
     /// Reserved: 0.
     pub reserved: u32,

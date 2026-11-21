@@ -138,7 +138,7 @@ fn a_sweep_of_the_disc_decodes_a_group_once() {
     };
     round_trip(dir.path(), &disc, &options, &[]);
     let mut reader = Reader::open(&dir.path().join("disc.ore")).unwrap();
-    let mut sweep = |reader: &mut Reader| {
+    let sweep = |reader: &mut Reader| {
         let mut buf = vec![0; 2048];
         let mut offset = 0;
         while offset < disc.len() {
