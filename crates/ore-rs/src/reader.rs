@@ -5,6 +5,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex, mpsc};
 
 use rayon::prelude::*;
@@ -18,7 +19,8 @@ use super::format::*;
 use super::format::{BLOCK, RECORD_MAX, Run};
 use super::io;
 use super::lfg::{Lfg, SEED_BYTES};
-use super::pack::{Cache, read_group};
+use super::pack::{Cache, decode_group, read_group};
+use super::precache::{BATCH_BYTES, BATCH_PAUSE, Progress, Run as PrecacheRun, Warm};
 use super::store::{Index, NOWHERE, StoreReader, find_store, hex};
 use super::wii::{
     self, BLOCK_DATA_SIZE, BLOCK_TOTAL_SIZE, BLOCKS_PER_GROUP, BlockData, GROUP_DATA_SIZE,
@@ -235,12 +237,36 @@ pub struct Reader {
     cache: Arc<Cache>,
     /// The sequential-read tracker and the worker it may have started.
     ahead: Ahead,
+    /// The compressed bytes of this ingot's own groups a precache
+    /// thread has brought in; `None` when nothing was asked to precache.
+    warm: Option<Arc<Warm>>,
+    /// The precache run's counters, shared with every clone of the
+    /// ingot opened with one: a frontend may poll the progress from
+    /// the handle it reads on.
+    precache: Option<Arc<PrecacheRun>>,
+    /// Whether this reader is the one the run was started on: the only
+    /// close that stops it, so a clone or a worker ending never stops
+    /// a precache a brother still reads.
+    precache_opener: bool,
     /// The store a thin ORE's chunks lie in, once found.
     store: Option<StoreReader>,
     /// The Wii group last encrypted: its area, its number, its bytes.
     wii: Option<(usize, u64, Vec<u8>)>,
     /// The Wii U span last encrypted: its area, where it starts, its bytes.
     wiiu: Option<(usize, u64, Vec<u8>)>,
+}
+
+impl Drop for Reader {
+    fn drop(&mut self) {
+        // A closed ingot should not leave a thread reading its whole
+        // file over the network behind it: the precache notices the
+        // stop between batches and gives up, unjoined, like its
+        // read-ahead brother. Only the ingot the run was opened on
+        // speaks; a clone closing says nothing.
+        if let (true, Some(run)) = (self.precache_opener, &self.precache) {
+            run.stop.store(true, Ordering::Relaxed);
+        }
+    }
 }
 
 fn corrupt(what: &str) -> Error {
@@ -272,6 +298,24 @@ impl Reader {
     /// callbacks cannot answer twice wants. The worker is internal to
     /// this reader: an ORE is still one caller's thread at a time.
     pub fn open_ahead(path: &Path, cache_bytes: usize, read_ahead: u32) -> Result<Self> {
+        Self::open_opts(path, cache_bytes, read_ahead, false)
+    }
+
+    /// [`Reader::open`] with every knob: a byte budget, a read-ahead
+    /// window, and the precache — a thread that reads the whole ingot's
+    /// groups, compressed, into memory behind the playhead, so a game
+    /// that seeks pays its round trips once rather than per group. The
+    /// footprint is the file's, not the disc's, and decoding stays in
+    /// the LRU. A thin ORE precaches only the store groups it uses. The
+    /// thread is the ingot's: closing this reader stops it, and a
+    /// thread that will not start leaves the ingot reading as if the
+    /// precache had never been asked for.
+    pub fn open_opts(
+        path: &Path,
+        cache_bytes: usize,
+        read_ahead: u32,
+        precache: bool,
+    ) -> Result<Self> {
         let mut reader = Self::inspect_with(path, cache_bytes)?;
         if let Some(uuid) = reader.store_uuid() {
             let missing = |found: String| {
@@ -294,6 +338,9 @@ impl Reader {
             // arithmetic, and no playhead outruns sixteen groups.
             groups => groups.clamp(1, 16) as usize,
         };
+        if precache {
+            reader.start_precache();
+        }
         Ok(reader)
     }
 
@@ -599,6 +646,9 @@ impl Reader {
             groups,
             cache: Cache::shared(cache_bytes),
             ahead: Ahead::off(),
+            warm: None,
+            precache: None,
+            precache_opener: false,
             store: None,
             wii: None,
             wiiu: None,
@@ -608,7 +658,9 @@ impl Reader {
     /// Another reader of the same ORE, sharing its store's index and the
     /// groups both have decoded. The clone read-aheads on its own terms:
     /// the same window, detection from its own reads, and its own worker
-    /// once those reads run sequential.
+    /// once those reads run sequential. It sees a precache run in flight
+    /// (and never stops its precache): the run belongs to the ingot it
+    /// was opened on.
     pub fn try_clone(&self) -> Result<Self> {
         Ok(Self {
             file: self.file.try_clone()?,
@@ -624,6 +676,9 @@ impl Reader {
                 window: self.ahead.window,
                 ..Ahead::off()
             },
+            warm: self.warm.clone(),
+            precache: self.precache.clone(),
+            precache_opener: false,
             store: self.store.as_ref().map(StoreReader::shared),
             wii: None,
             wiiu: None,
@@ -1185,12 +1240,43 @@ impl Reader {
         self.cache.decodes() + self.store.as_ref().map_or(0, StoreReader::decodes)
     }
 
-    /// A group, decoded and checked against its envelope.
+    /// What a precache in flight has done: `None` for an ingot opened
+    /// without one, and for its clones alike only in that case — a clone
+    /// of an ingot that was opened with one polls the same run. The run
+    /// counts groups, the ingot's own and its store's together; a run
+    /// that died is over and its `done` is all that ever came — a
+    /// frontend waiting on completion can stop waiting when `running`
+    /// says so.
+    pub fn precache_progress(&self) -> Option<Progress> {
+        let run = self.precache.as_ref()?;
+        Some(Progress {
+            done: run.done.load(Ordering::Relaxed),
+            total: run.total,
+            running: run.running.load(Ordering::Relaxed),
+        })
+    }
+
+    /// Groups decoded from precached bytes rather than from their file,
+    /// the ingot's own and its store's together: a debug counter, and
+    /// the witness `tests/precache.rs` mutation-checks.
+    pub fn precache_hits(&self) -> u64 {
+        self.warm.as_ref().map_or(0, |w| w.hits())
+            + self.store.as_ref().map_or(0, |s| s.warm_hits())
+    }
+
+    /// A group, decoded and checked against its envelope — from the
+    /// precache's bytes if the decode needs bytes and the cache holds
+    /// them, from the file otherwise. The lookup waits on the decode:
+    /// a cached group touches neither.
     fn group(&mut self, index: u32) -> Result<Arc<Vec<u8>>> {
         let at = &self.groups[index as usize];
+        let warm = self.warm.clone();
         let file = &self.file;
         self.cache.get(index, || {
-            read_group(file, at.offset, at.envelope_len, &at.group)
+            match warm.as_ref().and_then(|w| w.get((0, at.offset))) {
+                Some(bytes) => decode_group(&bytes, at.offset, at.envelope_len, &at.group),
+                None => read_group(file, at.offset, at.envelope_len, &at.group),
+            }
         })
     }
 
@@ -1200,7 +1286,144 @@ impl Reader {
     fn clone_for_worker(&self) -> Result<Self> {
         let mut worker = self.try_clone()?;
         worker.ahead = Ahead::off();
+        // The run belongs to the ingot it was opened on: try_clone hands
+        // a worker the counters but never the stop.
         Ok(worker)
+    }
+
+    /// Start the precache: the run and its byte store, then a thread
+    /// reading through a worker clone — its own handle on the file, the
+    /// store's files opened as its own. Nothing is attached before the
+    /// thread is alive: a spawn that fails leaves no counters to chase.
+    fn start_precache(&mut self) {
+        let own: Vec<(u64, u64)> = self
+            .groups
+            .iter()
+            .map(|at| (at.offset, at.envelope_len + at.group.stored_len))
+            .collect();
+        let plan = match &self.store {
+            Some(store) => {
+                let ids = self
+                    .store_uuid()
+                    .and_then(|uuid| self.store_ids(&uuid))
+                    .unwrap_or_default();
+                store.precache_plan(&ids)
+            }
+            None => Vec::new(),
+        };
+        let warm = Warm::new();
+        let warm_store = if plan.is_empty() {
+            None
+        } else {
+            Some(Warm::new())
+        };
+        let run = PrecacheRun::new(own.len() as u64 + plan.len() as u64);
+        let Ok(worker) = self.clone_for_worker() else {
+            return;
+        };
+        let started = std::thread::Builder::new()
+            .name("ore-precache".into())
+            .spawn({
+                let (filled, filled_store, counted) =
+                    (warm.clone(), warm_store.clone(), run.clone());
+                move || {
+                    Self::precache_loop(worker, own, plan, filled, filled_store, counted);
+                }
+            });
+        if started.is_err() {
+            // A thread that will not start leaves no counters to chase:
+            // the ingot reads as if precache had never been asked for.
+            return;
+        }
+        self.warm = Some(warm);
+        if let Some(store) = &mut self.store {
+            store.warm = warm_store;
+        }
+        self.precache = Some(run);
+        self.precache_opener = true;
+    }
+
+    /// The thread's work: the ingot's own groups first, in file order,
+    /// as many neighbours as a batch fits behind one read; then the
+    /// store's, per segment the same way. Between batches it rests, so
+    /// the playhead's reads get the share to themselves more often
+    /// than not. The first error ends the run: bytes already in stay,
+    /// and the ones that never came were never promised — a reader of
+    /// those takes its chance at the file.
+    fn precache_loop(
+        worker: Reader,
+        own: Vec<(u64, u64)>,
+        plan: Vec<(u32, u64, u64)>,
+        filled: Arc<Warm>,
+        filled_store: Option<Arc<Warm>>,
+        counted: Arc<PrecacheRun>,
+    ) {
+        let mut next = 0;
+        while next < own.len() && !counted.stopped() {
+            let start = own[next].0;
+            let mut end = start + own[next].1;
+            let mut upto = next + 1;
+            while upto < own.len() && own[upto].0 + own[upto].1 - start <= BATCH_BYTES {
+                end = own[upto].0 + own[upto].1;
+                upto += 1;
+            }
+            let mut bytes = vec![0u8; (end - start) as usize];
+            if io::read_exact_at(&worker.file, &mut bytes, start).is_err() {
+                break;
+            }
+            for (offset, len) in &own[next..upto] {
+                let from = (*offset - start) as usize;
+                filled.insert((0, *offset), bytes[from..from + *len as usize].to_vec());
+                counted.done.fetch_add(1, Ordering::Relaxed);
+            }
+            next = upto;
+            std::thread::sleep(BATCH_PAUSE);
+        }
+        // The store phase runs only if the file itself answered: a disc
+        // that will not read rarely has its store read better, and a
+        // thread chasing one is what this isn't.
+        let store_phase = filled_store.filter(|_| next == own.len());
+        if let Some(filled_store) = store_phase {
+            let mut store = worker;
+            let mut next = 0;
+            while next < plan.len() && !counted.stopped() {
+                let segment = plan[next].0;
+                let start = plan[next].1;
+                let mut end = start + plan[next].2;
+                let mut upto = next + 1;
+                while upto < plan.len()
+                    && plan[upto].0 == segment
+                    && plan[upto].1 + plan[upto].2 - start <= BATCH_BYTES
+                {
+                    end = plan[upto].1 + plan[upto].2;
+                    upto += 1;
+                }
+                // A store that vanished mid-run ends the run like a
+                // failed read would: this thread has no watcher, so it
+                // gets no panic path either.
+                let Some(st) = store.store.as_mut() else {
+                    break;
+                };
+                let Ok(file) = st.file_for(segment) else {
+                    break;
+                };
+                let mut bytes = vec![0u8; (end - start) as usize];
+                if io::read_exact_at(&file, &mut bytes, start).is_err() {
+                    break;
+                }
+                for (segment, offset, len) in &plan[next..upto] {
+                    let from = (*offset - start) as usize;
+                    filled_store.insert(
+                        (*segment, *offset),
+                        bytes[from..from + *len as usize].to_vec(),
+                    );
+                    counted.done.fetch_add(1, Ordering::Relaxed);
+                }
+                next = upto;
+                std::thread::sleep(BATCH_PAUSE);
+            }
+        }
+        counted.finish();
     }
 
     /// Tells the worker to have decoded, as far as it gets, the groups

@@ -66,6 +66,7 @@ mod gcwii {
 }
 mod pack;
 mod parity;
+mod precache;
 #[cfg(feature = "write")]
 mod ps2audio;
 mod range;
@@ -95,6 +96,7 @@ pub use error::{Error, Result};
 pub use format::{Codec, Profile};
 #[cfg(feature = "write")]
 pub use keys::{is_bootmii, load_keys, parse_key_file, parse_keys, parse_otp};
+pub use precache::Progress;
 pub use reader::{
     DEFAULT_READ_AHEAD, READ_AHEAD_OFF, Reader, Sizes, Stats, Track, TrackMode, decompress, is_ore,
     shares,

@@ -195,6 +195,7 @@ fn what_is_no_ore_or_no_argument_is_refused() {
     let opts = OpenOptions {
         cache_bytes: 0,
         read_ahead: 0,
+        precache: 0,
         reserved: 1,
     };
     assert_eq!(
@@ -206,6 +207,7 @@ fn what_is_no_ore_or_no_argument_is_refused() {
     let opts = OpenOptions {
         cache_bytes: 0,
         read_ahead: 2,
+        precache: 0,
         reserved: 0,
     };
     assert_eq!(
@@ -237,6 +239,7 @@ fn a_cache_budget_smaller_than_a_group_still_reads() {
     let opts = OpenOptions {
         cache_bytes: 4 << 10,
         read_ahead: SMELT_READ_AHEAD_OFF,
+        precache: 0,
         reserved: 0,
     };
     let mut ingot = ptr::null_mut();
@@ -250,5 +253,85 @@ fn a_cache_budget_smaller_than_a_group_still_reads() {
         SmeltErr::SmeltOk
     );
     assert!(back == bytes);
+    unsafe { smelt_close(ingot) };
+}
+
+#[test]
+fn a_precached_ingot_reports_its_progress_and_reads_from_ram() {
+    let dir = TempDir::new().unwrap();
+    let (input, bytes) = rom(dir.path());
+    let ore = dir.path().join("game.ore");
+    ore_rs::compress(&input, &ore, &options(), &[], &mut |_| {}).unwrap();
+    let opts = OpenOptions {
+        cache_bytes: 0,
+        read_ahead: 0,
+        precache: 1,
+        reserved: 0,
+    };
+    let mut ingot = ptr::null_mut();
+    assert_eq!(
+        unsafe { smelt_open(c(&ore).as_ptr(), &opts, &mut ingot) },
+        SmeltErr::SmeltOk
+    );
+    // A clone of the ingot sees the same run: a frontend may poll its
+    // bar on the handle it reads on, not the one it opened on. And
+    // closing this clone stops nothing — the run below must still fill.
+    let mut twin = ptr::null_mut();
+    assert_eq!(unsafe { smelt_clone(ingot, &mut twin) }, SmeltErr::SmeltOk);
+    let (mut twin_done, mut twin_total, mut twin_running) = (0u64, 0u64, 0i32);
+    assert_eq!(
+        unsafe {
+            smelt_precache_progress(twin, &mut twin_done, &mut twin_total, &mut twin_running)
+        },
+        SmeltErr::SmeltOk
+    );
+    assert!(
+        twin_total > 0,
+        "the clone sees the run it was cloned from: 0 of {twin_total}"
+    );
+    unsafe { smelt_close(twin) };
+    let (mut done, mut total, mut running) = (0u64, 0u64, 1i32);
+    for _ in 0..300 {
+        assert_eq!(
+            unsafe { smelt_precache_progress(ingot, &mut done, &mut total, &mut running) },
+            SmeltErr::SmeltOk
+        );
+        if running == 0 {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+    assert_eq!(running, 0, "the run is over");
+    assert!(
+        total > 0 && done == total,
+        "every group came in: {done} of {total}"
+    );
+    let mut back = vec![0u8; bytes.len()];
+    assert_eq!(
+        unsafe { smelt_read(ingot, 0, back.as_mut_ptr(), back.len()) },
+        SmeltErr::SmeltOk
+    );
+    assert!(back == bytes, "the precached disc is the disc");
+    unsafe { smelt_close(ingot) };
+    // A plain ingot answers nothing at all, and asks for nothing.
+    let opts = OpenOptions {
+        cache_bytes: 0,
+        read_ahead: 0,
+        precache: 0,
+        reserved: 0,
+    };
+    assert_eq!(
+        unsafe { smelt_open(c(&ore).as_ptr(), &opts, &mut ingot) },
+        SmeltErr::SmeltOk
+    );
+    assert_eq!(
+        unsafe { smelt_precache_progress(ingot, &mut done, &mut total, &mut running) },
+        SmeltErr::SmeltOk
+    );
+    assert_eq!(
+        (done, total, running),
+        (0, 0, 0),
+        "no precache, no progress: a frontend that waits anyway waits for nothing"
+    );
     unsafe { smelt_close(ingot) };
 }

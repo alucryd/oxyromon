@@ -107,6 +107,14 @@ pub struct OpenOptions {
     /// thread of its own, and a frontend whose reads go through callbacks
     /// it cannot answer twice — a VFS — wants this.
     pub read_ahead: u32,
+    /// 1 brings the whole ingot's compressed groups into memory on a
+    /// background thread after the open, so a game that seeks pays its
+    /// round trips once rather than per group. Memory grows by about
+    /// the file's size, not the disc's, and decoding still runs through
+    /// the cache; a thin ORE brings the store groups its chunks lie in
+    /// and no others. Poll it with `smelt_precache_progress`. 0, the
+    /// default, starts nothing.
+    pub precache: u32,
     /// Reserved: 0.
     pub reserved: u32,
 }
@@ -236,21 +244,24 @@ pub unsafe extern "C" fn smelt_open(
         if path.is_null() || out.is_null() {
             return fail(SmeltErrArgument, "a NULL argument");
         }
-        let (cache_bytes, read_ahead) = if opts.is_null() {
-            (0, 0)
+        let (cache_bytes, read_ahead, precache) = if opts.is_null() {
+            (0, 0, 0)
         } else {
             if unsafe { (*opts).reserved } != 0 {
                 return fail(SmeltErrArgument, "options this build does not know");
             }
-            (unsafe { (*opts).cache_bytes }, unsafe {
-                (*opts).read_ahead
-            })
+            (
+                unsafe { (*opts).cache_bytes },
+                unsafe { (*opts).read_ahead },
+                unsafe { (*opts).precache },
+            )
         };
         let Ok(path) = unsafe { CStr::from_ptr(path) }.to_str() else {
             return fail(SmeltErrArgument, "a path not UTF-8");
         };
         let path = Path::new(path);
-        let reader = match Reader::open_ahead(path, cache_bytes as usize, read_ahead) {
+        let reader = match Reader::open_opts(path, cache_bytes as usize, read_ahead, precache != 0)
+        {
             Ok(reader) => reader,
             // The ORE reads, but not the store it needs
             Err(Error::Io(error))
@@ -323,6 +334,42 @@ pub unsafe extern "C" fn smelt_logical_size(ingot: *const Ingot, out: *mut u64) 
             return fail(SmeltErrArgument, "a NULL argument");
         };
         unsafe { *out = ingot.reader.size() };
+        SmeltOk
+    })
+}
+
+/// Poll the ingot's precache: `*done` groups brought in of `*total` it
+/// set out to bring — the ingot's own and its store's together — and
+/// `*running` 1 while the thread is still at it, 0 when the run is over
+/// or died trying: `*done` is then all that ever came. An ingot opened
+/// without a precache answers 0, 0, 0. A `smelt_clone`d ingot answers
+/// for the run of the ingot it was cloned from; the run belongs to
+/// that one, and closing it stops the run whatever a clone is still
+/// polling.
+///
+/// # Safety
+///
+/// `ingot` is an open ingot, `done`, `total` and `running` valid.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn smelt_precache_progress(
+    ingot: *const Ingot,
+    done: *mut u64,
+    total: *mut u64,
+    running: *mut i32,
+) -> SmeltErr {
+    guard(|| {
+        let Some(ingot) = (unsafe { ingot.as_ref() }) else {
+            return fail(SmeltErrArgument, "a NULL ingot");
+        };
+        if done.is_null() || total.is_null() || running.is_null() {
+            return fail(SmeltErrArgument, "a NULL argument");
+        }
+        let progress = ingot.reader.precache_progress();
+        unsafe {
+            *done = progress.map_or(0, |p| p.done);
+            *total = progress.map_or(0, |p| p.total);
+            *running = progress.map_or(0, |p| p.running as i32);
+        }
         SmeltOk
     })
 }
