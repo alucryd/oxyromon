@@ -169,16 +169,11 @@ impl Ahead {
         } else {
             0
         };
-        let was = self.on;
         self.on = self.hits >= SEQUENTIAL_HITS;
-        if was && !self.on {
-            // The worker's pending guess lies behind the seek. Its group
-            // in hand lands in the cache whatever happens, where a stale
-            // one is fenced and a live one is only early.
-            if let Some(tx) = &self.tx {
-                let _ = tx.try_send(Vec::new());
-            }
-        }
+        // A seek cancels nothing: a batch already in the worker's hand
+        // lands in the cache wherever it lies, where a stale one is
+        // fenced and a live one is only early, and the next streak
+        // guesses from the playhead's new home.
         self.last_end = Some(end);
         self.on
     }
