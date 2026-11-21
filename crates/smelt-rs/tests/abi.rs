@@ -192,7 +192,10 @@ fn what_is_no_ore_or_no_argument_is_refused() {
     // Options this build does not know
     let ore = dir.path().join("game.ore");
     ore_rs::compress(&input, &ore, &options(), &[], &mut |_| {}).unwrap();
-    let opts = OpenOptions { reserved: 1 };
+    let opts = OpenOptions {
+        cache_bytes: 0,
+        reserved: 1,
+    };
     assert_eq!(
         unsafe { smelt_open(c(&ore).as_ptr(), &opts, &mut ingot) },
         SmeltErr::SmeltErrArgument
@@ -203,4 +206,30 @@ fn what_is_no_ore_or_no_argument_is_refused() {
         SmeltErr::SmeltErrArgument
     );
     unsafe { smelt_close(ptr::null_mut()) };
+}
+
+#[test]
+fn a_cache_budget_smaller_than_a_group_still_reads() {
+    let dir = TempDir::new().unwrap();
+    let (input, bytes) = rom(dir.path());
+    let ore = dir.path().join("game.ore");
+    ore_rs::compress(&input, &ore, &options(), &[], &mut |_| {}).unwrap();
+    // 4 KiB caches nothing this ORE can keep: every group is re-read,
+    // and the disc still comes back byte for byte
+    let opts = OpenOptions {
+        cache_bytes: 4 << 10,
+        reserved: 0,
+    };
+    let mut ingot = ptr::null_mut();
+    assert_eq!(
+        unsafe { smelt_open(c(&ore).as_ptr(), &opts, &mut ingot) },
+        SmeltErr::SmeltOk
+    );
+    let mut back = vec![0u8; bytes.len()];
+    assert_eq!(
+        unsafe { smelt_read(ingot, 0, back.as_mut_ptr(), back.len()) },
+        SmeltErr::SmeltOk
+    );
+    assert!(back == bytes);
+    unsafe { smelt_close(ingot) };
 }

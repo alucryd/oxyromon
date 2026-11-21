@@ -86,9 +86,14 @@ pub const SMELT_SECTOR: u32 = 2352;
 
 use SmeltErr::*;
 
-/// Options to [`smelt_open`]; none yet, so pass NULL.
+/// Options to [`smelt_open`]; pass NULL to take every default.
 #[repr(C)]
 pub struct OpenOptions {
+    /// Bytes each cache of decoded groups the ingot keeps in memory: a
+    /// thin ORE caches its own groups and its store's apart, so the
+    /// memory can reach twice this. 0 is the default, 32 MiB. Android
+    /// frontends over a slow share want less.
+    pub cache_bytes: u32,
     /// Reserved: 0.
     pub reserved: u32,
 }
@@ -199,7 +204,8 @@ pub extern "C" fn smelt_last_error() -> *const c_char {
 }
 
 /// Open the ORE at `path`, UTF-8, and if it is thin, the store its chunks
-/// lie in, the nearest `.ore-store` up from its folder. `opts` is NULL.
+/// lie in, the nearest `.ore-store` up from its folder. `opts` is NULL
+/// for the defaults or options this build knows.
 ///
 /// # Safety
 ///
@@ -214,14 +220,19 @@ pub unsafe extern "C" fn smelt_open(
         if path.is_null() || out.is_null() {
             return fail(SmeltErrArgument, "a NULL argument");
         }
-        if !opts.is_null() && unsafe { (*opts).reserved } != 0 {
-            return fail(SmeltErrArgument, "options this build does not know");
-        }
+        let cache_bytes = if opts.is_null() {
+            0
+        } else {
+            if unsafe { (*opts).reserved } != 0 {
+                return fail(SmeltErrArgument, "options this build does not know");
+            }
+            (unsafe { (*opts).cache_bytes }) as usize
+        };
         let Ok(path) = unsafe { CStr::from_ptr(path) }.to_str() else {
             return fail(SmeltErrArgument, "a path not UTF-8");
         };
         let path = Path::new(path);
-        let reader = match Reader::open(path) {
+        let reader = match Reader::open_with(path, cache_bytes) {
             Ok(reader) => reader,
             // The ORE reads, but not the store it needs
             Err(Error::Io(error))
