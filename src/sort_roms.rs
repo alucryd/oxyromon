@@ -232,6 +232,8 @@ pub async fn main(
             .map(|s| ArcadeRomType::from_str(s.as_str()).unwrap())
             .collect_vec();
         let languages = get_list(connection, "LANGUAGES", system_id).await;
+        let language_first = get_bool(connection, "LANGUAGE_FIRST", system_id).await;
+        let preferred_languages = get_list(connection, "PREFERRED_LANGUAGES", system_id).await;
         let ignored_releases = get_list(connection, "DISCARD_RELEASES", system_id).await;
         let ignored_flags = get_list(connection, "DISCARD_FLAGS", system_id).await;
         let ignored_categories = get_list(connection, "DISCARD_CATEGORIES", system_id).await;
@@ -274,6 +276,8 @@ pub async fn main(
             &one_regions_subfolders,
             one_regions_strict,
             infer_clones,
+            language_first,
+            &preferred_languages.iter().map(String::as_str).collect_vec(),
         )
         .await?;
 
@@ -329,6 +333,8 @@ async fn sort_system(
     one_regions_subfolders: &Option<SubfolderScheme>,
     one_regions_strict: bool,
     infer_clones: bool,
+    language_first: bool,
+    preferred_languages: &[&str],
 ) -> Result<()> {
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     print_header(progress_bar, &format!("Sorting \"{}\"", system.name));
@@ -393,12 +399,23 @@ async fn sort_system(
         };
 
         let priority = |game: &Game| priorities.get(&game.id).copied().unwrap_or(1);
+        // ranking languages only means something with languages to rank
+        let language_first = language_first && !preferred_languages.is_empty();
         for group in groups {
             games = group;
-            // put a lower clone list priority first, as within a region the
-            // first game wins, then newer releases
+            // the higher-ranked region wins, unless languages rank, in which
+            // case they win over the region, and within a region the lower
+            // clone list priority wins, then newer releases
             games.sort_by(|a, b| {
-                priority(a).cmp(&priority(b)).then_with(|| {
+                if language_first {
+                    language_rank(a, preferred_languages)
+                        .cmp(&language_rank(b, preferred_languages))
+                } else {
+                    Ordering::Equal
+                }
+                .then_with(|| region_rank(a, one_regions).cmp(&region_rank(b, one_regions)))
+                .then_with(|| priority(a).cmp(&priority(b)))
+                .then_with(|| {
                     sort_games_by_weight(
                         a,
                         b,
@@ -411,10 +428,12 @@ async fn sort_system(
                 })
             });
 
-            // trim ignored games
+            // trim ignored games; languages rank when language_first is set,
+            // so it opts out of the language filter and a game whose only
+            // releases speak unwanted languages is kept, not discarded
             let (mut left_games, right_games) = trim_ignored_games(
                 games,
-                languages,
+                if language_first { &[] } else { languages },
                 ignored_releases,
                 ignored_flags,
                 ignored_categories,
@@ -423,26 +442,25 @@ async fn sort_system(
             ignored_games.append(&mut left_games);
             games = right_games;
 
-            // find the one game we want to keep, if any
-            for region in one_regions {
-                let i = games.iter().position(|game| {
-                    (game.completion == Completion::Full as i64
-                        || one_regions_strict
-                        || games
-                            .iter()
-                            .all(|game| game.completion != Completion::Full as i64))
-                        && Region::try_from_tosec_region(&game.regions)
-                            .unwrap_or_default()
-                            .contains(region)
-                });
-                if let Some(i) = i {
-                    let game = games.remove(i);
-                    if game.completion == Completion::Full as i64 {
-                        one_region_games.push(game);
-                    } else {
-                        incomplete_one_region_games.push(game);
-                    }
-                    break;
+            // find the one game we want to keep, if any: the best-ranked game
+            // in a preferred region, games in no preferred region being left
+            // to the region filters below
+            let no_full = games
+                .iter()
+                .all(|game| game.completion != Completion::Full as i64);
+            let i = games.iter().position(|game| {
+                (game.completion == Completion::Full as i64 || one_regions_strict || no_full)
+                    && Region::try_from_tosec_region(&game.regions)
+                        .unwrap_or_default()
+                        .iter()
+                        .any(|region| one_regions.contains(region))
+            });
+            if let Some(i) = i {
+                let game = games.remove(i);
+                if game.completion == Completion::Full as i64 {
+                    one_region_games.push(game);
+                } else {
+                    incomplete_one_region_games.push(game);
                 }
             }
 
@@ -1115,25 +1133,16 @@ fn trim_ignored_names(
             log::debug!("sort_roms::trim_ignored_games(\"{}\")", game.name);
             if let Ok(name) = NoIntroName::try_parse(&game.name) {
                 for token in name.iter() {
-                    if let NoIntroToken::Languages(parsed_languages) = token {
-                        log::debug!("parsed languages: {:?}", parsed_languages);
-                        if !languages.is_empty() {
-                            let clean_parsed_languages = parsed_languages
+                    if let NoIntroToken::Languages(_) = token
+                        && !languages.is_empty()
+                    {
+                        let clean_parsed_languages = clean_languages(&name);
+                        if !clean_parsed_languages.is_empty()
+                            && !clean_parsed_languages
                                 .iter()
-                                .filter(|l| {
-                                    LANGUAGE_REGEX.is_match(l.code)
-                                        && (l.variant.is_none()
-                                            || VARIANT_REGEX.is_match(l.variant.unwrap()))
-                                })
-                                .map(|l| l.code.to_string())
-                                .collect::<Vec<String>>();
-                            if !clean_parsed_languages.is_empty()
-                                && !clean_parsed_languages
-                                    .iter()
-                                    .any(|language| languages.contains(&language.as_str()))
-                            {
-                                return true;
-                            }
+                                .any(|language| languages.contains(&language.as_str()))
+                        {
+                            return true;
                         }
                     }
                     if let NoIntroToken::Release {
@@ -1169,6 +1178,56 @@ fn trim_ignored_names(
             false
         })
     }
+}
+
+/// The languages of a parsed No-Intro name, tags that don't look like language
+/// codes dropped, shared by the language filter and the language-first ranking
+fn clean_languages(name: &NoIntroName) -> Vec<String> {
+    name.iter()
+        .filter_map(|token| match token {
+            NoIntroToken::Languages(languages) => Some(languages),
+            _ => None,
+        })
+        .flatten()
+        .filter(|language| {
+            LANGUAGE_REGEX.is_match(language.code)
+                && (language.variant.is_none() || VARIANT_REGEX.is_match(language.variant.unwrap()))
+        })
+        .map(|language| language.code.to_string())
+        .collect()
+}
+
+/// Where a game's languages rank among `preferred_languages`: the best rank
+/// of the preferred languages it ships, `preferred_languages.len()` when its
+/// name says nothing of its languages, and one past that when it ships
+/// preferred languages' worth of none. Unknown beats known-absent: a release
+/// that doesn't say may still be preferred, one that says otherwise isn't
+fn language_rank(game: &Game, preferred_languages: &[&str]) -> usize {
+    let languages = NoIntroName::try_parse(&game.name)
+        .map(|name| clean_languages(&name))
+        .unwrap_or_default();
+    if languages.is_empty() {
+        return preferred_languages.len();
+    }
+    languages
+        .iter()
+        .filter_map(|language| {
+            preferred_languages
+                .iter()
+                .position(|preferred| preferred == language)
+        })
+        .min()
+        .unwrap_or(preferred_languages.len() + 1)
+}
+
+/// Where a game ranks among `one_regions`: the rank of the first of its
+/// regions that is a preferred one, past the end when none is
+fn region_rank(game: &Game, one_regions: &[Region]) -> usize {
+    let regions = Region::try_from_tosec_region(&game.regions).unwrap_or_default();
+    one_regions
+        .iter()
+        .position(|region| regions.contains(region))
+        .unwrap_or(one_regions.len())
 }
 
 fn compare_versions(a: &[NoIntroVersion], b: &[NoIntroVersion]) -> Ordering {
@@ -1378,6 +1437,18 @@ mod test_sort_1g1r_infer_clones;
 mod test_sort_1g1r_infer_clones_parent_clone;
 #[cfg(test)]
 mod test_sort_1g1r_infer_clones_titles;
+#[cfg(test)]
+mod test_sort_1g1r_language_first;
+#[cfg(test)]
+mod test_sort_1g1r_language_first_demote_not_discard;
+#[cfg(test)]
+mod test_sort_1g1r_language_first_empty;
+#[cfg(test)]
+mod test_sort_1g1r_language_first_off;
+#[cfg(test)]
+mod test_sort_1g1r_language_first_region_tiebreak;
+#[cfg(test)]
+mod test_sort_1g1r_language_first_revisions;
 #[cfg(test)]
 mod test_sort_1g1r_lenient;
 #[cfg(test)]

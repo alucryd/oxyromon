@@ -157,6 +157,8 @@ These environment variables change where things go:
 | `DISCARD_FLAGS`          | Flags to discard (eg: `Virtual Console`)                                                     |         |
 | `DISCARD_RELEASES`       | Releases to discard (eg: `Beta,Proto`)                                                       |         |
 | `LANGUAGES`              | Languages to keep, for games that list theirs (eg: `En,Ja`)                                  |         |
+| `LANGUAGE_FIRST`         | Rank the language a game ships above its region in the 1G1R election, instead of filtering by `LANGUAGES` | `false` |
+| `PREFERRED_LANGUAGES`    | The language order for that election, most wanted first (eg: `Fr,En`)                        |         |
 | `GROUP_SUBSYSTEMS`       | Put every variant of a system in the same directory                                          | `true`  |
 | `GAME_SUBFOLDERS`        | Put games in folders named after them: `never`, `multiple` (those stored as several files) or `always` | `never` |
 
@@ -642,6 +644,8 @@ A game's disc number and any other flag stay, so `Game (Europe) (Disc 2)` is gro
 These groups have no parent, so `PREFER_PARENTS` doesn't apply to them.
 A clone list imported with `import-clone-lists` adds to these groups: the titles it names as one game share a group, whatever their names, a filter moving a region's release to another, and within a region its priorities elect a release before the `PREFER_*` settings do, a lower number first.
 A title naming an edition, as `Game (Premium Box)`, takes precedence over one naming the game for that edition's releases.
+
+`LANGUAGE_FIRST` lifts language above region in the election, on the order set by `PREFERRED_LANGUAGES`: a release shipping a preferred language beats one in a higher-ranked region, a release whose languages the DAT doesn't tell stays below a preferred one but above a release that ships only unwanted ones, and a release speaking no preferred language is kept rather than trimmed, so a game whose only release is a language you didn't ask for still makes 1G1R. The `LANGUAGES` filter takes no part in a language-first election; set the language order with `PREFERRED_LANGUAGES`, which ranks and nothing else. With `LANGUAGE_FIRST` off, or `PREFERRED_LANGUAGES` empty, the region order rules as before.
 
 Arcade systems sort by set type instead.
 `REGIONS_ALL_ARCADE` and `REGIONS_ONE_ARCADE` say which of `bios`, `parent` and `clone` go to each directory.

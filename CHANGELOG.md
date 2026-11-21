@@ -23,6 +23,7 @@
 - `ORE_COMPRESSION_ALGORITHM` defaults to `auto`: LZMA2 for a cartridge's ROM, where Zstandard loses to 7z, and Zstandard for a disc
 - ORE codes a PlayStation 2 DVD's audio as audio: its `VAGp` streams' SPU ADPCM and its 16-bit PCM, found by their headers, so a disc full of sound no longer loses to its CHD
 - Importing a cue sheet for a game whose tracks are in an ORE puts it in the ORE, in place of the dump's, writing the ORE's metadata alone again
+- Added `LANGUAGE_FIRST` and `PREFERRED_LANGUAGES`: with the first on, the 1G1R election ranks the language a game ships above its region, on the second's order, so a French user keeps a French release even in a lower-ranked region, a release whose languages the DAT doesn't tell stays below a preferred one and above one shipping only unwanted tongues, and a game whose only release speaks an unwanted language is kept, not trimmed; the `LANGUAGES` filter and the region order are untouched with it off (#331)
 
 ## Improvements
 

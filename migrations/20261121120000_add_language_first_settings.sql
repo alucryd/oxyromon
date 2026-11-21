@@ -1,0 +1,4 @@
+INSERT OR REPLACE INTO settings ("key", value)
+VALUES('LANGUAGE_FIRST', 'false');
+INSERT OR REPLACE INTO settings ("key", value)
+VALUES('PREFERRED_LANGUAGES', NULL);
