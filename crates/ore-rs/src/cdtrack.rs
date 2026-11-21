@@ -171,6 +171,11 @@ impl SectorMap {
         Ok(map)
     }
 
+    /// The map's sectors, what `ranges` counts to.
+    pub fn sectors(&self) -> usize {
+        self.starts.len() - 1
+    }
+
     /// Where each plane starts in the stream, and where the last ends: the
     /// stream's length.
     pub fn plane_starts(&self) -> [u64; 4] {

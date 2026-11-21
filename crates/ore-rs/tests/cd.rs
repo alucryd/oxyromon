@@ -271,6 +271,78 @@ fn a_cd_records_each_files_hashes_and_reads_anywhere() {
     }
 }
 
+/// Sweeps the whole stream in order, checking every byte.
+fn sweep(reader: &mut Reader, stream: &[u8]) {
+    let mut offset = 0usize;
+    while offset < stream.len() {
+        let length = (64 << 10).min(stream.len() - offset);
+        let mut wide = vec![0; length];
+        reader.read_at(offset as u64, &mut wide).unwrap();
+        assert_eq!(
+            &wide[..],
+            &stream[offset..offset + length],
+            "at {offset:#x}"
+        );
+        offset += length;
+    }
+}
+
+#[test]
+fn a_cd_guesses_its_planes_ahead() {
+    use std::thread::sleep;
+    use std::time::Duration;
+
+    let dir = TempDir::new().unwrap();
+    let cue = disc(dir.path(), "Game (Ahead)", 3, false);
+    let ore = dir.path().join("game.ore");
+    let options = Options {
+        profile: Profile::Stream,
+        codec: Codec::Zstd,
+        platform: None,
+    };
+    ore_rs::compress(&cue, &ore, &options, &[], &mut |_| {}).unwrap();
+    let stream: Vec<u8> = files(&cue)
+        .into_iter()
+        .filter(|(name, _)| name.ends_with(".bin"))
+        .flat_map(|(_, bytes)| bytes)
+        .collect();
+    let mut reader = Reader::open(&ore).unwrap();
+    // A playhead's first four reads: one group's worth of sectors so far.
+    let mut buf = vec![0; 2048];
+    for i in 0..4u64 {
+        reader.read_at(i * 2048, &mut buf).unwrap();
+    }
+    // The guess walks the planes, not the file: the sectors that follow
+    // ride on groups the next reads have not asked for yet, and the
+    // counter says the worker went and fetched them.
+    let mut decodes = reader.group_decodes();
+    for _ in 0..40 {
+        if decodes >= 2 {
+            break;
+        }
+        sleep(Duration::from_millis(50));
+        decodes = reader.group_decodes();
+    }
+    assert!(
+        decodes >= 2,
+        "the guess over the planes sent the worker past the four sectors read: {decodes}"
+    );
+    // And through the whole disc, in order, the playhead meets no wrong
+    // byte and pays for no group twice.
+    sweep(&mut reader, &stream);
+    let ahead = reader.group_decodes();
+    drop(reader);
+    // The same disc, the same sweep, one thread: ahead or not, a group
+    // is decoded once.
+    let mut plain = Reader::open_ahead(&ore, 0, ore_rs::READ_AHEAD_OFF).unwrap();
+    sweep(&mut plain, &stream);
+    assert_eq!(
+        plain.group_decodes(),
+        ahead,
+        "the worker guessed, it did not double"
+    );
+}
+
 #[test]
 fn cds_share_a_store_and_leave_it() {
     let dir = TempDir::new().unwrap();

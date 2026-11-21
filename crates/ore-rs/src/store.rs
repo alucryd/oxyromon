@@ -420,6 +420,12 @@ impl StoreReader {
         self.cache.decodes()
     }
 
+    /// Whether the cache holds this group: what a guesser asks before
+    /// waking a prefetch for it.
+    pub(super) fn holds(&self, group: u32) -> bool {
+        self.cache.holds(group)
+    }
+
     pub fn dir(&self) -> &Path {
         &self.dir
     }
