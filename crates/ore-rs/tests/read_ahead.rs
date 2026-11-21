@@ -87,6 +87,48 @@ fn sequential_reads_leave_groups_decoded_ahead() {
 }
 
 #[test]
+fn a_seek_drops_the_streak_and_three_fresh_reads_arm_it_again() {
+    let dir = TempDir::new().unwrap();
+    let (ore, _disc) = six_group_ore(dir.path());
+    let mut reader = Reader::open(&ore).unwrap();
+    // Engage, and let the one guess land: groups 0 through 4 decoded,
+    // the queue drained, the worker back to waiting on its channel.
+    for i in 0..4u64 {
+        reader.read_at(i * 2048, &mut [0; 2048]).unwrap();
+    }
+    assert_eq!(settled(&reader, 5), 5);
+    // A jump well past the gap: the window behind the old playhead says
+    // nothing about where the disc plays next. The seek reads a group
+    // the old window already holds, so every decode after this point is
+    // the worker guessing — and after a seek it must not guess until
+    // the reads run sequential again.
+    reader.read_at(1 << 20, &mut [0; 2048]).unwrap();
+    std::thread::sleep(Duration::from_millis(300));
+    assert_eq!(
+        reader.group_decodes(),
+        5,
+        "a seek buys no group ahead of it: the streak died with the jump"
+    );
+    // Two reads on from the seek: sequential, but not yet a streak.
+    reader.read_at((1 << 20) + 2048, &mut [0; 2048]).unwrap();
+    reader.read_at((1 << 20) + 4096, &mut [0; 2048]).unwrap();
+    std::thread::sleep(Duration::from_millis(300));
+    assert_eq!(
+        reader.group_decodes(),
+        5,
+        "two reads are a pattern, not yet a streak: still no guessing"
+    );
+    // The third engages, and the guessing starts from where the
+    // playhead actually is: the only group left undecoded is five.
+    reader.read_at((1 << 20) + 6144, &mut [0; 2048]).unwrap();
+    assert_eq!(
+        settled(&reader, 6),
+        6,
+        "re-engaged, the worker reaches the one group the disc still owes"
+    );
+}
+
+#[test]
 fn read_ahead_off_decodes_nobody_elses_groups() {
     let dir = TempDir::new().unwrap();
     let (ore, disc) = six_group_ore(dir.path());
