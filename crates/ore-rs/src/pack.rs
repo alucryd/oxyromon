@@ -230,7 +230,26 @@ impl Cache {
         index: u32,
         decode: impl FnOnce() -> Result<Vec<u8>>,
     ) -> Result<Arc<Vec<u8>>> {
+        self.get_in(index, None, decode)
+    }
+
+    /// [`Cache::get`] for a caller whose ids mean what they did at
+    /// `generation`, the [`Cache::generation`] its index was loaded at:
+    /// a cache cleared since holds groups of another index, so it serves
+    /// that caller nothing and keeps nothing of its.
+    pub fn get_in(
+        &self,
+        index: u32,
+        generation: Option<u64>,
+        decode: impl FnOnce() -> Result<Vec<u8>>,
+    ) -> Result<Arc<Vec<u8>>> {
         let mut inner = self.inner.lock().unwrap();
+        if generation.is_some_and(|generation| generation != inner.generation) {
+            drop(inner);
+            let data = Arc::new(decode()?);
+            self.inner.lock().unwrap().decodes += 1;
+            return Ok(data);
+        }
         loop {
             inner.clock += 1;
             let tick = inner.clock;
@@ -295,11 +314,18 @@ impl Cache {
     /// Drops every group: a store whose index was reloaded holds groups
     /// that no longer mean what they did. Decodes claimed before this
     /// land nowhere but with their own reader.
-    pub fn clear(&self) {
+    pub fn clear(&self) -> u64 {
         let mut inner = self.inner.lock().unwrap();
         inner.groups.clear();
         inner.bytes = 0;
         inner.generation += 1;
+        inner.generation
+    }
+
+    /// The `clear()` count: an index loaded at another one is not the
+    /// index the groups held are of.
+    pub fn generation(&self) -> u64 {
+        self.inner.lock().unwrap().generation
     }
 
     /// The groups decoded since the cache was made.
@@ -404,6 +430,19 @@ mod tests {
             }
         });
         assert_eq!(decodes.load(Ordering::SeqCst), 1, "three waited, one read");
+    }
+
+    #[test]
+    fn a_caller_on_an_old_generation_is_served_and_keeps_nothing() {
+        let cache = Cache::default();
+        let stale = cache.generation();
+        cache.clear();
+        let old = cache.get_in(1, Some(stale), || Ok(vec![1u8; 8])).unwrap();
+        assert_eq!(*old, vec![1u8; 8]);
+        let new = cache.get(1, || Ok(vec![2u8; 8])).unwrap();
+        assert_eq!(*new, vec![2u8; 8], "the old index's group was not kept");
+        let again = cache.get_in(1, Some(stale), || Ok(vec![1u8; 8])).unwrap();
+        assert_eq!(*again, vec![1u8; 8], "nor the new one served to the old");
     }
 
     #[test]

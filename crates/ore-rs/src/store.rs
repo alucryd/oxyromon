@@ -402,6 +402,9 @@ pub(super) struct StoreReader {
     /// store, shared with every clone too; `None` when nothing was
     /// asked to precache.
     pub(super) warm: Option<Arc<Warm>>,
+    /// The cache's generation `index` was loaded at: a sharer that
+    /// reloaded since clears it, and this reader then reloads too.
+    generation: u64,
 }
 
 impl StoreReader {
@@ -412,6 +415,7 @@ impl StoreReader {
             files: HashMap::new(),
             cache: Cache::shared(cache_bytes),
             warm: None,
+            generation: 0,
         }
     }
 
@@ -424,6 +428,7 @@ impl StoreReader {
             files: HashMap::new(),
             cache: self.cache.clone(),
             warm: self.warm.clone(),
+            generation: self.generation,
         }
     }
 
@@ -452,16 +457,21 @@ impl StoreReader {
     /// The group a chunk lies in, decoded, and where it starts there. A
     /// segment gone since the index was loaded, compacted or folded into
     /// another, sends it to the index again: a chunk keeps its id.
+    /// A sharer that met the compaction first cleared the cache: this
+    /// reader's index is the old one too, and is loaded again, even
+    /// though its own handles on the old segments still read.
     pub fn chunk(&mut self, id: u64) -> Result<(Arc<Vec<u8>>, usize)> {
+        if self.generation != self.cache.generation() && !self.reload(id)? {
+            return Err(Error::Corrupt(
+                "the store was replaced under its reader".into(),
+            ));
+        }
         match self.chunk_in_index(id) {
             Err(Error::Io(e)) if e.kind() == std::io::ErrorKind::NotFound => {
-                let index = Index::load(&self.dir)?;
-                if index.uuid != self.index.uuid || id as usize >= index.chunks.len() {
+                if !self.reload(id)? {
                     return Err(Error::Io(e));
                 }
-                self.index = Arc::new(index);
-                self.files.clear();
-                self.cache.clear();
+                self.generation = self.cache.clear();
                 if let Some(warm) = &self.warm {
                     // The groups moved; the positions they left hold
                     // other bytes now, or nothing.
@@ -473,6 +483,22 @@ impl StoreReader {
         }
     }
 
+    /// Load the index on disk now: false if it is another store's, or no
+    /// longer holds `id`, and the old one stays.
+    fn reload(&mut self, id: u64) -> Result<bool> {
+        // Taken before the load: a clear after it leaves this reader
+        // behind again, never ahead.
+        let generation = self.cache.generation();
+        let index = Index::load(&self.dir)?;
+        if index.uuid != self.index.uuid || id as usize >= index.chunks.len() {
+            return Ok(false);
+        }
+        self.index = Arc::new(index);
+        self.files.clear();
+        self.generation = generation;
+        Ok(true)
+    }
+
     fn chunk_in_index(&mut self, id: u64) -> Result<(Arc<Vec<u8>>, usize)> {
         let chunk = self.index.chunks[id as usize];
         let at = &self.index.groups[chunk.group as usize];
@@ -482,7 +508,7 @@ impl StoreReader {
             self.files.insert(at.segment, file);
         }
         let file = &self.files[&at.segment];
-        let group = self.cache.get(chunk.group, || {
+        let group = self.cache.get_in(chunk.group, Some(self.generation), || {
             match warm.as_ref().and_then(|w| w.get((at.segment, at.offset))) {
                 Some(bytes) => decode_group(&bytes, at.offset, at.envelope_len(), &at.group),
                 None => read_group(file, at.offset, at.envelope_len(), &at.group),
