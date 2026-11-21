@@ -74,6 +74,7 @@ pub(crate) const BOOLEANS: &[&str] = &[
     "CHD_PARENTS",
     "GROUP_SUBSYSTEMS",
     "INFER_CLONES",
+    "LANGUAGE_FIRST",
     "ORE_STORE",
     "PREFER_PARENTS",
     "REGIONS_ONE_STRICT",
@@ -131,6 +132,7 @@ pub(crate) const LISTS: &[&str] = &[
     "DISCARD_RELEASES",
     "LANGUAGES",
     "PREFER_FLAGS",
+    "PREFERRED_LANGUAGES",
     "REGIONS_ALL",
     "REGIONS_ONE",
 ];
@@ -151,6 +153,7 @@ pub(crate) const NULLABLES: &[&str] = &[
     "LANGUAGES",
     "PREFER_FLAGS",
     "PREFER_FORMAT",
+    "PREFERRED_LANGUAGES",
     "REGIONS_ALL",
     "REGIONS_ALL_ARCADE",
     "REGIONS_ONE",
@@ -166,6 +169,7 @@ const SORTED_LISTS: &[&str] = &[
     "CHD_DVD_COMPRESSION_ALGORITHMS",
     "CHD_HD_COMPRESSION_ALGORITHMS",
     "CHD_LD_COMPRESSION_ALGORITHMS",
+    "PREFERRED_LANGUAGES",
     "REGIONS_ONE",
 ];
 const LIST_SEPARATOR: &str = "|";

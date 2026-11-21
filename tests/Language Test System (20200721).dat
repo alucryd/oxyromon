@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Language Test System</name>
+		<description>Language Test System</description>
+		<version>20200721</version>
+		<date>20200721</date>
+		<author>Maxime Gauduin</author>
+	</header>
+	<game name="Language Game (USA)">
+		<description>Language Game (USA)</description>
+		<release name="Language Game (USA)" region="USA" />
+		<rom name="Language Game (USA).rom" size="256" crc="1599701f"
+			md5="0d622e8d2533b8fd1f1d885ee04d7c12" sha1="718854296187f4cfd4c932ed62786dba5f40da2f"
+			status="verified" />
+	</game>
+	<game name="Language Game (France) (Fr)">
+		<description>Language Game (France) (Fr)</description>
+		<release name="Language Game (France) (Fr)" region="FRA" />
+		<rom name="Language Game (France) (Fr).rom" size="256" crc="ffa84c49"
+			md5="41146e22625440190aa83a5482a31301" sha1="3fe9913a1323a00f96cb7bcc1985ca743f7ec8d7"
+			status="verified" />
+	</game>
+	<game name="Language Game (Europe) (En,Fr)">
+		<description>Language Game (Europe) (En,Fr)</description>
+		<release name="Language Game (Europe) (En,Fr)" region="EUR" />
+		<rom name="Language Game (Europe) (En,Fr).rom" size="256" crc="bca5161f"
+			md5="6009cb33b2d96ab24dcfd3b6a8292203" sha1="03f4d640ffc8fc9adc9ff0474d1c0caaafc2852d"
+			status="verified" />
+	</game>
+	<game name="Other Game (Europe) (De)">
+		<description>Other Game (Europe) (De)</description>
+		<release name="Other Game (Europe) (De)" region="EUR" />
+		<rom name="Other Game (Europe) (De).rom" size="256" crc="62cdb5bc"
+			md5="a9231c782b742832dec564de43e15c36" sha1="64afd6e91a58b82cbce57520ea8a9f07b929d34b"
+			status="verified" />
+	</game>
+	<game name="Revision Game (USA) (En)">
+		<description>Revision Game (USA) (En)</description>
+		<release name="Revision Game (USA) (En)" region="USA" />
+		<rom name="Revision Game (USA) (En).rom" size="256" crc="3412854b"
+			md5="2e27330ab1ac14eac0dd3036d6c2c9e4" sha1="d5ac6031ef3a61cbe3f257eeab6da4ec78c9e9f7"
+			status="verified" />
+	</game>
+	<game name="Revision Game (USA) (Rev 1) (En)">
+		<description>Revision Game (USA) (Rev 1) (En)</description>
+		<release name="Revision Game (USA) (Rev 1) (En)" region="USA" />
+		<rom name="Revision Game (USA) (Rev 1) (En).rom" size="256" crc="a65623f0"
+			md5="dbcca8f9ccd656e9b3b8a6f21c36aa38" sha1="64fb799fa2627e15685ef0ae5e8c1cc368cc090d"
+			status="verified" />
+	</game>
+</datafile>

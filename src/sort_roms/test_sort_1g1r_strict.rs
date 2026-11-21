@@ -78,6 +78,8 @@ async fn test() {
         &None,
         true,
         false,
+        false,
+        &[],
     )
     .await
     .unwrap();

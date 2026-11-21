@@ -16,11 +16,11 @@ use crate::model::Setting;
 use crate::state::{
     ALL_REGIONS_KEY, ALL_REGIONS_SUBFOLDERS_KEY, AppState, DISCARD_CATEGORIES_KEY,
     DISCARD_FLAGS_KEY, DISCARD_RELEASES_KEY, GAME_SUBFOLDERS_CHOICES, GAME_SUBFOLDERS_KEY,
-    GROUP_SUBSYSTEMS_KEY, INFER_CLONES_KEY, LANGUAGES_KEY, ONE_REGIONS_KEY,
+    GROUP_SUBSYSTEMS_KEY, INFER_CLONES_KEY, LANGUAGE_FIRST_KEY, LANGUAGES_KEY, ONE_REGIONS_KEY,
     ONE_REGIONS_SUBFOLDERS_KEY, PREFER_FLAGS_KEY, PREFER_FORMAT_CHOICES, PREFER_FORMAT_KEY,
     PREFER_PARENTS_KEY, PREFER_REGIONS_CHOICES, PREFER_REGIONS_KEY, PREFER_VERSIONS_CHOICES,
-    PREFER_VERSIONS_KEY, ROM_DIRECTORY_KEY, STRICT_ONE_REGIONS_KEY, SUBFOLDER_SCHEMES_CHOICES,
-    TMP_DIRECTORY_KEY, split_list,
+    PREFER_VERSIONS_KEY, PREFERRED_LANGUAGES_KEY, ROM_DIRECTORY_KEY, STRICT_ONE_REGIONS_KEY,
+    SUBFOLDER_SCHEMES_CHOICES, TMP_DIRECTORY_KEY, split_list,
 };
 use crate::ui::{Modal, control_checked, control_value};
 
@@ -30,12 +30,14 @@ struct Local {
     one_regions: RwSignal<Vec<String>>,
     all_regions: RwSignal<Vec<String>>,
     languages: RwSignal<Vec<String>>,
+    preferred_languages: RwSignal<Vec<String>>,
     discard_releases: RwSignal<Vec<String>>,
     discard_flags: RwSignal<Vec<String>>,
     discard_categories: RwSignal<Vec<String>>,
     prefer_flags: RwSignal<Vec<String>>,
     strict_one_regions: RwSignal<bool>,
     infer_clones: RwSignal<bool>,
+    language_first: RwSignal<bool>,
     prefer_parents: RwSignal<bool>,
     prefer_format: RwSignal<String>,
     group_subsystems: RwSignal<bool>,
@@ -54,12 +56,14 @@ impl Local {
             one_regions: RwSignal::new(Vec::new()),
             all_regions: RwSignal::new(Vec::new()),
             languages: RwSignal::new(Vec::new()),
+            preferred_languages: RwSignal::new(Vec::new()),
             discard_releases: RwSignal::new(Vec::new()),
             discard_flags: RwSignal::new(Vec::new()),
             discard_categories: RwSignal::new(Vec::new()),
             prefer_flags: RwSignal::new(Vec::new()),
             strict_one_regions: RwSignal::new(false),
             infer_clones: RwSignal::new(false),
+            language_first: RwSignal::new(false),
             prefer_parents: RwSignal::new(true),
             prefer_format: RwSignal::new(String::new()),
             group_subsystems: RwSignal::new(true),
@@ -86,6 +90,8 @@ impl Local {
         self.one_regions.set(split_list(&find(ONE_REGIONS_KEY)));
         self.all_regions.set(split_list(&find(ALL_REGIONS_KEY)));
         self.languages.set(split_list(&find(LANGUAGES_KEY)));
+        self.preferred_languages
+            .set(split_list(&find(PREFERRED_LANGUAGES_KEY)));
         self.discard_releases
             .set(split_list(&find(DISCARD_RELEASES_KEY)));
         self.discard_flags.set(split_list(&find(DISCARD_FLAGS_KEY)));
@@ -94,6 +100,7 @@ impl Local {
         self.prefer_flags.set(split_list(&find(PREFER_FLAGS_KEY)));
         self.strict_one_regions.set(is_true(STRICT_ONE_REGIONS_KEY));
         self.infer_clones.set(is_true(INFER_CLONES_KEY));
+        self.language_first.set(is_true(LANGUAGE_FIRST_KEY));
         self.prefer_parents.set(not_false(PREFER_PARENTS_KEY));
         self.prefer_format
             .set(find(PREFER_FORMAT_KEY).unwrap_or_default());
@@ -292,6 +299,14 @@ pub fn SettingsModal(
                             system_id=system_id
                             reload=reload
                         />
+                        <ListField
+                            label="Preferred Languages"
+                            hint="2 letters, capitalized, ordered by preference"
+                            setting_key=PREFERRED_LANGUAGES_KEY
+                            items=local.preferred_languages
+                            system_id=system_id
+                            reload=reload
+                        />
                     </SettingsSection>
                 </div>
 
@@ -308,6 +323,12 @@ pub fn SettingsModal(
                             hint="Group games by title when their DAT has no Parent-Clone data"
                             value=local.infer_clones
                             on_toggle=Callback::new(move |v| toggle(INFER_CLONES_KEY, v))
+                        />
+                        <ToggleField
+                            label="Language First"
+                            hint="Rank languages above regions in the election process, using the Preferred Languages order"
+                            value=local.language_first
+                            on_toggle=Callback::new(move |v| toggle(LANGUAGE_FIRST_KEY, v))
                         />
                         <ToggleField
                             label="Prefer Parents"
