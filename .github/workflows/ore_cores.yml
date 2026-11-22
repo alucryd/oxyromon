@@ -20,7 +20,7 @@ on:
         description: "Core to build"
         type: choice
         default: all
-        options: [all, beetle-psx, parallel-ps2, pcee2, dolphin, mesen, mesen-s, sameboy, mgba, melonds-ds, azahar]
+        options: [all, beetle-psx, parallel-ps2, pcee2, dolphin, mesen, mesen-s, sameboy, mgba, melonds-ds, azahar, parallel-n64]
 
 concurrency:
   group: ore-cores-${{ github.ref }}
@@ -428,3 +428,42 @@ jobs:
         with:
           name: azahar_libretro-ore-linux-x86_64
           path: build/bin/Release/azahar_libretro.so
+
+  parallel-n64:
+    name: ParaLLEl N64
+    runs-on: ubuntu-24.04
+    if: ${{ !inputs.core || inputs.core == 'all' || inputs.core == 'parallel-n64' }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: oxyromon
+      - uses: actions/checkout@v7
+        with:
+          repository: alucryd/parallel-n64
+          ref: ${{ env.CORE_REF }}
+          path: core
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: oxyromon/crates/smelt-rs
+      # As the core's own Linux checks install them
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential nasm libgl-dev
+      - name: Build libsmelt
+        run: cargo build --release --manifest-path "$SMELT_DIR/Cargo.toml"
+      # With the flags the core's AGENTS.md builds it with
+      - name: Build core
+        run: |
+          make -C core -j"$(nproc)" platform=unix WITH_DYNAREC=x86_64 \
+            HAVE_THR_AL=1 HAVE_PARALLEL=1 HAVE_PARALLEL_RSP=1 \
+            ORE=1 SMELT_DIR="$SMELT_DIR"
+      # The core's own checks run without ORE: at least the reader is in it
+      - name: Check the ORE reader is linked
+        run: nm core/parallel_n64_libretro.so | grep -q smelt_open
+      - uses: actions/upload-artifact@v7
+        with:
+          name: parallel_n64_libretro-ore-linux-x86_64
+          path: core/parallel_n64_libretro.so

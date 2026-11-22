@@ -1,7 +1,7 @@
 #!/bin/sh
 # Build the ORE cores locally, as .github/workflows/ore_cores.yml does in CI,
 # against this checkout's libsmelt:
-#   ./ore_cores.sh [beetle-psx|parallel-ps2|pcee2|dolphin|mesen|mesen-s|sameboy|mgba|melonds-ds|azahar ...]
+#   ./ore_cores.sh [beetle-psx|parallel-ps2|pcee2|dolphin|mesen|mesen-s|sameboy|mgba|melonds-ds|azahar|parallel-n64 ...]
 # No argument builds them all. The cores are the checkouts next to oxyromon
 # (CORES_DIR, default ..), built in place on whatever branch they are on.
 set -eu
@@ -51,10 +51,13 @@ dolphin() {
 }
 
 # make does not track ORE=1: objects left by a build without it would be
-# relinked as they are, without the reader, so these start clean
+# relinked as they are, without the reader, so these start clean.
+# make_ore <dir> [make flags...]
 make_ore() {
-    make -C "$1" clean
-    make -C "$1" -j"$JOBS" ORE=1 SMELT_DIR="$SMELT_DIR"
+    dir=$1
+    shift
+    make -C "$dir" clean "$@"
+    make -C "$dir" -j"$JOBS" ORE=1 SMELT_DIR="$SMELT_DIR" "$@"
 }
 
 mesen() {
@@ -67,6 +70,12 @@ mesen_s() {
 
 sameboy() {
     make_ore "$CORES_DIR/SameBoy/libretro"
+}
+
+parallel_n64() {
+    # As the core's own AGENTS.md builds it
+    make_ore "$CORES_DIR/parallel-n64" platform=unix WITH_DYNAREC=x86_64 \
+        HAVE_THR_AL=1 HAVE_PARALLEL=1 HAVE_PARALLEL_RSP=1
 }
 
 mgba() {
@@ -98,10 +107,10 @@ azahar() {
 
 cargo build --release --manifest-path "$SMELT_DIR/Cargo.toml"
 
-[ $# -gt 0 ] || set -- beetle-psx parallel-ps2 pcee2 dolphin mesen mesen-s sameboy mgba melonds-ds azahar
+[ $# -gt 0 ] || set -- beetle-psx parallel-ps2 pcee2 dolphin mesen mesen-s sameboy mgba melonds-ds azahar parallel-n64
 for c in "$@"; do
     case "$c" in
-        beetle-psx | parallel-ps2 | pcee2 | dolphin | mesen | mesen-s | sameboy | mgba | melonds-ds | azahar) echo "== $c"; "$(echo "$c" | tr - _)" ;;
+        beetle-psx | parallel-ps2 | pcee2 | dolphin | mesen | mesen-s | sameboy | mgba | melonds-ds | azahar | parallel-n64) echo "== $c"; "$(echo "$c" | tr - _)" ;;
         *) echo "unknown core: $c" >&2; exit 1 ;;
     esac
 done
