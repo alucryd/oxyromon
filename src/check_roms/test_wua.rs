@@ -1,69 +1,35 @@
-use super::super::config::*;
-use super::super::import_dats;
-use super::super::import_roms;
-use super::*;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 use tokio::fs;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20261025) (WUD).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    let mut env =
+        TestEnv::with_dat("Test System (20261025) (WUD).dat").await;
 
     // a lossless WUA, its update partition in the store beside it
-    let staging = tmp_directory.join("staging");
+    let staging = env.tmp_directory.join("staging");
     fs::create_dir(&staging).await.unwrap();
     let wua_path = staging.join("Test Game (USA).wua");
-    let keys = wux_rs::load_keys(&test_directory.join("Test Game (USA).keys.txt")).unwrap();
+    let keys = wux_rs::load_keys(
+        &env.fixture_source("Test Game (USA).keys.txt"),
+    )
+    .unwrap();
     wux_rs::to_wua(
-        &[&test_directory.join("Test Game (USA).wux")],
+        &[&env.fixture_source("Test Game (USA).wux")],
         &wua_path,
         &keys,
         Some(&staging.join(wux_rs::STORE_DIR)),
         &mut |_| {},
     )
     .unwrap();
-
-    let system = find_systems(&mut connection).await.remove(0);
-
-    let matches = import_roms::subcommand()
-        .get_matches_from(["import-roms", staging.as_os_str().to_str().unwrap()]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let games = find_full_games_by_system_id(&mut connection, system.id).await;
+    env.import_roms(&[&staging], &[]).await;
 
     // when
-    check_system(&mut connection, &progress_bar, &system, games, false)
-        .await
-        .unwrap();
+    env.run(&["check-roms", "-a"]).await.unwrap();
 
     // then
-    let mut romfiles = find_romfiles(&mut connection).await;
-    assert_eq!(romfiles.len(), 1);
-
-    let romfile = romfiles.remove(0);
+    let romfile = env.single_romfile().await;
     assert!(!romfile.path.contains("/Trash/"));
-    assert!(&rom_directory.path().join(&romfile.path).is_file());
+    assert!(env.romfile_path(&romfile).is_file());
 }

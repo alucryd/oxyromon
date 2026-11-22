@@ -1,64 +1,28 @@
-use super::super::config::*;
-use super::super::import_dats;
-use super::super::import_roms;
-use super::*;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
+    let mut env = TestEnv::with_dat("Test System (20200721).dat").await;
 
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).ore");
+    let romfile_path = env
+        .tmp_directory
+        .join("Test Game (USA, Europe) (Multiple Tracks).ore");
     ore_rs::compress(
-        &test_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue"),
+        &env.fixture_source("Test Game (USA, Europe) (Multiple Tracks).cue"),
         &romfile_path,
         &ore_rs::Options::default(),
         &[],
         &mut |_| {},
     )
     .unwrap();
-
-    let system = find_systems(&mut connection).await.remove(0);
-
-    let matches = import_roms::subcommand()
-        .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let games = find_full_games_by_system_id(&mut connection, system.id).await;
+    env.import_roms(&[&romfile_path], &[]).await;
 
     // when
-    check_system(&mut connection, &progress_bar, &system, games, false)
-        .await
-        .unwrap();
+    env.run(&["check-roms", "-a"]).await.unwrap();
 
     // then
-    let mut romfiles = find_romfiles(&mut connection).await;
-    assert_eq!(romfiles.len(), 1);
-
-    let romfile = romfiles.remove(0);
+    let romfile = env.single_romfile().await;
     assert!(!romfile.path.contains("/Trash/"));
-    assert!(&rom_directory.path().join(&romfile.path).is_file());
+    assert!(env.romfile_path(&romfile).is_file());
 }
