@@ -20,7 +20,7 @@ on:
         description: "Core to build"
         type: choice
         default: all
-        options: [all, beetle-psx, parallel-ps2, pcee2, dolphin, mesen, mesen-s, sameboy, mgba, melonds-ds, azahar, parallel-n64]
+        options: [all, beetle-psx, parallel-ps2, pcee2, dolphin, mesen, mesen-s, sameboy, mgba, melonds-ds, azahar, parallel-n64, cemu]
 
 concurrency:
   group: ore-cores-${{ github.ref }}
@@ -467,3 +467,57 @@ jobs:
         with:
           name: parallel_n64_libretro-ore-linux-x86_64
           path: core/parallel_n64_libretro.so
+
+  cemu:
+    name: Cemu
+    # As cemu-libretro's own linux-x64 build runs
+    runs-on: ubuntu-22.04
+    if: ${{ !inputs.core || inputs.core == 'all' || inputs.core == 'cemu' }}
+    timeout-minutes: 350
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/core/dependencies/vcpkg
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: oxyromon
+      - uses: actions/checkout@v7
+        with:
+          repository: alucryd/cemu-libretro
+          ref: ${{ env.CORE_REF }}
+          path: core
+          submodules: recursive
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: oxyromon/crates/smelt-rs
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build nasm autoconf automake libtool pkg-config python3 \
+            libglm-dev libgl1-mesa-dev libegl1-mesa-dev freeglut3-dev \
+            libx11-dev libxext-dev libxrandr-dev libxi-dev libxcursor-dev \
+            libxss-dev libxkbcommon-dev libwayland-dev wayland-protocols \
+            libudev-dev libdbus-1-dev libgcrypt20-dev libpulse-dev \
+            libsecret-1-dev libsystemd-dev libbluetooth-dev
+      - name: Bootstrap vcpkg
+        run: bash core/dependencies/vcpkg/bootstrap-vcpkg.sh
+      - name: Build libsmelt
+        run: cargo build --release --manifest-path "$SMELT_DIR/Cargo.toml"
+      - name: Build core
+        run: |
+          cmake -S core -B core/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DENABLE_LIBRETRO=ON \
+            -DENABLE_WXWIDGETS=OFF -DENABLE_DISCORD_RPC=OFF -DENABLE_CUBEB=OFF \
+            -DENABLE_BLUEZ=OFF -DENABLE_FERAL_GAMEMODE=OFF \
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+            -DORE=ON -DSMELT_DIR="$SMELT_DIR"
+          cmake --build core/build --target cemu_libretro -- -j "$(nproc)"
+      # No test suite in the core: at least the reader is in it
+      - name: Check the ORE reader is linked
+        run: nm core/bin/cemu_libretro.so | grep -q smelt_ticket
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cemu_libretro-ore-linux-x86_64
+          path: core/bin/cemu_libretro.so

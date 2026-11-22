@@ -114,6 +114,37 @@ public:
         return replaced != 0;
     }
 
+    /* A Wii U title's file: its name, and where it lies in the byte view. */
+    struct file {
+        std::string name;
+        std::uint64_t offset;
+        std::uint64_t size;
+    };
+
+    /* A Wii U title's files but its ticket; none for what is not a title. */
+    std::vector<file> files() const {
+        std::size_t count = 0;
+        check(smelt_file_count(raw_, &count));
+        std::vector<file> out(count);
+        for (std::size_t i = 0; i < count; ++i) {
+            std::size_t len = 0;
+            ask(smelt_file_at(raw_, i, nullptr, &len, &out[i].offset, &out[i].size));
+            out[i].name.assign(len, '\0');
+            check(smelt_file_at(raw_, i, &out[i].name[0], &len, &out[i].offset, &out[i].size));
+            out[i].name.resize(len - 1);
+        }
+        return out;
+    }
+
+    /* A Wii U title's ticket; throws for one written without it. */
+    std::vector<std::uint8_t> ticket() const {
+        std::size_t len = 0;
+        ask(smelt_ticket(raw_, nullptr, &len));
+        std::vector<std::uint8_t> out(len);
+        check(smelt_ticket(raw_, out.data(), &len));
+        return out;
+    }
+
     smelt_ingot *get() noexcept { return raw_; }
 
 private:
