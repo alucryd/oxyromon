@@ -28,8 +28,8 @@ async fn test() {
         .unwrap();
 
     // when, given the folder holding the title's folder
-    let env_tmp_directory_1 = env.tmp_directory.clone();
-    env.run(&["import-roms", env_tmp_directory_1.to_str().unwrap()])
+    let import_dir = env.tmp_directory.clone();
+    env.run(&["import-roms", import_dir.to_str().unwrap()])
         .await
         .unwrap();
 

@@ -1,27 +1,6 @@
-use super::super::import_roms::{UnattendedMode, import_other};
 use super::*;
 use crate::test_support::TestEnv;
-use std::collections::HashSet;
 use tokio::fs;
-
-async fn import_file(env: &mut TestEnv, system: &System, fixture: &str, name: &str) {
-    let path = env.tmp_directory.join(name);
-    fs::copy(env.fixture_source(fixture), &path).await.unwrap();
-    let result = import_other(
-        &mut env.connection,
-        &env.progress_bar,
-        &Some(system),
-        &None,
-        &HashSet::new(),
-        CommonRomfile::from_path(&path).unwrap(),
-        true,
-        false,
-        UnattendedMode::Skip,
-    )
-    .await
-    .unwrap();
-    assert!(result.is_some(), "Failed to match \"{}\"", name);
-}
 
 #[tokio::test]
 async fn test() {
@@ -32,15 +11,9 @@ async fn test() {
     let system_directory = env.system_directory(&system).await;
 
     // import the parent without its own rom, and the clone's exclusive rom
-    import_file(
-        &mut env,
-        &system,
-        "Test Game (Japan).rom",
-        "Test Parent Common.rom",
-    )
-    .await;
-    import_file(
-        &mut env,
+    env.import_other(&system, "Test Game (Japan).rom", "Test Parent Common.rom")
+        .await;
+    env.import_other(
         &system,
         "Test Game (USA, Europe) (Beta).rom",
         "Test Clone Only.rom",

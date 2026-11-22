@@ -20,14 +20,12 @@ async fn test() {
     let mut env = TestEnv::with_dat("Test System (20261111) (Clone Lists).dat").await;
 
     let system = env.system().await;
+    let clone_list = env.fixture_source("Test System (Clone Lists) (Redump).json");
 
     // when
-    env.run(&[
-        "import-clone-lists",
-        "tests/Test System (Clone Lists) (Redump).json",
-    ])
-    .await
-    .unwrap();
+    env.run(&["import-clone-lists", clone_list.to_str().unwrap()])
+        .await
+        .unwrap();
 
     // then
     assert_eq!(

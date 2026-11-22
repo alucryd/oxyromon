@@ -1,4 +1,5 @@
 use super::check_roms;
+use super::common::{CommonRomfile, FromPath};
 use super::compact_roms;
 use super::config;
 use super::config::{MUTEX, TestDatabase, set_rom_directory, set_tmp_directory};
@@ -27,6 +28,7 @@ use indicatif::ProgressBar;
 use sqlx::SqlitePool;
 use sqlx::pool::PoolConnection;
 use sqlx::sqlite::Sqlite;
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use tempfile::TempDir;
@@ -80,8 +82,9 @@ pub struct TestEnv {
 /// Runs one subcommand's `main` on the args, `subcommand()` included.
 macro_rules! run_subcommand {
     ($env:expr, $module:ident, $args:expr) => {{
+        let env: &mut TestEnv = $env;
         let matches = $module::subcommand().get_matches_from($args);
-        $module::main(&mut $env.connection, &matches, &$env.progress_bar).await
+        $module::main(&mut env.connection, &matches, &env.progress_bar).await
     }};
 }
 
@@ -158,6 +161,29 @@ impl TestEnv {
         let mut argv: Vec<&str> = vec!["import-roms"];
         argv.extend(paths.iter().map(|path| path.to_str().unwrap()));
         self.run(&argv).await.unwrap();
+    }
+
+    /// Copies a fixture into the temporary directory under another name,
+    /// then imports it into `system` with `import_other`, asserting a match.
+    pub async fn import_other(&mut self, system: &System, fixture: &str, name: &str) {
+        let path = self.tmp_directory.join(name);
+        tokio::fs::copy(fixtures().join(fixture), &path)
+            .await
+            .unwrap();
+        let result = import_roms::import_other(
+            &mut self.connection,
+            &self.progress_bar,
+            &Some(system),
+            &None,
+            &HashSet::new(),
+            CommonRomfile::from_path(&path).unwrap(),
+            true,
+            false,
+            import_roms::UnattendedMode::Skip,
+        )
+        .await
+        .unwrap();
+        assert!(result.is_some(), "Failed to match \"{}\"", name);
     }
 
     /// The system the database holds: every test's dat names one.

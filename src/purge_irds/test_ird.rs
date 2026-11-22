@@ -6,7 +6,8 @@ async fn test() {
     // given
     let mut env = TestEnv::with_dat("Test System (20240704) (IRD).dat").await;
 
-    env.run(&["import-irds", "tests/Test Game (USA).ird"])
+    let ird = env.fixture_source("Test Game (USA).ird");
+    env.run(&["import-irds", ird.to_str().unwrap()])
         .await
         .unwrap();
 

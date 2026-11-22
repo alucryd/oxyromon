@@ -5,8 +5,9 @@ use crate::test_support::TestEnv;
 async fn test() {
     // given
     let mut env = TestEnv::new().await;
+    let dat = env.fixture_source("Test System (20261025) (CDN).dat");
     // when
-    env.run(&["import-dats", "tests/Test System (20261025) (CDN).dat"])
+    env.run(&["import-dats", dat.to_str().unwrap()])
         .await
         .unwrap();
 

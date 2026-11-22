@@ -13,8 +13,8 @@ async fn test() {
         let path = entry.unwrap().path();
         std::fs::copy(&path, nus_directory.join(path.file_name().unwrap())).unwrap();
     }
-    let env_tmp_directory_1 = env.tmp_directory.clone();
-    env.import_roms(&[&env_tmp_directory_1]).await;
+    let import_dir = env.tmp_directory.clone();
+    env.import_roms(&[&import_dir]).await;
 
     let system = env.system().await;
     let system_directory = get_system_directory(&mut env.connection, &system)
