@@ -1,12 +1,11 @@
 use super::*;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
-#[test]
-fn test() {
+#[tokio::test]
+async fn test() {
+    let env = TestEnv::new().await;
     // given an aes_keys.txt whose slot key is a byte short
-    let directory = TempDir::new_in("tests").unwrap();
-    let progress_bar = ProgressBar::hidden();
-    let path = directory.path().join("aes_keys.txt");
+    let path = env.tmp_directory.join("aes_keys.txt");
     std::fs::write(
         &path,
         "generatorConstant=11111111111111111111111111111111\n\
@@ -15,9 +14,9 @@ fn test() {
     .unwrap();
 
     // when
-    let result = import_keys(&progress_bar, &[&path], directory.path());
+    let result = import_keys(&env.progress_bar, &[&path], &env.tmp_directory);
 
     // then it is refused, and nothing is written
     assert!(result.is_err());
-    assert!(!directory.path().join(N3DS_KEYS_FILE).exists());
+    assert!(!env.tmp_directory.join(N3DS_KEYS_FILE).exists());
 }
