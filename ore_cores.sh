@@ -1,7 +1,7 @@
 #!/bin/sh
 # Build the ORE cores locally, as .github/workflows/ore_cores.yml does in CI,
 # against this checkout's libsmelt:
-#   ./ore_cores.sh [beetle-psx|parallel-ps2|pcee2|dolphin|mesen|mesen-s ...]
+#   ./ore_cores.sh [beetle-psx|parallel-ps2|pcee2|dolphin|mesen|mesen-s|sameboy ...]
 # No argument builds them all. The cores are the checkouts next to oxyromon
 # (CORES_DIR, default ..), built in place on whatever branch they are on.
 set -eu
@@ -50,20 +50,31 @@ dolphin() {
     cmake --build "$core/build"
 }
 
+# make does not track ORE=1: objects left by a build without it would be
+# relinked as they are, without the reader, so these start clean
+make_ore() {
+    make -C "$1" clean
+    make -C "$1" -j"$JOBS" ORE=1 SMELT_DIR="$SMELT_DIR"
+}
+
 mesen() {
-    make -C "$CORES_DIR/Mesen/Libretro" -j"$JOBS" ORE=1 SMELT_DIR="$SMELT_DIR"
+    make_ore "$CORES_DIR/Mesen/Libretro"
 }
 
 mesen_s() {
-    make -C "$CORES_DIR/Mesen-S/Libretro" -j"$JOBS" ORE=1 SMELT_DIR="$SMELT_DIR"
+    make_ore "$CORES_DIR/Mesen-S/Libretro"
+}
+
+sameboy() {
+    make_ore "$CORES_DIR/SameBoy/libretro"
 }
 
 cargo build --release --manifest-path "$SMELT_DIR/Cargo.toml"
 
-[ $# -gt 0 ] || set -- beetle-psx parallel-ps2 pcee2 dolphin mesen mesen-s
+[ $# -gt 0 ] || set -- beetle-psx parallel-ps2 pcee2 dolphin mesen mesen-s sameboy
 for c in "$@"; do
     case "$c" in
-        beetle-psx | parallel-ps2 | pcee2 | dolphin | mesen | mesen-s) echo "== $c"; "$(echo "$c" | tr - _)" ;;
+        beetle-psx | parallel-ps2 | pcee2 | dolphin | mesen | mesen-s | sameboy) echo "== $c"; "$(echo "$c" | tr - _)" ;;
         *) echo "unknown core: $c" >&2; exit 1 ;;
     esac
 done
