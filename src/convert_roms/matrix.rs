@@ -1,4 +1,3 @@
-use super::super::database::find_roms_with_romfile_by_system_id;
 use super::super::test_support::TestEnv;
 use std::path::Path;
 use std::time::SystemTime;
@@ -77,7 +76,7 @@ async fn run_convert_case(case: &ConvertCase<'_>) {
         env.run(&argv).await.unwrap();
     }
 
-    let roms = find_roms_with_romfile_by_system_id(&mut env.connection, system.id).await;
+    let roms = env.roms_with_romfiles(&system).await;
     if case.rom_names.is_empty() {
         assert_eq!(roms.len(), 1, "the conversion should have left one rom");
     } else {
@@ -88,7 +87,7 @@ async fn run_convert_case(case: &ConvertCase<'_>) {
         assert_eq!(names, expected, "the roms left in the database");
     }
 
-    let mut romfiles = env.romfiles().await;
+    let romfiles = env.romfiles().await;
     let mut expected: Vec<String> = case
         .romfiles
         .iter()
@@ -379,7 +378,6 @@ convert_cases! {
         rom_names: &["Test Game (USA).iso"],
         romfiles: &["Test Game (USA).rvz"],
         recreated: true,
-        ..DEFAULT
     },
     rvz_to_sevenzip_iso: ConvertCase {
         dat: RVZ_DAT,

@@ -2245,45 +2245,13 @@ async fn to_original(
 }
 
 #[cfg(test)]
-mod test_cso_to_chd;
-#[cfg(test)]
-mod test_cso_to_cso;
-#[cfg(test)]
-mod test_cso_to_iso;
-#[cfg(test)]
-mod test_cso_to_sevenzip_iso;
-#[cfg(test)]
-mod test_iso_chd_to_chd_should_copy;
-#[cfg(test)]
-mod test_iso_chd_to_cso;
-#[cfg(test)]
-mod test_iso_chd_to_iso;
-#[cfg(test)]
-mod test_iso_chd_to_sevenzip_iso;
-#[cfg(test)]
-mod test_iso_chd_to_zso;
-#[cfg(test)]
-mod test_iso_to_chd;
-#[cfg(test)]
-mod test_iso_to_cso;
-#[cfg(test)]
-mod test_iso_to_rvz;
-#[cfg(test)]
-mod test_iso_to_wbfs;
-#[cfg(test)]
-mod test_iso_to_zso;
+mod matrix;
 #[cfg(test)]
 mod test_merged_to_original;
 #[cfg(test)]
 mod test_multiple_tracks_chd_to_cso_should_do_nothing;
 #[cfg(test)]
-mod test_multiple_tracks_chd_to_cue_bin;
-#[cfg(test)]
-mod test_multiple_tracks_chd_to_sevenzip_cue_bin;
-#[cfg(test)]
 mod test_multiple_tracks_chd_to_zso_should_do_nothing;
-#[cfg(test)]
-mod test_multiple_tracks_cue_bin_to_chd;
 #[cfg(test)]
 mod test_multiple_tracks_cue_bin_to_gdi;
 #[cfg(test)]
@@ -2297,43 +2265,15 @@ mod test_nus_stored_ticket_to_original;
 #[cfg(test)]
 mod test_nus_to_original;
 #[cfg(test)]
-mod test_original_to_original_should_copy;
-#[cfg(test)]
-mod test_original_to_sevenzip;
-#[cfg(test)]
-mod test_original_to_zip;
-#[cfg(test)]
 mod test_original_to_zip_multiple_roms;
 #[cfg(test)]
 mod test_original_to_zip_with_correct_name;
 #[cfg(test)]
 mod test_original_to_zip_with_incorrect_name;
 #[cfg(test)]
-mod test_rvz_to_iso;
-#[cfg(test)]
-mod test_rvz_to_rvz_should_copy;
-#[cfg(test)]
-mod test_rvz_to_sevenzip_iso;
-#[cfg(test)]
-mod test_rvz_to_wbfs;
-#[cfg(test)]
-mod test_sevenzip_iso_to_chd;
-#[cfg(test)]
-mod test_sevenzip_iso_to_cso;
-#[cfg(test)]
-mod test_sevenzip_iso_to_zso;
-#[cfg(test)]
 mod test_sevenzip_multiple_tracks_cue_bin_to_chd;
 #[cfg(test)]
 mod test_sevenzip_multiple_tracks_cue_bin_to_iso;
-#[cfg(test)]
-mod test_sevenzip_single_track_cue_bin_to_iso;
-#[cfg(test)]
-mod test_sevenzip_to_original;
-#[cfg(test)]
-mod test_sevenzip_to_zip;
-#[cfg(test)]
-mod test_single_track_chd_to_iso;
 #[cfg(test)]
 mod test_single_track_cue_bin_to_iso;
 #[cfg(test)]
@@ -2343,13 +2283,9 @@ mod test_wua_to_nus;
 #[cfg(test)]
 mod test_wua_to_wux;
 #[cfg(test)]
-mod test_wud_to_wua;
-#[cfg(test)]
 mod test_wux_to_nus;
 #[cfg(test)]
 mod test_wux_to_wua;
-#[cfg(test)]
-mod test_wux_to_wud;
 #[cfg(test)]
 mod test_wux_to_wux_should_copy;
 #[cfg(test)]
@@ -2358,17 +2294,3 @@ mod test_wux_with_stored_ticket_update_to_wua;
 mod test_wux_with_ticketless_update_to_wua;
 #[cfg(test)]
 mod test_wux_with_update_to_wua;
-#[cfg(test)]
-mod test_zip_to_original;
-#[cfg(test)]
-mod test_zip_to_sevenzip;
-#[cfg(test)]
-mod test_zip_to_zip_should_copy;
-#[cfg(test)]
-mod test_zso_to_chd;
-#[cfg(test)]
-mod test_zso_to_iso;
-#[cfg(test)]
-mod test_zso_to_sevenzip_iso;
-#[cfg(test)]
-mod test_zso_to_zso_should_copy;
