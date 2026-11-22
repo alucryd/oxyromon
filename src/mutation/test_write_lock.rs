@@ -1,5 +1,5 @@
 use super::*;
-use crate::config::MUTEX;
+use crate::test_support::TestEnv;
 use std::time::Duration;
 use tokio::sync::oneshot;
 use tokio::time::timeout;
@@ -8,9 +8,8 @@ use tokio::time::timeout;
 /// lock, whichever surface started that one, before it runs.
 #[tokio::test]
 async fn test() {
-    let _guard = MUTEX.lock().await;
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+    let env = TestEnv::new().await;
+    let pool = env.pool.clone();
     let (sse_tx, mut sse_rx) = broadcast::channel(16);
     let (ran_tx, mut ran_rx) = oneshot::channel();
 

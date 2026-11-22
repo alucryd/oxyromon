@@ -1,18 +1,15 @@
 use super::*;
-use std::path::Path;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 use tokio::fs;
 
 /// A LaserDisc capture goes to a CHD and back without chdman, and the CHD
 /// made from what comes back is the same.
 #[tokio::test]
 async fn test() {
-    let test_directory = Path::new("tests").canonicalize().unwrap();
-    let progress_bar = ProgressBar::hidden();
-    let dir = TempDir::new_in(&test_directory).unwrap();
-    let riff_path = dir.path().join("disc.riff");
+    let env = TestEnv::new().await;
+    let riff_path = env.tmp_directory.join("disc.riff");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe) (LD).riff"),
+        env.fixture_source("Test Game (USA, Europe) (LD).riff"),
         &riff_path,
     )
     .await
@@ -23,24 +20,24 @@ async fn test() {
         .as_riff()
         .await
         .unwrap();
-    let first = dir.path().join("first");
+    let first = env.tmp_directory.join("first");
     fs::create_dir(&first).await.unwrap();
     let chd = riff
-        .to_chd(&progress_bar, &first, &[], &None, None)
+        .to_chd(&env.progress_bar, &first, &[], &None, None)
         .await
         .unwrap();
     let chd = chd.romfile.as_chd().await.unwrap();
     assert!(chd.chd_type == ChdType::Ld);
     assert!(chd.size > 0);
 
-    let extracted = dir.path().join("extracted");
+    let extracted = env.tmp_directory.join("extracted");
     fs::create_dir(&extracted).await.unwrap();
-    let riff = chd.to_riff(&progress_bar, &extracted).await.unwrap();
+    let riff = chd.to_riff(&env.progress_bar, &extracted).await.unwrap();
 
-    let second = dir.path().join("second");
+    let second = env.tmp_directory.join("second");
     fs::create_dir(&second).await.unwrap();
     let again = riff
-        .to_chd(&progress_bar, &second, &[], &None, None)
+        .to_chd(&env.progress_bar, &second, &[], &None, None)
         .await
         .unwrap();
     assert_eq!(

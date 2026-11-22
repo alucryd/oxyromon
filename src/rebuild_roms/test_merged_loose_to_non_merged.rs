@@ -1,14 +1,10 @@
 // A merged ZIP is imported as loose files, one directory per game, and a ROM
 // name may have no extension, as HBMAME's "yrw801-m" does.
 
-use super::super::check_roms;
-use super::super::import_dats;
-use super::super::import_roms;
 use super::*;
+use crate::test_support::TestEnv;
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
-use tempfile::TempDir;
 use zip::ZipWriter;
 use zip::write::SimpleFileOptions;
 
@@ -35,30 +31,14 @@ const DAT: &str = r#"<?xml version="1.0"?>
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let dat_path = tmp_directory.join("Test System.dat");
+    let mut env = TestEnv::new().await;
+    let dat_path = env.tmp_directory.join("Test System.dat");
     std::fs::write(&dat_path, DAT).unwrap();
-    let matches =
-        import_dats::subcommand().get_matches_from(["import-dats", dat_path.to_str().unwrap()]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
+    env.run(&["import-dats", dat_path.to_str().unwrap()])
         .await
         .unwrap();
 
-    let zip_path = tmp_directory.join("Test Parent.zip");
+    let zip_path = env.tmp_directory.join("Test Parent.zip");
     let mut writer = ZipWriter::new(File::create(&zip_path).unwrap());
     for (name, fixture) in [
         ("Test Program.rom", "Test Game (USA, Europe).rom"),
@@ -69,29 +49,22 @@ async fn test() {
             .start_file(name, SimpleFileOptions::default())
             .unwrap();
         writer
-            .write_all(&std::fs::read(test_directory.join(fixture)).unwrap())
+            .write_all(&std::fs::read(env.fixture_source(fixture)).unwrap())
             .unwrap();
     }
     writer.finish().unwrap();
-    let matches = import_roms::subcommand().get_matches_from([
-        "import-roms",
-        "-u",
-        "skip",
-        zip_path.to_str().unwrap(),
-    ]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
+    env.run(&["import-roms", "-u", "skip", zip_path.to_str().unwrap()])
         .await
         .unwrap();
 
-    let system = find_arcade_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system)
+    let system = find_arcade_systems(&mut env.connection).await.remove(0);
+    let system_directory = get_system_directory(&mut env.connection, &system)
         .await
         .unwrap();
     assert!(system_directory.join("Test Parent/Test Common").is_file());
 
     // when
-    let matches = subcommand().get_matches_from(["rebuild-roms", "--all", "-m", "NON_MERGED"]);
-    main(&mut connection, &matches, &progress_bar)
+    env.run(&["rebuild-roms", "--all", "-m", "NON_MERGED"])
         .await
         .unwrap();
 
@@ -105,10 +78,7 @@ async fn test() {
     assert!(!system_directory.join("Test Clone.zip").exists());
 
     // and check-roms reads the extensionless files without trashing them
-    let before = find_romfiles(&mut connection).await.len();
-    let matches = check_roms::subcommand().get_matches_from(["check-roms", "-a"]);
-    check_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-    assert_eq!(before, find_romfiles(&mut connection).await.len());
+    let before = find_romfiles(&mut env.connection).await.len();
+    env.run(&["check-roms", "-a"]).await.unwrap();
+    assert_eq!(before, find_romfiles(&mut env.connection).await.len());
 }

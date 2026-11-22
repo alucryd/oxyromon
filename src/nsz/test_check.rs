@@ -1,28 +1,11 @@
-use super::super::database::establish_connection;
 use super::*;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
-use tokio::fs;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let nsz_path = tmp_directory.path().join("Test Game (USA).nsz");
-    fs::copy(test_directory.join("Test Game (USA).nsz"), &nsz_path)
-        .await
-        .unwrap();
+    let mut env = TestEnv::new().await;
+    let nsz_path = env.fixture("Test Game (USA).nsz").await;
     let nsz = CommonRomfile::from_path(&nsz_path)
         .unwrap()
         .as_nsz()
@@ -46,7 +29,7 @@ async fn test() {
 
     // when
     let result = nsz
-        .check(&mut connection, &progress_bar, &None, &[&rom])
+        .check(&mut env.connection, &env.progress_bar, &None, &[&rom])
         .await;
 
     // then

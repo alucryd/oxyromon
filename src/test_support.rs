@@ -1,14 +1,34 @@
 use super::check_roms;
+use super::common::{CommonRomfile, FromPath};
+use super::compact_roms;
+use super::config;
 use super::config::{MUTEX, TestDatabase, set_rom_directory, set_tmp_directory};
+use super::convert_roms;
+use super::create_dats;
 use super::database::{establish_connection, find_romfiles, find_systems};
+use super::download_dats;
+use super::export_roms;
+use super::generate_playlists;
+use super::import_clone_lists;
 use super::import_dats;
+use super::import_irds;
+use super::import_keys;
+use super::import_patches;
 use super::import_roms;
 use super::model::{Romfile, System};
+use super::purge_games;
+use super::purge_irds;
+use super::purge_roms;
+use super::purge_systems;
+use super::rebuild_roms;
+use super::sort_roms;
 use super::util::get_system_directory;
 use anyhow::Result;
 use indicatif::ProgressBar;
+use sqlx::SqlitePool;
 use sqlx::pool::PoolConnection;
 use sqlx::sqlite::Sqlite;
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use tempfile::TempDir;
@@ -47,6 +67,9 @@ fn copy_tree_owned(from: PathBuf, to: PathBuf) -> Pin<Box<dyn Future<Output = ()
 /// test sets up its world by hand anymore.
 pub struct TestEnv {
     pub connection: PoolConnection<Sqlite>,
+    /// A handle to the same pool the connection came from: for the rare
+    /// test that hands one to a `main` of its own, such as the server's.
+    pub pool: SqlitePool,
     pub rom_directory: PathBuf,
     pub tmp_directory: PathBuf,
     pub progress_bar: ProgressBar,
@@ -54,6 +77,15 @@ pub struct TestEnv {
     _root: TempDir,
     // Dropped last, after the connection closed on its database.
     _db: TestDatabase,
+}
+
+/// Runs one subcommand's `main` on the args, `subcommand()` included.
+macro_rules! run_subcommand {
+    ($env:expr, $module:ident, $args:expr) => {{
+        let env: &mut TestEnv = $env;
+        let matches = $module::subcommand().get_matches_from($args);
+        $module::main(&mut env.connection, &matches, &env.progress_bar).await
+    }};
 }
 
 impl TestEnv {
@@ -75,6 +107,7 @@ impl TestEnv {
 
         Self {
             connection,
+            pool,
             rom_directory,
             tmp_directory,
             progress_bar: ProgressBar::hidden(),
@@ -111,7 +144,14 @@ impl TestEnv {
     /// Copies a fixture file, or a fixture directory with its whole tree,
     /// into the temporary directory under the same name; returns the copy.
     pub async fn fixture(&self, name: &str) -> PathBuf {
-        let target = self.tmp_directory.join(name);
+        self.fixture_into(&self.tmp_directory, name).await
+    }
+
+    /// Copies a fixture into an arbitrary directory under the same name:
+    /// the rare test that plants a file straight into the ROM directory
+    /// or another corner of its world instead of the temporary one.
+    pub async fn fixture_into(&self, directory: &Path, name: &str) -> PathBuf {
+        let target = directory.join(name);
         copy_tree_owned(fixtures().join(name), target.clone()).await;
         target
     }
@@ -121,6 +161,29 @@ impl TestEnv {
         let mut argv: Vec<&str> = vec!["import-roms"];
         argv.extend(paths.iter().map(|path| path.to_str().unwrap()));
         self.run(&argv).await.unwrap();
+    }
+
+    /// Copies a fixture into the temporary directory under another name,
+    /// then imports it into `system` with `import_other`, asserting a match.
+    pub async fn import_other(&mut self, system: &System, fixture: &str, name: &str) {
+        let path = self.tmp_directory.join(name);
+        tokio::fs::copy(fixtures().join(fixture), &path)
+            .await
+            .unwrap();
+        let result = import_roms::import_other(
+            &mut self.connection,
+            &self.progress_bar,
+            &Some(system),
+            &None,
+            &HashSet::new(),
+            CommonRomfile::from_path(&path).unwrap(),
+            true,
+            false,
+            import_roms::UnattendedMode::Skip,
+        )
+        .await
+        .unwrap();
+        assert!(result.is_some(), "Failed to match \"{}\"", name);
     }
 
     /// The system the database holds: every test's dat names one.
@@ -179,18 +242,26 @@ impl TestEnv {
     /// `when` goes through the same doors as a user's command.
     pub async fn run(&mut self, args: &[&str]) -> Result<()> {
         match args.first().copied().unwrap_or_default() {
-            "check-roms" => {
-                let matches = check_roms::subcommand().get_matches_from(args);
-                check_roms::main(&mut self.connection, &matches, &self.progress_bar).await
-            }
-            "import-dats" => {
-                let matches = import_dats::subcommand().get_matches_from(args);
-                import_dats::main(&mut self.connection, &matches, &self.progress_bar).await
-            }
-            "import-roms" => {
-                let matches = import_roms::subcommand().get_matches_from(args);
-                import_roms::main(&mut self.connection, &matches, &self.progress_bar).await
-            }
+            "check-roms" => run_subcommand!(self, check_roms, args),
+            "compact-roms" => run_subcommand!(self, compact_roms, args),
+            "config" => run_subcommand!(self, config, args),
+            "convert-roms" => run_subcommand!(self, convert_roms, args),
+            "create-dats" => run_subcommand!(self, create_dats, args),
+            "download-dats" => run_subcommand!(self, download_dats, args),
+            "export-roms" => run_subcommand!(self, export_roms, args),
+            "generate-playlists" => run_subcommand!(self, generate_playlists, args),
+            "import-clone-lists" => run_subcommand!(self, import_clone_lists, args),
+            "import-dats" => run_subcommand!(self, import_dats, args),
+            "import-irds" => run_subcommand!(self, import_irds, args),
+            "import-keys" => run_subcommand!(self, import_keys, args),
+            "import-patches" => run_subcommand!(self, import_patches, args),
+            "import-roms" => run_subcommand!(self, import_roms, args),
+            "purge-games" => run_subcommand!(self, purge_games, args),
+            "purge-irds" => run_subcommand!(self, purge_irds, args),
+            "purge-roms" => run_subcommand!(self, purge_roms, args),
+            "purge-systems" => run_subcommand!(self, purge_systems, args),
+            "rebuild-roms" => run_subcommand!(self, rebuild_roms, args),
+            "sort-roms" => run_subcommand!(self, sort_roms, args),
             other => unimplemented!("TestEnv::run does not dispatch \"{other}\" yet"),
         }
     }

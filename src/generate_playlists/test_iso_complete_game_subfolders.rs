@@ -1,79 +1,51 @@
 use super::super::config::*;
-use super::super::import_dats;
-use super::super::import_roms;
 use super::*;
-use std::path::Path;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 use tokio::fs;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
+    let mut env = TestEnv::new().await;
+    set_string(&mut env.connection, "GAME_SUBFOLDERS", "always", None).await;
 
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
+    env.import_dats(&["Test System (20230105) (Multiple Discs).dat"])
+        .await;
 
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-    set_string(&mut connection, "GAME_SUBFOLDERS", "always", None).await;
-
-    let matches = import_dats::subcommand().get_matches_from([
-        "import-dats",
-        "tests/Test System (20230105) (Multiple Discs).dat",
-    ]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system)
+    let system = env.system().await;
+    let system_directory = get_system_directory(&mut env.connection, &system)
         .await
         .unwrap();
 
     for i in 1..=2 {
         let romfile_name = format!("Test Game (USA, Europe) (Disc {}).iso", i);
-        let romfile_path = tmp_directory.join(&romfile_name);
-        fs::copy(test_directory.join(&romfile_name), &romfile_path)
-            .await
-            .unwrap();
-        let matches = import_roms::subcommand()
-            .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
-            .await
-            .unwrap();
+        let romfile_path = env.fixture(&romfile_name).await;
+        env.import_roms(&[&romfile_path]).await;
     }
 
     // when
-    process_system(&mut connection, &progress_bar, &system)
+    process_system(&mut env.connection, &env.progress_bar, &system)
         .await
         .unwrap();
 
     // then
-    let games = find_full_games_by_system_id(&mut connection, system.id).await;
+    let games = find_full_games_by_system_id(&mut env.connection, system.id).await;
     assert_eq!(games.len(), 2);
 
-    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+    let roms = find_roms_with_romfile_by_system_id(&mut env.connection, system.id).await;
     assert_eq!(roms.len(), 2);
 
     let playlist_id = games.first().unwrap().playlist_id;
     assert!(playlist_id.is_some());
 
-    let playlist = find_romfile_by_id(&mut connection, playlist_id.unwrap()).await;
+    let playlist = find_romfile_by_id(&mut env.connection, playlist_id.unwrap()).await;
     let playlist_path = system_directory
         .join("Test Game (USA, Europe)")
         .join("Test Game (USA, Europe).m3u");
     assert_eq!(
         playlist.path,
         playlist_path
-            .strip_prefix(&rom_directory)
+            .strip_prefix(&env.rom_directory)
             .unwrap()
             .as_os_str()
             .to_str()
@@ -103,7 +75,7 @@ async fn test() {
         games
             .first()
             .unwrap()
-            .get_playlist_path(&mut connection, &system, &None)
+            .get_playlist_path(&mut env.connection, &system, &None)
             .await
             .unwrap(),
         playlist_path

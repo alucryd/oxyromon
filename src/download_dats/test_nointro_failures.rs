@@ -1,6 +1,7 @@
 extern crate wiremock;
 
 use super::*;
+use crate::test_support::TestEnv;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -8,11 +9,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 #[tokio::test]
 async fn test() {
     // given
-    let progress_bar = ProgressBar::hidden();
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
+    let mut env = TestEnv::new().await;
     let mock_server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/profile.xml"))
@@ -22,7 +19,8 @@ async fn test() {
 
     // when an HTTP error status, then an unreachable host
     for base_url in [mock_server.uri(), String::from("http://127.0.0.1:9")] {
-        let result = update_nointro_dats(&mut connection, &progress_bar, &base_url, true).await;
+        let result =
+            update_nointro_dats(&mut env.connection, &env.progress_bar, &base_url, true).await;
 
         // then
         assert!(result.is_err(), "{base_url}");

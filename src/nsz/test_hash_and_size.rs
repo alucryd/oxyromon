@@ -1,28 +1,11 @@
-use super::super::database::establish_connection;
 use super::*;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
-use tokio::fs;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let nsz_path = tmp_directory.path().join("Test Game (USA).nsz");
-    fs::copy(test_directory.join("Test Game (USA).nsz"), &nsz_path)
-        .await
-        .unwrap();
+    let mut env = TestEnv::new().await;
+    let nsz_path = env.fixture("Test Game (USA).nsz").await;
     let nsz = CommonRomfile::from_path(&nsz_path)
         .unwrap()
         .as_nsz()
@@ -30,11 +13,23 @@ async fn test() {
 
     // when
     let (sha1, sha1_size) = nsz
-        .get_hash_and_size(&mut connection, &progress_bar, 1, 1, &HashAlgorithm::Sha1)
+        .get_hash_and_size(
+            &mut env.connection,
+            &env.progress_bar,
+            1,
+            1,
+            &HashAlgorithm::Sha1,
+        )
         .await
         .unwrap();
     let (md5, md5_size) = nsz
-        .get_hash_and_size(&mut connection, &progress_bar, 1, 1, &HashAlgorithm::Md5)
+        .get_hash_and_size(
+            &mut env.connection,
+            &env.progress_bar,
+            1,
+            1,
+            &HashAlgorithm::Md5,
+        )
         .await
         .unwrap();
 

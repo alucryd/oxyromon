@@ -1,13 +1,9 @@
-use super::super::config::{MUTEX, set_rom_directory, set_tmp_directory};
-use super::super::import_dats;
-use super::super::import_roms;
-use super::super::sort_roms;
-use super::super::util::*;
 use super::*;
+use crate::test_support::TestEnv;
+use crate::util::get_one_region_directory;
 use async_graphql::Result;
-use indicatif::ProgressBar;
 use serde_json::{Value, json};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tempfile::TempDir;
 use tokio::fs;
 use tokio::select;
@@ -34,56 +30,26 @@ fn build_multipart(filename: &str, data: &[u8]) -> (Vec<u8>, String) {
 #[tokio::test]
 async fn test() -> Result<()> {
     // given
-    let _guard = MUTEX.lock().await;
+    let mut env = TestEnv::with_dat("Test System (20200721).dat").await;
 
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let romfile_names = vec!["Test Game (USA, Europe).rom", "Test Game (Japan).rom"];
     let mut romfile_paths = vec![];
-    for romfile_name in romfile_names {
-        let romfile_path = tmp_directory.join(romfile_name);
-        fs::copy(test_directory.join(romfile_name), &romfile_path)
-            .await
-            .unwrap();
-        romfile_paths.push(romfile_path);
+    for romfile_name in ["Test Game (USA, Europe).rom", "Test Game (Japan).rom"] {
+        romfile_paths.push(env.fixture(romfile_name).await);
     }
+    let romfile_refs: Vec<&Path> = romfile_paths.iter().map(|p| p.as_path()).collect();
+    env.import_roms(&romfile_refs).await;
 
-    let matches = import_roms::subcommand().get_matches_from([
-        "import-roms",
-        romfile_paths.first().unwrap().as_os_str().to_str().unwrap(),
-        romfile_paths.get(1).unwrap().as_os_str().to_str().unwrap(),
-    ]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
+    env.run(&["sort-roms", "-a", "-y", "-o", "US", "-r", "JP"])
         .await
         .unwrap();
 
-    let matches =
-        sort_roms::subcommand().get_matches_from(["sort-roms", "-a", "-y", "-o", "US", "-r", "JP"]);
-    sort_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let system = find_systems(&mut connection).await.remove(0);
+    let system = env.system().await;
 
     // when
     let matches = subcommand().get_matches_from(["server"]);
+    let pool = env.pool.clone();
+    let rom_directory = env.rom_directory.clone();
+    let mut connection = env.connection;
     let server = async move {
         main(pool, &matches).await.unwrap();
     };
@@ -236,21 +202,14 @@ async fn test() -> Result<()> {
 #[tokio::test]
 async fn test_upload_dat() -> Result<()> {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
+    let env = TestEnv::new().await;
+    let dat = fs::read(env.fixture_source("Test System (20200721).dat"))
+        .await
+        .unwrap();
 
     // when
     let matches = subcommand().get_matches_from(["server", "--port", "8001"]);
+    let pool = env.pool.clone();
     let server = async move {
         main(pool, &matches).await.unwrap();
     };
@@ -260,7 +219,6 @@ async fn test_upload_dat() -> Result<()> {
 
         let client = reqwest::Client::new();
 
-        let dat = fs::read("tests/Test System (20200721).dat").await.unwrap();
         let (body, content_type) = build_multipart("Test System (20200721).dat", &dat);
 
         let resp = client
@@ -304,21 +262,14 @@ async fn test_upload_dat() -> Result<()> {
 #[tokio::test]
 async fn test_upload_dat_zip() -> Result<()> {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
+    let env = TestEnv::new().await;
+    let zip = fs::read(env.fixture_source("Test System (20200721).zip"))
+        .await
+        .unwrap();
 
     // when
     let matches = subcommand().get_matches_from(["server", "--port", "8002"]);
+    let pool = env.pool.clone();
     let server = async move {
         main(pool, &matches).await.unwrap();
     };
@@ -328,7 +279,6 @@ async fn test_upload_dat_zip() -> Result<()> {
 
         let client = reqwest::Client::new();
 
-        let zip = fs::read("tests/Test System (20200721).zip").await.unwrap();
         let (body, content_type) = build_multipart("Test System (20200721).zip", &zip);
 
         let resp = client
@@ -372,31 +322,16 @@ async fn test_upload_dat_zip() -> Result<()> {
 #[tokio::test]
 async fn test_upload_dat_already_imported() -> Result<()> {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    // pre-import the DAT via CLI
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
+    let mut env = TestEnv::with_dat("Test System (20200721).dat").await;
+    let dat = fs::read(env.fixture_source("Test System (20200721).dat"))
         .await
         .unwrap();
 
-    let game_count_before = find_games_by_system_id(&mut connection, 1).await.len();
+    let game_count_before = find_games_by_system_id(&mut env.connection, 1).await.len();
 
     // when
     let matches = subcommand().get_matches_from(["server", "--port", "8003"]);
+    let pool = env.pool.clone();
     let server = async move {
         main(pool, &matches).await.unwrap();
     };
@@ -406,7 +341,6 @@ async fn test_upload_dat_already_imported() -> Result<()> {
 
         let client = reqwest::Client::new();
 
-        let dat = fs::read("tests/Test System (20200721).dat").await.unwrap();
         let (body, content_type) = build_multipart("Test System (20200721).dat", &dat);
 
         let resp = client
@@ -451,34 +385,15 @@ async fn test_upload_dat_already_imported() -> Result<()> {
 #[tokio::test]
 async fn test_import_rom_source() -> Result<()> {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let system = find_systems(&mut connection).await.remove(0);
+    let mut env = TestEnv::with_dat("Test System (20200721).dat").await;
+    let system = env.system().await;
 
     // when
     // An unknown mode is rejected before the file is even touched.
-    let bogus_directory = TempDir::new_in(test_directory).unwrap();
+    let bogus_directory = TempDir::new().unwrap();
     let result = import_rom_source(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         RomSource::Upload {
             filename: "unused".to_string(),
             directory: bogus_directory,
@@ -490,17 +405,17 @@ async fn test_import_rom_source() -> Result<()> {
     assert!(result.is_err());
 
     // Absent means "first", so the import lands on its own.
-    let directory = TempDir::new_in(test_directory).unwrap();
     let filename = "Test Game (USA, Europe).rom";
+    let directory = TempDir::new().unwrap();
     fs::copy(
-        test_directory.join(filename),
+        env.fixture_source(filename),
         directory.path().join(filename),
     )
     .await
     .unwrap();
     import_rom_source(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         RomSource::Upload {
             filename: filename.to_string(),
             directory,
@@ -511,7 +426,7 @@ async fn test_import_rom_source() -> Result<()> {
     .await?;
 
     // then
-    let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+    let romfiles = find_romfiles_by_system_id(&mut env.connection, system.id).await;
     assert_eq!(1, romfiles.len());
 
     Ok(())

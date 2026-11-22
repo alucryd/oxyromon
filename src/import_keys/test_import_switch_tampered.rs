@@ -1,12 +1,11 @@
 use super::*;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
-#[test]
-fn test() {
+#[tokio::test]
+async fn test() {
+    let env = TestEnv::new().await;
     // given a prod.keys whose keys are not the real ones
-    let directory = TempDir::new_in("tests").unwrap();
-    let progress_bar = ProgressBar::hidden();
-    let prod = directory.path().join("prod.keys");
+    let prod = env.tmp_directory.join("prod.keys");
     let keys = [
         "aes_kek_generation_source",
         "aes_key_generation_source",
@@ -21,9 +20,9 @@ fn test() {
     std::fs::write(&prod, keys).unwrap();
 
     // when
-    let result = import_keys(&progress_bar, &[&prod], directory.path());
+    let result = import_keys(&env.progress_bar, &[&prod], &env.tmp_directory);
 
     // then it is refused, and nothing is written
     assert!(format!("{:#}", result.unwrap_err()).contains("crc32 mismatch"));
-    assert!(!directory.path().join(SWITCH_KEYS_FILE).exists());
+    assert!(!env.tmp_directory.join(SWITCH_KEYS_FILE).exists());
 }

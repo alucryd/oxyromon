@@ -1,42 +1,19 @@
-use super::super::import_dats;
 use super::*;
-use std::path::PathBuf;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 use tokio::fs;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
+    let mut env = TestEnv::with_dat("Test System (20200721) (Identical Tracks).dat").await;
 
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand().get_matches_from([
-        "import-dats",
-        "tests/Test System (20200721) (Identical Tracks).dat",
-    ]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system)
+    let system = env.system().await;
+    let system_directory = get_system_directory(&mut env.connection, &system)
         .await
         .unwrap();
 
     // its Track 03 is Track 02's bytes, and only Track 03 is here
-    let input_directory = tmp_directory.join("input");
+    let input_directory = env.tmp_directory.join("input");
     fs::create_dir(&input_directory).await.unwrap();
     for (fixture, name) in [
         (
@@ -52,24 +29,23 @@ async fn test() {
             "Test Game (USA, Europe) (Identical Tracks) (Track 03).bin",
         ),
     ] {
-        fs::copy(test_directory.join(fixture), input_directory.join(name))
+        fs::copy(env.fixture_source(fixture), input_directory.join(name))
             .await
             .unwrap();
     }
 
     // when
-    let matches = subcommand().get_matches_from([
+    env.run(&[
         "import-roms",
         "-u",
         "skip",
-        input_directory.as_os_str().to_str().unwrap(),
-    ]);
-    main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+        input_directory.to_str().unwrap(),
+    ])
+    .await
+    .unwrap();
 
     // then it is Track 03's, Track 02's is missing
-    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+    let roms = find_roms_with_romfile_by_system_id(&mut env.connection, system.id).await;
     assert_eq!(roms.len(), 3);
     assert!(
         !roms
@@ -80,17 +56,17 @@ async fn test() {
         .iter()
         .find(|rom| rom.name == "Test Game (USA, Europe) (Identical Tracks) (Track 03).bin")
         .unwrap();
-    let romfile = find_romfile_by_id(&mut connection, rom.romfile_id.unwrap()).await;
+    let romfile = find_romfile_by_id(&mut env.connection, rom.romfile_id.unwrap()).await;
     assert_eq!(
         romfile.path,
         system_directory
             .join("Test Game (USA, Europe) (Identical Tracks) (Track 03).bin")
-            .strip_prefix(&rom_directory)
+            .strip_prefix(&env.rom_directory)
             .unwrap()
             .as_os_str()
             .to_str()
             .unwrap(),
     );
-    let games = find_games(&mut connection).await;
+    let games = find_games(&mut env.connection).await;
     assert_eq!(games[0].completion, Completion::Partial as i64);
 }

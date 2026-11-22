@@ -1,14 +1,13 @@
 use super::*;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
-#[test]
-fn test() {
+#[tokio::test]
+async fn test() {
     // given
-    let directory = TempDir::new_in("tests").unwrap();
-    let progress_bar = ProgressBar::hidden();
-    let destination = directory.path().join(WIIU_KEYS_FILE);
-    let a = directory.path().join("a.txt");
-    let b = directory.path().join("b.txt");
+    let env = TestEnv::new().await;
+    let destination = env.tmp_directory.join(WIIU_KEYS_FILE);
+    let a = env.tmp_directory.join("a.txt");
+    let b = env.tmp_directory.join("b.txt");
     std::fs::write(
         &a,
         "# Cemu's format\n11111111111111111111111111111111 # Some Game\n2222-2222-2222-2222-2222-2222-2222-2222\n",
@@ -21,8 +20,8 @@ fn test() {
     .unwrap();
 
     // when
-    import_keys(&progress_bar, &[&a], directory.path()).unwrap();
-    import_keys(&progress_bar, &[&b, &a], directory.path()).unwrap();
+    import_keys(&env.progress_bar, &[&a], &env.tmp_directory).unwrap();
+    import_keys(&env.progress_bar, &[&b, &a], &env.tmp_directory).unwrap();
 
     // then each key is kept once, in the order first seen
     assert_eq!(

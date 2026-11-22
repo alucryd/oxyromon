@@ -1,47 +1,19 @@
-use super::super::import_dats;
 use super::*;
-use std::path::PathBuf;
-use tempfile::TempDir;
-use tokio::fs;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
+    let mut env = TestEnv::with_dat("Test System (20200721).dat").await;
 
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
+    let romfile_path = env.fixture("Test Game (USA, Europe) (Headered).rom").await;
 
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Headered).rom");
-    fs::copy(
-        test_directory.join("Test Game (USA, Europe) (Headered).rom"),
-        &romfile_path.as_os_str().to_str().unwrap(),
-    )
-    .await
-    .unwrap();
-
-    let system = find_systems(&mut connection).await.remove(0);
+    let system = env.system().await;
 
     // when
     import_other(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         &Some(&system),
         &None,
         &HashSet::new(),
@@ -54,14 +26,13 @@ async fn test() {
     .unwrap();
 
     // then
-    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+    let roms = find_roms_with_romfile_by_system_id(&mut env.connection, system.id).await;
     assert_eq!(roms.len(), 0);
-    let romfiles = find_romfiles(&mut connection).await;
+    let romfiles = find_romfiles(&mut env.connection).await;
     assert_eq!(romfiles.len(), 0);
 
     assert!(
-        !rom_directory
-            .path()
+        !env.rom_directory
             .join("Trash")
             .join("Test Game (USA, Europe) (Headered).rom")
             .is_file()

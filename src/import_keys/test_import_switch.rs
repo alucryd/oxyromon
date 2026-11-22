@@ -1,15 +1,14 @@
 use super::*;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
-#[test]
-fn test() {
+#[tokio::test]
+async fn test() {
+    let env = TestEnv::new().await;
     // given two title.keys files, one updating a key of the other, and a Cemu
     // keys.txt alongside
-    let directory = TempDir::new_in("tests").unwrap();
-    let progress_bar = ProgressBar::hidden();
-    let a = directory.path().join("title.keys");
-    let b = directory.path().join("newer.keys");
-    let cemu = directory.path().join("keys.txt");
+    let a = env.tmp_directory.join("title.keys");
+    let b = env.tmp_directory.join("newer.keys");
+    let cemu = env.tmp_directory.join("keys.txt");
     std::fs::write(
         &a,
         "01000000000000000000000000000000 = 11111111111111111111111111111111\n\
@@ -25,12 +24,12 @@ fn test() {
     std::fs::write(&cemu, "44444444444444444444444444444444\n").unwrap();
 
     // when
-    import_keys(&progress_bar, &[&a], directory.path()).unwrap();
-    import_keys(&progress_bar, &[&b, &cemu], directory.path()).unwrap();
+    import_keys(&env.progress_bar, &[&a], &env.tmp_directory).unwrap();
+    import_keys(&env.progress_bar, &[&b, &cemu], &env.tmp_directory).unwrap();
 
     // then the Switch keys are merged by name, the newer value winning, and
     // kept apart from the Wii U keys
-    let destination = directory.path().join(SWITCH_KEYS_FILE);
+    let destination = env.tmp_directory.join(SWITCH_KEYS_FILE);
     assert_eq!(
         std::fs::read_to_string(&destination).unwrap(),
         "01000000000000000000000000000000 = 11111111111111111111111111111111\n\
@@ -38,7 +37,7 @@ fn test() {
          03000000000000000000000000000000 = 33333333333333333333333333333333\n"
     );
     assert_eq!(
-        std::fs::read_to_string(directory.path().join(WIIU_KEYS_FILE)).unwrap(),
+        std::fs::read_to_string(env.tmp_directory.join(WIIU_KEYS_FILE)).unwrap(),
         "44444444444444444444444444444444\n"
     );
     #[cfg(unix)]

@@ -1,14 +1,13 @@
 use super::*;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
-#[test]
-fn test() {
+#[tokio::test]
+async fn test() {
+    let env = TestEnv::new().await;
     // given two of Azahar's aes_keys.txt, the second updating a key of the
     // first, with a comment, a blank line and an RSA modulus among them
-    let directory = TempDir::new_in("tests").unwrap();
-    let progress_bar = ProgressBar::hidden();
-    let a = directory.path().join("aes_keys.txt");
-    let b = directory.path().join("newer.txt");
+    let a = env.tmp_directory.join("aes_keys.txt");
+    let b = env.tmp_directory.join("newer.txt");
     std::fs::write(
         &a,
         "# Generator constant\n\
@@ -29,12 +28,12 @@ fn test() {
     .unwrap();
 
     // when
-    import_keys(&progress_bar, &[&a], directory.path()).unwrap();
-    import_keys(&progress_bar, &[&b], directory.path()).unwrap();
+    import_keys(&env.progress_bar, &[&a], &env.tmp_directory).unwrap();
+    import_keys(&env.progress_bar, &[&b], &env.tmp_directory).unwrap();
 
     // then they are merged by name, the newer value winning, upper case, in
     // Azahar's format, and taken for neither Switch nor Wii U keys
-    let destination = directory.path().join(N3DS_KEYS_FILE);
+    let destination = env.tmp_directory.join(N3DS_KEYS_FILE);
     assert_eq!(
         std::fs::read_to_string(&destination).unwrap(),
         format!(
@@ -45,8 +44,8 @@ fn test() {
             "B".repeat(512)
         )
     );
-    assert!(!directory.path().join(SWITCH_KEYS_FILE).exists());
-    assert!(!directory.path().join(WIIU_KEYS_FILE).exists());
+    assert!(!env.tmp_directory.join(SWITCH_KEYS_FILE).exists());
+    assert!(!env.tmp_directory.join(WIIU_KEYS_FILE).exists());
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;

@@ -1,20 +1,10 @@
-use tempfile::TempDir;
-
 use super::*;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-
+    let mut env = TestEnv::new().await;
     let system = System {
         id: 1,
         name: String::from("Test System"),
@@ -72,16 +62,16 @@ async fn test() {
 
     // when
     let path = romfile
-        .as_common(&mut connection)
+        .as_common(&mut env.connection)
         .await
         .unwrap()
-        .get_sorted_path(&mut connection, &system, &game, &rom, &None, &None)
+        .get_sorted_path(&mut env.connection, &system, &game, &rom, &None, &None)
         .await
         .unwrap();
 
     // then
     assert_eq!(
         path,
-        rom_directory.path().join(system.name).join("rom name.rom")
+        env.rom_directory.join(system.name).join("rom name.rom")
     );
 }

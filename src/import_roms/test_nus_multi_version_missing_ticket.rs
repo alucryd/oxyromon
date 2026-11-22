@@ -1,54 +1,33 @@
-use super::super::import_dats;
 use super::*;
-use std::path::PathBuf;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
+    let mut env = TestEnv::new().await;
     // the entry also lists an older version's TMD and a content only it uses
-    let matches = import_dats::subcommand().get_matches_from([
-        "import-dats",
-        "tests/Test System (20261025) (CDN History).dat",
-    ]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    env.import_dats(&["Test System (20261025) (CDN History).dat"])
+        .await;
 
     // the newest version, but for its ticket
-    let nus_directory = tmp_directory.join("Test Game (USA) (Update)");
+    let nus_directory = env.tmp_directory.join("Test Game (USA) (Update)");
     std::fs::create_dir(&nus_directory).unwrap();
-    for entry in std::fs::read_dir(test_directory.join("Test Game (USA) (Update)")).unwrap() {
+    for entry in std::fs::read_dir(env.fixture_source("Test Game (USA) (Update)")).unwrap() {
         let path = entry.unwrap().path();
         if path.file_name().unwrap() != "cetk.48" {
             std::fs::copy(&path, nus_directory.join(path.file_name().unwrap())).unwrap();
         }
     }
 
-    let system = find_systems(&mut connection).await.remove(0);
+    let system = env.system().await;
 
     // when
-    let matches = subcommand().get_matches_from(["import-roms", tmp_directory.to_str().unwrap()]);
-    main(&mut connection, &matches, &progress_bar)
+    let import_dir = env.tmp_directory.clone();
+    env.run(&["import-roms", import_dir.to_str().unwrap()])
         .await
         .unwrap();
 
     // then the newest ticket is still required
-    let games = find_games_by_system_id(&mut connection, system.id).await;
+    let games = find_games_by_system_id(&mut env.connection, system.id).await;
     assert_eq!(games[0].completion, Completion::Partial as i64);
 }

@@ -1,24 +1,11 @@
 use super::*;
-use std::path::PathBuf;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    set_bool(&mut connection, "GROUP_SUBSYSTEMS", false, None).await;
+    let mut env = TestEnv::new().await;
+    set_bool(&mut env.connection, "GROUP_SUBSYSTEMS", false, None).await;
 
     let system = System {
         id: 1,
@@ -36,7 +23,7 @@ async fn test() {
     };
 
     // when
-    let system_directory = get_system_directory(&mut connection, &system)
+    let system_directory = get_system_directory(&mut env.connection, &system)
         .await
         .unwrap();
 

@@ -1,10 +1,8 @@
 extern crate wiremock;
 
-use super::super::config::*;
 use super::*;
+use crate::test_support::TestEnv;
 use std::io::{Cursor, Write};
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 use zip::write::{SimpleFileOptions, ZipWriter};
@@ -22,20 +20,7 @@ fn zip_with(entries: &[(&str, &[u8])]) -> Vec<u8> {
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
+    let mut env = TestEnv::new().await;
     let system_name = "Test System";
 
     // an empty ZIP is an error, and nothing is imported
@@ -47,8 +32,8 @@ async fn test() {
         .await;
     assert!(
         download_redump_dat(
-            &mut connection,
-            &progress_bar,
+            &mut env.connection,
+            &env.progress_bar,
             &mock_server.uri(),
             system_name,
             false,
@@ -57,7 +42,7 @@ async fn test() {
         .await
         .is_err()
     );
-    assert!(find_systems(&mut connection).await.is_empty());
+    assert!(find_systems(&mut env.connection).await.is_empty());
 
     // so is a ZIP with more than one entry
     let mock_server = MockServer::start().await;
@@ -71,8 +56,8 @@ async fn test() {
         .await;
     assert!(
         download_redump_dat(
-            &mut connection,
-            &progress_bar,
+            &mut env.connection,
+            &env.progress_bar,
             &mock_server.uri(),
             system_name,
             false,
@@ -81,7 +66,7 @@ async fn test() {
         .await
         .is_err()
     );
-    assert!(find_systems(&mut connection).await.is_empty());
+    assert!(find_systems(&mut env.connection).await.is_empty());
 
     // and an HTTP error status
     let mock_server = MockServer::start().await;
@@ -92,8 +77,8 @@ async fn test() {
         .await;
     assert!(
         download_redump_dat(
-            &mut connection,
-            &progress_bar,
+            &mut env.connection,
+            &env.progress_bar,
             &mock_server.uri(),
             system_name,
             false,

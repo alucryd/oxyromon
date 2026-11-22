@@ -1,72 +1,38 @@
-use super::super::config::{MUTEX, set_rom_directory, set_tmp_directory};
-use super::super::import_dats;
-use super::super::import_roms;
 use super::*;
+use crate::test_support::TestEnv;
 use itertools::Itertools;
 use std::fs::DirEntry;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
-use tokio::fs;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
+    let mut env = TestEnv::with_dat("Test System (20200721).dat").await;
 
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
+    let romfile_path = env.fixture("Test Game (USA, Europe).rom").await;
 
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
+    env.import_roms(&[&romfile_path]).await;
 
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
-    fs::copy(
-        test_directory.join("Test Game (USA, Europe).rom"),
-        &romfile_path,
-    )
-    .await
-    .unwrap();
-
-    let matches = import_roms::subcommand()
-        .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let romfiles = find_romfiles(&mut connection).await;
+    let romfiles = find_romfiles(&mut env.connection).await;
     romfiles[0]
-        .as_common(&mut connection)
+        .as_common(&mut env.connection)
         .await
         .unwrap()
-        .delete(&progress_bar, false)
+        .delete(&env.progress_bar, false)
         .await
         .unwrap();
 
-    let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system)
+    let system = env.system().await;
+    let system_directory = get_system_directory(&mut env.connection, &system)
         .await
         .unwrap();
 
     // when
-    purge_missing_romfiles(&mut connection, &progress_bar)
+    purge_missing_romfiles(&mut env.connection, &env.progress_bar)
         .await
         .unwrap();
 
     // then
-    let romfiles = find_romfiles(&mut connection).await;
+    let romfiles = find_romfiles(&mut env.connection).await;
     assert!(romfiles.is_empty());
     let entries: Vec<DirEntry> = system_directory
         .read_dir()

@@ -1,10 +1,7 @@
 extern crate wiremock;
 
-use super::super::config::*;
-use super::super::import_dats;
 use super::*;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 use tokio::fs;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -12,27 +9,9 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
+    let mut env = TestEnv::with_dat("Test System (20200721).dat").await;
 
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let profile_xml_path = test_directory.join("profile.xml");
+    let profile_xml_path = env.fixture_source("profile.xml");
 
     let mock_server = MockServer::start().await;
     Mock::given(method("GET"))
@@ -45,9 +24,14 @@ async fn test() {
         .await;
 
     // when
-    update_nointro_dats(&mut connection, &progress_bar, &mock_server.uri(), true)
-        .await
-        .unwrap();
+    update_nointro_dats(
+        &mut env.connection,
+        &env.progress_bar,
+        &mock_server.uri(),
+        true,
+    )
+    .await
+    .unwrap();
 
     // then
     //do nothing

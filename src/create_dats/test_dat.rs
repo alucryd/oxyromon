@@ -1,50 +1,24 @@
-use super::super::config::*;
 use super::super::database::*;
-use super::super::import_dats;
 use super::*;
-use std::path::PathBuf;
-use tempfile::TempDir;
-use tokio::fs;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
+    let mut env = TestEnv::new().await;
 
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
+    let system_directory = env.tmp_directory.join("Test System");
+    tokio::fs::create_dir(&system_directory).await.unwrap();
+    env.fixture_into(&system_directory, "Test Game (USA, Europe).rom")
+        .await;
 
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let system_directory = tmp_directory.join("Test System");
-    fs::create_dir(&system_directory).await.unwrap();
-
-    let romfile_path = system_directory.join("Test Game (USA, Europe).rom");
-    fs::copy(
-        test_directory.join("Test Game (USA, Europe).rom"),
-        &romfile_path.as_os_str().to_str().unwrap(),
-    )
-    .await
-    .unwrap();
-
-    let dat_directory = tmp_directory.join("DAT");
+    let dat_directory = env.tmp_directory.join("DAT");
     let dat_path = dat_directory.join("Test System (42).dat");
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", dat_path.as_os_str().to_str().unwrap()]);
 
     // when
     create_dat(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         &system_directory,
         Some(&dat_directory),
         None,
@@ -55,20 +29,20 @@ async fn test() {
     )
     .await
     .unwrap();
-    import_dats::main(&mut connection, &matches, &progress_bar)
+    env.run(&["import-dats", dat_path.to_str().unwrap()])
         .await
         .unwrap();
 
     // then
-    let systems = find_systems(&mut connection).await;
+    let systems = find_systems(&mut env.connection).await;
     assert_eq!(systems.len(), 1);
     let system = systems.first().unwrap();
     assert_eq!(system.name, "Test System");
-    let games = find_games_by_system_id(&mut connection, system.id).await;
+    let games = find_games_by_system_id(&mut env.connection, system.id).await;
     assert_eq!(games.len(), 1);
     let game = games.first().unwrap();
     assert_eq!(game.name, "Test Game (USA, Europe)");
-    let roms = find_roms_without_romfile_by_game_ids(&mut connection, &[game.id]).await;
+    let roms = find_roms_without_romfile_by_game_ids(&mut env.connection, &[game.id]).await;
     assert_eq!(roms.len(), 1);
     let rom = roms.first().unwrap();
     assert_eq!(rom.name, "Test Game (USA, Europe).rom");

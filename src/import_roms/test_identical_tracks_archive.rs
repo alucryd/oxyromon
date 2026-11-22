@@ -1,40 +1,17 @@
 use super::super::archive::{ArchiveCompression, ArchiveType, ToArchive};
-use super::super::import_dats;
 use super::*;
-use std::path::PathBuf;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 use tokio::fs;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
+    let mut env = TestEnv::with_dat("Test System (20200721) (Identical Tracks).dat").await;
 
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand().get_matches_from([
-        "import-dats",
-        "tests/Test System (20200721) (Identical Tracks).dat",
-    ]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let system = find_systems(&mut connection).await.remove(0);
+    let system = env.system().await;
 
     // its Track 03 is Track 02's bytes
-    let source_directory = tmp_directory.join("source");
+    let source_directory = env.tmp_directory.join("source");
     fs::create_dir(&source_directory).await.unwrap();
     for (fixture, name) in [
         (
@@ -54,7 +31,7 @@ async fn test() {
             "Test Game (USA, Europe) (Identical Tracks) (Track 03).bin",
         ),
     ] {
-        fs::copy(test_directory.join(fixture), source_directory.join(name))
+        fs::copy(env.fixture_source(fixture), source_directory.join(name))
             .await
             .unwrap();
     }
@@ -85,9 +62,9 @@ async fn test() {
             CommonRomfile::from_path(&source_directory.join(entry))
                 .unwrap()
                 .to_archive(
-                    &progress_bar,
+                    &env.progress_bar,
                     &source_directory,
-                    &tmp_directory,
+                    &env.tmp_directory,
                     "Tracks",
                     &ArchiveType::Zip,
                     &ArchiveCompression::Default,
@@ -101,19 +78,13 @@ async fn test() {
     fs::remove_dir_all(&source_directory).await.unwrap();
 
     // when
-    let matches = subcommand().get_matches_from([
-        "import-roms",
-        "-u",
-        "skip",
-        romfile_path.as_os_str().to_str().unwrap(),
-    ]);
-    main(&mut connection, &matches, &progress_bar)
+    env.run(&["import-roms", "-u", "skip", romfile_path.to_str().unwrap()])
         .await
         .unwrap();
 
     // then every ROM, Track 03's included, has its file
-    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+    let roms = find_roms_with_romfile_by_system_id(&mut env.connection, system.id).await;
     assert_eq!(roms.len(), 4);
-    let games = find_games(&mut connection).await;
+    let games = find_games(&mut env.connection).await;
     assert_eq!(games[0].completion, Completion::Full as i64);
 }

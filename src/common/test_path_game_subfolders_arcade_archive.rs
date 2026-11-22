@@ -1,20 +1,11 @@
-use tempfile::TempDir;
-
 use super::*;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    set_string(&mut connection, "GAME_SUBFOLDERS", "always", None).await;
+    let mut env = TestEnv::new().await;
+    set_string(&mut env.connection, "GAME_SUBFOLDERS", "always", None).await;
 
     let system = System {
         id: 1,
@@ -73,16 +64,20 @@ async fn test() {
 
     // when
     let path = romfile
-        .as_common(&mut connection)
+        .as_common(&mut env.connection)
         .await
         .unwrap()
-        .get_sorted_path(&mut connection, &system, &game, &rom, &None, &Some("zip"))
+        .get_sorted_path(
+            &mut env.connection,
+            &system,
+            &game,
+            &rom,
+            &None,
+            &Some("zip"),
+        )
         .await
         .unwrap();
 
     // then: an arcade archive is already one game, so it is not nested
-    assert_eq!(
-        path.parent().unwrap(),
-        rom_directory.path().join(&system.name)
-    );
+    assert_eq!(path.parent().unwrap(), env.rom_directory.join(&system.name));
 }
