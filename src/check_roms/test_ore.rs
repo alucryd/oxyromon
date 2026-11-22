@@ -3,8 +3,7 @@ use crate::test_support::TestEnv;
 #[tokio::test]
 async fn test() {
     // given
-    let mut env =
-        TestEnv::with_dat("Test System (20230618) (RVZ).dat").await;
+    let mut env = TestEnv::with_dat("Test System (20230618) (RVZ).dat").await;
 
     let romfile_path = env.tmp_directory.join("Test Game (USA).ore");
     ore_rs::compress(

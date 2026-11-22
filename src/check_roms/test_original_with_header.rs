@@ -5,11 +5,8 @@ use crate::test_support::TestEnv;
 #[tokio::test]
 async fn test() {
     // given
-    let mut env =
-        TestEnv::with_dat("Test System (20210402) (Headered).dat").await;
-    let romfile_path = env
-        .fixture("Test Game (USA, Europe) (Headered).rom")
-        .await;
+    let mut env = TestEnv::with_dat("Test System (20210402) (Headered).dat").await;
+    let romfile_path = env.fixture("Test Game (USA, Europe) (Headered).rom").await;
 
     let system = env.system().await;
     let header = find_header_by_system_id(&mut env.connection, system.id).await;

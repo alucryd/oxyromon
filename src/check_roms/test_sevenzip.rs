@@ -4,9 +4,7 @@ use crate::test_support::TestEnv;
 async fn test() {
     // given
     let mut env = TestEnv::with_dat("Test System (20200721).dat").await;
-    let romfile_path = env
-        .fixture("Test Game (USA, Europe).rom.7z")
-        .await;
+    let romfile_path = env.fixture("Test Game (USA, Europe).rom.7z").await;
     env.import_roms(&[&romfile_path], &[]).await;
 
     // when

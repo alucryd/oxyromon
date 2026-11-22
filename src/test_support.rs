@@ -1,7 +1,5 @@
 use super::check_roms;
-use super::config::{
-    MUTEX, TestDatabase, set_rom_directory, set_tmp_directory,
-};
+use super::config::{MUTEX, TestDatabase, set_rom_directory, set_tmp_directory};
 use super::database::{establish_connection, find_romfiles, find_systems};
 use super::import_dats;
 use super::import_roms;
