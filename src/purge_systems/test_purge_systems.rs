@@ -1,34 +1,10 @@
-use super::super::config::*;
-use super::super::import_dats;
-use super::super::import_roms;
 use super::*;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
-use tokio::fs;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    let mut env = TestEnv::with_dat("Test System (20200721).dat").await;
 
     let romfile_names = vec![
         "Test Game (Asia).rom",
@@ -37,35 +13,32 @@ async fn test() {
         "Test Game (USA, Europe) (Beta).rom",
     ];
     for romfile_name in &romfile_names {
-        let romfile_path = tmp_directory.join(romfile_name);
-        fs::copy(test_directory.join(romfile_name), &romfile_path)
-            .await
-            .unwrap();
-        let matches = import_roms::subcommand()
-            .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
-            .await
-            .unwrap();
+        let romfile_path = env.fixture(romfile_name).await;
+        env.import_roms(&[&romfile_path]).await;
     }
 
-    let systems = find_systems(&mut connection).await;
+    let systems = find_systems(&mut env.connection).await;
 
     // when
-    purge_system(&mut connection, &progress_bar, systems.first().unwrap())
-        .await
-        .unwrap();
+    purge_system(
+        &mut env.connection,
+        &env.progress_bar,
+        systems.first().unwrap(),
+    )
+    .await
+    .unwrap();
 
     // then
-    let systems = find_systems(&mut connection).await;
+    let systems = find_systems(&mut env.connection).await;
     assert_eq!(systems.len(), 0);
 
-    let games = find_games(&mut connection).await;
+    let games = find_games(&mut env.connection).await;
     assert_eq!(games.len(), 0);
 
-    let roms = find_roms(&mut connection).await;
+    let roms = find_roms(&mut env.connection).await;
     assert_eq!(roms.len(), 0);
 
-    let romfiles = find_romfiles(&mut connection).await;
+    let romfiles = find_romfiles(&mut env.connection).await;
 
     for romfile in romfiles {
         assert!(romfile.path.contains("Trash"))

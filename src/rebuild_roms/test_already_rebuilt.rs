@@ -2,13 +2,10 @@
 // imported into it later: a clone's completion then counts its parent's files,
 // which it does not hold yet, and that must not keep it from getting them.
 
-use super::super::import_dats;
-use super::super::import_roms;
 use super::*;
+use crate::test_support::TestEnv;
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
-use tempfile::TempDir;
 use zip::ZipWriter;
 use zip::write::SimpleFileOptions;
 
@@ -34,31 +31,17 @@ const DAT: &str = r#"<?xml version="1.0"?>
 
 async fn rebuild(current: Merging, target: &str) {
     // given
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let dat_path = tmp_directory.join("Test System.dat");
+    let mut env = TestEnv::new().await;
+    let dat_path = env.tmp_directory.join("Test System.dat");
     std::fs::write(&dat_path, DAT).unwrap();
-    let matches =
-        import_dats::subcommand().get_matches_from(["import-dats", dat_path.to_str().unwrap()]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
+    env.run(&["import-dats", dat_path.to_str().unwrap()])
         .await
         .unwrap();
 
-    let system = find_arcade_systems(&mut connection).await.remove(0);
-    update_system_merging(&mut connection, system.id, current).await;
+    let system = find_arcade_systems(&mut env.connection).await.remove(0);
+    update_system_merging(&mut env.connection, system.id, current).await;
 
-    let zip_path = tmp_directory.join("Test Parent.zip");
+    let zip_path = env.tmp_directory.join("Test Parent.zip");
     let mut writer = ZipWriter::new(File::create(&zip_path).unwrap());
     for (name, fixture) in [
         ("Test Program.rom", "Test Game (USA, Europe).rom"),
@@ -69,28 +52,21 @@ async fn rebuild(current: Merging, target: &str) {
             .start_file(name, SimpleFileOptions::default())
             .unwrap();
         writer
-            .write_all(&std::fs::read(test_directory.join(fixture)).unwrap())
+            .write_all(&std::fs::read(env.fixture_source(fixture)).unwrap())
             .unwrap();
     }
     writer.finish().unwrap();
-    let matches = import_roms::subcommand().get_matches_from([
-        "import-roms",
-        "-u",
-        "skip",
-        zip_path.to_str().unwrap(),
-    ]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
+    env.run(&["import-roms", "-u", "skip", zip_path.to_str().unwrap()])
         .await
         .unwrap();
 
-    let system_directory = get_system_directory(&mut connection, &system)
+    let system_directory = get_system_directory(&mut env.connection, &system)
         .await
         .unwrap();
     assert!(system_directory.join("Test Parent/Test Common").is_file());
 
     // when
-    let matches = subcommand().get_matches_from(["rebuild-roms", "--all", "-f", "-m", target]);
-    main(&mut connection, &matches, &progress_bar)
+    env.run(&["rebuild-roms", "--all", "-f", "-m", target])
         .await
         .unwrap();
 
@@ -104,16 +80,19 @@ async fn rebuild(current: Merging, target: &str) {
     assert!(!system_directory.join("Test Clone.zip").exists());
 
     // and it counts as complete
-    let game =
-        find_game_by_name_and_bios_and_system_id(&mut connection, "Test Clone", false, system.id)
-            .await
-            .unwrap();
+    let game = find_game_by_name_and_bios_and_system_id(
+        &mut env.connection,
+        "Test Clone",
+        false,
+        system.id,
+    )
+    .await
+    .unwrap();
     assert_eq!(game.completion, Completion::Full as i64);
 }
 
 #[tokio::test]
 async fn test() {
-    let _guard = MUTEX.lock().await;
     rebuild(Merging::NonMerged, "NON_MERGED").await;
     rebuild(Merging::FullNonMerged, "FULL_NON_MERGED").await;
     rebuild(Merging::FullNonMerged, "NON_MERGED").await;
