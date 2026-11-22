@@ -20,7 +20,7 @@ on:
         description: "Core to build"
         type: choice
         default: all
-        options: [all, beetle-psx, parallel-ps2, pcee2, dolphin, mesen, mesen-s, sameboy]
+        options: [all, beetle-psx, parallel-ps2, pcee2, dolphin, mesen, mesen-s, sameboy, mgba]
 
 concurrency:
   group: ore-cores-${{ github.ref }}
@@ -312,3 +312,38 @@ jobs:
         with:
           name: sameboy_libretro-ore-linux-x86_64
           path: core/libretro/sameboy_libretro.so
+
+  mgba:
+    name: mGBA
+    runs-on: ubuntu-24.04
+    if: ${{ !inputs.core || inputs.core == 'all' || inputs.core == 'mgba' }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: oxyromon
+      - uses: actions/checkout@v7
+        with:
+          repository: alucryd/mgba
+          ref: ${{ env.CORE_REF }}
+          path: core
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: oxyromon/crates/smelt-rs
+      - name: Build libsmelt
+        run: cargo build --release --manifest-path "$SMELT_DIR/Cargo.toml"
+      # As mGBA's own libretro builds configure it
+      - name: Build core
+        run: |
+          cmake -S core -B build \
+            -DCMAKE_BUILD_TYPE=Release -DLIBMGBA_ONLY=ON -DBUILD_LIBRETRO=ON \
+            -DORE=ON -DSMELT_DIR="$SMELT_DIR"
+          cmake --build build --target mgba_libretro -j"$(nproc)"
+      # No test suite in the libretro build: at least the reader is in it
+      - name: Check the ORE reader is linked
+        run: nm build/mgba_libretro.so | grep -q smelt_open
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mgba_libretro-ore-linux-x86_64
+          path: build/mgba_libretro.so
