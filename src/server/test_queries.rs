@@ -1,10 +1,7 @@
-use super::super::config::{MUTEX, set_rom_directory, set_tmp_directory};
-use super::super::import_dats;
 use super::*;
+use crate::test_support::TestEnv;
 use async_graphql::Result;
 use serde_json::{Value, json};
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
 use tokio::select;
 use tokio::time::{Duration, sleep};
 
@@ -25,28 +22,11 @@ async fn gql(client: &reqwest::Client, body: &str) -> Value {
 #[tokio::test]
 async fn test() -> Result<()> {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let progress_bar = indicatif::ProgressBar::hidden();
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    let env = TestEnv::with_dat("Test System (20200721).dat").await;
 
     // when
     let matches = subcommand().get_matches_from(["server", "--port", "8011"]);
+    let pool = env.pool.clone();
     let server = async move {
         main(pool, &matches).await.unwrap();
     };

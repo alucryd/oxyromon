@@ -2,76 +2,44 @@
 //! request asks for them: the store's index is read once, whatever the
 //! number of fields that need it.
 
-use super::super::config::{MUTEX, set_bool, set_rom_directory, set_string, set_tmp_directory};
-use super::super::convert_roms;
+use super::super::config::{set_bool, set_string};
 use super::super::database::find_romfiles;
-use super::super::import_dats;
-use super::super::import_roms;
-use super::super::sort_roms;
-use super::super::util::get_system_directory;
 use super::*;
+use crate::test_support::TestEnv;
 use sqlx::AssertSqlSafe;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
+use std::path::Path;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
+    let mut env = TestEnv::with_dat("Test System (20261114) (Game Boy).dat").await;
 
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
+    let romfile_path = env.fixture("Test Game (USA, Europe).gb").await;
+    env.import_roms(&[&romfile_path]).await;
 
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20261114) (Game Boy).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe).gb");
-    tokio::fs::copy(
-        test_directory.join("Test Game (USA, Europe).gb"),
-        &romfile_path,
-    )
-    .await
-    .unwrap();
-    let matches = import_roms::subcommand()
-        .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let matches =
-        sort_roms::subcommand().get_matches_from(["sort-roms", "-a", "-y", "-o", "US", "-r", "JP"]);
-    sort_roms::main(&mut connection, &matches, &progress_bar)
+    env.run(&["sort-roms", "-a", "-y", "-o", "US", "-r", "JP"])
         .await
         .unwrap();
 
     // and the game's ORE in the system's store
-    let system = find_systems(&mut connection).await.remove(0);
-    set_bool(&mut connection, "ORE_STORE", true, Some(system.id)).await;
-    set_string(&mut connection, "ORE_STORE_BATCH", "game", Some(system.id)).await;
-    let matches =
-        convert_roms::subcommand().get_matches_from(["convert-roms", "-f", "ORE", "-a", "-c"]);
-    convert_roms::main(&mut connection, &matches, &progress_bar)
+    let system = env.system().await;
+    set_bool(&mut env.connection, "ORE_STORE", true, Some(system.id)).await;
+    set_string(
+        &mut env.connection,
+        "ORE_STORE_BATCH",
+        "game",
+        Some(system.id),
+    )
+    .await;
+    env.run(&["convert-roms", "-f", "ORE", "-a", "-c"])
         .await
         .unwrap();
 
     // when one request asks for every size of the system
-    let store_index_loader = StoreIndexLoader::new(pool.clone());
+    let store_index_loader = StoreIndexLoader::new(env.pool.clone());
     let counted = store_index_loader.clone();
     let (sse_tx, _) = broadcast::channel::<SseMessage>(100);
-    let schema = build_schema(pool.clone(), sse_tx, store_index_loader);
+    let schema = build_schema(env.pool.clone(), sse_tx, store_index_loader);
     let response = schema
         .execute("{ totalActualSize(systemId: 1), oneRegionActualSize(systemId: 1), storeDedupSaved(systemId: 1), storeParityCost(systemId: 1) }")
         .await;
@@ -89,9 +57,7 @@ async fn test() {
 
     // and the answer is still the store's own
     let data = response.data.into_json().unwrap();
-    let system_directory = get_system_directory(&mut connection, &system)
-        .await
-        .unwrap();
+    let system_directory = env.system_directory(&system).await;
     let store = system_directory.join(ore_rs::STORE_DIR);
     let stats = ore_rs::store_stats(&store).unwrap();
     assert_eq!(data["storeDedupSaved"], stats.dedup_saved as i64);
@@ -107,7 +73,7 @@ async fn test() {
     // a store the system no longer names, which the preload cannot answer
     // for and the sizes must read off disk
     let original_size = data["totalActualSize"].as_i64().unwrap();
-    let romfiles = find_romfiles(&mut connection).await;
+    let romfiles = find_romfiles(&mut env.connection).await;
     let ore = romfiles
         .iter()
         .find(|romfile| romfile.path.ends_with(".ore"))
@@ -120,19 +86,19 @@ async fn test() {
         .to_str()
         .unwrap()
         .to_owned();
-    tokio::fs::rename(&store, rom_directory.path().join(ore_rs::STORE_DIR))
+    tokio::fs::rename(&store, env.rom_directory.join(ore_rs::STORE_DIR))
         .await
         .unwrap();
     tokio::fs::rename(
-        rom_directory.path().join(&ore),
-        rom_directory.path().join(&ore_name),
+        env.rom_directory.join(&ore),
+        env.rom_directory.join(&ore_name),
     )
     .await
     .unwrap();
     sqlx::query(AssertSqlSafe(
         format!("UPDATE romfiles SET path = '{ore_name}';").as_str(),
     ))
-    .execute(&mut *connection)
+    .execute(&mut *env.connection)
     .await
     .unwrap();
     ore_rs::create_store(&store, &ore_rs::StoreOptions::default()).unwrap();
@@ -140,10 +106,10 @@ async fn test() {
     // and a fresh request asks the sizes of the system again, through a
     // loader that has never seen it: its preload is the system's new, empty
     // store, and the ORE's own is the moved one
-    let store_index_loader = StoreIndexLoader::new(pool.clone());
+    let store_index_loader = StoreIndexLoader::new(env.pool.clone());
     let counted = store_index_loader.clone();
     let (sse_tx, _) = broadcast::channel::<SseMessage>(100);
-    let schema = build_schema(pool.clone(), sse_tx, store_index_loader);
+    let schema = build_schema(env.pool.clone(), sse_tx, store_index_loader);
     let response = schema.execute("{ totalActualSize(systemId: 1) }").await;
     assert!(response.errors.is_empty(), "{:?}", response.errors);
 

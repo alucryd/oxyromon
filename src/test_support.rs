@@ -24,6 +24,7 @@ use super::sort_roms;
 use super::util::get_system_directory;
 use anyhow::Result;
 use indicatif::ProgressBar;
+use sqlx::SqlitePool;
 use sqlx::pool::PoolConnection;
 use sqlx::sqlite::Sqlite;
 use std::path::{Path, PathBuf};
@@ -64,6 +65,9 @@ fn copy_tree_owned(from: PathBuf, to: PathBuf) -> Pin<Box<dyn Future<Output = ()
 /// test sets up its world by hand anymore.
 pub struct TestEnv {
     pub connection: PoolConnection<Sqlite>,
+    /// A handle to the same pool the connection came from: for the rare
+    /// test that hands one to a `main` of its own, such as the server's.
+    pub pool: SqlitePool,
     pub rom_directory: PathBuf,
     pub tmp_directory: PathBuf,
     pub progress_bar: ProgressBar,
@@ -100,6 +104,7 @@ impl TestEnv {
 
         Self {
             connection,
+            pool,
             rom_directory,
             tmp_directory,
             progress_bar: ProgressBar::hidden(),

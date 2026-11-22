@@ -1,11 +1,7 @@
-use super::super::config::{MUTEX, set_rom_directory, set_tmp_directory};
 use super::super::database::find_roms;
-use super::super::import_dats;
 use super::*;
+use crate::test_support::TestEnv;
 use async_graphql::Result;
-use indicatif::ProgressBar;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
 use tokio::select;
 use tokio::time::{Duration, sleep};
 
@@ -48,32 +44,15 @@ async fn post(client: &reqwest::Client, path: &str, body: Vec<u8>, content_type:
 #[tokio::test]
 async fn test() -> Result<()> {
     // given
-    let _guard = MUTEX.lock().await;
+    let mut env = TestEnv::with_dat("Test System (20200721).dat").await;
+    let rom_id = find_roms(&mut env.connection).await.first().unwrap().id;
 
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-    let rom_id = find_roms(&mut connection).await.first().unwrap().id;
-
-    let rom_bytes = std::fs::read(test_directory.join("Test Game (USA, Europe).rom")).unwrap();
-    let patch_bytes = std::fs::read(test_directory.join("Test Game (USA, Europe).bps")).unwrap();
+    let rom_bytes = std::fs::read(env.fixture_source("Test Game (USA, Europe).rom")).unwrap();
+    let patch_bytes = std::fs::read(env.fixture_source("Test Game (USA, Europe).bps")).unwrap();
 
     // when
     let matches = subcommand().get_matches_from(["server", "--port", "8012"]);
+    let pool = env.pool.clone();
     let server = async move {
         main(pool, &matches).await.unwrap();
     };

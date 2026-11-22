@@ -1,9 +1,7 @@
-use super::super::config::{MUTEX, set_rom_directory, set_tmp_directory};
 use super::*;
+use crate::test_support::TestEnv;
 use async_graphql::Result;
 use serde_json::{Value, json};
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
 use tokio::select;
 use tokio::time::{Duration, sleep};
 
@@ -34,22 +32,12 @@ fn setting_value(settings: &Value, key: &str) -> Option<String> {
 #[tokio::test]
 async fn test() -> Result<()> {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
+    let env = TestEnv::new().await;
+    let tmp_directory = env.tmp_directory.clone();
 
     // when
     let matches = subcommand().get_matches_from(["server", "--port", "8010"]);
+    let pool = env.pool.clone();
     let server = async move {
         main(pool, &matches).await.unwrap();
     };
