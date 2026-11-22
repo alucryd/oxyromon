@@ -16,6 +16,11 @@ on:
       ref:
         description: "Branch of the cores to build"
         default: feat/ore
+      core:
+        description: "Core to build"
+        type: choice
+        default: all
+        options: [all, beetle-psx, parallel-ps2, pcee2, dolphin, mesen]
 
 concurrency:
   group: ore-cores-${{ github.ref }}
@@ -28,9 +33,11 @@ env:
 
 # Each job checks oxyromon out in oxyromon/ and the core in core/. The
 # runner's apt lists go stale within days, so every install updates first.
+# A push builds every core (inputs.core is empty), a dispatch the one picked.
 jobs:
   beetle-psx:
     name: Beetle PSX
+    if: ${{ !inputs.core || inputs.core == 'all' || inputs.core == 'beetle-psx' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -71,6 +78,7 @@ jobs:
 
   parallel-ps2:
     name: ParaLLEl PS2
+    if: ${{ !inputs.core || inputs.core == 'all' || inputs.core == 'parallel-ps2' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
@@ -108,6 +116,7 @@ jobs:
 
   pcee2:
     name: PCEE2
+    if: ${{ !inputs.core || inputs.core == 'all' || inputs.core == 'pcee2' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
@@ -172,6 +181,7 @@ jobs:
 
   dolphin:
     name: Dolphin
+    if: ${{ !inputs.core || inputs.core == 'all' || inputs.core == 'dolphin' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
@@ -212,3 +222,33 @@ jobs:
         with:
           name: dolphin_libretro-ore-linux-x86_64
           path: build/**/dolphin_libretro.so
+
+  mesen:
+    name: Mesen
+    runs-on: ubuntu-24.04
+    if: ${{ !inputs.core || inputs.core == 'all' || inputs.core == 'mesen' }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: oxyromon
+      - uses: actions/checkout@v7
+        with:
+          repository: alucryd/Mesen
+          ref: ${{ env.CORE_REF }}
+          path: core
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: oxyromon/crates/smelt-rs
+      - name: Build libsmelt
+        run: cargo build --release --manifest-path "$SMELT_DIR/Cargo.toml"
+      - name: Build core
+        run: make -C core/Libretro -j"$(nproc)" ORE=1 SMELT_DIR="$SMELT_DIR"
+      # No test suite in the core: at least the reader is in it
+      - name: Check the ORE reader is linked
+        run: nm core/Libretro/mesen_libretro.so | grep -q smelt_open
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mesen_libretro-ore-linux-x86_64
+          path: core/Libretro/mesen_libretro.so
