@@ -320,6 +320,45 @@ enum smelt_err smelt_subq_replacement(const struct smelt_ingot *ingot,
                                       uint8_t *q,
                                       uint8_t *replaced);
 
+/**
+ * A Wii U eShop title's files but its ticket, in the order its byte view
+ * holds them: 0 for what is not a title.
+ *
+ * # Safety
+ *
+ * `ingot` is an open ingot, `out` valid.
+ */
+enum smelt_err smelt_file_count(const struct smelt_ingot *ingot, size_t *out);
+
+/**
+ * The `i`th file of a title, from 0: where it starts in the byte view
+ * into `*offset` and its size in bytes into `*size`, then its name,
+ * NUL-terminated, into `name`: SMELT_ERR_RANGE past the last. `*offset`
+ * and `*size` are written even when `name` is too small.
+ *
+ * # Safety
+ *
+ * `ingot` is an open ingot, `name_len`, `offset` and `size` valid, `name`
+ * NULL or of `*name_len` bytes.
+ */
+enum smelt_err smelt_file_at(const struct smelt_ingot *ingot,
+                             size_t i,
+                             char *name,
+                             size_t *name_len,
+                             uint64_t *offset,
+                             uint64_t *size);
+
+/**
+ * A title's ticket, as its folder had it, its bytes into `buf`:
+ * SMELT_ERR_UNSUPPORTED for a title written without one, or what is not
+ * a title.
+ *
+ * # Safety
+ *
+ * `ingot` is an open ingot, `len` valid, `buf` NULL or of `*len` bytes.
+ */
+enum smelt_err smelt_ticket(const struct smelt_ingot *ingot, uint8_t *buf, size_t *len);
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif  /* __cplusplus */

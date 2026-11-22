@@ -117,6 +117,34 @@ fn an_eshop_title_comes_back_as_its_folder() {
 }
 
 #[test]
+fn an_eshop_title_reads_file_by_file_from_its_byte_view() {
+    let dir = TempDir::new().unwrap();
+    let nus = dir.path().join("Update");
+    std::fs::create_dir(&nus).unwrap();
+    wiiu_common::nus(&nus);
+    let ore = dir.path().join("Update.ore");
+    ore_rs::compress(&nus, &ore, &Options::default(), &[COMMON_KEY], &mut |_| {}).unwrap();
+
+    let mut reader = Reader::open(&ore).unwrap();
+    let mut read: Vec<(String, Vec<u8>)> = Vec::new();
+    for (name, start, len) in reader.title_files().unwrap() {
+        let mut bytes = vec![0; len as usize];
+        reader.read_at(start, &mut bytes).unwrap();
+        read.push((name, bytes));
+    }
+    let (name, ticket) = reader.ticket().unwrap();
+    read.push((name.to_owned(), ticket.to_vec()));
+    read.sort();
+    assert!(read == files(&nus));
+
+    // A disc is no title: no files, no ticket
+    let (_, disc) = write(dir.path(), &[COMMON_KEY, DISC_KEY, VWII_KEY]);
+    let disc = Reader::open(&disc).unwrap();
+    assert!(disc.title_files().unwrap().is_empty());
+    assert!(disc.ticket().is_none());
+}
+
+#[test]
 fn an_eshop_title_without_its_ticket_is_kept_as_it_is() {
     let dir = TempDir::new().unwrap();
     let nus = dir.path().join("DLC");

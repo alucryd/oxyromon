@@ -7,6 +7,8 @@
 //! the size, the platform and the hashes of what it holds, and reads. The
 //! drive view, for a CD: its tracks, whole 2,352-byte sectors by LBA as a
 //! drive reads them, and the Q subchannel its SBI replaces, libcrypt's.
+//! A Wii U eShop title's byte view is its folder's files end to end: its
+//! files say where each lies in it, and its ticket, kept apart, comes whole.
 //!
 //! An ingot belongs to one thread at a time: [`Reader::read_at`] caches what
 //! it decodes, so every read changes it. [`smelt_clone`] gives another
@@ -132,11 +134,23 @@ pub struct Ingot {
     tracks: Vec<Track>,
     /// Its SBI's replacements by frame, in order, or why it has none.
     subq: std::result::Result<Vec<Replacement>, (SmeltErr, String)>,
+    /// A title's files: each its name, and where it starts and how long it
+    /// is in the byte view; none for what is not a title.
+    files: Vec<(CString, u64, u64)>,
 }
 
 impl Ingot {
     fn new(reader: Reader) -> std::result::Result<Self, Error> {
         let tracks = reader.tracks()?;
+        let files = reader
+            .title_files()?
+            .into_iter()
+            .map(|(name, start, len)| {
+                CString::new(name)
+                    .map(|name| (name, start, len))
+                    .map_err(|_| Error::Corrupt("a title's file name holding a NUL".into()))
+            })
+            .collect::<std::result::Result<_, _>>()?;
         let subq = reader
             .subchannel_q()
             .map(|mut entries| {
@@ -148,6 +162,7 @@ impl Ingot {
             reader,
             tracks,
             subq,
+            files,
         })
     }
 
@@ -300,6 +315,7 @@ pub unsafe extern "C" fn smelt_clone(ingot: *const Ingot, out: *mut *mut Ingot) 
                     reader,
                     tracks: ingot.tracks.clone(),
                     subq: ingot.subq.clone(),
+                    files: ingot.files.clone(),
                 };
                 unsafe { *out = Box::into_raw(Box::new(clone)) };
                 SmeltOk
@@ -635,5 +651,85 @@ pub unsafe extern "C" fn smelt_subq_replacement(
             Err(_) => unsafe { *replaced = 0 },
         }
         SmeltOk
+    })
+}
+
+/// A Wii U eShop title's files but its ticket, in the order its byte view
+/// holds them: 0 for what is not a title.
+///
+/// # Safety
+///
+/// `ingot` is an open ingot, `out` valid.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn smelt_file_count(ingot: *const Ingot, out: *mut usize) -> SmeltErr {
+    guard(|| {
+        let (Some(ingot), false) = (unsafe { ingot.as_ref() }, out.is_null()) else {
+            return fail(SmeltErrArgument, "a NULL argument");
+        };
+        unsafe { *out = ingot.files.len() };
+        SmeltOk
+    })
+}
+
+/// The `i`th file of a title, from 0: where it starts in the byte view
+/// into `*offset` and its size in bytes into `*size`, then its name,
+/// NUL-terminated, into `name`: SMELT_ERR_RANGE past the last. `*offset`
+/// and `*size` are written even when `name` is too small.
+///
+/// # Safety
+///
+/// `ingot` is an open ingot, `name_len`, `offset` and `size` valid, `name`
+/// NULL or of `*name_len` bytes.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn smelt_file_at(
+    ingot: *const Ingot,
+    i: usize,
+    name: *mut c_char,
+    name_len: *mut usize,
+    offset: *mut u64,
+    size: *mut u64,
+) -> SmeltErr {
+    guard(|| {
+        let Some(ingot) = (unsafe { ingot.as_ref() }) else {
+            return fail(SmeltErrArgument, "a NULL ingot");
+        };
+        if name_len.is_null() || offset.is_null() || size.is_null() {
+            return fail(SmeltErrArgument, "a NULL argument");
+        }
+        let Some((file, start, len)) = ingot.files.get(i) else {
+            return fail(SmeltErrRange, format!("file {i} of {}", ingot.files.len()));
+        };
+        unsafe {
+            *offset = *start;
+            *size = *len;
+            give(file.as_bytes_with_nul(), name.cast(), name_len)
+        }
+    })
+}
+
+/// A title's ticket, as its folder had it, its bytes into `buf`:
+/// SMELT_ERR_UNSUPPORTED for a title written without one, or what is not
+/// a title.
+///
+/// # Safety
+///
+/// `ingot` is an open ingot, `len` valid, `buf` NULL or of `*len` bytes.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn smelt_ticket(
+    ingot: *const Ingot,
+    buf: *mut u8,
+    len: *mut usize,
+) -> SmeltErr {
+    guard(|| {
+        let (Some(ingot), false) = (unsafe { ingot.as_ref() }, len.is_null()) else {
+            return fail(SmeltErrArgument, "a NULL argument");
+        };
+        match ingot.reader.ticket() {
+            Some((_, bytes)) => unsafe { give(bytes, buf, len) },
+            None => fail(
+                SmeltErrUnsupported,
+                "no ticket: not a title, or written without one",
+            ),
+        }
     })
 }

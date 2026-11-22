@@ -859,6 +859,33 @@ impl Reader {
         self.meta.media.class == MEDIA_CDN_TITLE
     }
 
+    /// A title's files but its ticket, in the order the byte view holds
+    /// them: each its name, and where it starts and how long it is there,
+    /// so an emulator reads one as the folder's file; none for what is not
+    /// a title.
+    pub fn title_files(&self) -> Result<Vec<(String, u64, u64)>> {
+        if !self.is_title() {
+            return Ok(Vec::new());
+        }
+        let (files, _) = self.title_outputs(Path::new(""))?;
+        Ok(files
+            .into_iter()
+            .map(|(path, start, len)| (path.to_string_lossy().into_owned(), start, len))
+            .collect())
+    }
+
+    /// A title's ticket, its name and bytes, as its folder had it: none for
+    /// a title written without one, or what is not a title.
+    pub fn ticket(&self) -> Option<(&str, &[u8])> {
+        let ticket = self
+            .meta
+            .media
+            .ticket
+            .as_ref()
+            .filter(|_| self.is_title())?;
+        Some((&ticket.name, &ticket.bytes))
+    }
+
     /// A CD's tracks, as its cue sheet and its areas give them, in order;
     /// none for what is not a CD.
     pub fn tracks(&self) -> Result<Vec<Track>> {

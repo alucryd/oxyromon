@@ -1,7 +1,7 @@
 #!/bin/sh
 # Build the ORE cores locally, as .github/workflows/ore_cores.yml does in CI,
 # against this checkout's libsmelt:
-#   ./ore_cores.sh [beetle-psx|parallel-ps2|pcee2|dolphin|mesen|mesen-s|sameboy|mgba|melonds-ds|azahar|parallel-n64 ...]
+#   ./ore_cores.sh [beetle-psx|parallel-ps2|pcee2|dolphin|mesen|mesen-s|sameboy|mgba|melonds-ds|azahar|parallel-n64|cemu ...]
 # No argument builds them all. The cores are the checkouts next to oxyromon
 # (CORES_DIR, default ..), built in place on whatever branch they are on.
 set -eu
@@ -105,12 +105,27 @@ azahar() {
     cmake --build "$core/build" --target citra_libretro -j"$JOBS"
 }
 
+cemu() {
+    core="$CORES_DIR/cemu-libretro"
+    # vcpkg and ZArchive come from the submodules; a system zarchive, older
+    # than the fork's, would be found first otherwise
+    git -C "$core" submodule update --init --recursive
+    cmake -S "$core" -B "$core/build" -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release -DENABLE_LIBRETRO=ON \
+        -DENABLE_WXWIDGETS=OFF -DENABLE_DISCORD_RPC=OFF -DENABLE_CUBEB=OFF \
+        -DENABLE_BLUEZ=OFF -DENABLE_FERAL_GAMEMODE=OFF \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -DCMAKE_DISABLE_FIND_PACKAGE_ZArchive=ON \
+        -DORE=ON -DSMELT_DIR="$SMELT_DIR"
+    cmake --build "$core/build" --target cemu_libretro
+}
+
 cargo build --release --manifest-path "$SMELT_DIR/Cargo.toml"
 
-[ $# -gt 0 ] || set -- beetle-psx parallel-ps2 pcee2 dolphin mesen mesen-s sameboy mgba melonds-ds azahar parallel-n64
+[ $# -gt 0 ] || set -- beetle-psx parallel-ps2 pcee2 dolphin mesen mesen-s sameboy mgba melonds-ds azahar parallel-n64 cemu
 for c in "$@"; do
     case "$c" in
-        beetle-psx | parallel-ps2 | pcee2 | dolphin | mesen | mesen-s | sameboy | mgba | melonds-ds | azahar | parallel-n64) echo "== $c"; "$(echo "$c" | tr - _)" ;;
+        beetle-psx | parallel-ps2 | pcee2 | dolphin | mesen | mesen-s | sameboy | mgba | melonds-ds | azahar | parallel-n64 | cemu) echo "== $c"; "$(echo "$c" | tr - _)" ;;
         *) echo "unknown core: $c" >&2; exit 1 ;;
     esac
 done

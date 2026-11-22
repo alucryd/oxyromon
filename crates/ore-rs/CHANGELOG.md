@@ -6,6 +6,7 @@
 
 ## Features
 
+- Added `Reader::title_files` and `Reader::ticket`: a Wii U eShop title's files, each its name and where it lies in the byte view, and its ticket, so a reader gives a file of the title without writing the folder out
 - Added `Index` among the exports, a store's index as a value: `Index::load` reads one from a store, and its `stats` and `shares` answer from what is already read what `store_stats` and `shares` answer from the store's path, so a caller that asks the same store many times parses it once
 - Added `store_stats`, what a store's tricks get it and what they cost it: its distinct chunks and what they weigh where they lie, the bytes its dedup kept from being stored twice, and the footers of parity over its segments, all read off its index alone, no data
 - Added `SPEC.md`, ORE 1.0's specification, its codecs `xa`, `vag` and `str` among it, and its conformance vectors in `spec/vectors`: every media class, record kind and codec, a store and its thin OREs, what a later writer adds and what a reader refuses
