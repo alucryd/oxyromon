@@ -4460,49 +4460,21 @@ async fn print_diff(
 }
 
 #[cfg(test)]
+mod matrix;
+#[cfg(test)]
 mod test_chd_children_to_ore_before_parents;
 #[cfg(test)]
 mod test_chd_parents_to_chd_should_not_touch_parent;
 #[cfg(test)]
 mod test_chd_parents_to_iso;
 #[cfg(test)]
-mod test_cso_to_chd;
-#[cfg(test)]
-mod test_cso_to_cso;
-#[cfg(test)]
-mod test_cso_to_iso;
-#[cfg(test)]
-mod test_cso_to_sevenzip_iso;
-#[cfg(test)]
-mod test_cso_to_zso;
-#[cfg(test)]
 mod test_gb_ore_to_sevenzip;
 #[cfg(test)]
 mod test_gb_to_ore_to_original;
 #[cfg(test)]
-mod test_iso_chd_to_chd;
-#[cfg(test)]
-mod test_iso_chd_to_cso;
-#[cfg(test)]
-mod test_iso_chd_to_iso;
-#[cfg(test)]
 mod test_iso_chd_to_ore_should_skip;
 #[cfg(test)]
-mod test_iso_chd_to_sevenzip_iso;
-#[cfg(test)]
-mod test_iso_chd_to_zso;
-#[cfg(test)]
-mod test_iso_to_chd;
-#[cfg(test)]
 mod test_iso_to_chd_parents;
-#[cfg(test)]
-mod test_iso_to_cso;
-#[cfg(test)]
-mod test_iso_to_ore;
-#[cfg(test)]
-mod test_iso_to_rvz;
-#[cfg(test)]
-mod test_iso_to_zso;
 #[cfg(test)]
 mod test_multiple_tracks_chd_to_chd;
 #[cfg(test)]
@@ -4536,13 +4508,7 @@ mod test_nus_to_ore_to_original;
 #[cfg(test)]
 mod test_nus_to_sevenzip;
 #[cfg(test)]
-mod test_ore_to_iso;
-#[cfg(test)]
-mod test_original_to_sevenzip;
-#[cfg(test)]
 mod test_original_to_sevenzip_zstd;
-#[cfg(test)]
-mod test_original_to_zip;
 #[cfg(test)]
 mod test_original_to_zip_multiple_roms;
 #[cfg(test)]
@@ -4552,33 +4518,13 @@ mod test_original_to_zip_with_incorrect_name;
 #[cfg(test)]
 mod test_original_to_zip_zstd;
 #[cfg(test)]
-mod test_rvz_to_iso;
-#[cfg(test)]
-mod test_rvz_to_ore;
-#[cfg(test)]
-mod test_rvz_to_rvz;
-#[cfg(test)]
-mod test_rvz_to_sevenzip_iso;
-#[cfg(test)]
 mod test_sevenzip_gb_to_ore;
 #[cfg(test)]
 mod test_sevenzip_gb_to_ore_store;
 #[cfg(test)]
 mod test_sevenzip_gb_to_ore_store_run;
 #[cfg(test)]
-mod test_sevenzip_iso_to_chd;
-#[cfg(test)]
-mod test_sevenzip_iso_to_cso;
-#[cfg(test)]
-mod test_sevenzip_iso_to_zso;
-#[cfg(test)]
 mod test_sevenzip_multiple_tracks_cue_bin_to_chd;
-#[cfg(test)]
-mod test_sevenzip_to_original;
-#[cfg(test)]
-mod test_sevenzip_to_sevenzip;
-#[cfg(test)]
-mod test_sevenzip_to_zip;
 #[cfg(test)]
 mod test_sevenzip_to_zip_multiple_files;
 #[cfg(test)]
@@ -4588,30 +4534,8 @@ mod test_wua_to_wux;
 #[cfg(test)]
 mod test_wud_to_ore_to_original;
 #[cfg(test)]
-mod test_wud_to_wux;
-#[cfg(test)]
-mod test_wux_to_sevenzip_wud;
-#[cfg(test)]
 mod test_wux_to_wua;
 #[cfg(test)]
 mod test_wux_to_wua_to_ore_to_original;
 #[cfg(test)]
-mod test_wux_to_wud;
-#[cfg(test)]
-mod test_zip_to_original;
-#[cfg(test)]
-mod test_zip_to_sevenzip;
-#[cfg(test)]
-mod test_zip_to_zip;
-#[cfg(test)]
 mod test_zip_to_zip_should_do_nothing;
-#[cfg(test)]
-mod test_zso_to_chd;
-#[cfg(test)]
-mod test_zso_to_cso;
-#[cfg(test)]
-mod test_zso_to_iso;
-#[cfg(test)]
-mod test_zso_to_sevenzip_iso;
-#[cfg(test)]
-mod test_zso_to_zso;

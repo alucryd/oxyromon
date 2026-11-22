@@ -2,10 +2,15 @@ use super::check_roms;
 use super::common::{CommonRomfile, FromPath};
 use super::compact_roms;
 use super::config;
-use super::config::{MUTEX, TestDatabase, set_rom_directory, set_tmp_directory};
+use super::config::{
+    MUTEX, TestDatabase, add_to_list, set_bool, set_rom_directory, set_string, set_tmp_directory,
+};
 use super::convert_roms;
 use super::create_dats;
-use super::database::{establish_connection, find_romfiles, find_systems};
+use super::database::{
+    establish_connection, find_romfiles, find_romfiles_by_system_id,
+    find_roms_with_romfile_by_system_id, find_systems,
+};
 use super::download_dats;
 use super::export_roms;
 use super::generate_playlists;
@@ -235,6 +240,51 @@ impl TestEnv {
         get_system_directory(&mut self.connection, system)
             .await
             .unwrap()
+    }
+
+    /// The roms of a system that have a romfile: what the convert and
+    /// export matrices assert against.
+    pub async fn roms_with_romfiles(&mut self, system: &System) -> Vec<super::model::Rom> {
+        find_roms_with_romfile_by_system_id(&mut self.connection, system.id).await
+    }
+
+    /// Every romfile of a system.
+    pub async fn romfiles_of(&mut self, system: &System) -> Vec<Romfile> {
+        find_romfiles_by_system_id(&mut self.connection, system.id).await
+    }
+
+    /// A system-scoped boolean setting: the knobs `sort-roms` reads back
+    /// from the database.
+    pub async fn set_bool(&mut self, key: &str, value: bool, system_id: i64) {
+        set_bool(&mut self.connection, key, value, Some(system_id)).await;
+    }
+
+    /// A system-scoped string setting.
+    pub async fn set_string(&mut self, key: &str, value: &str, system_id: i64) {
+        set_string(&mut self.connection, key, value, Some(system_id)).await;
+    }
+
+    /// One value added to a system-scoped list setting.
+    pub async fn add_to_list(&mut self, key: &str, value: &str, system_id: i64) {
+        add_to_list(
+            &mut self.connection,
+            &self.progress_bar,
+            key,
+            value,
+            Some(system_id),
+        )
+        .await;
+    }
+
+    /// The relative path a romfile under a system directory is stored as:
+    /// the path's tail after the ROM directory, exactly as the database
+    /// keeps it.
+    pub fn stored_path(&self, path: &Path) -> String {
+        path.strip_prefix(&self.rom_directory)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
     }
 
     /// Runs a subcommand's `main` on these args, its first word naming
