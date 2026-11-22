@@ -47,6 +47,8 @@ mod rvz;
 #[cfg(feature = "server")]
 mod server;
 mod sort_roms;
+#[cfg(test)]
+mod test_support;
 mod transcode;
 mod util;
 #[cfg(feature = "server")]
