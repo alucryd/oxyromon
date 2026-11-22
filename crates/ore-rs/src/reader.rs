@@ -1091,10 +1091,16 @@ impl Reader {
                     buf[..length].copy_from_slice(&bytes[from..from + length]);
                 }
                 AreaKind::Repeat => {
-                    // The disc a period before, at most a period at a time
+                    // The disc a period before, which for a repeat longer
+                    // than its period is the repeat itself: folded onto the
+                    // period just before the area, so a repeat of any length
+                    // reads in one step rather than one per period crossed,
+                    // a recursion a disc's gigabytes of free space overflowed
+                    // the stack with. `period <= start`, checked at open.
                     let period = area.period;
-                    let length = length.min(period as usize);
-                    self.read_from(offset - period, &mut buf[..length])?;
+                    let phase = within % period;
+                    let length = length.min((period - phase) as usize);
+                    self.read_from(area.start - period + phase, &mut buf[..length])?;
                     buf = &mut buf[length..];
                     offset += length as u64;
                     continue;
