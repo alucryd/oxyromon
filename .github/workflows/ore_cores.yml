@@ -20,7 +20,7 @@ on:
         description: "Core to build"
         type: choice
         default: all
-        options: [all, beetle-psx, parallel-ps2, pcee2, dolphin, mesen, mesen-s, sameboy, mgba, melonds-ds]
+        options: [all, beetle-psx, parallel-ps2, pcee2, dolphin, mesen, mesen-s, sameboy, mgba, melonds-ds, azahar]
 
 concurrency:
   group: ore-cores-${{ github.ref }}
@@ -391,3 +391,40 @@ jobs:
             build/src/libretro/melondsds_libretro.so
             build/melondsds_libretro.info
           if-no-files-found: error
+
+  azahar:
+    name: Azahar
+    # As Azahar's own libretro-linux build runs, on its runner and compiler
+    runs-on: ubuntu-22.04
+    if: ${{ !inputs.core || inputs.core == 'all' || inputs.core == 'azahar' }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: oxyromon
+      - uses: actions/checkout@v7
+        with:
+          repository: alucryd/azahar
+          ref: ${{ env.CORE_REF }}
+          path: core
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: oxyromon/crates/smelt-rs
+      - name: Build libsmelt
+        run: cargo build --release --manifest-path "$SMELT_DIR/Cargo.toml"
+      - name: Build core
+        run: |
+          cmake -S core -B build \
+            -DCMAKE_BUILD_TYPE=Release -DENABLE_LIBRETRO=ON \
+            -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DENABLE_LTO=OFF \
+            -DORE=ON -DSMELT_DIR="$SMELT_DIR"
+          cmake --build build --target citra_libretro -j"$(nproc)"
+      # The core's tests do not cover the libretro build: at least the reader is in it
+      - name: Check the ORE reader is linked
+        run: nm -C build/bin/Release/azahar_libretro.so | grep -q OreReadIOFile::IsOreIOFile
+      - uses: actions/upload-artifact@v7
+        with:
+          name: azahar_libretro-ore-linux-x86_64
+          path: build/bin/Release/azahar_libretro.so
