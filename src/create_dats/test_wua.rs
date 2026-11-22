@@ -1,39 +1,28 @@
-use super::super::config::*;
-use super::super::database::*;
 use super::*;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let system_directory = tmp_directory.path().join("Test System");
+    let mut env = TestEnv::new().await;
+    let system_directory = env.tmp_directory.join("Test System");
     std::fs::create_dir(&system_directory).unwrap();
     // a lossless WUA, its update partition in the store beside it
-    let keys = wux_rs::load_keys(&test_directory.join("Test Game (USA).keys.txt")).unwrap();
+    let keys = wux_rs::load_keys(&env.fixture_source("Test Game (USA).keys.txt")).unwrap();
     wux_rs::to_wua(
-        &[&test_directory.join("Test Game (USA).wux")],
+        &[&env.fixture_source("Test Game (USA).wux")],
         &system_directory.join("Test Game (USA).wua"),
         &keys,
         Some(&system_directory.join(wux_rs::STORE_DIR)),
         &mut |_| {},
     )
     .unwrap();
-    let dat_directory = tmp_directory.path().join("DAT");
+    let dat_directory = env.tmp_directory.join("DAT");
 
     // when
     create_dat(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         &system_directory,
         Some(&dat_directory),
         None,

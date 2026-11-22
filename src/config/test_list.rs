@@ -1,24 +1,22 @@
 use super::*;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
+    let mut env = TestEnv::new().await;
     let key = "DISCARD_FLAGS";
 
     // when
     set_list(
-        &mut connection,
+        &mut env.connection,
         key,
         &[String::from("item1"), String::from("item2")],
         None,
     )
     .await;
 
-    let list = get_list(&mut connection, key, None).await;
+    let list = get_list(&mut env.connection, key, None).await;
 
     // then
     assert_eq!(list.len(), 2);

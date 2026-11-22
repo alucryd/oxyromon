@@ -1,40 +1,25 @@
 use super::merged_set::*;
 use super::*;
-use std::path::Path;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let system = import_split_set(&mut connection, &progress_bar, &tmp_directory).await;
-    let system_directory = get_system_directory(&mut connection, &system)
+    let mut env = TestEnv::new().await;
+    let system = import_split_set(&mut env.connection, &env.progress_bar, &env.tmp_directory).await;
+    let system_directory = get_system_directory(&mut env.connection, &system)
         .await
         .unwrap();
 
     // when rebuilding to MERGED
-    let system = rebuild(&mut connection, &progress_bar, "MERGED").await;
+    let system = rebuild(&mut env.connection, &env.progress_bar, "MERGED").await;
 
     // then the parent's ZIP holds every file once, the clashing one under its clone
-    assert_merged(&mut connection, &system).await;
-    assert_checks(&mut connection, &progress_bar).await;
+    assert_merged(&mut env.connection, &system).await;
+    assert_checks(&mut env.connection, &env.progress_bar).await;
 
     // when rebuilding back to SPLIT
-    let system = rebuild(&mut connection, &progress_bar, "SPLIT").await;
+    let system = rebuild(&mut env.connection, &env.progress_bar, "SPLIT").await;
 
     // then each set has its own ZIP again
     assert_eq!(system.merging, Merging::Split as i64);
@@ -50,9 +35,9 @@ async fn test() {
         entry_names(&system_directory.join("Test Clone 2.zip")),
         ["Test Clones.rom"]
     );
-    assert_eq!(find_romfiles(&mut connection).await.len(), 3);
-    for game in find_games_by_system_id(&mut connection, system.id).await {
+    assert_eq!(find_romfiles(&mut env.connection).await.len(), 3);
+    for game in find_games_by_system_id(&mut env.connection, system.id).await {
         assert_eq!(game.completion, Completion::Full as i64, "{}", game.name);
     }
-    assert_checks(&mut connection, &progress_bar).await;
+    assert_checks(&mut env.connection, &env.progress_bar).await;
 }

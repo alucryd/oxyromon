@@ -1,30 +1,17 @@
-use super::super::config::*;
 use super::*;
-use std::path::PathBuf;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let dat_path = test_directory.join("Test System (20200721).dat");
-    let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
+    let mut env = TestEnv::new().await;
+    let dat_path = env.fixture_source("Test System (20200721).dat");
+    let (datfile_xml, detector_xml) = parse_dat(&env.progress_bar, &dat_path, false)
+        .await
+        .unwrap();
     import_dat(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         &datfile_xml,
         &detector_xml,
         Some(&String::from("Custom Test System")),
@@ -37,13 +24,15 @@ async fn test() {
 
     // a newer DAT for the same system, imported without customizations, as
     // `import-dats -u` always does
-    let dat_path = test_directory.join("Test System (20210401).dat");
-    let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
+    let dat_path = env.fixture_source("Test System (20210401).dat");
+    let (datfile_xml, detector_xml) = parse_dat(&env.progress_bar, &dat_path, false)
+        .await
+        .unwrap();
 
     // when
     import_dat(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         &datfile_xml,
         &detector_xml,
         None,
@@ -55,7 +44,7 @@ async fn test() {
     .unwrap();
 
     // then
-    let systems = find_systems(&mut connection).await;
+    let systems = find_systems(&mut env.connection).await;
     assert_eq!(systems.len(), 1);
     let system = systems.first().unwrap();
     assert_eq!(system.version, "20210401");

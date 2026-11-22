@@ -1,24 +1,13 @@
-use super::super::config::{MUTEX, set_tmp_directory};
 use super::*;
+use crate::test_support::TestEnv;
 use std::io::Write;
-use tempfile::{NamedTempFile, TempDir};
+use tempfile::NamedTempFile;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let mut clone_list_file = NamedTempFile::new_in(tmp_directory.path()).unwrap();
+    let mut env = TestEnv::new().await;
+    let mut clone_list_file = NamedTempFile::new_in(env.tmp_directory).unwrap();
     write!(
         clone_list_file,
         r#"{{"description": {{"name": "Unknown System (Redump)", "lastUpdated": "2026-11-11 00:00:00"}}, "variants": []}}"#
@@ -27,8 +16,8 @@ async fn test() {
 
     // when
     let imported = import_clone_list(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         clone_list_file.path(),
         false,
     )

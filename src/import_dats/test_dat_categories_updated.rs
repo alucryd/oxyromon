@@ -1,36 +1,23 @@
-use super::super::config::*;
 use super::*;
-use std::path::PathBuf;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
+    let mut env = TestEnv::new().await;
     for dat_name in [
         "Test System (20200721) (Parent-Clone).dat",
         "Test System (20261109) (Parent-Clone) (Categories).dat",
     ] {
-        let dat_path = test_directory.join(dat_name);
-        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
+        let dat_path = env.fixture_source(dat_name);
+        let (datfile_xml, detector_xml) = parse_dat(&env.progress_bar, &dat_path, false)
+            .await
+            .unwrap();
 
         // when
         import_dat(
-            &mut connection,
-            &progress_bar,
+            &mut env.connection,
+            &env.progress_bar,
             &datfile_xml,
             &detector_xml,
             None,
@@ -43,7 +30,7 @@ async fn test() {
     }
 
     // then
-    let games = find_games(&mut connection).await;
+    let games = find_games(&mut env.connection).await;
     assert_eq!(games.len(), 6);
     let game = games
         .iter()

@@ -1,17 +1,15 @@
 use super::*;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
+    let mut env = TestEnv::new().await;
     let key = "TEST_BOOLEAN";
 
     // when
-    set_bool(&mut connection, key, true, None).await;
-    let bool = get_bool(&mut connection, key, None).await;
+    set_bool(&mut env.connection, key, true, None).await;
+    let bool = get_bool(&mut env.connection, key, None).await;
 
     // then
     assert!(bool);

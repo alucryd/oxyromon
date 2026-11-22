@@ -1,35 +1,23 @@
 use super::super::config::*;
 use super::super::import_roms::UnattendedMode;
 use super::*;
+use crate::test_support::TestEnv;
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
-use tempfile::TempDir;
 use tokio::fs;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
+    let mut env = TestEnv::new().await;
+    set_string(&mut env.connection, "REGIONS_ALL_SUBFOLDERS", "alpha", None).await;
 
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-    set_string(&mut connection, "REGIONS_ALL_SUBFOLDERS", "alpha", None).await;
-
-    let dat_path = test_directory.join("Test System (20200721).dat");
-    let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
+    let dat_path = env.fixture_source("Test System (20200721).dat");
+    let (datfile_xml, detector_xml) = parse_dat(&env.progress_bar, &dat_path, false)
+        .await
+        .unwrap();
     import_dat(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         &datfile_xml,
         &detector_xml,
         None,
@@ -40,20 +28,14 @@ async fn test() {
     .await
     .unwrap();
 
-    let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system)
+    let system = env.system().await;
+    let system_directory = get_system_directory(&mut env.connection, &system)
         .await
         .unwrap();
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
-    fs::copy(
-        test_directory.join("Test Game (USA, Europe).rom"),
-        &romfile_path,
-    )
-    .await
-    .unwrap();
+    let romfile_path = env.fixture("Test Game (USA, Europe).rom").await;
     import_rom(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         &Some(&system),
         &None,
         &romfile_path,
@@ -74,13 +56,15 @@ async fn test() {
         .unwrap();
     std::fs::set_permissions(&system_directory, std::fs::Permissions::from_mode(0o555)).unwrap();
 
-    let dat_path = test_directory.join("Test System (20200723) (Changed Hashes).dat");
-    let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
+    let dat_path = env.fixture_source("Test System (20200723) (Changed Hashes).dat");
+    let (datfile_xml, detector_xml) = parse_dat(&env.progress_bar, &dat_path, false)
+        .await
+        .unwrap();
 
     // when
     let result = import_dat(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         &datfile_xml,
         &detector_xml,
         None,
@@ -94,9 +78,13 @@ async fn test() {
     // then
     // the update still completes, and the database follows the file
     result.unwrap();
-    let romfiles = find_romfiles(&mut connection).await;
+    let romfiles = find_romfiles(&mut env.connection).await;
     assert_eq!(romfiles.len(), 1);
-    let romfile_path = romfiles[0].as_common(&mut connection).await.unwrap().path;
+    let romfile_path = romfiles[0]
+        .as_common(&mut env.connection)
+        .await
+        .unwrap()
+        .path;
     assert_eq!(
         romfile_path,
         system_directory

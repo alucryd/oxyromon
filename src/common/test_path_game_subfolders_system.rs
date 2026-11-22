@@ -1,30 +1,12 @@
-use indicatif::ProgressBar;
-use tempfile::TempDir;
-
-use super::super::import_dats;
 use super::*;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-    let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system)
+    let mut env = TestEnv::with_dat("Test System (20200721).dat").await;
+    let system = env.system().await;
+    let system_directory = get_system_directory(&mut env.connection, &system)
         .await
         .unwrap();
 
@@ -70,30 +52,36 @@ async fn test() {
     };
 
     // when: off globally, on for this system
-    set_string(&mut connection, "GAME_SUBFOLDERS", "never", None).await;
+    set_string(&mut env.connection, "GAME_SUBFOLDERS", "never", None).await;
     set_string(
-        &mut connection,
+        &mut env.connection,
         "GAME_SUBFOLDERS",
         "always",
         Some(system.id),
     )
     .await;
     let nested = romfile
-        .as_common(&mut connection)
+        .as_common(&mut env.connection)
         .await
         .unwrap()
-        .get_sorted_path(&mut connection, &system, &game, &rom, &None, &None)
+        .get_sorted_path(&mut env.connection, &system, &game, &rom, &None, &None)
         .await
         .unwrap();
 
     // and: on globally, off for this system
-    set_string(&mut connection, "GAME_SUBFOLDERS", "always", None).await;
-    set_string(&mut connection, "GAME_SUBFOLDERS", "never", Some(system.id)).await;
+    set_string(&mut env.connection, "GAME_SUBFOLDERS", "always", None).await;
+    set_string(
+        &mut env.connection,
+        "GAME_SUBFOLDERS",
+        "never",
+        Some(system.id),
+    )
+    .await;
     let flat = romfile
-        .as_common(&mut connection)
+        .as_common(&mut env.connection)
         .await
         .unwrap()
-        .get_sorted_path(&mut connection, &system, &game, &rom, &None, &None)
+        .get_sorted_path(&mut env.connection, &system, &game, &rom, &None, &None)
         .await
         .unwrap();
 

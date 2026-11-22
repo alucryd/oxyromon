@@ -1,32 +1,19 @@
-use super::super::config::*;
 use super::*;
-use std::path::PathBuf;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let dat_path = test_directory.join("hbmame.xml");
-    let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
+    let mut env = TestEnv::new().await;
+    let dat_path = env.fixture_source("hbmame.xml");
+    let (datfile_xml, detector_xml) = parse_dat(&env.progress_bar, &dat_path, false)
+        .await
+        .unwrap();
 
     // when
     import_dat(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         &datfile_xml,
         &detector_xml,
         None,
@@ -38,7 +25,7 @@ async fn test() {
     .unwrap();
 
     // then
-    let systems = find_systems(&mut connection).await;
+    let systems = find_systems(&mut env.connection).await;
     assert_eq!(systems.len(), 1);
 
     let system = systems.first().unwrap();
@@ -46,6 +33,6 @@ async fn test() {
     assert_eq!(system.version, "0.245.23 (unknown)");
     assert!(system.arcade);
 
-    assert_eq!(find_games(&mut connection).await.len(), 2);
-    assert_eq!(find_roms(&mut connection).await.len(), 1);
+    assert_eq!(find_games(&mut env.connection).await.len(), 2);
+    assert_eq!(find_roms(&mut env.connection).await.len(), 1);
 }

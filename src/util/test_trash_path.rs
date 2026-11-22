@@ -1,23 +1,10 @@
 use super::*;
-use std::path::PathBuf;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
-    let test_directory = Path::new("tests");
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
+    let mut env = TestEnv::new().await;
     let system = System {
         id: 1,
         name: String::from("Test System"),
@@ -32,10 +19,10 @@ async fn test() {
         games_complete: 0,
         games_total: 0,
     };
-    let system_directory = get_system_directory(&mut connection, &system)
+    let system_directory = get_system_directory(&mut env.connection, &system)
         .await
         .unwrap();
-    let trash_directory = get_trash_directory(&mut connection, Some(&system))
+    let trash_directory = get_trash_directory(&mut env.connection, Some(&system))
         .await
         .unwrap();
 
@@ -44,7 +31,7 @@ async fn test() {
     let other_clone_path = system_directory.join("1944j").join("c83u.p3");
 
     // when the trash holds no file of that name
-    let parent = get_trash_path(&mut connection, Some(&system), &parent_path)
+    let parent = get_trash_path(&mut env.connection, Some(&system), &parent_path)
         .await
         .unwrap();
 
@@ -54,7 +41,7 @@ async fn test() {
     // when another game's file of the same name is already there
     fs::create_dir_all(&trash_directory).await.unwrap();
     fs::write(&parent, b"").await.unwrap();
-    let clone = get_trash_path(&mut connection, Some(&system), &clone_path)
+    let clone = get_trash_path(&mut env.connection, Some(&system), &clone_path)
         .await
         .unwrap();
 
@@ -65,7 +52,7 @@ async fn test() {
     fs::create_dir_all(clone.parent().unwrap()).await.unwrap();
     fs::write(&clone, b"").await.unwrap();
     let taken = get_trash_path(
-        &mut connection,
+        &mut env.connection,
         Some(&system),
         &system_directory.join("1944d").join("c83u.p3"),
     )
@@ -77,7 +64,7 @@ async fn test() {
 
     // and files of other games stay apart
     assert_eq!(
-        get_trash_path(&mut connection, Some(&system), &other_clone_path)
+        get_trash_path(&mut env.connection, Some(&system), &other_clone_path)
             .await
             .unwrap(),
         trash_directory.join("1944j").join("c83u.p3")
@@ -85,7 +72,7 @@ async fn test() {
 
     // and a file already in the trash stays where it is
     assert_eq!(
-        get_trash_path(&mut connection, Some(&system), &clone)
+        get_trash_path(&mut env.connection, Some(&system), &clone)
             .await
             .unwrap(),
         clone

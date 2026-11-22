@@ -1,57 +1,33 @@
-use super::super::config::*;
-use super::super::import_dats;
-use super::super::import_irds;
 use super::*;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
+    let mut env = TestEnv::with_dat("Test System (20240704) (IRD).dat").await;
 
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20240704) (IRD).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
+    env.run(&["import-irds", "tests/Test Game (USA).ird"])
         .await
         .unwrap();
 
-    let matches =
-        import_irds::subcommand().get_matches_from(["import-irds", "tests/Test Game (USA).ird"]);
-    import_irds::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    let game = find_games(&mut env.connection).await.remove(0);
 
-    let game = find_games(&mut connection).await.remove(0);
-
-    let roms_before = find_roms(&mut connection).await;
+    let roms_before = find_roms(&mut env.connection).await;
     assert_eq!(roms_before.len(), 208);
 
     // Refetch game to get updated jbfolder status
-    let game = find_game_by_id(&mut connection, game.id).await;
+    let game = find_game_by_id(&mut env.connection, game.id).await;
     assert!(game.jbfolder);
 
     // when
-    purge_ird(&mut connection, &progress_bar, &game)
+    purge_ird(&mut env.connection, &env.progress_bar, &game)
         .await
         .unwrap();
 
     // then
-    let roms_after = find_roms(&mut connection).await;
+    let roms_after = find_roms(&mut env.connection).await;
     assert_eq!(roms_after.len(), 1); // Only the parent rom should remain
 
-    let updated_game = find_game_by_id(&mut connection, game.id).await;
+    let updated_game = find_game_by_id(&mut env.connection, game.id).await;
     assert!(!updated_game.jbfolder);
 }
