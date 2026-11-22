@@ -20,7 +20,7 @@ on:
         description: "Core to build"
         type: choice
         default: all
-        options: [all, beetle-psx, parallel-ps2, pcee2, dolphin, mesen, mesen-s, sameboy, mgba]
+        options: [all, beetle-psx, parallel-ps2, pcee2, dolphin, mesen, mesen-s, sameboy, mgba, melonds-ds]
 
 concurrency:
   group: ore-cores-${{ github.ref }}
@@ -347,3 +347,47 @@ jobs:
         with:
           name: mgba_libretro-ore-linux-x86_64
           path: build/mgba_libretro.so
+
+  melonds-ds:
+    name: melonDS DS
+    runs-on: ubuntu-24.04
+    if: ${{ !inputs.core || inputs.core == 'all' || inputs.core == 'melonds-ds' }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: oxyromon
+      - uses: actions/checkout@v7
+        with:
+          repository: alucryd/melonds-ds
+          ref: ${{ env.CORE_REF }}
+          path: core
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: oxyromon/crates/smelt-rs
+      # As melonDS DS's own Linux build installs them
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libepoxy-dev libopengl-dev
+      - name: Build libsmelt
+        run: cargo build --release --manifest-path "$SMELT_DIR/Cargo.toml"
+      # Fetches melonDS and its other dependencies at configure time
+      - name: Build core
+        run: |
+          cmake -S core -B build -G Ninja -Wno-deprecated \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+            -DORE=ON -DSMELT_DIR="$SMELT_DIR"
+          cmake --build build --target melondsds_libretro
+      # The core's test suite needs BIOS and ROM files: at least the reader is in it
+      - name: Check the ORE reader is linked
+        run: nm build/src/libretro/melondsds_libretro.so | grep -q smelt_open
+      - uses: actions/upload-artifact@v7
+        with:
+          name: melondsds_libretro-ore-linux-x86_64
+          # The .info the build generates lists ore, which RetroArch's needs
+          path: |
+            build/src/libretro/melondsds_libretro.so
+            build/melondsds_libretro.info
+          if-no-files-found: error
