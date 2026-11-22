@@ -9,8 +9,9 @@ async fn test() {
 
     // first import the system from a plain DAT so it exists in the database
     let dat_path = env.fixture_source("Test System (20200721).dat");
-    let (datfile_xml, detector_xml) =
-        parse_dat(&env.progress_bar, &dat_path, false).await.unwrap();
+    let (datfile_xml, detector_xml) = parse_dat(&env.progress_bar, &dat_path, false)
+        .await
+        .unwrap();
 
     import_dat(
         &mut env.connection,
