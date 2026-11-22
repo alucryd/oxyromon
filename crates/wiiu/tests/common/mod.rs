@@ -603,6 +603,12 @@ pub fn wud_with(disc_key: &[u8; 16]) -> Vec<u8> {
 
 /// The whole disc, and where the game's hashed cluster starts in it.
 pub fn wud_and_hashed(disc_key: &[u8; 16]) -> (Vec<u8>, usize) {
+    wud_with_free(disc_key, FREE)
+}
+
+/// The whole disc, each partition but the update's holding `free` sectors
+/// more than it uses: a repeat as long as a disc's free space, for many.
+pub fn wud_with_free(disc_key: &[u8; 16], free: usize) -> (Vec<u8>, usize) {
     // The game partitions are third and fourth, so the SI partition holds
     // their TMDs, tickets and certificates under 02/ and 03/.
     let gm = partition(
@@ -644,7 +650,7 @@ pub fn wud_and_hashed(disc_key: &[u8; 16]) -> (Vec<u8>, usize) {
         Encryption::DiscKey,
     );
     let fill = |partition: Partition| {
-        let sectors = partition.bytes.len() / SECTOR + FREE;
+        let sectors = partition.bytes.len() / SECTOR + free;
         partition.fill(sectors)
     };
     let gm_hashed = gm.hashed_at.unwrap();

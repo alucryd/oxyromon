@@ -58,6 +58,40 @@ fn a_wii_u_disc_reads_back_as_it_was() {
 }
 
 #[test]
+fn a_long_repeat_reads_on_a_small_stack() {
+    // Free space a thousand sectors long, repeating a region a sector long,
+    // as a disc's gigabytes of it do: a read that followed the repeat back
+    // a period at a time took a stack frame per period, and overflowed a
+    // tokio worker's 2 MiB on a real disc. Read on a 64 KiB stack here, a
+    // normal read's needs twice over and a frame per period's far under.
+    let dir = TempDir::new().unwrap();
+    let (wud, _) = wiiu_common::wud_with_free(&DISC_KEY, 1024);
+    let input = dir.path().join("Game.wud");
+    std::fs::write(&input, &wud).unwrap();
+    let ore = dir.path().join("Game.ore");
+    ore_rs::compress(
+        &input,
+        &ore,
+        &Options::default(),
+        &[COMMON_KEY, DISC_KEY, VWII_KEY],
+        &mut |_| {},
+    )
+    .unwrap();
+    let back = std::thread::Builder::new()
+        .stack_size(64 << 10)
+        .spawn(move || {
+            let mut reader = Reader::open(&ore).unwrap();
+            let mut back = vec![0; reader.size() as usize];
+            reader.read_at(0, &mut back).unwrap();
+            back
+        })
+        .unwrap()
+        .join()
+        .unwrap();
+    assert!(back == wud);
+}
+
+#[test]
 fn a_wii_u_disc_needs_its_keys_to_be_written_only() {
     let dir = TempDir::new().unwrap();
     let wud = dir.path().join("Game.wud");
