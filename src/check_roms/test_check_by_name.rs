@@ -5,7 +5,7 @@ async fn test() {
     // given
     let mut env = TestEnv::with_dat("Test System (20200721).dat").await;
     let romfile_path = env.fixture("Test Game (USA, Europe).rom").await;
-    env.import_roms(&[&romfile_path], &[]).await;
+    env.import_roms(&[&romfile_path]).await;
 
     let system = env.system().await;
     let romfile = env.single_romfile().await;

@@ -21,11 +21,6 @@ fn fixtures() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests")
 }
 
-/// Copies `from` onto `to`, whole when it is a directory.
-async fn copy_tree(from: &Path, to: &Path) {
-    copy_tree_owned(from.to_path_buf(), to.to_path_buf()).await;
-}
-
 fn copy_tree_owned(from: PathBuf, to: PathBuf) -> Pin<Box<dyn Future<Output = ()> + Send>> {
     Box::pin(async move {
         if tokio::fs::symlink_metadata(&from).await.unwrap().is_dir() {
@@ -117,15 +112,13 @@ impl TestEnv {
     /// into the temporary directory under the same name; returns the copy.
     pub async fn fixture(&self, name: &str) -> PathBuf {
         let target = self.tmp_directory.join(name);
-        copy_tree(&fixtures().join(name), &target).await;
+        copy_tree_owned(fixtures().join(name), target.clone()).await;
         target
     }
 
-    /// Imports paths with the `import-roms` subcommand, plus any extra
-    /// flags to put before them.
-    pub async fn import_roms(&mut self, paths: &[&Path], args: &[&str]) {
+    /// Imports paths with the `import-roms` subcommand.
+    pub async fn import_roms(&mut self, paths: &[&Path]) {
         let mut argv: Vec<&str> = vec!["import-roms"];
-        argv.extend(args.iter().copied());
         argv.extend(paths.iter().map(|path| path.to_str().unwrap()));
         self.run(&argv).await.unwrap();
     }

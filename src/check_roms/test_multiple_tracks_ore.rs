@@ -16,7 +16,7 @@ async fn test() {
         &mut |_| {},
     )
     .unwrap();
-    env.import_roms(&[&romfile_path], &[]).await;
+    env.import_roms(&[&romfile_path]).await;
 
     // when
     env.run(&["check-roms", "-a"]).await.unwrap();

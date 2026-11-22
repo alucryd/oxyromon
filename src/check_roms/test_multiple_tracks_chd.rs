@@ -7,7 +7,7 @@ async fn test() {
     let romfile_path = env
         .fixture("Test Game (USA, Europe) (Multiple Tracks).chd")
         .await;
-    env.import_roms(&[&romfile_path], &[]).await;
+    env.import_roms(&[&romfile_path]).await;
 
     // when
     env.run(&["check-roms", "-a"]).await.unwrap();

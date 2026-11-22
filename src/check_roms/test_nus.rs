@@ -5,7 +5,7 @@ async fn test() {
     // given
     let mut env = TestEnv::with_dat("Test System (20261025) (CDN).dat").await;
     let update_directory = env.fixture("Test Game (USA) (Update)").await;
-    env.import_roms(&[&update_directory], &[]).await;
+    env.import_roms(&[&update_directory]).await;
     let system = env.system().await;
     let system_directory = env.system_directory(&system).await;
 

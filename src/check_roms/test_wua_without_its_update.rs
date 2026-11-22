@@ -19,7 +19,7 @@ async fn test() {
         &mut |_| {},
     )
     .unwrap();
-    env.import_roms(&[&staging], &[]).await;
+    env.import_roms(&[&staging]).await;
 
     // the update partition, gone from the system's store: the WUA can't be
     // rebuilt, so it fails its check
