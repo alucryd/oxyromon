@@ -1,24 +1,20 @@
 use super::*;
-use std::path::Path;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 use tokio::fs;
 
 #[tokio::test]
 async fn test() {
-    let test_directory = Path::new("tests").canonicalize().unwrap();
-    let progress_bar = ProgressBar::hidden();
-    let dir = TempDir::new_in(&test_directory).unwrap();
-
-    let base_path = dir.path().join("base.rom");
+    let env = TestEnv::new().await;
+    let base_path = env.tmp_directory.join("base.rom");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe).rom"),
+        env.fixture_source("Test Game (USA, Europe).rom"),
         &base_path,
     )
     .await
     .unwrap();
-    let patch_path = dir.path().join("patch.xdelta");
+    let patch_path = env.tmp_directory.join("patch.xdelta");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe).xdelta"),
+        env.fixture_source("Test Game (USA, Europe).xdelta"),
         &patch_path,
     )
     .await
@@ -30,11 +26,11 @@ async fn test() {
         .as_xdelta()
         .unwrap();
 
-    let dest = dir.path().join("out");
+    let dest = env.tmp_directory.join("out");
     fs::create_dir(&dest).await.unwrap();
-    let result = patch.patch(&progress_bar, &base, &dest).await.unwrap();
+    let result = patch.patch(&env.progress_bar, &base, &dest).await.unwrap();
 
-    let expected = fs::read(test_directory.join("Test Game (USA, Europe) (patched).rom"))
+    let expected = fs::read(env.fixture_source("Test Game (USA, Europe) (patched).rom"))
         .await
         .unwrap();
     assert_eq!(fs::read(&result.path).await.unwrap(), expected);
