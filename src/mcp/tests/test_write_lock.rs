@@ -1,12 +1,10 @@
 use super::actions::lock_writes;
 use super::*;
-use crate::config::MUTEX;
 
 /// A tool waiting behind a long action can be cancelled, by its client or by
 /// the server stopping, and gets the lock once it is free.
 #[tokio::test]
 async fn test() {
-    let _guard = MUTEX.lock().await;
     let (client, server) = (CancellationToken::new(), CancellationToken::new());
 
     let held = WRITE_LOCK.lock().await;

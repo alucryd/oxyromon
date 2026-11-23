@@ -16,8 +16,6 @@ use tokio::fs;
 #[tokio::test]
 async fn test() {
     // given
-    let _guard = MUTEX.lock().await;
-
     let test_directory = Path::new("tests");
     let progress_bar = ProgressBar::hidden();
 

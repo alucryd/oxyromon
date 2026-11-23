@@ -7,8 +7,6 @@ use tempfile::TempDir;
 #[tokio::test]
 async fn test() {
     // given a title converted to ORE without its ticket, which no DAT lists
-    let _guard = MUTEX.lock().await;
-
     let test_directory = Path::new("tests");
     let progress_bar = ProgressBar::hidden();
 

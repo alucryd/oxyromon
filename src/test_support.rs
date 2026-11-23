@@ -2,9 +2,7 @@ use super::check_roms;
 use super::common::{CommonRomfile, FromPath};
 use super::compact_roms;
 use super::config;
-use super::config::{
-    MUTEX, TestDatabase, add_to_list, set_bool, set_rom_directory, set_string, set_tmp_directory,
-};
+use super::config::{TestDatabase, add_to_list, set_bool, set_rom_directory, set_string, set_tmp_directory};
 use super::convert_roms;
 use super::create_dats;
 use super::database::{
@@ -39,7 +37,6 @@ use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use tempfile::TempDir;
 use tokio::io::AsyncWriteExt;
-use tokio::sync::MutexGuard;
 
 /// The dat nearly every matrix cell imports.
 pub const DAT: &str = "Test System (20200721).dat";
@@ -87,10 +84,6 @@ fn copy_tree_owned(from: PathBuf, to: PathBuf) -> Pin<Box<dyn Future<Output = ()
 ///
 /// The scratch root lives under the system temp directory, never inside
 /// `tests/`, so a killed run leaves no junk beside the fixtures.
-///
-/// The global `MUTEX` is held for the env's lifetime, exactly as every
-/// test used to hold it itself. Dropping it is step 4 of #334, once no
-/// test sets up its world by hand anymore.
 pub struct TestEnv {
     pub connection: PoolConnection<Sqlite>,
     /// A handle to the same pool the connection came from: for the rare
@@ -100,7 +93,6 @@ pub struct TestEnv {
     pub rom_directory: PathBuf,
     pub tmp_directory: PathBuf,
     pub progress_bar: ProgressBar,
-    _guard: MutexGuard<'static, i32>,
     _root: TempDir,
     // Dropped last, after the connection closed on its database.
     _db: TestDatabase,
@@ -118,8 +110,6 @@ macro_rules! run_subcommand {
 impl TestEnv {
     /// A bare environment: database, directories and settings, no dat.
     pub async fn new() -> Self {
-        let _guard = MUTEX.lock().await;
-
         let root = TempDir::new().unwrap();
         let rom_directory = root.path().join("roms");
         let tmp_directory = root.path().join("tmp");
@@ -139,7 +129,6 @@ impl TestEnv {
             rom_directory,
             tmp_directory,
             progress_bar: ProgressBar::hidden(),
-            _guard,
             _root: root,
             _db: db,
         }
