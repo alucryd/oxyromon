@@ -737,24 +737,4 @@ async fn delete_rom(
 #[cfg(test)]
 pub(crate) mod merged_set;
 #[cfg(test)]
-mod test_already_rebuilt;
-#[cfg(test)]
-mod test_full_non_merged_to_non_merged;
-#[cfg(test)]
-mod test_merged_loose_to_non_merged;
-#[cfg(test)]
-mod test_merged_to_non_merged;
-#[cfg(test)]
-mod test_non_merged_to_merged;
-#[cfg(test)]
-mod test_non_merged_to_split;
-#[cfg(test)]
-mod test_nothing_to_do;
-#[cfg(test)]
-mod test_split_to_full_non_merged;
-#[cfg(test)]
-mod test_split_to_merged;
-#[cfg(test)]
-mod test_split_to_non_merged;
-#[cfg(test)]
-mod test_split_to_non_merged_missing;
+mod tests;

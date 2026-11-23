@@ -173,4 +173,4 @@ pub async fn purge_ird(
 }
 
 #[cfg(test)]
-mod test_ird;
+mod tests;

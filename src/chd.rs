@@ -902,6 +902,4 @@ pub async fn get_version() -> Result<String> {
 }
 
 #[cfg(test)]
-mod test_hd;
-#[cfg(test)]
-mod test_ld;
+mod tests;

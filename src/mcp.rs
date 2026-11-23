@@ -233,4 +233,4 @@ impl ServerHandler for OxyromonMcp {
 }
 
 #[cfg(test)]
-mod test_write_lock;
+mod tests;

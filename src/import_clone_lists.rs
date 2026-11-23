@@ -217,10 +217,4 @@ fn get_release_group(url: &str) -> Option<&'static str> {
 }
 
 #[cfg(test)]
-mod test_import_clone_lists;
-#[cfg(test)]
-mod test_import_clone_lists_release_group;
-#[cfg(test)]
-mod test_import_clone_lists_unknown_system;
-#[cfg(test)]
-mod test_split_release_group;
+mod tests;

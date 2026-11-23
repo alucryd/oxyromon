@@ -799,4 +799,4 @@ impl Mutation {
 }
 
 #[cfg(test)]
-mod test_write_lock;
+mod tests;

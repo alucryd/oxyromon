@@ -72,12 +72,4 @@ impl CustomValidator<String> for DirectoryValidator {
 }
 
 #[cfg(test)]
-mod test_directory_validator;
-#[cfg(test)]
-mod test_game_subfolders_validator;
-#[cfg(test)]
-mod test_prefer_region_validator;
-#[cfg(test)]
-mod test_prefer_version_validator;
-#[cfg(test)]
-mod test_subfolder_scheme_validator;
+mod tests;

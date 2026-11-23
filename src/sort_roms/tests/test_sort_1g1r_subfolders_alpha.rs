@@ -1,0 +1,109 @@
+use super::*;
+use crate::import_dats;
+use crate::import_roms;
+use tempfile::TempDir;
+use tokio::fs;
+
+#[tokio::test]
+async fn test() {
+    // given
+    let test_directory = Path::new("tests");
+    let progress_bar = ProgressBar::hidden();
+
+    let db_file = crate::config::TestDatabase::new();
+    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+    let mut connection = pool.acquire().await.unwrap();
+
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
+    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
+    let tmp_directory =
+        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
+
+    let matches = import_dats::subcommand().get_matches_from([
+        "import-dats",
+        "tests/Test System (20200721) (Parent-Clone).dat",
+    ]);
+    import_dats::main(&mut connection, &matches, &progress_bar)
+        .await
+        .unwrap();
+
+    let romfile_names = vec![
+        "42 Test Game (USA, Europe).rom",
+        "Another Test Game (USA, Europe).rom",
+        "Test Game (USA, Europe).rom",
+    ];
+    for romfile_name in &romfile_names {
+        let romfile_path = tmp_directory.join(romfile_name);
+        fs::copy(test_directory.join(romfile_name), &romfile_path)
+            .await
+            .unwrap();
+        let matches = import_roms::subcommand()
+            .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
+        import_roms::main(&mut connection, &matches, &progress_bar)
+            .await
+            .unwrap();
+    }
+
+    let system = find_systems(&mut connection).await.remove(0);
+    let system_directory = get_system_directory(&mut connection, &system)
+        .await
+        .unwrap();
+
+    let all_regions = vec![];
+    let one_regions = vec![Region::UnitedStates, Region::Europe];
+
+    // when
+    sort_system(
+        &mut connection,
+        &progress_bar,
+        true,
+        false,
+        &system,
+        &all_regions,
+        &one_regions,
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+        true,
+        &PreferredRegion::None,
+        &PreferredVersion::None,
+        &[],
+        &None,
+        &Some(SubfolderScheme::Alpha),
+        false,
+        false,
+        false,
+        &[],
+    )
+    .await
+    .unwrap();
+
+    // then
+    let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+    assert_eq!(3, romfiles.len());
+
+    for (i, romfile) in romfiles.iter().enumerate() {
+        let first_char = &romfile_names.get(i).unwrap().chars().next().unwrap();
+        assert_eq!(
+            &system_directory
+                .join("1G1R")
+                .join(if first_char.is_ascii_alphabetic() {
+                    first_char.to_ascii_uppercase().to_string()
+                } else {
+                    String::from("#")
+                })
+                .join(romfile_names.get(i).unwrap())
+                .strip_prefix(&rom_directory)
+                .unwrap()
+                .as_os_str()
+                .to_str()
+                .unwrap(),
+            &romfile.path
+        );
+        assert!(rom_directory.path().join(&romfile.path).is_file());
+    }
+}

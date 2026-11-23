@@ -240,12 +240,4 @@ async fn do_import_patch<P: AsRef<Path>>(
 }
 
 #[cfg(test)]
-mod test_bps;
-#[cfg(test)]
-mod test_bps_by_rom_id;
-#[cfg(test)]
-mod test_bps_ips;
-#[cfg(test)]
-mod test_ips;
-#[cfg(test)]
-mod test_xdelta;
+mod tests;

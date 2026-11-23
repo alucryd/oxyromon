@@ -70,4 +70,4 @@ pub async fn main(
 }
 
 #[cfg(test)]
-mod test_parity_and_recompress;
+mod tests;

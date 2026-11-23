@@ -1,0 +1,44 @@
+//! Per-file tests for this module. The re-export keeps each
+//! file's `use super::*;` pointing at the subcommand's namespace.
+pub use super::*;
+
+mod matrix;
+mod test_chd_children_to_ore_before_parents;
+mod test_chd_parents_to_chd_should_not_touch_parent;
+mod test_chd_parents_to_iso;
+mod test_gb_ore_to_sevenzip;
+mod test_gb_to_ore_to_original;
+mod test_iso_chd_to_ore_should_skip;
+mod test_iso_to_chd_parents;
+mod test_multiple_tracks_chd_to_chd;
+mod test_multiple_tracks_chd_to_cso_should_do_nothing;
+mod test_multiple_tracks_chd_to_cue_bin;
+mod test_multiple_tracks_chd_to_ore;
+mod test_multiple_tracks_chd_to_sevenzip_cue_bin;
+mod test_multiple_tracks_chd_to_zso_should_do_nothing;
+mod test_multiple_tracks_cue_bin_to_chd;
+mod test_multiple_tracks_cue_bin_to_ore;
+mod test_multiple_tracks_ore_to_cue_bin;
+mod test_multiple_tracks_ore_to_ore;
+mod test_multiple_tracks_ore_to_sevenzip_cue_bin;
+mod test_nes_to_ore;
+mod test_nus_ore_recompress_with_kept_ticket;
+mod test_nus_sevenzip_to_original;
+mod test_nus_to_ore_to_original;
+mod test_nus_to_sevenzip;
+mod test_original_to_sevenzip_zstd;
+mod test_original_to_zip_multiple_roms;
+mod test_original_to_zip_with_correct_name;
+mod test_original_to_zip_with_incorrect_name;
+mod test_original_to_zip_zstd;
+mod test_sevenzip_gb_to_ore;
+mod test_sevenzip_gb_to_ore_store;
+mod test_sevenzip_gb_to_ore_store_run;
+mod test_sevenzip_multiple_tracks_cue_bin_to_chd;
+mod test_sevenzip_to_zip_multiple_files;
+mod test_wua_to_original;
+mod test_wua_to_wux;
+mod test_wud_to_ore_to_original;
+mod test_wux_to_wua;
+mod test_wux_to_wua_to_ore_to_original;
+mod test_zip_to_zip_should_do_nothing;

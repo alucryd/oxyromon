@@ -137,22 +137,4 @@ pub async fn get_mimetype<P: AsRef<Path>>(path: &P) -> Result<Option<Type>> {
 }
 
 #[cfg(test)]
-mod test_bps_matcher;
-#[cfg(test)]
-mod test_chd_matcher;
-#[cfg(test)]
-mod test_cso_matcher;
-#[cfg(test)]
-mod test_ips_matcher;
-#[cfg(test)]
-mod test_ird_matcher;
-#[cfg(test)]
-mod test_rdsk_matcher;
-#[cfg(test)]
-mod test_riff_matcher;
-#[cfg(test)]
-mod test_rvz_matcher;
-#[cfg(test)]
-mod test_xdelta_matcher;
-#[cfg(test)]
-mod test_zso_matcher;
+mod tests;

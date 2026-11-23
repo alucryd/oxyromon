@@ -903,40 +903,4 @@ async fn get_game_subfolders(connection: &mut SqliteConnection, system: &System)
 
 // === TESTS ===
 #[cfg(test)]
-mod test_path_archive_custom_extension;
-#[cfg(test)]
-mod test_path_archive_multiple_files;
-#[cfg(test)]
-mod test_path_archive_single_file;
-#[cfg(test)]
-mod test_path_chd_multiple_tracks;
-#[cfg(test)]
-mod test_path_chd_single_track;
-#[cfg(test)]
-mod test_path_cso;
-#[cfg(test)]
-mod test_path_custom_extension;
-#[cfg(test)]
-mod test_path_game_subfolders;
-#[cfg(test)]
-mod test_path_game_subfolders_arcade_archive;
-#[cfg(test)]
-mod test_path_game_subfolders_disc;
-#[cfg(test)]
-mod test_path_game_subfolders_multiple;
-#[cfg(test)]
-mod test_path_game_subfolders_system;
-#[cfg(test)]
-mod test_path_original;
-#[cfg(test)]
-mod test_path_playlist;
-#[cfg(test)]
-mod test_path_playlist_game_subfolders;
-#[cfg(test)]
-mod test_path_playlist_subfolder_alpha;
-#[cfg(test)]
-mod test_path_rvz;
-#[cfg(test)]
-mod test_path_subfolder_alpha_letter;
-#[cfg(test)]
-mod test_path_subfolder_alpha_other;
+mod tests;

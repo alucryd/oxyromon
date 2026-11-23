@@ -243,16 +243,4 @@ async fn trash_romfile(
 }
 
 #[cfg(test)]
-mod test_purge_games;
-#[cfg(test)]
-mod test_purge_games_clash;
-#[cfg(test)]
-mod test_purge_games_folder;
-#[cfg(test)]
-mod test_purge_games_missing;
-#[cfg(test)]
-mod test_purge_games_parent;
-#[cfg(test)]
-mod test_purge_games_playlist;
-#[cfg(test)]
-mod test_purge_games_shared;
+mod tests;

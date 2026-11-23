@@ -125,13 +125,19 @@ global `MultiProgress`.
 
 ## Tests
 
-- Each test case is its own file: `src/<module>/test_<case>.rs`, included with
-  `#[cfg(test)] mod test_<case>;` at the bottom of the module.
-- Tests use a `config::TestDatabase`, which deletes the WAL journal SQLite
-  leaves beside it, and `TempDir::new_in("tests")` directories, set with
+- Each test case is its own file: `src/<module>/tests/test_<case>.rs`,
+  declared in `src/<module>/tests/mod.rs`, which starts with `pub use
+  super::*;`. The module itself has one `#[cfg(test)] mod tests;` at the bottom.
+  Reach root modules as `crate::<module>`.
+- New tests use `test_support::TestEnv`, which owns its own database, ROM and
+  tmp directories and config, with fixtures read from `CARGO_MANIFEST_DIR` and
+  scratch space in the system temp directory. Older tests still build this by
+  hand: a `config::TestDatabase`, which deletes the WAL journal SQLite leaves
+  beside it, and `TempDir::new_in("tests")` directories, set with
   `set_rom_directory` / `set_tmp_directory`.
-- **Acquire the global `MUTEX`** (`config.rs`) in every test touching shared
-  state: `let _guard = MUTEX.lock().await;`. Forgetting it causes flaky failures.
+- **The suite runs multi-threaded, with no global lock.** A test must share
+  nothing with another: no fixed file names in `tests/`, no process-wide
+  environment, and a loopback port no other test uses.
 - Subcommand tests run the real pipeline: import a DAT from `tests/`, import
   ROMs, run the subcommand, then assert the database and the filesystem.
 - `tests/mcp_stdio.rs` drives the real binary over JSON-RPC; `tests/crates.rs`

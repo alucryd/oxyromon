@@ -668,11 +668,6 @@ pub async fn get_tmp_directory(connection: &mut SqliteConnection) -> PathBuf {
 
 cfg_if! {
     if #[cfg(test)] {
-        use std::sync::LazyLock;
-        use tokio::sync::Mutex;
-
-        pub static MUTEX: LazyLock<Mutex<i32>> = LazyLock::new(|| Mutex::new(0));
-
         /// A test's database, deleted with the journals SQLite leaves beside
         /// it: the pool is never closed, so its WAL outlives the connection.
         pub struct TestDatabase(tempfile::NamedTempFile);
@@ -710,26 +705,4 @@ cfg_if! {
 }
 
 #[cfg(test)]
-mod test_add_to_list;
-#[cfg(test)]
-mod test_add_to_list_already_exists;
-#[cfg(test)]
-mod test_bool;
-#[cfg(test)]
-mod test_chd_settings;
-#[cfg(test)]
-mod test_cli;
-#[cfg(test)]
-mod test_directory;
-#[cfg(test)]
-mod test_list;
-#[cfg(test)]
-mod test_remove_from_list;
-#[cfg(test)]
-mod test_remove_from_list_does_not_exist;
-#[cfg(test)]
-mod test_set_new_directory_when_old_is_missing;
-#[cfg(test)]
-mod test_system_bool_fallback;
-#[cfg(test)]
-mod test_system_bool_override;
+mod tests;
