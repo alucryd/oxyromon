@@ -52,7 +52,7 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-2209a68ba11f4f6225c7aec7
     resource: repo://tests/Test%20System%20(20230527)%20(PSN).dat
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "unknown", at: "2026-11-23T22:34:01.701Z" }
 verified:
   - by: openwiki/0.9.0
     at: 2026-11-13T20:59:45.363Z
@@ -182,6 +182,7 @@ one, so `unattended_game` compares `title_key` — the title with `(...)` and
 `[...]` tags, punctuation and case removed — and accepts exactly one candidate,
 bailing with "import the IRD from the CLI to pick one" on zero or several
 ([src/import_irds.rs](../../src/import_irds.rs#L158-L197),
+<!-- openwiki: broken internal link [../../src/import_irds/test_title.rs] file "../../src/import_irds/test_title.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [`src/import_irds/test_title.rs`](../../src/import_irds/test_title.rs)).
 Headless mode has no fallback in the other direction either: a system with no
 games is a hard error naming `import its DAT first`, where interactive mode would
@@ -409,6 +410,7 @@ rom name, so a PKG and its RAP keep their pairing
 companion files look like, and its test asserts the pair ending as two rom rows
 sharing one game-named zip
 (`tests/Test System (20230527) (PSN).dat`,
+<!-- openwiki: broken internal link [../../src/convert_roms/test_original_to_zip_multiple_roms.rs] file "../../src/convert_roms/test_original_to_zip_multiple_roms.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [`src/convert_roms/test_original_to_zip_multiple_roms.rs`](../../src/convert_roms/test_original_to_zip_multiple_roms.rs)).
 Nothing in `import-irds` special-cases those extensions.
 
@@ -423,15 +425,19 @@ units committed and the failing one untouched.
 
 The focused tests are these:
 
+<!-- openwiki: broken internal link [../../src/import_irds/test_ird.rs] file "../../src/import_irds/test_ird.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 - [`src/import_irds/test_ird.rs`](../../src/import_irds/test_ird.rs) — import the
   fixture DAT, then `tests/Test Game (USA).ird`,
   and assert 208 rom rows: the DAT's disc row plus the IRD's per-file children.
+<!-- openwiki: broken internal link [../../src/import_irds/test_ird_orphan_subfolder.rs] file "../../src/import_irds/test_ird_orphan_subfolder.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 - [`src/import_irds/test_ird_orphan_subfolder.rs`](../../src/import_irds/test_ird_orphan_subfolder.rs) —
   re-import over a file an older IRD described differently, and assert that file
   now lives in `Trash`, the subdirectory it left empty is gone, the game directory
   and the untouched root file survive.
+<!-- openwiki: broken internal link [../../src/purge_irds/test_ird.rs] file "../../src/purge_irds/test_ird.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 - [`src/purge_irds/test_ird.rs`](../../src/purge_irds/test_ird.rs) — after
   `purge_ird`, one rom remains and `jbfolder` is false.
+<!-- openwiki: broken internal link [../../src/mimetype/test_ird_matcher.rs] file "../../src/mimetype/test_ird_matcher.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 - [`src/mimetype/test_ird_matcher.rs`](../../src/mimetype/test_ird_matcher.rs) —
   the `3IRD` magic byte.
 

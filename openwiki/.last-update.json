@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-11-13T21:51:56.761Z",
+  "updatedAt": "2026-11-23T23:05:32.001Z",
   "command": "update",
   "gitHead": "111252fea6c28262deceb98e4ea5c6113d3a9753",
-  "model": "host-agent/zed",
-  "status": "complete",
+  "model": "host-agent/unknown",
+  "status": "interrupted",
   "language": "en"
 }

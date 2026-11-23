@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Test Fixtures and End-to-End Suites"
-description: "What lives in tests/ — the Logiqx DAT fixtures and the ROM, disc-image (including the in-process CHD fixtures), archive, patch and header files they declare — how src/<module>/test_*.rs consumes them without mutating the corpus, and what the four real integration targets (tests/crates.rs, tests/mcp_stdio.rs, tests/plain_output.rs, tests/cli_output.rs) prove."
+description: "What lives in tests/ — the Logiqx DAT fixtures and the ROM, disc-image (including the in-process CHD fixtures), archive, patch and header files they declare — how the src/<module>/tests/test_*.rs modules consume them through TestEnv without mutating the corpus, and what the four real integration targets (tests/crates.rs, tests/mcp_stdio.rs, tests/plain_output.rs, tests/cli_output.rs) prove."
 tags: [testing, fixtures, dat, chd, roms, mcp, integration-tests, compute-sums]
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
@@ -16,64 +16,66 @@ sources:
     resource: repo://crates/cia-rs/tests/common/mod.rs
   - id: openwiki-source-39b287310cfd4e9fe820875a
     resource: repo://crates/cia-rs/tests/kat.rs
-  - id: openwiki-source-2317ee3d71643178aaa4c218
-    resource: repo://crates/gcwii/tests/common/mod.rs
+  - id: openwiki-source-a1d16d55f25bc040c982913c
+    resource: repo://crates/test-support/src/gcwii.rs
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
-  - id: openwiki-source-a380817ef07d05704067a359
-    resource: repo://src/chd/test_ld.rs
-  - id: openwiki-source-de387659b991f4f153cbd6d1
-    resource: repo://src/check_roms/test_original_crc_mismatch.rs
+  - id: openwiki-source-1826bf5b21d79fc9b3cc2feb
+    resource: repo://src/chd/tests/test_ld.rs
+  - id: openwiki-source-a1a2b11f3afc455177286005
+    resource: repo://src/check_roms/tests/test_original_crc_mismatch.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
     resource: repo://src/config.rs
-  - id: openwiki-source-885c8766d237f8340462593b
-    resource: repo://src/download_dats/test_nointro.rs
-  - id: openwiki-source-904cc3411b962b115194d55e
-    resource: repo://src/download_dats/test_redump.rs
-  - id: openwiki-source-0f48e709a294c84643eef7ef
-    resource: repo://src/export_roms/test_wux_with_ticketless_update_to_wua.rs
-  - id: openwiki-source-53841b6d7bd07af06da7ffdd
-    resource: repo://src/import_clone_lists/test_import_clone_lists.rs
+  - id: openwiki-source-b94e49e3da43d66b03ed7c7e
+    resource: repo://src/database.rs
+  - id: openwiki-source-ae8712a0faa4566fdcf56692
+    resource: repo://src/download_dats/tests/test_nointro.rs
+  - id: openwiki-source-e2ce7b6fc583c8a117ee6366
+    resource: repo://src/download_dats/tests/test_redump.rs
+  - id: openwiki-source-c456cfdbfa89ab887bb4c340
+    resource: repo://src/export_roms/tests/test_wux_with_ticketless_update_to_wua.rs
+  - id: openwiki-source-e576535ea81d7a450126682a
+    resource: repo://src/import_clone_lists/tests/test_import_clone_lists.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
     resource: repo://src/import_dats.rs
-  - id: openwiki-source-6050befef6bfccbdaf8b9ead
-    resource: repo://src/import_dats/test_dat_categories.rs
-  - id: openwiki-source-8485a3ae73bdd8c6923a0bf4
-    resource: repo://src/import_dats/test_dat_headered_skipped_header.rs
-  - id: openwiki-source-0ad541323389e44d86d51bdc
-    resource: repo://src/import_dats/test_dat_mame_listxml.rs
-  - id: openwiki-source-799a986fffbd6d0361994608
-    resource: repo://src/import_dats/test_dat_mame_mixed.rs
-  - id: openwiki-source-e851f29de7bc17b747354e83
-    resource: repo://src/import_dats/test_dat_outdated_should_do_nothing.rs
-  - id: openwiki-source-f093705c2776c0311faf3317
-    resource: repo://src/import_dats/test_dat_updated_orphan_archive_mismatch.rs
-  - id: openwiki-source-a48de08504b916d7bc192623
-    resource: repo://src/import_dats/test_dat_updated_orphan_archive.rs
-  - id: openwiki-source-2026e066e6cdf5075f88459c
-    resource: repo://src/import_dats/test_dat_updated_orphan_chd_mismatch.rs
-  - id: openwiki-source-009a879733276999b4edfc7b
-    resource: repo://src/import_dats/test_dat_updated_orphan_chd.rs
-  - id: openwiki-source-927c0f03fc461e25baa1f129
-    resource: repo://src/import_dats/test_dat_updated.rs
-  - id: openwiki-source-b64c77b451fbf8078aeef243
-    resource: repo://src/import_dats/test_zip_nested.rs
-  - id: openwiki-source-5822ac752aee6ed90feaf40f
-    resource: repo://src/import_patches/test_ips.rs
+  - id: openwiki-source-7326778f80e70bb8bd502e07
+    resource: repo://src/import_dats/tests/test_dat_categories.rs
+  - id: openwiki-source-2722c2fbfe788466317d8c37
+    resource: repo://src/import_dats/tests/test_dat_headered_skipped_header.rs
+  - id: openwiki-source-a3c43c42b09b4371de25de3b
+    resource: repo://src/import_dats/tests/test_dat_mame_listxml.rs
+  - id: openwiki-source-9eb95246f3e2800afb513eec
+    resource: repo://src/import_dats/tests/test_dat_mame_mixed.rs
+  - id: openwiki-source-5a3c1ea36a82a26e7e840402
+    resource: repo://src/import_dats/tests/test_dat_outdated_should_do_nothing.rs
+  - id: openwiki-source-6ff31c728527c13efbd36346
+    resource: repo://src/import_dats/tests/test_dat_updated_orphan_archive_mismatch.rs
+  - id: openwiki-source-5bf0744cc6060bbdbdf8faa8
+    resource: repo://src/import_dats/tests/test_dat_updated_orphan_archive.rs
+  - id: openwiki-source-32dcc987397f2b181b10bc2b
+    resource: repo://src/import_dats/tests/test_dat_updated_orphan_chd_mismatch.rs
+  - id: openwiki-source-ea6689b9591a0a153a0bfdd5
+    resource: repo://src/import_dats/tests/test_dat_updated_orphan_chd.rs
+  - id: openwiki-source-42e67320b89f49058e32dbcf
+    resource: repo://src/import_dats/tests/test_dat_updated.rs
+  - id: openwiki-source-5c08493588bea1a1e2f05f47
+    resource: repo://src/import_dats/tests/test_zip_nested.rs
+  - id: openwiki-source-23271b7c2f7bf18297205425
+    resource: repo://src/import_patches/tests/test_ips.rs
   - id: openwiki-source-9add64e166d8ef19bd58c5af
     resource: repo://src/import_roms.rs
-  - id: openwiki-source-84ac44b0fed2dfbd81801afc
-    resource: repo://src/import_roms/test_iso_chd.rs
-  - id: openwiki-source-d2a3ecfe56b135e9acbf7c81
-    resource: repo://src/import_roms/test_mame_chd.rs
-  - id: openwiki-source-29cce0b2b6a22a67a00d0a31
-    resource: repo://src/import_roms/test_multiple_tracks_chd.rs
-  - id: openwiki-source-e39f531dcbca745e3e2e92a4
-    resource: repo://src/import_roms/test_original.rs
-  - id: openwiki-source-c7e9fe6c31daad3e16dda346
-    resource: repo://src/import_roms/test_zip_single_file.rs
+  - id: openwiki-source-7d6b50673263b13d7ad26c6b
+    resource: repo://src/import_roms/tests/test_iso_chd.rs
+  - id: openwiki-source-b6eed4a317df8df129eeeec8
+    resource: repo://src/import_roms/tests/test_mame_chd.rs
+  - id: openwiki-source-acad12e13e158c93fc46fffe
+    resource: repo://src/import_roms/tests/test_multiple_tracks_chd.rs
+  - id: openwiki-source-e769c7f073b409ac492de995
+    resource: repo://src/import_roms/tests/test_original.rs
+  - id: openwiki-source-838d9b64afedbfbf87cb4313
+    resource: repo://src/import_roms/tests/test_zip_single_file.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
   - id: openwiki-source-b95ec25c5cfc0be350df258c
@@ -90,20 +92,22 @@ sources:
     resource: repo://src/rebuild_roms/merged_set.rs
   - id: openwiki-source-0a9271029eb893aacec54c15
     resource: repo://src/sort_roms.rs
-  - id: openwiki-source-1ecefd886ee274df1f2a91b3
-    resource: repo://src/sort_roms/test_sort_1g1r_clone_lists.rs
-  - id: openwiki-source-6b7f73133b2465c3121b03a5
-    resource: repo://src/sort_roms/test_sort_1g1r_discard_categories.rs
-  - id: openwiki-source-6fcb49e6463833d943d18daa
-    resource: repo://src/sort_roms/test_sort_1g1r_infer_clones_parent_clone.rs
-  - id: openwiki-source-c188920547914990d564b7b8
-    resource: repo://src/sort_roms/test_sort_1g1r_infer_clones_titles.rs
+  - id: openwiki-source-ec0aa887e5de1d0b43fed8ad
+    resource: repo://src/sort_roms/tests/matrix.rs
+  - id: openwiki-source-d6f929878820b5fea8cbeef0
+    resource: repo://src/sort_roms/tests/test_sort_1g1r_clone_lists.rs
+  - id: openwiki-source-6d515e7d536538ca3c2b529a
+    resource: repo://src/sort_roms/tests/test_sort_1g1r_infer_clones_parent_clone.rs
+  - id: openwiki-source-669e9c7a038b0cfc622bd557
+    resource: repo://src/sort_roms/tests/test_sort_1g1r_infer_clones_titles.rs
+  - id: openwiki-source-0cd6f9bc897c4c44e2a03069
+    resource: repo://src/test_support.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-  - id: openwiki-source-1cf069de5c999c3ff1245ed6
-    resource: repo://src/xps/test_patch.rs
+  - id: openwiki-source-006c17d5451a62e6207b0dcd
+    resource: repo://src/xps/tests/test_patch.rs
   - id: openwiki-source-d3ba64341f3a424837662eeb
     resource: repo://tests/cli_output.rs
   - id: openwiki-source-790aa1ecc03c536bf0e060a6
@@ -150,19 +154,19 @@ sources:
     resource: repo://tests/Test%20System%20(20261110)%20(Infer%20Clones).dat
   - id: openwiki-source-6492b1773800677865aa0655
     resource: repo://tests/Test%20System%20(Clone%20Lists)%20(Redump).json
-generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
+generated: { by: "unknown", at: "2026-11-23T22:34:01.701Z" }
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-13T20:59:45.363Z
+    at: 2026-11-23T22:34:01.701Z
 ---
 
 # Test Fixtures and End-to-End Suites
 
 `tests/` is not an integration-test directory in the ordinary Rust sense. It is
-**a fixture corpus** — 33 Logiqx DAT files and the ROM, disc-image, archive,
-patch and header files they describe — consumed by the ~300 `src/<module>/test_*.rs`
-modules that live beside the code under test (see
-[Testing Conventions](testing-conventions.md)). Only four files in it are test
+**a fixture corpus** — 47 Logiqx DAT files and the ROM, disc-image, archive,
+patch and header files they describe — consumed by the ~300
+`src/<module>/tests/test_*.rs` modules that live beside the code under test
+(see [Testing Conventions](testing-conventions.md)). Only four files in it are test
 targets of the root package, and all are special cases: `tests/crates.rs`, a
 cross-crate parity guard; `tests/mcp_stdio.rs`, an end-to-end suite that spawns
 the real binary; and `tests/plain_output.rs` and `tests/cli_output.rs`, which
@@ -177,55 +181,59 @@ The rule that shapes every test's setup: **an import moves, it does not copy**.
 `import_roms` relocates the romfile into the system directory with
 `rename_file`, which falls back to copy-then-remove only when the rename crosses
 filesystems
-([src/util.rs](../../src/util.rs#L122-L150)). Handing `tests/` a committed
-fixture path directly would delete it from the checkout. So every test copies the
-fixture into a scratch directory first and imports that copy
-([src/import_roms/test_original.rs](../../src/import_roms/test_original.rs#L19-L37)):
+([src/util.rs](../../src/util.rs#L121-L150)). Handing `tests/` a committed
+fixture path directly would delete it from the checkout. So every test copies
+the fixture before importing it, and it does so through `TestEnv` — the harness
+in `src/test_support.rs` that owns the test's whole world:
 
 ```rust
-let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
-fs::copy(
-    test_directory.join("Test Game (USA, Europe).rom"),
-    &romfile_path.as_os_str().to_str().unwrap(),
-)
-.await
-.unwrap();
+let mut env = TestEnv::with_dat("Test System (20200721).dat").await;
+let romfile_path = env.fixture("Test Game (USA, Europe).rom").await;
 ```
+
+`env.fixture(name)` copies a fixture file, or a fixture directory with its whole
+tree, from `tests/` into the test's temporary directory under the same name and
+returns the copy
+([src/test_support.rs](../../src/test_support.rs#L163-L176));
+`env.fixture_source(name)` returns the in-place path for the few things that are
+only ever read.
 
 Only fixtures that are **read**, never imported, are referenced in place:
 `tests/Test Game (USA).ird` for `parse_ird`, `tests/profile.xml` served by a
 wiremock server, the DAT zips fed to `download_dats`, and the DATs themselves.
 
-The scratch `TempDir`s are created **inside `tests/`**, not in `/tmp` —
-`TempDir::new_in(test_directory)` — so fixtures and their imported results stay
-on one filesystem and the rename path is exercised rather than the cross-device
-fallback. `.gitignore` carries `tests/.tmp*` for the leftovers
-([.gitignore](../../.gitignore#L10-L20)). The MCP stdio harness is the one
-exception: it has no fixtures to keep close, so its data `TempDir` is an ordinary
-system-temp one held inside the `Client` struct.
+The scratch root is a `TempDir` **under the system temp directory, never inside
+`tests/`**, so a killed run leaves no junk beside the fixtures — the older
+scheme kept scratch inside `tests/` (and `.gitignore` still carries `tests/.tmp*`
+for the leftovers). The `TestEnv` doc comment states the property as designed:
+each test gets "its own database, its own ROM and temporary directories under
+one scratch root outside the fixtures"
+([src/test_support.rs](../../src/test_support.rs#L83-L118),
+[.gitignore](../../.gitignore#L23-L23)). The MCP stdio harness keeps the same
+distance: its data `TempDir` is an ordinary system-temp one held inside the
+`Client` struct ([tests/mcp_stdio.rs](../../tests/mcp_stdio.rs#L16-L30)).
 
-The rest of the skeleton is the same twelve lines in every fixture-consuming
-test, and it is a test-only API: `config.rs` defines `MUTEX`,
-`set_rom_directory` and `set_tmp_directory` inside a `cfg_if!`/`cfg(test)`
-block, so no production build can point the database at a scratch directory. The
-global `MUTEX` is taken first because the settings that follow are process-wide
-database rows, then a `NamedTempFile` database is opened, then the ROM and tmp
-directories are registered
-([src/config.rs](../../src/config.rs#L631-L648),
-[src/import_roms/test_iso_chd.rs](../../src/import_roms/test_iso_chd.rs#L10-L24)).
+The per-test setup is one call and a test-only API: `config.rs` defines
+`set_rom_directory` and `set_tmp_directory` inside a `cfg(test)` block, so no
+production build can point a database at a scratch directory. `TestEnv::new`
+creates the scratch root, opens a per-test `TestDatabase`, and registers both
+directories as settings **in that database** — the settings are no longer
+process-wide rows, which is why the old global test `MUTEX` could be removed
+and fixture tests run in parallel
+([src/config.rs](../../src/config.rs#L695-L703),
+[src/test_support.rs](../../src/test_support.rs#L112-L136)).
 
 ```mermaid
 flowchart TD
-  A["lock the global test MUTEX"] --> B["NamedTempFile database + establish_connection"]
-  B --> C["TempDir::new_in tests/ as ROM_DIRECTORY"]
-  C --> D["TempDir::new_in tests/ as TMP_DIRECTORY"]
-  D --> E["import a DAT from tests/ read in place"]
-  E --> F["fs::copy fixture into the tmp TempDir"]
-  F --> G["import_roms / convert / check against the copy"]
-  G --> H["assert database rows and the renamed file under the ROM TempDir"]
+  A["TestEnv::new: system-temp scratch root"] --> B["per-test TestDatabase + pool"]
+  B --> C["set_rom_directory / set_tmp_directory in that database"]
+  C --> D["TestEnv::with_dat imports a DAT from tests/ read in place"]
+  D --> E["env.fixture copies a fixture into the tmp directory"]
+  E --> F["import_roms / convert / check against the copy"]
+  F --> G["assert database rows and the renamed file under the ROM directory"]
 ```
 
-_Caption: the shared setup every fixture-consuming test repeats — scratch directories inside `tests/`, fixtures copied before anything can move them, assertions made against the ROM directory._
+_Caption: the shared setup every fixture-consuming test gets from TestEnv — one scratch root outside the fixtures, a per-test database, and fixtures copied before anything can move them._
 
 ## DAT naming: system, version date, scenario suffix
 
@@ -238,7 +246,8 @@ suite while "renaming a fixture":
   never parsed by the product code.
 - **The `<header><name>`** is the database identity. Systems are matched with
   `find_system_by_name(&system_xml.name)`
-  ([src/import_dats.rs](../../src/import_dats.rs#L453-L501)), so the scenario
+  ([src/database.rs](../../src/database.rs#L370-L380),
+  [src/import_dats.rs](../../src/import_dats.rs#L200-L210)), so the scenario
   suffix belongs in `<name>` **only when the scenario needs its own system**.
 - **The `<header><version>`** is the update gate — see the next section.
 
@@ -251,7 +260,7 @@ update of the same system** keep `<name>Test System</name>` and advance only the
 date, so the suffix lives in the file name alone: `Test System (20210401).dat`,
 `Test System (20200722) (Renamed Game).dat`, `Test System (20200723) (Changed
 Hashes).dat`, and both `Test System (20240626) (Multiple Orphan Roms*)` DATs
-([src/import_dats/test_dat_updated.rs](../../src/import_dats/test_dat_updated.rs#L88-L128)).
+([src/import_dats/tests/test_dat_updated.rs](../../src/import_dats/tests/test_dat_updated.rs)).
 
 The file-name date and `<version>` normally agree, and the deliberate exceptions
 are load-bearing: `Test System (20240908) (Patches).dat` carries version
@@ -260,7 +269,7 @@ are load-bearing: `Test System (20240908) (Patches).dat` carries version
 System (20241230) (MAME Mixed).dat` deliberately reuses **both** the header name
 and the version of `Test System (20241228) (MAME CHD).dat`, which is why its test
 asserts `"Test System (MAME CHD)"` and not anything about "Mixed"
-([src/import_dats/test_dat_mame_mixed.rs](../../src/import_dats/test_dat_mame_mixed.rs#L23-L49)).
+([src/import_dats/tests/test_dat_mame_mixed.rs](../../src/import_dats/tests/test_dat_mame_mixed.rs)).
 
 ### The version gate
 
@@ -268,10 +277,10 @@ asserts `"Test System (MAME CHD)"` and not anything about "Mixed"
 and `is_update` is a plain string `Ordering` compare on the version: **less**
 prints "Skipping older version" and returns false, **equal** prints "Already up
 to date" and returns false, **greater** updates
-([src/util.rs](../../src/util.rs#L363-L390)). `--force` bypasses it. This is why
+([src/util.rs](../../src/util.rs#L378-L405)). `--force` bypasses it. This is why
 `Test System (20000000).dat` exists at all: it is a _deliberately ancient_
 catalog, imported second, used to prove nothing changed
-([src/import_dats/test_dat_outdated_should_do_nothing.rs](../../src/import_dats/test_dat_outdated_should_do_nothing.rs#L23-L62)).
+([src/import_dats/tests/test_dat_outdated_should_do_nothing.rs](../../src/import_dats/tests/test_dat_outdated_should_do_nothing.rs)).
 Dates are lexicographic, not calendar: any `YYYYMMDD` string works, and a new
 scenario DAT that must update an existing system simply needs a version string
 that sorts higher.
@@ -302,14 +311,14 @@ For containers, the DAT declares the **entries inside**, not the container: the
 base DAT lists `Test Game (USA, Europe).rom` and the test feeds it
 `Test Game (USA, Europe).rom.zip`; the CUE/BIN game is declared as a `.cue` plus
 two `.bin` tracks and a CHD holding the same three entries is matched to it
-([src/import_roms/test_multiple_tracks_chd.rs](../../src/import_roms/test_multiple_tracks_chd.rs#L37-L100)).
+([src/import_roms/tests/test_multiple_tracks_chd.rs](../../src/import_roms/tests/test_multiple_tracks_chd.rs)).
 MAME arcade DATs break the pattern in one specific way: `<disk>` rows carry only
 a `sha1` and no size, because MAME's own CHD DATs have none, and the importer has
 a dedicated retry that looks the file up by CHD SHA1 with size 0 — in each of the
 three non-CD branches, DVD, HD and LD
-([src/import_roms.rs](../../src/import_roms.rs#L1192-L1215),
-[src/import_roms.rs](../../src/import_roms.rs#L1303-L1326),
-[src/import_roms.rs](../../src/import_roms.rs#L1423-L1446)).
+([src/import_roms.rs](../../src/import_roms.rs#L1643-L1655),
+[src/import_roms.rs](../../src/import_roms.rs#L1760-L1772),
+[src/import_roms.rs](../../src/import_roms.rs#L1886-L1898)).
 
 ```mermaid
 flowchart TD
@@ -359,6 +368,7 @@ the Parent-Clone DAT, the MAME DAT, the Headered DAT and the Patches DAT, and
 the MAME Rebuild DAT. Arcade scenarios exploit that freedom: the `rebuild_roms`
 tests copy a flat fixture to the name the `<machine>` catalog declares
 (`Test Game (USA, Europe).rom` → `Test Parent.rom`) rather than committing a
+<!-- openwiki: broken internal link [../../src/rebuild_roms/test_split_to_non_merged.rs#L9-L35] file "../../src/rebuild_roms/test_split_to_non_merged.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 duplicate file ([src/rebuild_roms/test_split_to_non_merged.rs](../../src/rebuild_roms/test_split_to_non_merged.rs#L9-L35)).
 
 The merged-layout scenarios go one step further and build their ZIPs at run
@@ -390,12 +400,12 @@ Orphan Roms).dat`, `Test System (20200722) (Renamed Game).dat` — orphans the
   ever takes effect.
 - **Corrupt after import.** `check_roms` writes over the already-imported file in
   the ROM directory and asserts the file lands under `/Trash/`
-  ([src/check_roms/test_original_crc_mismatch.rs](../../src/check_roms/test_original_crc_mismatch.rs#L50-L72)).
+  ([src/check_roms/tests/test_original_crc_mismatch.rs](../../src/check_roms/tests/test_original_crc_mismatch.rs)).
 
 Trash assertions are substring checks on `romfile.path`, not existence checks
 against a fixed location: the trash directory is per-system
 (`<system>/Trash`) or global (`<ROM directory>/Trash`) depending on the system
-([src/util.rs](../../src/util.rs#L277-L288)), and `contains("/Trash/")` holds for
+([src/util.rs](../../src/util.rs#L276-L287)), and `contains("/Trash/")` holds for
 both.
 
 ### What the DAT-update work changed about orphan fixtures
@@ -403,8 +413,8 @@ both.
 The orphan DATs are not just an import of a bad catalog. Each pairs a DAT-update
 `import_dat` with an explicit romfile count and an explicit trash verdict, and
 the two DATs differ _on purpose_
-([src/import_dats/test_dat_updated_orphan_chd.rs](../../src/import_dats/test_dat_updated_orphan_chd.rs#L102-L119),
-[src/import_dats/test_dat_updated_orphan_chd_mismatch.rs](../../src/import_dats/test_dat_updated_orphan_chd_mismatch.rs#L103-L120)):
+([src/import_dats/tests/test_dat_updated_orphan_chd.rs](../../src/import_dats/tests/test_dat_updated_orphan_chd.rs),
+[src/import_dats/tests/test_dat_updated_orphan_chd_mismatch.rs](../../src/import_dats/tests/test_dat_updated_orphan_chd_mismatch.rs)):
 
 | Fixture imported first              | Update DAT                                                                       | Roms / romfiles after | Trash                                                    |
 | ----------------------------------- | -------------------------------------------------------------------------------- | --------------------- | -------------------------------------------------------- |
@@ -439,8 +449,8 @@ SHA-1, parent SHA-1 and track count straight from the container
 | `Test Game (USA, Europe) (Multiple Tracks).chd` | `Cd`                            | `import_roms/test_multiple_tracks_chd.rs`, `check_roms/test_multiple_tracks_chd.rs`, `import_dats/test_dat_updated_orphan_chd*.rs`, `convert_roms`/`export_roms` CHD suites | the CD branch hashes **each extracted track** against the DAT's `.cue` + two `(Track 0n).bin` rows, and only imports when every track matches one game ([src/import_roms.rs](../../src/import_roms.rs#L1047-L1145))                                                 |
 | `Test Game (USA, Europe) (Single Track).chd`    | `Cd` with one track             | `import_roms/test_single_track_chd.rs`, `export_roms/test_single_track_chd_to_iso.rs`                                                                                       | `track_count == 1` takes the unsplit extraction path, so one rom is matched and the CHD is stored as `<game>.chd` ([src/chd.rs](../../src/chd.rs#L418-L467))                                                                                                        |
 | `Test Game (USA, Europe) (ISO).chd`             | `Dvd`                           | `import_roms/test_iso_chd.rs`, `check_roms/test_iso_chd.rs`, the `iso_chd_to_*` convert/export suites                                                                       | the DVD branch hashes the _extracted_ ISO against `Test Game (USA, Europe) (ISO).iso`'s row — `ChdRomfile::get_hash_and_size` extracts into the tmp directory and delegates, so the importer never hashes the CHD itself ([src/chd.rs](../../src/chd.rs#L171-L229)) |
-| `Test Game (USA, Europe) (RDSK).chd`            | `Hd`                            | `import_roms/test_mame_chd.rs`, `import_roms/test_mame_mixed.rs`                                                                                                            | the HD branch matches the `<disk sha1=…>` row through the size-0 CHD-SHA1 retry, and an arcade system stores it in a per-game subdirectory ([src/import_roms/test_mame_chd.rs](../../src/import_roms/test_mame_chd.rs#L77-L94))                                     |
-| `Test Game (USA, Europe) (LD).riff`             | the LaserDisc source, not a CHD | `src/chd/test_ld.rs`                                                                                                                                                        | `.riff` → `to_chd` → `as_chd` → `to_riff` → `to_chd` again produces a **byte-identical** CHD, in process ([src/chd/test_ld.rs](../../src/chd/test_ld.rs#L1-L50)) — the only consumer of this fixture anywhere in the workspace                                      |
+| `Test Game (USA, Europe) (RDSK).chd`            | `Hd`                            | `import_roms/test_mame_chd.rs`, `import_roms/test_mame_mixed.rs`                                                                                                            | the HD branch matches the `<disk sha1=…>` row through the size-0 CHD-SHA1 retry, and an arcade system stores it in a per-game subdirectory ([src/import_roms/tests/test_mame_chd.rs](../../src/import_roms/tests/test_mame_chd.rs))                                 |
+| `Test Game (USA, Europe) (LD).riff`             | the LaserDisc source, not a CHD | `src/chd/tests/test_ld.rs`                                                                                                                                                  | `.riff` → `to_chd` → `as_chd` → `to_riff` → `to_chd` again produces a **byte-identical** CHD, in process ([src/chd/tests/test_ld.rs](../../src/chd/tests/test_ld.rs)) — the only consumer of this fixture anywhere in the workspace                                |
 
 Two consequences worth internalising. First, the `.chd` fixtures no longer
 require any tool on `PATH` to be _used_: import, check, convert and export all
@@ -476,24 +486,22 @@ the WUD, WUX and WUA cases under `convert_roms/` and `export_roms/`,
 `import_roms/test_wua.rs`, `check_roms/test_wua.rs` and
 `test_wua_without_its_update.rs`, `purge_roms/test_foreign_store.rs`, and
 `create_dats/test_wux_and_nus.rs` and `test_wua.rs`. No WUA ships as a fixture:
-the WUA tests write one from the WUD first, its update partition in a store. The export tests that bundle an update import
-both DATs, so `ToWua` finds the update by title ID; the ticketless case removes
-the `cetk` and checks that the update is left out of the WUA.
+the WUA tests write one from the WUD and WUX first.
 
-## Election fixtures: categories, inferred clones, clone lists
+## Catalog metadata: categories, inferred clones, clone lists
 
-Three later DAT scenarios feed the sorting features rather than the import
-path. `Test System (20261109) (Parent-Clone) (Categories).dat` carries
+Three newer fixture families drive metadata through import into the 1G1R
+election. `Test System (20261109) (Parent-Clone) (Categories).dat` carries
 per-game `<category>` elements (`Games`, `Applications`, `Demos`,
-`Preproduction`); `import_dats/test_dat_categories.rs` and
+`Preproduction`); `import_dats/tests/test_dat_categories.rs` and
 `test_dat_categories_updated.rs` assert the categories land on the game
-(a `\|`-joined string) and survive a DAT update, while
-`sort_roms/test_sort_discard_categories.rs` and
-`test_sort_1g1r_discard_categories.rs` pass `&["Demos"]` as `sort_system`'s
-ignored-category list — what the `DISCARD_CATEGORIES` setting compiles to —
+(a `\|`-joined string) and survive a DAT update, while the
+`DISCARD_CATEGORIES` scenarios of `sort_roms/tests/matrix.rs` pass
+`&["Demos"]` (and once `&["Demos", "Preproduction"]`) as the ignored-category
+list — what the `DISCARD_CATEGORIES` setting compiles to —
 and check the flagged games drop out of the election. `Test System (20261110)
 (Infer Clones).dat` ships no `<clone>` links at all; with `INFER_CLONES`
-enabled, `sort_roms/test_sort_1g1r_infer_clones_titles.rs` proves games are
+enabled, `sort_roms/tests/test_sort_1g1r_infer_clones_titles.rs` proves games are
 grouped by shared metadata instead, and its `(Infer Clones) (Parent-Clone)
 .dat` companion is the same corpus with explicit clone links, used by
 `test_sort_1g1r_infer_clones_parent_clone.rs` to show the inferred election
@@ -502,43 +510,45 @@ pairs with `Test System (Clone Lists) (Redump).json`, a clone-list dump in the
 Retool-derived JSON shape (`description` plus `variants` of `group` / `titles`
 entries with `searchTerm`, `priority`, `filters`); the whole
 `src/import_clone_lists/` suite parses that file, and
-`sort_roms/test_sort_1g1r_clone_lists.rs` consumes the imported priorities.
+`sort_roms/tests/test_sort_1g1r_clone_lists.rs` consumes the imported priorities.
 
 ## Non-DAT fixtures
 
 | File                                                                    | Role                                                                                                                                                                                                                                                                                                                              |
 | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `hbmame.xml`                                                            | A headerless MAME `-listxml` file with a `build` attribute, one machine with a `nodump` ROM and one device; `import_dats/test_dat_mame_listxml.rs` asserts the system takes its name from the file and its version from the build                                                                                                 |
-| `header.xml`                                                            | A `clrmamepro` header detector (`NES` magic at offset 10) referenced by `<clrmamepro header="header.xml" />` in the Headered DATs; resolved next to the DAT, else from the embedded `data/` assets ([src/import_dats.rs](../../src/import_dats.rs#L283-L304))                                                                     |
-| `profile.xml`                                                           | A no-intro profile served by a wiremock `GET /profile.xml` in the DAT-download test ([src/download_dats/test_nointro.rs](../../src/download_dats/test_nointro.rs#L35-L50))                                                                                                                                                        |
-| `Test System (20200721).zip`                                            | The redump datfile payload a mocked `GET /datfile/…` returns ([src/download_dats/test_redump.rs](../../src/download_dats/test_redump.rs#L28-L70))                                                                                                                                                                                 |
-| `Test System (20210401).zip`                                            | A DAT **nested in a subdirectory** (`Test System/…`), exercising `import-dats` on an archive: the ZIP is unpacked into the tmp directory and every `.dat` in the tree is found ([src/import_dats.rs](../../src/import_dats.rs#L110-L143), [src/import_dats/test_zip_nested.rs](../../src/import_dats/test_zip_nested.rs#L25-L46)) |
-| `Test Game (USA, Europe).ips` / `.bps` / `.xdelta` with `(patched).rom` | The known-answer triple: apply the patch, compare to the committed expected output ([src/xps/test_patch.rs](../../src/xps/test_patch.rs#L38-L45))                                                                                                                                                                                 |
-| `UP0001-BLUS00001.pkg` + `prfgmHWxGNxsfJ.rap`                           | The PSN pair declared by `Test System (20230527) (PSN).dat`                                                                                                                                                                                                                                                                       |
+| `header.xml`                                                            | A `clrmamepro` header detector (`NES` magic at offset 10) referenced by `<clrmamepro header="header.xml" />` in the Headered DATs; resolved next to the DAT, else from the embedded `data/` assets ([src/import_dats.rs](../../src/import_dats.rs#L300-L328))                                                                     |
+| `profile.xml`                                                           | A no-intro profile served by a wiremock `GET /profile.xml` in the DAT-download test ([src/download_dats/tests/test_nointro.rs](../../src/download_dats/tests/test_nointro.rs))                                                                                                                                                   |
+| `Test System (20200721).zip`                                            | The redump datfile payload a mocked `GET /datfile/…` returns ([src/download_dats/tests/test_redump.rs](../../src/download_dats/tests/test_redump.rs))                                                                                                                                                                            |
+| `Test System (20210401).zip`                                            | A DAT **nested in a subdirectory** (`Test System/…`), exercising `import-dats` on an archive: the ZIP is unpacked into the tmp directory and every `.dat` in the tree is found ([src/import_dats.rs](../../src/import_dats.rs#L120-L145), [src/import_dats/tests/test_zip_nested.rs](../../src/import_dats/tests/test_zip_nested.rs)) |
+| `Test Game (USA, Europe).ips` / `.bps` / `.xdelta` with `(patched).rom` | The known-answer triple: apply the patch, compare to the committed expected output ([src/xps/tests/test_patch.rs](../../src/xps/tests/test_patch.rs))                                                                                                                                                                             |
+| `UP0001-BLUS00001.pkg` + `prfgmHWxGNxsfJ.rap`                           | The PSN pair declared by `Test System (20230527) (PSN).dat`                                                                                                                                                                                                                                                                              |
 
 ## `tests/crates.rs`: the shared CLI shell must not drift
 
-`tests/crates.rs` is a workspace-level guard, not a behaviour test. The ten
-format crates each ship a CLI whose `ui.rs` — progress bar, `-o DIR`, the
+`tests/crates.rs` is a workspace-level guard, not a behaviour test. The format
+crates each ship a CLI whose `ui.rs` — progress bar, `-o DIR`, the
 `✔`/`✖` per-input lines — is a **verbatim copy**. `every_cli_shares_one_ui`
 reads `crates/xso-rs/src/bin/xsors/ui.rs` as the reference and asserts the copies
-in **`chdrs`**, `ciars`, `gdirs`, `nszrs`, `rvzrs`, `wbfsrs`, `xdeltars`, `wuxrs`
-and `xpsrs` are byte-identical ([tests/crates.rs](../../tests/crates.rs#L1-L21)).
+in **`chdrs`**, `ciars`, `gdirs`, `nszrs`, `orers`, `rvzrs`, `wbfsrs`, `xdeltars`,
+`wuxrs` and `xpsrs` are byte-identical ([tests/crates.rs](../../tests/crates.rs#L4-L22)).
 
 It has no feature gate and no fixtures, so it runs on every
 `cargo test --workspace`, including the CI coverage pass. Editing one `ui.rs`
-without the other nine turns CI red with `"<path> differs from xsors's ui.rs"`;
-the fix is always to change all ten together, which is the convention `AGENTS.md`
+without the other ten turns CI red with `"<path> differs from xsors's ui.rs"`;
+the fix is always to change them all together, which is the convention `AGENTS.md`
 records for the crates
 ([Format Crates](../integrations/format-crates.md)).
 
-The same file guards fixtures shared by symlink. The GameCube and Wii test
-discs live once, in `crates/gcwii/tests/common/mod.rs`, which builds synthetic
-discs (encrypted with a made-up Wii common key) and finds `dolphin-tool`;
-`crates/rvz-rs/tests/common` and `crates/wbfs-rs/tests/common` are symlinks to
-it, as their `src/gcwii` are to gcwii's source. `embedded_crates_are_symlinked_in`
-checks every one of those links, so a broken or text-file symlink — what a
-Windows checkout without `core.symlinks` produces — fails here first.
+The same file guards the embedded crates, `EMBEDDED`: `cd` copied into chd-rs,
+`gcwii` into rvz-rs and wbfs-rs, `wiiu` into wux-rs.
+`embedded_crates_are_copied_in` compares every copy byte for byte against the
+embedded crate's own `src` and fails a symlink — what a Windows checkout without
+`core.symlinks` produces — before it can poison a published crate. What the
+suites share is deliberately **not** embedded: the GameCube/Wii and Wii U disc
+builders live in `crates/test-support`, used as a dev-dependency, as the
+`EMBEDDED` comment records — nothing to keep in sync
+([tests/crates.rs](../../tests/crates.rs#L24-L35)).
 
 One fixture is deliberately duplicated: `crates/cia-rs/tests/data/Test Game (USA,
 Europe).cia` is a byte-identical copy of `tests/Test Game (USA, Europe).cia`, so the
@@ -602,7 +612,7 @@ The behaviours pinned by the suite:
 
 | Test                                          | Contract                                                                                                                                                                                                                                                                                 |
 | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `handshake_exposes_the_full_surface`          | `initialize` names the server `oxyromon`; `tools/list` contains every one of the 20 tool names it enumerates; `prompts/list` is exactly `audit_system`, `onboard_system` **in that order**; `resources/list` is exactly `oxyromon://status`, `oxyromon://systems`, `oxyromon://settings` |
+| `handshake_exposes_the_full_surface`          | `initialize` names the server `oxyromon`; `tools/list` contains every one of the 21 tool names it enumerates; `prompts/list` is exactly `audit_system`, `onboard_system` **in that order**; `resources/list` is exactly `oxyromon://status`, `oxyromon://systems`, `oxyromon://settings` |
 | `status_reports_the_empty_library`            | `structuredContent.version` equals `CARGO_PKG_VERSION`, `read_only` false, `systems` 0                                                                                                                                                                                                   |
 | `unknown_ids_are_tool_errors_with_pointers`   | `get_system` with an unknown id is a **tool-level** `isError` whose text points at `list_systems`                                                                                                                                                                                        |
 | `import_dats_then_read_the_catalog_back`      | Importing `tests/Test System (20200721).dat` through the tool yields one system with `games_total` 6, `search_games "test game"` count 6, `list_games limit 2` returning 2 of 6                                                                                                          |
@@ -624,11 +634,12 @@ an MCP test as well as the ~130 in-module tests that import it
 ```sh
 cargo test --workspace --features oxyromon/server   # fixtures, crates.rs, mcp_stdio.rs
 cargo test --features oxyromon/server mcp_stdio     # just the stdio suite
-./test.sh                                           # the llvm-cov command CI runs
+./test.sh                                           # the llvm-cov command, without nextest
 ```
 
 `server` implies `mcp`, so CI's single
-`cargo llvm-cov --workspace --features oxyromon/server` step runs both suites
+`cargo llvm-cov nextest --workspace --features oxyromon/server` step runs both
+suites
 ([CI Pipelines and Runtime Environment](../operations/ci-and-environment.md)).
 The stdio suite is also compiled — linted, at least — under
 `cargo clippy --no-default-features --features use-rustls,mcp --all-targets`,
@@ -652,10 +663,11 @@ tests pass without any of them.
 3. Add or reuse ROM files, then run `tests/compute_sums.sh` on each and paste the
    size, CRC, MD5 and SHA1 into its `<rom>` row. For a container, declare the
    entries inside it; for a MAME `<disk>`, the SHA1 of the CHD **file**.
-4. Copy the fixture into the test's temp directory before importing it — never
-   import from `tests/`.
-5. Create scratch directories with `TempDir::new_in(test_directory)` so renames
-   stay on one filesystem.
+4. Take the fixture through `TestEnv` — `env.fixture(name)` copies it into the
+   test's scratch before anything imports it; never import from `tests/`.
+5. Let `TestEnv` own the scratch: its root is a system-temp `TempDir` with the
+   ROM and tmp directories under it, registered as settings in the test's own
+   database.
 6. For a new CHD, generate it with `chdrs` or `convert-roms` rather than with an
    external tool, and check whether `crates/chd-rs/tests/cli.rs` now has to
    include it in its golden comparison.
@@ -663,4 +675,4 @@ tests pass without any of them.
 See also [Format Crate Test Strategy](format-crate-tests.md) for how the crates
 under `crates/` prove themselves against upstream tools, and
 [Testing Conventions](testing-conventions.md) for the shared
-`MUTEX`/`NamedTempFile` scaffolding every fixture-consuming test uses.
+`TestEnv` scaffolding every fixture-consuming test uses.

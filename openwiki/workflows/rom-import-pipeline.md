@@ -102,7 +102,7 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
+generated: { by: "unknown", at: "2026-11-23T22:34:01.701Z" }
 verified:
   - by: openwiki/0.9.0
     at: 2026-11-13T20:59:45.363Z
@@ -158,6 +158,7 @@ de-duplicated by id. A `-s` matching nothing fails with `No matching system foun
 rather than falling back to every system, as after a typo; when `-s` is not passed the
 list is a single `None` entry meaning "every system"
 ([src/import_roms.rs](../../src/import_roms.rs#L144-L154),
+<!-- openwiki: broken internal link [../../src/import_roms/test_unknown_system.rs] file "../../src/import_roms/test_unknown_system.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [`test_unknown_system.rs`](../../src/import_roms/test_unknown_system.rs)).
 
 That list is not just a filter — `main` loops **once per system**, so `-s A -s B`
