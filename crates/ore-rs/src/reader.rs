@@ -1514,8 +1514,8 @@ impl Reader {
     /// often not its next group in use, so the guess starts from the
     /// sectors that follow and takes each plane of theirs, the records
     /// of their ranges, and the groups behind those. Groups already held
-    /// count for nothing: a reader catching up on the worker's head
-    /// start should guess nothing.
+    /// still count toward the window but are not fetched again: a reader
+    /// inside the worker's head start should guess nothing.
     fn guess(&self, end: u64) -> Vec<Fetch> {
         let mut out = Vec::new();
         let mut seen: Vec<(bool, u32)> = Vec::new();
@@ -1560,8 +1560,10 @@ impl Reader {
 
     /// The groups of `area`'s stored stream from `from` onward, walking
     /// the records forward: the ORE's own chunks' groups, and store
-    /// chunks' groups in the store. A group once, and only if none
-    /// holds it yet, until the window of them are gathered.
+    /// chunks' groups in the store, up to the group `from` lies in and
+    /// the window past it. Every group walked counts toward the window,
+    /// held or not, but only those no one holds yet, once each, are
+    /// fetched.
     fn guess_stored(
         &self,
         area: usize,
@@ -1579,8 +1581,10 @@ impl Reader {
         // The starts begin at zero: the record `from` lies in is the one
         // before the first start past it, whatever it holds.
         let mut record = area.starts.partition_point(|&start| start <= from) - 1;
-        let want = out.len() + self.ahead.window;
-        while record < area.records.len() && out.len() < want {
+        // The groups this walk has passed, held, seen or not: a plane's
+        // window counts the groups another plane already gave.
+        let mut walked: Vec<(bool, u32)> = Vec::new();
+        while record < area.records.len() && walked.len() <= self.ahead.window {
             let (store_side, group, fetch) = match &area.records[record] {
                 Record::Chunk(id) => {
                     let group = self.chunks[*id as usize].group;
@@ -1607,6 +1611,10 @@ impl Reader {
                 }
             };
             record += 1;
+            if walked.contains(&(store_side, group)) {
+                continue;
+            }
+            walked.push((store_side, group));
             if seen.contains(&(store_side, group)) {
                 continue;
             }
