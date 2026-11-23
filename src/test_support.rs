@@ -2,10 +2,15 @@ use super::check_roms;
 use super::common::{CommonRomfile, FromPath};
 use super::compact_roms;
 use super::config;
-use super::config::{MUTEX, TestDatabase, set_rom_directory, set_tmp_directory};
+use super::config::{
+    MUTEX, TestDatabase, add_to_list, set_bool, set_rom_directory, set_string, set_tmp_directory,
+};
 use super::convert_roms;
 use super::create_dats;
-use super::database::{establish_connection, find_romfiles, find_systems};
+use super::database::{
+    establish_connection, find_romfiles, find_romfiles_by_system_id,
+    find_roms_with_romfile_by_system_id, find_systems,
+};
 use super::download_dats;
 use super::export_roms;
 use super::generate_playlists;
@@ -25,6 +30,7 @@ use super::sort_roms;
 use super::util::get_system_directory;
 use anyhow::Result;
 use indicatif::ProgressBar;
+#[cfg(feature = "server")]
 use sqlx::SqlitePool;
 use sqlx::pool::PoolConnection;
 use sqlx::sqlite::Sqlite;
@@ -34,6 +40,26 @@ use std::pin::Pin;
 use tempfile::TempDir;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::MutexGuard;
+
+/// The dat nearly every matrix cell imports.
+pub const DAT: &str = "Test System (20200721).dat";
+/// The dat for the GameCube/Wii cells.
+pub const RVZ_DAT: &str = "Test System (20230618) (RVZ).dat";
+/// The dat for the Wii U cells.
+pub const WUD_DAT: &str = "Test System (20261025) (WUD).dat";
+
+/// One `#[tokio::test]` per matrix cell, each handing its case to `$runner`.
+macro_rules! test_cases {
+    ($runner:ident; $($name:ident : $case:expr),+ $(,)?) => {
+        $(
+            #[tokio::test]
+            async fn $name() {
+                $runner(&$case).await;
+            }
+        )+
+    };
+}
+pub(crate) use test_cases;
 
 /// The fixtures' directory: the checked-in files every test reads from,
 /// resolved from the crate root so a test never depends on the cwd.
@@ -69,6 +95,7 @@ pub struct TestEnv {
     pub connection: PoolConnection<Sqlite>,
     /// A handle to the same pool the connection came from: for the rare
     /// test that hands one to a `main` of its own, such as the server's.
+    #[cfg(feature = "server")]
     pub pool: SqlitePool,
     pub rom_directory: PathBuf,
     pub tmp_directory: PathBuf,
@@ -107,6 +134,7 @@ impl TestEnv {
 
         Self {
             connection,
+            #[cfg(feature = "server")]
             pool,
             rom_directory,
             tmp_directory,
@@ -235,6 +263,51 @@ impl TestEnv {
         get_system_directory(&mut self.connection, system)
             .await
             .unwrap()
+    }
+
+    /// The roms of a system that have a romfile: what the convert and
+    /// export matrices assert against.
+    pub async fn roms_with_romfiles(&mut self, system: &System) -> Vec<super::model::Rom> {
+        find_roms_with_romfile_by_system_id(&mut self.connection, system.id).await
+    }
+
+    /// Every romfile of a system.
+    pub async fn romfiles_of(&mut self, system: &System) -> Vec<Romfile> {
+        find_romfiles_by_system_id(&mut self.connection, system.id).await
+    }
+
+    /// A system-scoped boolean setting: the knobs `sort-roms` reads back
+    /// from the database.
+    pub async fn set_bool(&mut self, key: &str, value: bool, system_id: i64) {
+        set_bool(&mut self.connection, key, value, Some(system_id)).await;
+    }
+
+    /// A system-scoped string setting.
+    pub async fn set_string(&mut self, key: &str, value: &str, system_id: i64) {
+        set_string(&mut self.connection, key, value, Some(system_id)).await;
+    }
+
+    /// One value added to a system-scoped list setting.
+    pub async fn add_to_list(&mut self, key: &str, value: &str, system_id: i64) {
+        add_to_list(
+            &mut self.connection,
+            &self.progress_bar,
+            key,
+            value,
+            Some(system_id),
+        )
+        .await;
+    }
+
+    /// The relative path a romfile under a system directory is stored as:
+    /// the path's tail after the ROM directory, exactly as the database
+    /// keeps it.
+    pub fn stored_path(&self, path: &Path) -> String {
+        path.strip_prefix(&self.rom_directory)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
     }
 
     /// Runs a subcommand's `main` on these args, its first word naming

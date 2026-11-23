@@ -1368,6 +1368,8 @@ fn sort_games_by_weight(
 }
 
 #[cfg(test)]
+mod matrix;
+#[cfg(test)]
 mod test_all_regions_from_db;
 #[cfg(test)]
 mod test_all_regions_from_matches;
@@ -1420,47 +1422,17 @@ mod test_order_prefer_versions_old_vanilla_vs_revision;
 #[cfg(test)]
 mod test_search_term_title;
 #[cfg(test)]
-mod test_sort;
-#[cfg(test)]
-mod test_sort_1g1r;
-#[cfg(test)]
 mod test_sort_1g1r_catch_all;
 #[cfg(test)]
 mod test_sort_1g1r_clone_lists;
-#[cfg(test)]
-mod test_sort_1g1r_discard_asia_and_beta;
-#[cfg(test)]
-mod test_sort_1g1r_discard_categories;
-#[cfg(test)]
-mod test_sort_1g1r_infer_clones;
 #[cfg(test)]
 mod test_sort_1g1r_infer_clones_parent_clone;
 #[cfg(test)]
 mod test_sort_1g1r_infer_clones_titles;
 #[cfg(test)]
-mod test_sort_1g1r_language_first;
-#[cfg(test)]
-mod test_sort_1g1r_language_first_demote_not_discard;
-#[cfg(test)]
-mod test_sort_1g1r_language_first_empty;
-#[cfg(test)]
-mod test_sort_1g1r_language_first_off;
-#[cfg(test)]
-mod test_sort_1g1r_language_first_region_tiebreak;
-#[cfg(test)]
-mod test_sort_1g1r_language_first_revisions;
-#[cfg(test)]
-mod test_sort_1g1r_lenient;
-#[cfg(test)]
 mod test_sort_1g1r_playlist;
 #[cfg(test)]
-mod test_sort_1g1r_revisions;
-#[cfg(test)]
-mod test_sort_1g1r_strict;
-#[cfg(test)]
 mod test_sort_1g1r_subfolders_alpha;
-#[cfg(test)]
-mod test_sort_1g1r_without_parent_clone;
 #[cfg(test)]
 mod test_sort_1g1r_without_roms;
 #[cfg(test)]
@@ -1469,14 +1441,6 @@ mod test_sort_archive_custom_extension;
 mod test_sort_by_name;
 #[cfg(test)]
 mod test_sort_custom_extension;
-#[cfg(test)]
-mod test_sort_discard_asia;
-#[cfg(test)]
-mod test_sort_discard_asia_and_beta;
-#[cfg(test)]
-mod test_sort_discard_beta;
-#[cfg(test)]
-mod test_sort_discard_categories;
 #[cfg(test)]
 mod test_title;
 #[cfg(test)]
