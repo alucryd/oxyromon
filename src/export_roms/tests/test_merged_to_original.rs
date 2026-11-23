@@ -1,5 +1,5 @@
-use crate::rebuild_roms::merged_set::*;
 use super::*;
+use crate::rebuild_roms::merged_set::*;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 

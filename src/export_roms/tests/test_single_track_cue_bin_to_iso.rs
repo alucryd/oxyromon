@@ -1,6 +1,6 @@
+use super::*;
 use crate::import_dats;
 use crate::import_roms;
-use super::*;
 use sha1::{Digest, Sha1};
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;

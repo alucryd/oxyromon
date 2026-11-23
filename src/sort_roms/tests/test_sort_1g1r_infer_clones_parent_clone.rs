@@ -1,5 +1,5 @@
-use crate::import_dats;
 use super::*;
+use crate::import_dats;
 use tempfile::TempDir;
 
 #[tokio::test]

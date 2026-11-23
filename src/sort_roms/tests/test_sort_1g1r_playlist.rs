@@ -1,8 +1,8 @@
+use super::*;
 use crate::config::{PreferredRegion, PreferredVersion};
 use crate::generate_playlists;
 use crate::import_dats;
 use crate::import_roms;
-use super::*;
 use std::path::Path;
 use tempfile::TempDir;
 use tokio::fs;

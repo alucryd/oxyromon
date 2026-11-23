@@ -1,9 +1,9 @@
+use super::*;
 use crate::check_roms;
 use crate::compact_roms;
 use crate::import_dats;
 use crate::import_roms;
 use crate::purge_roms;
-use super::*;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 

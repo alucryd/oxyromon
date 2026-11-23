@@ -1,5 +1,5 @@
-use crate::prompt::SCRIPTED_SELECTIONS;
 use super::*;
+use crate::prompt::SCRIPTED_SELECTIONS;
 use crate::test_support::TestEnv;
 use tokio::fs;
 

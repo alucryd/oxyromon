@@ -1,7 +1,7 @@
-use crate::database::*;
-use crate::util::*;
 use super::*;
+use crate::database::*;
 use crate::test_support::TestEnv;
+use crate::util::*;
 use std::path::Path;
 
 #[tokio::test]

@@ -1,5 +1,5 @@
-use crate::import_roms::UnattendedMode;
 use super::*;
+use crate::import_roms::UnattendedMode;
 use crate::test_support::TestEnv;
 use tokio::fs;
 

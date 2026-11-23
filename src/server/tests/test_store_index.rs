@@ -2,9 +2,9 @@
 //! request asks for them: the store's index is read once, whatever the
 //! number of fields that need it.
 
+use super::*;
 use crate::config::{set_bool, set_string};
 use crate::database::find_romfiles;
-use super::*;
 use crate::test_support::TestEnv;
 use sqlx::AssertSqlSafe;
 use std::path::Path;

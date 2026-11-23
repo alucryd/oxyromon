@@ -1,5 +1,5 @@
-use crate::archive::{ArchiveCompression, ArchiveType, ToArchive};
 use super::*;
+use crate::archive::{ArchiveCompression, ArchiveType, ToArchive};
 use crate::test_support::TestEnv;
 use tokio::fs;
 

@@ -5,10 +5,10 @@
 //! round trip through `as_archive` is the point of the test — it proves
 //! what was written can be listed and its entry checked afterwards.
 
-use crate::import_dats;
-use crate::import_roms;
 use super::*;
 use crate::archive::ArchiveCompression;
+use crate::import_dats;
+use crate::import_roms;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 use tokio::fs;

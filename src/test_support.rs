@@ -2,7 +2,9 @@ use super::check_roms;
 use super::common::{CommonRomfile, FromPath};
 use super::compact_roms;
 use super::config;
-use super::config::{TestDatabase, add_to_list, set_bool, set_rom_directory, set_string, set_tmp_directory};
+use super::config::{
+    TestDatabase, add_to_list, set_bool, set_rom_directory, set_string, set_tmp_directory,
+};
 use super::convert_roms;
 use super::create_dats;
 use super::database::{

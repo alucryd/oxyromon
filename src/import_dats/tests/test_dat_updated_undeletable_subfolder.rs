@@ -1,6 +1,6 @@
+use super::*;
 use crate::config::*;
 use crate::import_roms::UnattendedMode;
-use super::*;
 use crate::test_support::TestEnv;
 use std::os::unix::fs::PermissionsExt;
 use tokio::fs;

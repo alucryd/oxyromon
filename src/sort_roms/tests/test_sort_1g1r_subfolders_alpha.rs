@@ -1,6 +1,6 @@
+use super::*;
 use crate::import_dats;
 use crate::import_roms;
-use super::*;
 use tempfile::TempDir;
 use tokio::fs;
 

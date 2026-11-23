@@ -1,6 +1,6 @@
+use super::*;
 use crate::import_clone_lists;
 use crate::import_dats;
-use super::*;
 use tempfile::TempDir;
 
 #[tokio::test]

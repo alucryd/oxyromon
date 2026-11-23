@@ -1,7 +1,7 @@
+use super::*;
 use crate::import_dats;
 use crate::import_roms;
 use crate::xso::XsoType;
-use super::*;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 use tokio::fs;

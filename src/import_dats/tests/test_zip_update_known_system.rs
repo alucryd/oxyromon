@@ -1,5 +1,5 @@
-use crate::database::*;
 use super::{import_dat, parse_dat};
+use crate::database::*;
 use crate::test_support::TestEnv;
 
 #[tokio::test]

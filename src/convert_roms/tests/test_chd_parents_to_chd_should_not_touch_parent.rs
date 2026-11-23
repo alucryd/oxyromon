@@ -1,7 +1,7 @@
+use super::*;
 use crate::generate_playlists;
 use crate::import_dats;
 use crate::import_roms;
-use super::*;
 use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
