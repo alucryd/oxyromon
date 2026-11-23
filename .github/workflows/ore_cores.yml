@@ -20,7 +20,7 @@ on:
         description: "Core to build"
         type: choice
         default: all
-        options: [all, beetle-psx, parallel-ps2, pcee2, dolphin, mesen, mesen-s, sameboy, mgba, melonds-ds, azahar, parallel-n64, cemu, beetle-vb, pokemini, genesis-plus-gx]
+        options: [all, beetle-psx, parallel-ps2, pcee2, dolphin, mesen, mesen-s, sameboy, mgba, melonds-ds, azahar, parallel-n64, cemu, beetle-vb, pokemini, genesis-plus-gx, picodrive]
 
 concurrency:
   group: ore-cores-${{ github.ref }}
@@ -611,3 +611,34 @@ jobs:
         with:
           name: genesis_plus_gx_libretro-ore-linux-x86_64
           path: core/genesis_plus_gx_libretro.so
+
+  picodrive:
+    name: PicoDrive
+    runs-on: ubuntu-24.04
+    if: ${{ !inputs.core || inputs.core == 'all' || inputs.core == 'picodrive' }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: oxyromon
+      - uses: actions/checkout@v7
+        with:
+          repository: alucryd/picodrive
+          ref: ${{ env.CORE_REF }}
+          path: core
+          submodules: true
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: oxyromon/crates/smelt-rs
+      - name: Build libsmelt
+        run: cargo build --release --manifest-path "$SMELT_DIR/Cargo.toml"
+      - name: Build core
+        run: make -C core -f Makefile.libretro -j"$(nproc)" ORE=1 SMELT_DIR="$SMELT_DIR"
+      # No test suite in the core: at least the reader is in it, CD side too
+      - name: Check the ORE reader is linked
+        run: nm core/picodrive_libretro.so | grep -q smelt_track_at
+      - uses: actions/upload-artifact@v7
+        with:
+          name: picodrive_libretro-ore-linux-x86_64
+          path: core/picodrive_libretro.so
