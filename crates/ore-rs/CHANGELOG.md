@@ -52,6 +52,7 @@
 
 ## Fixes
 
+- Reading ahead stops at its window past the playhead's group, four groups by default, where it counted only the groups it had yet to decode and walked past the ones held to find that many: every read sent the worker a window further, so a disc played from a share was fetched about as fast as the link carried it
 - A Wii U disc's `repeat` area longer than its period, as its free space is, reads in one step, folded onto the period before it, where the reader followed it back one period at a time, a stack frame each: a disc's gigabytes of free space overflowed the stack, which aborted oxyromon's check of a fresh ORE on a tokio worker
 - An ORE whose header and metadata name different media classes is refused: the file name was read from the header's class and the outputs from the metadata's, so the two could disagree on what a file is
 - A header longer than 192 bytes is read, its groups found after it and the bytes past the 192 skipped, as the spec has it, and kept as they are by a cue sheet's replacement, so a later version growing the header leaves this one able to read its files; and an ORE of a later layout, `ORE2` on, is refused as one, not as a file of another kind

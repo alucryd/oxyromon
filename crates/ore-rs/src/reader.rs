@@ -1579,8 +1579,8 @@ impl Reader {
         // The starts begin at zero: the record `from` lies in is the one
         // before the first start past it, whatever it holds.
         let mut record = area.starts.partition_point(|&start| start <= from) - 1;
-        let want = out.len() + self.ahead.window;
-        while record < area.records.len() && out.len() < want {
+        let mut ahead = 0;
+        while record < area.records.len() && ahead <= self.ahead.window {
             let (store_side, group, fetch) = match &area.records[record] {
                 Record::Chunk(id) => {
                     let group = self.chunks[*id as usize].group;
@@ -1611,6 +1611,7 @@ impl Reader {
                 continue;
             }
             seen.push((store_side, group));
+            ahead += 1;
             let held = if store_side {
                 self.store.as_ref().is_some_and(|s| s.holds(group))
             } else {

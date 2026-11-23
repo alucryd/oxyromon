@@ -97,12 +97,13 @@ fn a_seek_drops_the_streak_and_three_fresh_reads_arm_it_again() {
         reader.read_at(i * 2048, &mut [0; 2048]).unwrap();
     }
     assert_eq!(settled(&reader, 5), 5);
-    // A jump well past the gap: the window behind the old playhead says
-    // nothing about where the disc plays next. The seek reads a group
-    // the old window already holds, so every decode after this point is
-    // the worker guessing — and after a seek it must not guess until
-    // the reads run sequential again.
-    reader.read_at(1 << 20, &mut [0; 2048]).unwrap();
+    // A jump well past the gap, and past the first group, which holds
+    // more than 1 MiB of the disc for its header compressing: the window
+    // behind the old playhead says nothing about where the disc plays
+    // next. The seek reads a group the old window already holds, so
+    // every decode after this point is the worker guessing — and after a
+    // seek it must not guess until the reads run sequential again.
+    reader.read_at(2 << 20, &mut [0; 2048]).unwrap();
     std::thread::sleep(Duration::from_millis(300));
     assert_eq!(
         reader.group_decodes(),
@@ -110,8 +111,8 @@ fn a_seek_drops_the_streak_and_three_fresh_reads_arm_it_again() {
         "a seek buys no group ahead of it: the streak died with the jump"
     );
     // Two reads on from the seek: sequential, but not yet a streak.
-    reader.read_at((1 << 20) + 2048, &mut [0; 2048]).unwrap();
-    reader.read_at((1 << 20) + 4096, &mut [0; 2048]).unwrap();
+    reader.read_at((2 << 20) + 2048, &mut [0; 2048]).unwrap();
+    reader.read_at((2 << 20) + 4096, &mut [0; 2048]).unwrap();
     std::thread::sleep(Duration::from_millis(300));
     assert_eq!(
         reader.group_decodes(),
@@ -120,11 +121,36 @@ fn a_seek_drops_the_streak_and_three_fresh_reads_arm_it_again() {
     );
     // The third engages, and the guessing starts from where the
     // playhead actually is: the only group left undecoded is five.
-    reader.read_at((1 << 20) + 6144, &mut [0; 2048]).unwrap();
+    reader.read_at((2 << 20) + 6144, &mut [0; 2048]).unwrap();
     assert_eq!(
         settled(&reader, 6),
         6,
         "re-engaged, the worker reaches the one group the disc still owes"
+    );
+}
+
+#[test]
+fn a_playhead_inside_its_window_asks_for_nothing_more() {
+    let dir = TempDir::new().unwrap();
+    let (ore, _disc) = six_group_ore(dir.path());
+    let mut reader = Reader::open(&ore).unwrap();
+    // Engage: the group read and the window of four ahead of it.
+    for i in 0..4u64 {
+        reader.read_at(i * 2048, &mut [0; 2048]).unwrap();
+    }
+    assert_eq!(settled(&reader, 5), 5);
+    // Play on inside the first group: every read guesses again, and the
+    // four groups past the playhead are the four already held. Counting
+    // only the groups not yet held would walk past them to the fifth,
+    // and on a longer disc on and on, a read at a time.
+    for i in 4..64u64 {
+        reader.read_at(i * 2048, &mut [0; 2048]).unwrap();
+    }
+    std::thread::sleep(Duration::from_millis(300));
+    assert_eq!(
+        reader.group_decodes(),
+        5,
+        "the window is four groups past the playhead, not four past what is held"
     );
 }
 
