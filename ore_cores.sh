@@ -1,7 +1,7 @@
 #!/bin/sh
 # Build the ORE cores locally, as .github/workflows/ore_cores.yml does in CI,
 # against this checkout's libsmelt:
-#   ./ore_cores.sh [beetle-psx|parallel-ps2|pcee2|dolphin|mesen|mesen-s|sameboy|mgba|melonds-ds|azahar|parallel-n64|cemu|beetle-vb|pokemini|genesis-plus-gx|picodrive ...]
+#   ./ore_cores.sh [beetle-psx|parallel-ps2|pcee2|dolphin|mesen|mesen-s|sameboy|mgba|melonds-ds|azahar|parallel-n64|cemu|beetle-vb|pokemini|genesis-plus-gx|picodrive|beetle-saturn ...]
 # No argument builds them all. The cores are the checkouts next to oxyromon
 # (CORES_DIR, default ..), built in place on whatever branch they are on.
 set -eu
@@ -97,6 +97,13 @@ picodrive() {
     make_ore "$core" -f Makefile.libretro
 }
 
+beetle_saturn() {
+    core="$CORES_DIR/beetle-saturn-libretro"
+    # Its flag is HAVE_ORE, as Beetle PSX's; make does not track it either
+    make -C "$core" clean
+    make -C "$core" -j"$JOBS" HAVE_ORE=1 SMELT_DIR="$SMELT_DIR"
+}
+
 mgba() {
     core="$CORES_DIR/mgba"
     cmake -S "$core" -B "$core/build" \
@@ -141,10 +148,10 @@ cemu() {
 
 cargo build --release --manifest-path "$SMELT_DIR/Cargo.toml"
 
-[ $# -gt 0 ] || set -- beetle-psx parallel-ps2 pcee2 dolphin mesen mesen-s sameboy mgba melonds-ds azahar parallel-n64 cemu beetle-vb pokemini genesis-plus-gx picodrive
+[ $# -gt 0 ] || set -- beetle-psx parallel-ps2 pcee2 dolphin mesen mesen-s sameboy mgba melonds-ds azahar parallel-n64 cemu beetle-vb pokemini genesis-plus-gx picodrive beetle-saturn
 for c in "$@"; do
     case "$c" in
-        beetle-psx | parallel-ps2 | pcee2 | dolphin | mesen | mesen-s | sameboy | mgba | melonds-ds | azahar | parallel-n64 | cemu | beetle-vb | pokemini | genesis-plus-gx | picodrive) echo "== $c"; "$(echo "$c" | tr - _)" ;;
+        beetle-psx | parallel-ps2 | pcee2 | dolphin | mesen | mesen-s | sameboy | mgba | melonds-ds | azahar | parallel-n64 | cemu | beetle-vb | pokemini | genesis-plus-gx | picodrive | beetle-saturn) echo "== $c"; "$(echo "$c" | tr - _)" ;;
         *) echo "unknown core: $c" >&2; exit 1 ;;
     esac
 done
