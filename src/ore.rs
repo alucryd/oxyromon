@@ -1334,6 +1334,4 @@ pub async fn get_version() -> Result<String> {
 }
 
 #[cfg(test)]
-mod test_cartridge_platform_3ds;
-#[cfg(test)]
-mod test_store_settings_base_system;
+mod tests;

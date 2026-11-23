@@ -266,14 +266,4 @@ fn write_lines(lines: impl Iterator<Item = String>, destination: &Path) -> Resul
 }
 
 #[cfg(test)]
-mod test_import_3ds;
-#[cfg(test)]
-mod test_import_3ds_bad_key;
-#[cfg(test)]
-mod test_import_keys;
-#[cfg(test)]
-mod test_import_otp;
-#[cfg(test)]
-mod test_import_switch;
-#[cfg(test)]
-mod test_import_switch_tampered;
+mod tests;

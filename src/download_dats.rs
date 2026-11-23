@@ -561,10 +561,4 @@ async fn fetch_redump_dat(
 }
 
 #[cfg(test)]
-mod test_nointro;
-#[cfg(test)]
-mod test_nointro_failures;
-#[cfg(test)]
-mod test_redump;
-#[cfg(test)]
-mod test_redump_failures;
+mod tests;

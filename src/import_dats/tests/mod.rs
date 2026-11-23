@@ -1,0 +1,47 @@
+//! Per-file tests for this module. The re-export keeps each
+//! file's `use super::*;` pointing at the subcommand's namespace.
+pub use super::*;
+
+mod test_dat;
+mod test_dat_arcade;
+mod test_dat_as_is;
+mod test_dat_categories;
+mod test_dat_categories_updated;
+mod test_dat_custom_name;
+mod test_dat_custom_name_forced;
+mod test_dat_custom_name_replaced;
+mod test_dat_custom_name_revert;
+mod test_dat_custom_name_updated;
+mod test_dat_headered;
+mod test_dat_headered_duplicate_clrmamepro;
+mod test_dat_headered_embedded;
+mod test_dat_headered_skipped_header;
+mod test_dat_mame;
+mod test_dat_mame_chd;
+mod test_dat_mame_listxml;
+mod test_dat_mame_mixed;
+mod test_dat_nus;
+mod test_dat_outdated_forced;
+mod test_dat_outdated_should_do_nothing;
+mod test_dat_parent_clone;
+mod test_dat_updated;
+mod test_dat_updated_orphan_archive;
+mod test_dat_updated_orphan_archive_mismatch;
+mod test_dat_updated_orphan_chd;
+mod test_dat_updated_orphan_chd_mismatch;
+mod test_dat_updated_renamed_arcade;
+mod test_dat_updated_renamed_cue_bin;
+mod test_dat_updated_renamed_cue_chd;
+mod test_dat_updated_renamed_cue_identical_tracks;
+mod test_dat_updated_renamed_cue_mismatch;
+mod test_dat_updated_renamed_cue_same_game;
+mod test_dat_updated_renamed_cue_shared_track;
+mod test_dat_updated_renamed_subfolder;
+mod test_dat_updated_trashed_subfolder;
+mod test_dat_updated_undeletable_subfolder;
+mod test_regions_france_germany;
+mod test_regions_world;
+mod test_rename_cue_files;
+mod test_zip_nested;
+mod test_zip_update_known_system;
+mod test_zip_update_unknown_system;

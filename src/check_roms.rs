@@ -337,40 +337,4 @@ async fn move_to_trash(
 }
 
 #[cfg(test)]
-mod test_check_by_name;
-#[cfg(test)]
-mod test_cso;
-#[cfg(test)]
-mod test_iso_chd;
-#[cfg(test)]
-mod test_multiple_tracks_chd;
-#[cfg(test)]
-mod test_multiple_tracks_ore;
-#[cfg(test)]
-mod test_nus;
-#[cfg(test)]
-mod test_ore;
-#[cfg(test)]
-mod test_original;
-#[cfg(test)]
-mod test_original_crc_mismatch;
-#[cfg(test)]
-mod test_original_size_mismatch;
-#[cfg(test)]
-mod test_original_with_header;
-#[cfg(test)]
-mod test_rvz;
-#[cfg(test)]
-mod test_sevenzip;
-#[cfg(test)]
-mod test_sevenzip_with_header;
-#[cfg(test)]
-mod test_wua;
-#[cfg(test)]
-mod test_wua_without_its_update;
-#[cfg(test)]
-mod test_wux;
-#[cfg(test)]
-mod test_zip;
-#[cfg(test)]
-mod test_zso;
+mod tests;

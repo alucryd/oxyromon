@@ -1,0 +1,143 @@
+use crate::import_dats;
+use crate::import_roms;
+use super::*;
+use std::path::{Path, PathBuf};
+use tempfile::TempDir;
+use tokio::fs;
+
+#[tokio::test]
+async fn test() {
+    // given
+    let _guard = MUTEX.lock().await;
+
+    let test_directory = Path::new("tests");
+    let progress_bar = ProgressBar::hidden();
+
+    let db_file = crate::config::TestDatabase::new();
+    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+    let mut connection = pool.acquire().await.unwrap();
+
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
+    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
+    let tmp_directory =
+        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
+
+    let matches = import_dats::subcommand()
+        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
+    import_dats::main(&mut connection, &matches, &progress_bar)
+        .await
+        .unwrap();
+
+    let mut romfile_paths: Vec<PathBuf> = vec![];
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
+    fs::copy(
+        test_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue"),
+        &romfile_path,
+    )
+    .await
+    .unwrap();
+    romfile_paths.push(romfile_path);
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 01).bin");
+    fs::copy(
+        test_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 01).bin"),
+        &romfile_path,
+    )
+    .await
+    .unwrap();
+    romfile_paths.push(romfile_path);
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 02).bin");
+    fs::copy(
+        test_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 02).bin"),
+        &romfile_path,
+    )
+    .await
+    .unwrap();
+    romfile_paths.push(romfile_path);
+
+    let system = find_systems(&mut connection).await.remove(0);
+    let system_directory = get_system_directory(&mut connection, &system)
+        .await
+        .unwrap();
+
+    for romfile_path in romfile_paths {
+        let matches = import_roms::subcommand()
+            .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
+        import_roms::main(&mut connection, &matches, &progress_bar)
+            .await
+            .unwrap();
+    }
+
+    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+    let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
+    for rom in &roms {
+        let romfile = find_romfile_by_id(&mut connection, rom.romfile_id.unwrap()).await;
+        romfiles_by_id.insert(romfile.id, romfile);
+    }
+    let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
+    roms_by_game_id.insert(roms[0].game_id, roms);
+
+    to_ore(
+        &mut connection,
+        &progress_bar,
+        roms_by_game_id,
+        romfiles_by_id,
+        false,
+        true,
+        true,
+        &OreCompressionAlgorithm::Zstd,
+        &OreProfile::Stream,
+        None,
+        None,
+    )
+    .await
+    .unwrap();
+
+    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+    let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
+    for rom in &roms {
+        let romfile = find_romfile_by_id(&mut connection, rom.romfile_id.unwrap()).await;
+        romfiles_by_id.insert(romfile.id, romfile);
+    }
+    let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
+    roms_by_game_id.insert(roms[0].game_id, roms);
+
+    // when
+    to_original(
+        &mut connection,
+        &progress_bar,
+        &system,
+        roms_by_game_id,
+        romfiles_by_id,
+        true,
+    )
+    .await
+    .unwrap();
+
+    // then
+    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+    assert_eq!(roms.len(), 3);
+    let romfiles = find_romfiles(&mut connection).await;
+    assert_eq!(romfiles.len(), 3);
+
+    // each ROM its own file again, the cue sheet included
+    for rom in &roms {
+        let romfile = find_romfile_by_id(&mut connection, rom.romfile_id.unwrap()).await;
+        assert_eq!(
+            romfile.path,
+            system_directory
+                .join(&rom.name)
+                .strip_prefix(&rom_directory)
+                .unwrap()
+                .as_os_str()
+                .to_str()
+                .unwrap(),
+        );
+        assert!(rom_directory.path().join(&romfile.path).is_file());
+    }
+    assert!(
+        !system_directory
+            .join("Test Game (USA, Europe) (CUE BIN).ore")
+            .exists()
+    );
+}

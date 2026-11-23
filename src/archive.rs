@@ -916,4 +916,4 @@ fn content_methods(compression: ArchiveCompression) -> Vec<EncoderConfiguration>
 }
 
 #[cfg(test)]
-mod test_rewrite;
+mod tests;

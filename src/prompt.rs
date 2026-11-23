@@ -308,4 +308,4 @@ pub fn multiselect<T: ToString + std::fmt::Display>(
 }
 
 #[cfg(test)]
-mod test_prompt_for_games_single_match;
+mod tests;

@@ -323,8 +323,4 @@ fn rom_xml(progress_bar: &ProgressBar, path: &Path, name: String) -> Result<RomX
 }
 
 #[cfg(test)]
-mod test_dat;
-#[cfg(test)]
-mod test_wua;
-#[cfg(test)]
-mod test_wux_and_nus;
+mod tests;

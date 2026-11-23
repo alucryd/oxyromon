@@ -93,8 +93,4 @@ pub async fn purge_system(
 }
 
 #[cfg(test)]
-mod test_purge_systems;
-#[cfg(test)]
-mod test_purge_systems_arcade;
-#[cfg(test)]
-mod test_purge_systems_by_name;
+mod tests;

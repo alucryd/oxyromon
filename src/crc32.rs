@@ -54,10 +54,4 @@ impl Write for Crc32 {
 }
 
 #[cfg(test)]
-mod test_empty_input;
-#[cfg(test)]
-mod test_known_value;
-#[cfg(test)]
-mod test_reset;
-#[cfg(test)]
-mod test_write_trait;
+mod tests;

@@ -179,10 +179,6 @@ async fn process_system(
 }
 
 #[cfg(test)]
-mod test_iso_complete;
+mod tests;
 
-#[cfg(test)]
-mod test_iso_complete_game_subfolders;
 
-#[cfg(test)]
-mod test_iso_incomplete;

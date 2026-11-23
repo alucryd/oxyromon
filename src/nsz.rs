@@ -274,14 +274,4 @@ pub async fn get_version() -> Result<String> {
 }
 
 #[cfg(test)]
-mod test_as_nsp_as_nsz;
-#[cfg(test)]
-mod test_check;
-#[cfg(test)]
-mod test_check_mismatch;
-#[cfg(test)]
-mod test_hash_and_size;
-#[cfg(test)]
-mod test_to_nsp;
-#[cfg(test)]
-mod test_to_nsz;
+mod tests;
