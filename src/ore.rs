@@ -18,10 +18,12 @@ use anyhow::{Context, Result, bail};
 use indicatif::{HumanBytes, ProgressBar};
 use ore_rs::{Codec, Options, Profile, Reader, StoreBatch, StoreOptions};
 use sqlx::SqliteConnection;
+#[cfg(any(feature = "mcp", test))]
 use std::collections::HashMap;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+#[cfg(any(feature = "mcp", test))]
 use std::sync::Arc;
 use strum::{Display, EnumString, VariantNames};
 use tokio::task::spawn_blocking;
@@ -851,6 +853,7 @@ pub async fn system_store(connection: &mut SqliteConnection, system: &System) ->
 /// What the system's store saves by dedup and what its parity costs,
 /// `None` when the system uses no store, or it cannot be read: the stats
 /// are an extra, no flow fails without them.
+#[cfg(feature = "mcp")]
 pub async fn system_store_stats(
     connection: &mut SqliteConnection,
     system: &System,
@@ -864,6 +867,7 @@ pub async fn system_store_stats(
 /// store shared with other systems, as `GROUP_SUBSYSTEMS` gives, is split
 /// by game, so each system counts only its part. Reads every thin ORE's
 /// header and its store's index, and with WUAs every WUA's layout.
+#[cfg(any(feature = "mcp", test))]
 pub async fn actual_size(connection: &mut SqliteConnection, romfiles: &[Romfile]) -> Result<u64> {
     actual_size_in(connection, romfiles, |store| async move {
         spawn_blocking(move || ore_rs::Index::load(&store).ok().map(Arc::new))
@@ -901,6 +905,7 @@ pub async fn actual_size_loaded(
 /// `index_of` — read off disk by [`actual_size`], handed over by the
 /// request's loader by [`actual_size_loaded`] — so a caller that reads
 /// the same store many times parses it once.
+#[cfg(any(feature = "mcp", test))]
 async fn actual_size_in<F, Fut>(
     connection: &mut SqliteConnection,
     romfiles: &[Romfile],
@@ -980,6 +985,7 @@ where
 
 /// The share of `wuas` in their update partition stores: each entry split
 /// among every WUA of `all_wuas` that needs it.
+#[cfg(any(feature = "mcp", test))]
 fn wua_store_share(all_wuas: &[PathBuf], wuas: &[PathBuf]) -> u64 {
     let entries = |wua: &Path| -> Vec<PathBuf> {
         let Some(store) = crate::wux::find_store(wua) else {

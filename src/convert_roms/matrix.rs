@@ -1,67 +1,71 @@
-use super::super::test_support::TestEnv;
+use super::super::test_support::{DAT, RVZ_DAT, TestEnv, WUD_DAT, test_cases};
 use std::path::Path;
 use std::time::SystemTime;
 
-/// The dat nearly every convert cell imports.
-const DAT: &str = "Test System (20200721).dat";
-/// The dat for the GameCube/Wii cells.
-const RVZ_DAT: &str = "Test System (20230618) (RVZ).dat";
-/// The dat for the Wii U cells.
-const WUD_DAT: &str = "Test System (20261025) (WUD).dat";
-
 /// One cell of the convert matrix: a world with its fixtures imported,
-/// one or more `convert-roms` invocations, and what the database and the
+/// a `convert-roms` invocation, and what the database and the
 /// disk hold afterwards. Leave a field at `DEFAULT` to take the common
 /// value.
-pub struct ConvertCase<'a> {
+struct ConvertCase<'a> {
     /// The dat that gives the world its one system.
-    pub dat: &'a str,
+    dat: &'a str,
     /// Fixtures copied into the temporary directory and imported, in order.
-    pub roms: &'a [&'a str],
-    /// `convert-roms` invocations, each its own step, `--all` included.
-    pub steps: &'a [&'a [&'a str]],
+    roms: &'a [&'a str],
+    /// `convert-roms` arguments beyond `--all`.
+    args: &'a [&'a str],
     /// The rom names the database should hold afterwards, sorted. Empty
     /// asserts the single rom a one-file conversion leaves.
-    pub rom_names: &'a [&'a str],
+    rom_names: &'a [&'a str],
     /// The romfile paths, relative to the system directory, sorted.
-    pub romfiles: &'a [&'a str],
+    romfiles: &'a [&'a str],
     /// Whether the conversion must leave a fresh file: a conversion to a
     /// format the rom is already in, run with `--recompress`.
-    pub recreated: bool,
+    recreated: bool,
+    /// Compress each fixture to ORE with ore-rs and import that instead:
+    /// an input the repo doesn't check in.
+    ore: bool,
 }
 
 const DEFAULT: ConvertCase<'static> = ConvertCase {
     dat: DAT,
     roms: &[],
-    steps: &[],
+    args: &[],
     rom_names: &[],
     romfiles: &[],
     recreated: false,
+    ore: false,
 };
-
-macro_rules! convert_cases {
-    ($($name:ident : $case:expr),+ $(,)?) => {
-        $(
-            #[tokio::test]
-            async fn $name() {
-                run_convert_case(&$case).await;
-            }
-        )+
-    };
-}
 
 async fn run_convert_case(case: &ConvertCase<'_>) {
     let mut env = TestEnv::with_dat(case.dat).await;
 
     let mut paths = vec![];
     for rom in case.roms {
-        paths.push(env.fixture(rom).await);
+        if case.ore {
+            let path = env.tmp_directory.join(rom).with_extension("ore");
+            ore_rs::compress(
+                &env.fixture_source(rom),
+                &path,
+                &ore_rs::Options::default(),
+                &[],
+                &mut |_| {},
+            )
+            .unwrap();
+            paths.push(path);
+        } else {
+            paths.push(env.fixture(rom).await);
+        }
     }
     env.import_roms(&paths.iter().map(|path| path.as_path()).collect::<Vec<_>>())
         .await;
 
     let system = env.system().await;
     let system_directory = env.system_directory(&system).await;
+
+    if case.ore {
+        // Otherwise the cell converts its input to the format it is already in.
+        assert!(env.single_romfile().await.path.ends_with(".ore"));
+    }
 
     let before = if case.recreated {
         let romfile = env.single_romfile().await;
@@ -70,11 +74,9 @@ async fn run_convert_case(case: &ConvertCase<'_>) {
         None
     };
 
-    for step in case.steps {
-        let mut argv = vec!["convert-roms", "--all"];
-        argv.extend_from_slice(step);
-        env.run(&argv).await.unwrap();
-    }
+    let mut argv = vec!["convert-roms", "--all"];
+    argv.extend_from_slice(case.args);
+    env.run(&argv).await.unwrap();
 
     let roms = env.roms_with_romfiles(&system).await;
     if case.rom_names.is_empty() {
@@ -126,18 +128,19 @@ fn file_time(path: &Path) -> SystemTime {
     std::fs::metadata(path).unwrap().modified().unwrap()
 }
 
-convert_cases! {
+test_cases! {
+    run_convert_case;
     // PlayStation: ISO, CHD, CSO, ZSO, archives.
     cso_to_chd: ConvertCase {
         roms: &["Test Game (USA, Europe).cso"],
-        steps: &[&["--format", "CHD"]],
+        args: &["--format", "CHD"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).chd"],
         ..DEFAULT
     },
     cso_to_cso: ConvertCase {
         roms: &["Test Game (USA, Europe).cso"],
-        steps: &[&["--format", "CSO", "--recompress"]],
+        args: &["--format", "CSO", "--recompress"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).cso"],
         recreated: true,
@@ -145,28 +148,28 @@ convert_cases! {
     },
     cso_to_iso: ConvertCase {
         roms: &["Test Game (USA, Europe).cso"],
-        steps: &[&["--format", "ORIGINAL"]],
+        args: &["--format", "ORIGINAL"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).iso"],
         ..DEFAULT
     },
     cso_to_sevenzip_iso: ConvertCase {
         roms: &["Test Game (USA, Europe).cso"],
-        steps: &[&["--format", "7Z"]],
+        args: &["--format", "7Z"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).7z"],
         ..DEFAULT
     },
     cso_to_zso: ConvertCase {
         roms: &["Test Game (USA, Europe).cso"],
-        steps: &[&["--format", "ZSO"]],
+        args: &["--format", "ZSO"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).zso"],
         ..DEFAULT
     },
     iso_chd_to_chd: ConvertCase {
         roms: &["Test Game (USA, Europe) (ISO).chd"],
-        steps: &[&["--format", "CHD", "--recompress"]],
+        args: &["--format", "CHD", "--recompress"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).chd"],
         recreated: true,
@@ -174,84 +177,84 @@ convert_cases! {
     },
     iso_chd_to_cso: ConvertCase {
         roms: &["Test Game (USA, Europe) (ISO).chd"],
-        steps: &[&["--format", "CSO"]],
+        args: &["--format", "CSO"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).cso"],
         ..DEFAULT
     },
     iso_chd_to_iso: ConvertCase {
         roms: &["Test Game (USA, Europe) (ISO).chd"],
-        steps: &[&["--format", "ORIGINAL"]],
+        args: &["--format", "ORIGINAL"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).iso"],
         ..DEFAULT
     },
     iso_chd_to_sevenzip_iso: ConvertCase {
         roms: &["Test Game (USA, Europe) (ISO).chd"],
-        steps: &[&["--format", "7Z"]],
+        args: &["--format", "7Z"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).7z"],
         ..DEFAULT
     },
     iso_chd_to_zso: ConvertCase {
         roms: &["Test Game (USA, Europe) (ISO).chd"],
-        steps: &[&["--format", "ZSO"]],
+        args: &["--format", "ZSO"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).zso"],
         ..DEFAULT
     },
     iso_to_chd: ConvertCase {
         roms: &["Test Game (USA, Europe).iso"],
-        steps: &[&["--format", "CHD"]],
+        args: &["--format", "CHD"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).chd"],
         ..DEFAULT
     },
     iso_to_cso: ConvertCase {
         roms: &["Test Game (USA, Europe).iso"],
-        steps: &[&["--format", "CSO"]],
+        args: &["--format", "CSO"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).cso"],
         ..DEFAULT
     },
     iso_to_zso: ConvertCase {
         roms: &["Test Game (USA, Europe).iso"],
-        steps: &[&["--format", "ZSO"]],
+        args: &["--format", "ZSO"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).zso"],
         ..DEFAULT
     },
     zso_to_chd: ConvertCase {
         roms: &["Test Game (USA, Europe).zso"],
-        steps: &[&["--format", "CHD"]],
+        args: &["--format", "CHD"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).chd"],
         ..DEFAULT
     },
     zso_to_cso: ConvertCase {
         roms: &["Test Game (USA, Europe).zso"],
-        steps: &[&["--format", "CSO"]],
+        args: &["--format", "CSO"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).cso"],
         ..DEFAULT
     },
     zso_to_iso: ConvertCase {
         roms: &["Test Game (USA, Europe).zso"],
-        steps: &[&["--format", "ORIGINAL"]],
+        args: &["--format", "ORIGINAL"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).iso"],
         ..DEFAULT
     },
     zso_to_sevenzip_iso: ConvertCase {
         roms: &["Test Game (USA, Europe).zso"],
-        steps: &[&["--format", "7Z"]],
+        args: &["--format", "7Z"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).7z"],
         ..DEFAULT
     },
     zso_to_zso: ConvertCase {
         roms: &["Test Game (USA, Europe).zso"],
-        steps: &[&["--format", "ZSO", "--recompress"]],
+        args: &["--format", "ZSO", "--recompress"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).zso"],
         recreated: true,
@@ -260,28 +263,28 @@ convert_cases! {
     // Loose files and archives.
     original_to_sevenzip: ConvertCase {
         roms: &["Test Game (USA, Europe).rom"],
-        steps: &[&["--format", "7Z"]],
+        args: &["--format", "7Z"],
         rom_names: &["Test Game (USA, Europe).rom"],
         romfiles: &["Test Game (USA, Europe).7z"],
         ..DEFAULT
     },
     original_to_zip: ConvertCase {
         roms: &["Test Game (USA, Europe).rom"],
-        steps: &[&["--format", "ZIP"]],
+        args: &["--format", "ZIP"],
         rom_names: &["Test Game (USA, Europe).rom"],
         romfiles: &["Test Game (USA, Europe).zip"],
         ..DEFAULT
     },
     sevenzip_to_original: ConvertCase {
         roms: &["Test Game (USA, Europe).rom.7z"],
-        steps: &[&["--format", "ORIGINAL"]],
+        args: &["--format", "ORIGINAL"],
         rom_names: &["Test Game (USA, Europe).rom"],
         romfiles: &["Test Game (USA, Europe).rom"],
         ..DEFAULT
     },
     sevenzip_to_sevenzip: ConvertCase {
         roms: &["Test Game (USA, Europe).rom.7z"],
-        steps: &[&["--format", "7Z", "--recompress"]],
+        args: &["--format", "7Z", "--recompress"],
         rom_names: &["Test Game (USA, Europe).rom"],
         romfiles: &["Test Game (USA, Europe).7z"],
         recreated: true,
@@ -289,28 +292,28 @@ convert_cases! {
     },
     sevenzip_to_zip: ConvertCase {
         roms: &["Test Game (USA, Europe).rom.7z"],
-        steps: &[&["--format", "ZIP"]],
+        args: &["--format", "ZIP"],
         rom_names: &["Test Game (USA, Europe).rom"],
         romfiles: &["Test Game (USA, Europe).zip"],
         ..DEFAULT
     },
     zip_to_original: ConvertCase {
         roms: &["Test Game (USA, Europe).rom.zip"],
-        steps: &[&["--format", "ORIGINAL"]],
+        args: &["--format", "ORIGINAL"],
         rom_names: &["Test Game (USA, Europe).rom"],
         romfiles: &["Test Game (USA, Europe).rom"],
         ..DEFAULT
     },
     zip_to_sevenzip: ConvertCase {
         roms: &["Test Game (USA, Europe).rom.zip"],
-        steps: &[&["--format", "7Z"]],
+        args: &["--format", "7Z"],
         rom_names: &["Test Game (USA, Europe).rom"],
         romfiles: &["Test Game (USA, Europe).7z"],
         ..DEFAULT
     },
     zip_to_zip: ConvertCase {
         roms: &["Test Game (USA, Europe).rom.zip"],
-        steps: &[&["--format", "ZIP", "--recompress"]],
+        args: &["--format", "ZIP", "--recompress"],
         rom_names: &["Test Game (USA, Europe).rom"],
         romfiles: &["Test Game (USA, Europe).zip"],
         recreated: true,
@@ -319,21 +322,21 @@ convert_cases! {
     // Archived discs.
     sevenzip_iso_to_chd: ConvertCase {
         roms: &["Test Game (USA, Europe).iso.7z"],
-        steps: &[&["--format", "CHD"]],
+        args: &["--format", "CHD"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).chd"],
         ..DEFAULT
     },
     sevenzip_iso_to_cso: ConvertCase {
         roms: &["Test Game (USA, Europe).iso.7z"],
-        steps: &[&["--format", "CSO"]],
+        args: &["--format", "CSO"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).cso"],
         ..DEFAULT
     },
     sevenzip_iso_to_zso: ConvertCase {
         roms: &["Test Game (USA, Europe).iso.7z"],
-        steps: &[&["--format", "ZSO"]],
+        args: &["--format", "ZSO"],
         rom_names: &["Test Game (USA, Europe) (ISO).iso"],
         romfiles: &["Test Game (USA, Europe) (ISO).zso"],
         ..DEFAULT
@@ -342,7 +345,7 @@ convert_cases! {
     iso_to_ore: ConvertCase {
         dat: RVZ_DAT,
         roms: &["Test Game (USA).iso"],
-        steps: &[&["--format", "ORE"]],
+        args: &["--format", "ORE"],
         rom_names: &["Test Game (USA).iso"],
         romfiles: &["Test Game (USA).ore"],
         ..DEFAULT
@@ -350,7 +353,7 @@ convert_cases! {
     iso_to_rvz: ConvertCase {
         dat: RVZ_DAT,
         roms: &["Test Game (USA).iso"],
-        steps: &[&["--format", "RVZ"]],
+        args: &["--format", "RVZ"],
         rom_names: &["Test Game (USA).iso"],
         romfiles: &["Test Game (USA).rvz"],
         ..DEFAULT
@@ -358,7 +361,7 @@ convert_cases! {
     rvz_to_iso: ConvertCase {
         dat: RVZ_DAT,
         roms: &["Test Game (USA).rvz"],
-        steps: &[&["--format", "ORIGINAL"]],
+        args: &["--format", "ORIGINAL"],
         rom_names: &["Test Game (USA).iso"],
         romfiles: &["Test Game (USA).iso"],
         ..DEFAULT
@@ -366,7 +369,7 @@ convert_cases! {
     rvz_to_ore: ConvertCase {
         dat: RVZ_DAT,
         roms: &["Test Game (USA).rvz"],
-        steps: &[&["--format", "ORE"]],
+        args: &["--format", "ORE"],
         rom_names: &["Test Game (USA).iso"],
         romfiles: &["Test Game (USA).ore"],
         ..DEFAULT
@@ -374,15 +377,16 @@ convert_cases! {
     rvz_to_rvz: ConvertCase {
         dat: RVZ_DAT,
         roms: &["Test Game (USA).rvz"],
-        steps: &[&["--format", "RVZ", "--recompress"]],
+        args: &["--format", "RVZ", "--recompress"],
         rom_names: &["Test Game (USA).iso"],
         romfiles: &["Test Game (USA).rvz"],
         recreated: true,
+        ..DEFAULT
     },
     rvz_to_sevenzip_iso: ConvertCase {
         dat: RVZ_DAT,
         roms: &["Test Game (USA).rvz"],
-        steps: &[&["--format", "7Z"]],
+        args: &["--format", "7Z"],
         rom_names: &["Test Game (USA).iso"],
         romfiles: &["Test Game (USA).7z"],
         ..DEFAULT
@@ -390,16 +394,17 @@ convert_cases! {
     ore_to_iso: ConvertCase {
         dat: RVZ_DAT,
         roms: &["Test Game (USA).iso"],
-        steps: &[&["--format", "ORIGINAL"]],
+        args: &["--format", "ORIGINAL"],
         rom_names: &["Test Game (USA).iso"],
         romfiles: &["Test Game (USA).iso"],
+        ore: true,
         ..DEFAULT
     },
     // Wii U.
     wud_to_wux: ConvertCase {
         dat: WUD_DAT,
         roms: &["Test Game (USA).wud"],
-        steps: &[&["--format", "WUX"]],
+        args: &["--format", "WUX"],
         rom_names: &["Test Game (USA).iso"],
         romfiles: &["Test Game (USA).wux"],
         ..DEFAULT
@@ -407,7 +412,7 @@ convert_cases! {
     wux_to_sevenzip_wud: ConvertCase {
         dat: WUD_DAT,
         roms: &["Test Game (USA).wux"],
-        steps: &[&["--format", "7Z"]],
+        args: &["--format", "7Z"],
         rom_names: &["Test Game (USA).iso"],
         romfiles: &["Test Game (USA).7z"],
         ..DEFAULT
@@ -415,7 +420,7 @@ convert_cases! {
     wux_to_wud: ConvertCase {
         dat: WUD_DAT,
         roms: &["Test Game (USA).wux"],
-        steps: &[&["--format", "ORIGINAL"]],
+        args: &["--format", "ORIGINAL"],
         rom_names: &["Test Game (USA).iso"],
         romfiles: &["Test Game (USA).iso"],
         ..DEFAULT

@@ -1,26 +1,20 @@
-use super::super::test_support::TestEnv;
+use super::super::test_support::{DAT, RVZ_DAT, TestEnv, WUD_DAT, test_cases};
 
-/// The dat nearly every export cell imports.
-const DAT: &str = "Test System (20200721).dat";
-/// The dat for the GameCube/Wii cells.
-const RVZ_DAT: &str = "Test System (20230618) (RVZ).dat";
 /// The dat for the single track CD cells.
 const SINGLE_TRACK_DAT: &str = "Test System (20240229) (Single Track).dat";
-/// The dat for the Wii U cells.
-const WUD_DAT: &str = "Test System (20261025) (WUD).dat";
 
 /// One cell of the export matrix: a world with its fixtures imported, a
 /// `export-roms` invocation, and the files the destination directory holds
 /// afterwards.
-pub struct ExportCase<'a> {
+struct ExportCase<'a> {
     /// The dat that gives the world its one system.
-    pub dat: &'a str,
+    dat: &'a str,
     /// Fixtures copied into the temporary directory and imported, in order.
-    pub roms: &'a [&'a str],
+    roms: &'a [&'a str],
     /// The `--format` to export to.
-    pub format: &'a str,
+    format: &'a str,
     /// The files the destination directory should hold, relative to it.
-    pub files: &'a [&'a str],
+    files: &'a [&'a str],
 }
 
 const DEFAULT: ExportCase<'static> = ExportCase {
@@ -45,17 +39,6 @@ const WUD: ExportCase<'static> = ExportCase {
     dat: WUD_DAT,
     ..DEFAULT
 };
-
-macro_rules! export_cases {
-    ($($name:ident : $case:expr),+ $(,)?) => {
-        $(
-            #[tokio::test]
-            async fn $name() {
-                run_export_case(&$case).await;
-            }
-        )+
-    };
-}
 
 async fn run_export_case(case: &ExportCase<'_>) {
     let mut env = TestEnv::with_dat(case.dat).await;
@@ -91,7 +74,8 @@ async fn run_export_case(case: &ExportCase<'_>) {
     }
 }
 
-export_cases! {
+test_cases! {
+    run_export_case;
     // PlayStation: ISO, CHD, CSO, ZSO, archives.
     cso_to_chd: ExportCase {
         roms: &["Test Game (USA, Europe).cso"],

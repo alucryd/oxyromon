@@ -30,6 +30,7 @@ use super::sort_roms;
 use super::util::get_system_directory;
 use anyhow::Result;
 use indicatif::ProgressBar;
+#[cfg(feature = "server")]
 use sqlx::SqlitePool;
 use sqlx::pool::PoolConnection;
 use sqlx::sqlite::Sqlite;
@@ -39,6 +40,26 @@ use std::pin::Pin;
 use tempfile::TempDir;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::MutexGuard;
+
+/// The dat nearly every matrix cell imports.
+pub const DAT: &str = "Test System (20200721).dat";
+/// The dat for the GameCube/Wii cells.
+pub const RVZ_DAT: &str = "Test System (20230618) (RVZ).dat";
+/// The dat for the Wii U cells.
+pub const WUD_DAT: &str = "Test System (20261025) (WUD).dat";
+
+/// One `#[tokio::test]` per matrix cell, each handing its case to `$runner`.
+macro_rules! test_cases {
+    ($runner:ident; $($name:ident : $case:expr),+ $(,)?) => {
+        $(
+            #[tokio::test]
+            async fn $name() {
+                $runner(&$case).await;
+            }
+        )+
+    };
+}
+pub(crate) use test_cases;
 
 /// The fixtures' directory: the checked-in files every test reads from,
 /// resolved from the crate root so a test never depends on the cwd.
@@ -74,6 +95,7 @@ pub struct TestEnv {
     pub connection: PoolConnection<Sqlite>,
     /// A handle to the same pool the connection came from: for the rare
     /// test that hands one to a `main` of its own, such as the server's.
+    #[cfg(feature = "server")]
     pub pool: SqlitePool,
     pub rom_directory: PathBuf,
     pub tmp_directory: PathBuf,
@@ -112,6 +134,7 @@ impl TestEnv {
 
         Self {
             connection,
+            #[cfg(feature = "server")]
             pool,
             rom_directory,
             tmp_directory,

@@ -1,8 +1,6 @@
-use super::super::test_support::TestEnv;
+use super::super::test_support::{DAT, TestEnv, test_cases};
 use std::path::Path;
 
-/// The dat nearly every sort cell imports.
-const DAT: &str = "Test System (20200721).dat";
 /// The dat with clone relations for 1G1R.
 const PARENT_CLONE_DAT: &str = "Test System (20200721) (Parent-Clone).dat";
 /// The dat with categories on the releases.
@@ -13,7 +11,7 @@ const REVISIONS_DAT: &str = "Test System (20230112) (Parent-Clone) (Revisions).d
 const LANGUAGE_DAT: &str = "Language Test System (20200721).dat";
 
 /// One value a sort cell writes into the system's settings before running.
-pub enum Setting<'a> {
+enum Setting<'a> {
     Bool(&'a str, bool),
     Str(&'a str, &'a str),
     List(&'a str, &'a [&'a str]),
@@ -22,18 +20,18 @@ pub enum Setting<'a> {
 /// One cell of the sort matrix: a world with its fixtures imported, the
 /// settings `sort-roms` reads back, the invocation, and where every
 /// romfile ends up.
-pub struct SortCase<'a> {
+struct SortCase<'a> {
     /// The dat that gives the world its one system.
-    pub dat: &'a str,
+    dat: &'a str,
     /// Fixture roms, copied and imported one by one, in order.
-    pub roms: &'a [&'a str],
+    roms: &'a [&'a str],
     /// Settings applied to the system before sorting.
-    pub settings: &'a [Setting<'a>],
+    settings: &'a [Setting<'a>],
     /// `sort-roms` arguments beyond `--all --yes`.
-    pub args: &'a [&'a str],
+    args: &'a [&'a str],
     /// Where each romfile ends up: its name, and the folders between the
     /// system directory and it. Empty folders mean the system root.
-    pub expected: &'a [(&'a str, &'a [&'a str])],
+    expected: &'a [(&'a str, &'a [&'a str])],
 }
 
 const DEFAULT: SortCase<'static> = SortCase {
@@ -64,17 +62,6 @@ const LANGUAGE: SortCase<'static> = SortCase {
     dat: LANGUAGE_DAT,
     ..DEFAULT
 };
-
-macro_rules! sort_cases {
-    ($($name:ident : $case:expr),+ $(,)?) => {
-        $(
-            #[tokio::test]
-            async fn $name() {
-                run_sort_case(&$case).await;
-            }
-        )+
-    };
-}
 
 async fn run_sort_case(case: &SortCase<'_>) {
     let mut env = TestEnv::with_dat(case.dat).await;
@@ -125,7 +112,8 @@ async fn run_sort_case(case: &SortCase<'_>) {
     }
 }
 
-sort_cases! {
+test_cases! {
+    run_sort_case;
     // Sort all, without regions: everything stays where it is.
     sort: SortCase {
         roms: &[
