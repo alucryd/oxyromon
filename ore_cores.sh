@@ -1,7 +1,7 @@
 #!/bin/sh
 # Build the ORE cores locally, as .github/workflows/ore_cores.yml does in CI,
 # against this checkout's libsmelt:
-#   ./ore_cores.sh [beetle-psx|parallel-ps2|pcee2|dolphin|mesen|mesen-s|sameboy|mgba|melonds-ds|azahar|parallel-n64|cemu ...]
+#   ./ore_cores.sh [beetle-psx|parallel-ps2|pcee2|dolphin|mesen|mesen-s|sameboy|mgba|melonds-ds|azahar|parallel-n64|cemu|beetle-vb ...]
 # No argument builds them all. The cores are the checkouts next to oxyromon
 # (CORES_DIR, default ..), built in place on whatever branch they are on.
 set -eu
@@ -78,6 +78,10 @@ parallel_n64() {
         HAVE_THR_AL=1 HAVE_PARALLEL=1 HAVE_PARALLEL_RSP=1
 }
 
+beetle_vb() {
+    make_ore "$CORES_DIR/beetle-vb-libretro"
+}
+
 mgba() {
     core="$CORES_DIR/mgba"
     cmake -S "$core" -B "$core/build" \
@@ -122,10 +126,10 @@ cemu() {
 
 cargo build --release --manifest-path "$SMELT_DIR/Cargo.toml"
 
-[ $# -gt 0 ] || set -- beetle-psx parallel-ps2 pcee2 dolphin mesen mesen-s sameboy mgba melonds-ds azahar parallel-n64 cemu
+[ $# -gt 0 ] || set -- beetle-psx parallel-ps2 pcee2 dolphin mesen mesen-s sameboy mgba melonds-ds azahar parallel-n64 cemu beetle-vb
 for c in "$@"; do
     case "$c" in
-        beetle-psx | parallel-ps2 | pcee2 | dolphin | mesen | mesen-s | sameboy | mgba | melonds-ds | azahar | parallel-n64 | cemu) echo "== $c"; "$(echo "$c" | tr - _)" ;;
+        beetle-psx | parallel-ps2 | pcee2 | dolphin | mesen | mesen-s | sameboy | mgba | melonds-ds | azahar | parallel-n64 | cemu | beetle-vb) echo "== $c"; "$(echo "$c" | tr - _)" ;;
         *) echo "unknown core: $c" >&2; exit 1 ;;
     esac
 done
