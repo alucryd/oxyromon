@@ -214,11 +214,9 @@ fn the_specs_padding_generator_is_the_discs() {
 #[path = "../../cd/src/lib.rs"]
 mod cd;
 #[cfg(feature = "write")]
-#[path = "../../gcwii/tests/common/mod.rs"]
-mod gcwii;
+use test_support::gcwii;
 #[cfg(feature = "write")]
-#[path = "../../wiiu/tests/common/mod.rs"]
-mod wiiu;
+use test_support::wiiu;
 
 #[cfg(feature = "write")]
 mod write {

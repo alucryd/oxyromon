@@ -177,8 +177,9 @@ input's output.
 
 ## Verification
 
-No Wii U disc can be shipped, so the tests build their own. `tests/common`
-lays out a small disc as Cemu reads one: a partition table, an SI partition
+No Wii U disc can be shipped, so the tests build their own. oxyROMon's
+unpublished `test-support` crate, a dev-dependency, lays out a small disc as
+Cemu reads one: a partition table, an SI partition
 holding the game's ticket, and a game partition with raw and hashed clusters,
 a link, an empty file and nested directories, all encrypted with made-up
 keys, and an update for it as a NUS folder. `tests/wua.rs` converts the disc

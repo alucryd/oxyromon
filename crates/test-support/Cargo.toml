@@ -1,0 +1,25 @@
+[package]
+name = "test-support"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "Synthetic discs and titles for the format crates' tests: GameCube and Wii discs under one feature, Wii U discs and NUS titles under another"
+# The gcwii family ports Dolphin's junk generator and Wii hashing, GPL-2.0
+# or later; the wiiu family is that crate's disc model, GPL-3.0 or later
+license = "GPL-2.0-or-later AND GPL-3.0-or-later"
+repository.workspace = true
+# Never published: a dev-dependency of the crates whose tests build their
+# discs here, path-only, which publishing drops
+publish = false
+
+[dependencies]
+aes = "0.9"
+sha1.workspace = true
+
+[features]
+# The synthetic GameCube and Wii discs, as rvz-rs, wbfs-rs and ore-rs are
+# tested on them
+gcwii = []
+# The synthetic Wii U disc and its NUS update, as wux-rs, ore-rs and
+# smelt-rs are tested on them
+wiiu = []

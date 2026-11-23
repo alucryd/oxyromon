@@ -1,7 +1,7 @@
 //! WUA back to NUS folders, from the revert data a WUA keeps, on a synthetic
 //! disc and its update.
 
-mod common;
+use test_support::wiiu as common;
 
 use std::path::Path;
 

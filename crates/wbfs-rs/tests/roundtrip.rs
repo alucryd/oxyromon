@@ -7,7 +7,7 @@ use std::path::Path;
 use tempfile::TempDir;
 use wbfs_rs::Error;
 
-mod common;
+use test_support::gcwii as common;
 mod rvz_source;
 use common::{COMMON_KEY, gamecube_disc, wii_disc, write};
 

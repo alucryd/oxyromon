@@ -12,9 +12,8 @@ use std::time::{Duration, Instant};
 use ore_rs::{Codec, Options, Profile, READ_AHEAD_OFF, Reader, StoreOptions};
 use tempfile::TempDir;
 
-#[path = "../../gcwii/tests/common/mod.rs"]
-mod common;
 use common::{gamecube_disc, noise, write};
+use test_support::gcwii as common;
 
 /// A 5.5 MiB GameCube disc, incompressible past its header: six 1 MiB
 /// groups, none of them a repeated zero.

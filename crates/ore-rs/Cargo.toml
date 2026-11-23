@@ -58,11 +58,10 @@ console = { workspace = true, optional = true }
 indicatif = { workspace = true, optional = true }
 
 [dev-dependencies]
-# To build synthetic discs
-aes = "0.9"
+# The synthetic discs the tests run on
+test-support = { path = "../test-support", features = ["gcwii", "wiiu"] }
 # The reference MinCDC the chunker is checked against
 mothcdc = { version = "0.7", default-features = false }
-sha1.workspace = true
 tempfile.workspace = true
 
 [features]

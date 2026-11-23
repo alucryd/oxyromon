@@ -10,9 +10,8 @@ use ore_rs::{Codec, Options, Profile, Reader};
 use sha1::{Digest, Sha1};
 use tempfile::TempDir;
 
-#[path = "../../gcwii/tests/common/mod.rs"]
-mod common;
 use common::{COMMON_KEY, WII_PARTITION_DATA, gamecube_disc, noise, wii_disc, write};
+use test_support::gcwii as common;
 
 const OPTIONS: [Options; 3] = [
     Options {

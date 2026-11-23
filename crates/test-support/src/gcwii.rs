@@ -1,9 +1,8 @@
-//! Synthetic discs, built here independently of the crate: their junk from
-//! the generator as Dolphin's documentation describes it, and a Wii disc's
-//! hashes and encryption from scratch, with a made-up common key, as no
-//! real key may ship.
-//! Each test crate uses a subset, so nothing here is dead on its own.
-#![allow(dead_code)]
+//! Synthetic GameCube and Wii discs, built independently of any crate:
+//! their junk from the generator as Dolphin's documentation describes it,
+//! and a Wii disc's hashes and encryption from scratch, with a made-up
+//! common key, as no real key may ship.
+//! Each test crate uses a subset.
 
 use std::path::{Path, PathBuf};
 

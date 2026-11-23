@@ -8,7 +8,9 @@ license = "GPL-2.0-or-later"
 repository.workspace = true
 keywords = ["rvz", "gamecube", "wii", "dolphin", "compression"]
 categories = ["compression", "command-line-utilities"]
-include = ["src/**/*", "tests/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+# The tests build their discs with test-support, an unpublished
+# dev-dependency, so they stay out of the package
+include = ["src/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
 
 [lib]
 name = "rvz_rs"
@@ -33,9 +35,8 @@ console = { workspace = true, optional = true }
 indicatif = { workspace = true, optional = true }
 
 [dev-dependencies]
-# To build a synthetic Wii disc.
-aes = "0.9"
-sha1.workspace = true
+# The synthetic discs the tests run on.
+test-support = { path = "../test-support", features = ["gcwii"] }
 tempfile.workspace = true
 
 [features]

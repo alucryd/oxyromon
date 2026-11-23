@@ -2,9 +2,6 @@
 //! byte view, and its ticket, come back as its NUS folder had them, so an
 //! emulator mounts the ORE as the folder.
 
-#[path = "../../wiiu/tests/common/mod.rs"]
-mod wiiu_common;
-
 use std::ffi::{CStr, CString};
 use std::path::Path;
 use std::ptr;
@@ -12,6 +9,7 @@ use std::ptr;
 use ore_rs::Options;
 use smelt::*;
 use tempfile::TempDir;
+use test_support::wiiu as wiiu_common;
 use wiiu_common::COMMON_KEY;
 
 fn open(path: &Path) -> *mut Ingot {

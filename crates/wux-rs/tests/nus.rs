@@ -1,7 +1,7 @@
 //! WUD and WUX to a NUS folder, on a synthetic disc.
 
 mod archive;
-mod common;
+use test_support::wiiu as common;
 
 use std::path::Path;
 

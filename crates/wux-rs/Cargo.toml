@@ -8,7 +8,9 @@ license = "GPL-3.0-or-later"
 repository.workspace = true
 keywords = ["wud", "wux", "wua", "wiiu", "compression"]
 categories = ["compression", "command-line-utilities"]
-include = ["src/**/*", "tests/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+# The tests build their disc with test-support, an unpublished
+# dev-dependency, so they stay out of the package
+include = ["src/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
 
 [lib]
 name = "wux_rs"
@@ -35,9 +37,8 @@ indicatif = { workspace = true, optional = true }
 dirs = { version = "7.0.0", optional = true }
 
 [dev-dependencies]
-# To build a synthetic disc.
-aes = "0.9"
-sha1.workspace = true
+# The synthetic disc the tests run on.
+test-support = { path = "../test-support", features = ["wiiu"] }
 tempfile.workspace = true
 # An independent ZArchive reader, to check the WUAs written here.
 zarust = "0.2.1"
