@@ -1,54 +1,20 @@
 use super::*;
-use crate::check_roms;
-use crate::compact_roms;
-use crate::import_dats;
-use crate::import_roms;
-use crate::purge_roms;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
+use std::path::Path;
 
 #[tokio::test]
 async fn test() {
     // given
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
+    let mut env = TestEnv::with_dat("Test System (20261114) (Game Boy).dat").await;
 
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
+    let romfile_path = env.fixture("Test Game (USA, Europe).gb.7z").await;
+    env.import_roms(&[&romfile_path]).await;
 
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20261114) (Game Boy).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe).gb.7z");
-    tokio::fs::copy(
-        test_directory.join("Test Game (USA, Europe).gb.7z"),
-        &romfile_path,
-    )
-    .await
-    .unwrap();
-    let matches = import_roms::subcommand()
-        .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system)
-        .await
-        .unwrap();
+    let system = env.system().await;
+    let system_directory = env.system_directory(&system).await;
     let ore_path = system_directory.join("Test Game (USA, Europe).ore");
     let store = system_directory.join(ore_rs::STORE_DIR);
-    let rom = std::fs::read(test_directory.join("Test Game (USA, Europe).gb")).unwrap();
+    let rom = std::fs::read(env.fixture_source("Test Game (USA, Europe).gb")).unwrap();
     let thin = |path: &Path| {
         ore_rs::Reader::inspect(path)
             .unwrap()
@@ -63,10 +29,16 @@ async fn test() {
     };
 
     // when the store is on, a game at a time then a run at a time
-    set_bool(&mut connection, "ORE_STORE", true, Some(system.id)).await;
-    set_string(&mut connection, "ORE_STORE_BATCH", "game", Some(system.id)).await;
+    set_bool(&mut env.connection, "ORE_STORE", true, Some(system.id)).await;
+    set_string(
+        &mut env.connection,
+        "ORE_STORE_BATCH",
+        "game",
+        Some(system.id),
+    )
+    .await;
     let matches = subcommand().get_matches_from(["convert-roms", "-f", "ORE", "-a", "-c"]);
-    main(&mut connection, &matches, &progress_bar)
+    main(&mut env.connection, &matches, &env.progress_bar)
         .await
         .unwrap();
 
@@ -74,51 +46,48 @@ async fn test() {
     assert!(store.is_dir());
     assert!(thin(&ore_path));
     assert!(reads_back(&ore_path));
-    let romfiles = find_romfiles(&mut connection).await;
+    let romfiles = find_romfiles(&mut env.connection).await;
     assert_eq!(romfiles.len(), 1);
     // and it weighs its share of the store, not its file alone
-    let size = crate::ore::actual_size(&mut connection, &romfiles)
+    let size = crate::ore::actual_size(&mut env.connection, &romfiles)
         .await
         .unwrap();
     assert_eq!(size, ore_rs::Reader::open(&ore_path).unwrap().sizes().share);
     assert!(size > romfiles[0].size as u64);
-    let matches = check_roms::subcommand().get_matches_from(["check-roms", "-a"]);
-    check_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    env.run(&["check-roms", "-a"]).await.unwrap();
 
     // when the store is off, it is standalone again, and the run batched
-    set_bool(&mut connection, "ORE_STORE", false, Some(system.id)).await;
-    set_string(&mut connection, "ORE_STORE_BATCH", "run", Some(system.id)).await;
+    set_bool(&mut env.connection, "ORE_STORE", false, Some(system.id)).await;
+    set_string(
+        &mut env.connection,
+        "ORE_STORE_BATCH",
+        "run",
+        Some(system.id),
+    )
+    .await;
     let matches = subcommand().get_matches_from(["convert-roms", "-f", "ORE", "-a"]);
-    main(&mut connection, &matches, &progress_bar)
+    main(&mut env.connection, &matches, &env.progress_bar)
         .await
         .unwrap();
     assert!(!thin(&ore_path));
     assert!(reads_back(&ore_path));
 
     // and back in, a run at a time
-    set_bool(&mut connection, "ORE_STORE", true, Some(system.id)).await;
+    set_bool(&mut env.connection, "ORE_STORE", true, Some(system.id)).await;
     let matches = subcommand().get_matches_from(["convert-roms", "-f", "ORE", "-a"]);
-    main(&mut connection, &matches, &progress_bar)
+    main(&mut env.connection, &matches, &env.progress_bar)
         .await
         .unwrap();
     assert!(thin(&ore_path));
     assert!(reads_back(&ore_path));
 
     // then a purge never takes the store's files for foreign ones
-    let matches = purge_roms::subcommand().get_matches_from(["purge-roms", "-f", "-y"]);
-    purge_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    env.run(&["purge-roms", "-f", "-y"]).await.unwrap();
     assert!(reads_back(&ore_path));
     assert!(store.join("store.index").is_file());
-    assert_eq!(find_romfiles(&mut connection).await.len(), 1);
+    assert_eq!(find_romfiles(&mut env.connection).await.len(), 1);
 
     // and a compaction keeps what the game uses
-    let matches = compact_roms::subcommand().get_matches_from(["compact-roms", "-a"]);
-    compact_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    env.run(&["compact-roms", "-a"]).await.unwrap();
     assert!(reads_back(&ore_path));
 }

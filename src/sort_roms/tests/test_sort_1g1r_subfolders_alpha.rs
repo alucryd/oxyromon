@@ -1,32 +1,11 @@
 use super::*;
-use crate::import_dats;
-use crate::import_roms;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 use tokio::fs;
 
 #[tokio::test]
 async fn test() {
     // given
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand().get_matches_from([
-        "import-dats",
-        "tests/Test System (20200721) (Parent-Clone).dat",
-    ]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    let mut env = TestEnv::with_dat("Test System (20200721) (Parent-Clone).dat").await;
 
     let romfile_names = vec![
         "42 Test Game (USA, Europe).rom",
@@ -34,29 +13,23 @@ async fn test() {
         "Test Game (USA, Europe).rom",
     ];
     for romfile_name in &romfile_names {
-        let romfile_path = tmp_directory.join(romfile_name);
-        fs::copy(test_directory.join(romfile_name), &romfile_path)
+        let romfile_path = env.tmp_directory.join(romfile_name);
+        fs::copy(env.fixture_source(romfile_name), &romfile_path)
             .await
             .unwrap();
-        let matches = import_roms::subcommand()
-            .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
-            .await
-            .unwrap();
+        env.import_roms(&[&romfile_path]).await;
     }
 
-    let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system)
-        .await
-        .unwrap();
+    let system = env.system().await;
+    let system_directory = env.system_directory(&system).await;
 
     let all_regions = vec![];
     let one_regions = vec![Region::UnitedStates, Region::Europe];
 
     // when
     sort_system(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         true,
         false,
         &system,
@@ -83,7 +56,7 @@ async fn test() {
     .unwrap();
 
     // then
-    let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+    let romfiles = find_romfiles_by_system_id(&mut env.connection, system.id).await;
     assert_eq!(3, romfiles.len());
 
     for (i, romfile) in romfiles.iter().enumerate() {
@@ -97,13 +70,13 @@ async fn test() {
                     String::from("#")
                 })
                 .join(romfile_names.get(i).unwrap())
-                .strip_prefix(&rom_directory)
+                .strip_prefix(&env.rom_directory)
                 .unwrap()
                 .as_os_str()
                 .to_str()
                 .unwrap(),
             &romfile.path
         );
-        assert!(rom_directory.path().join(&romfile.path).is_file());
+        assert!(env.rom_directory.join(&romfile.path).is_file());
     }
 }

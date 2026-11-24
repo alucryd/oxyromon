@@ -40,7 +40,10 @@ pub use wux_rs::STORE_DIR;
 /// disc.
 pub fn keys_path() -> Result<PathBuf> {
     if cfg!(test) {
-        return Ok(PathBuf::from("tests/Test Game (USA).keys.txt"));
+        return Ok(PathBuf::from(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/Test Game (USA).keys.txt"
+        )));
     }
     Ok(get_data_directory()?.join(WIIU_KEYS_FILE))
 }

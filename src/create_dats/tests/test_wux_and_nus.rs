@@ -12,12 +12,9 @@ async fn test() {
         system_directory.join("Test Game (USA).wux"),
     )
     .unwrap();
-    let update_directory = system_directory.join("Test Game (USA) (Update)");
-    std::fs::create_dir(&update_directory).unwrap();
-    for entry in std::fs::read_dir(env.fixture_source("Test Game (USA) (Update)")).unwrap() {
-        let path = entry.unwrap().path();
-        std::fs::copy(&path, update_directory.join(path.file_name().unwrap())).unwrap();
-    }
+    let _update_directory = env
+        .fixture_into(&system_directory, "Test Game (USA) (Update)")
+        .await;
     let dat_directory = env.tmp_directory.join("DAT");
 
     // when

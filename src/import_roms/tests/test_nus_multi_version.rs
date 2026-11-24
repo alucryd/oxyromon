@@ -10,12 +10,7 @@ async fn test() {
         .await;
 
     // the newest version, whole
-    let nus_directory = env.tmp_directory.join("Test Game (USA) (Update)");
-    std::fs::create_dir(&nus_directory).unwrap();
-    for entry in std::fs::read_dir(env.fixture_source("Test Game (USA) (Update)")).unwrap() {
-        let path = entry.unwrap().path();
-        std::fs::copy(&path, nus_directory.join(path.file_name().unwrap())).unwrap();
-    }
+    let _nus_directory = env.fixture("Test Game (USA) (Update)").await;
 
     let system = env.system().await;
 

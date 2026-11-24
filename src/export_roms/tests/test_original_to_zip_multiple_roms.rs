@@ -1,76 +1,46 @@
 use super::*;
 use crate::archive::ArchiveCompression;
-use crate::import_dats;
-use crate::import_roms;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
-use tokio::fs;
+use crate::test_support::TestEnv;
+use std::path::PathBuf;
 
 #[tokio::test]
 async fn test() {
     // given
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20230527) (PSN).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    let mut env = TestEnv::with_dat("Test System (20230527) (PSN).dat").await;
 
     let mut romfile_paths: Vec<PathBuf> = vec![];
-    let romfile_path = tmp_directory.join("UP0001-BLUS00001.pkg");
-    fs::copy(test_directory.join("UP0001-BLUS00001.pkg"), &romfile_path)
-        .await
-        .unwrap();
+    let romfile_path = env.fixture("UP0001-BLUS00001.pkg").await;
     romfile_paths.push(romfile_path);
-    let romfile_path = tmp_directory.join("prfgmHWxGNxsfJ.rap");
-    fs::copy(test_directory.join("prfgmHWxGNxsfJ.rap"), &romfile_path)
-        .await
-        .unwrap();
+    let romfile_path = env.fixture("prfgmHWxGNxsfJ.rap").await;
     romfile_paths.push(romfile_path);
 
-    let system = find_systems(&mut connection).await.remove(0);
+    let system = env.system().await;
 
     for romfile_path in romfile_paths {
-        let matches = import_roms::subcommand()
-            .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
-            .await
-            .unwrap();
+        env.import_roms(&[&romfile_path]).await;
     }
 
     let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     let mut games_by_id: HashMap<i64, Game> = HashMap::new();
     let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
-    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+    let roms = find_roms_with_romfile_by_system_id(&mut env.connection, system.id).await;
     for rom in &roms {
-        let romfile = find_romfile_by_id(&mut connection, rom.romfile_id.unwrap()).await;
+        let romfile = find_romfile_by_id(&mut env.connection, rom.romfile_id.unwrap()).await;
         romfiles_by_id.insert(romfile.id, romfile);
     }
-    let game = find_game_by_id(&mut connection, roms[0].game_id).await;
+    let game = find_game_by_id(&mut env.connection, roms[0].game_id).await;
     games_by_id.insert(roms[0].game_id, game);
     roms_by_game_id.insert(roms[0].game_id, roms);
 
-    let destination_directory = tmp_directory.join("destination");
-    create_directory(&progress_bar, &destination_directory, true)
+    let destination_directory = env.tmp_directory.join("destination");
+    create_directory(&env.progress_bar, &destination_directory, true)
         .await
         .unwrap();
 
     // when
     to_archive(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         &destination_directory,
         &system,
         games_by_id,

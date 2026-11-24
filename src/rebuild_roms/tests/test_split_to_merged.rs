@@ -6,7 +6,7 @@ use crate::test_support::TestEnv;
 async fn test() {
     // given
     let mut env = TestEnv::new().await;
-    let system = import_split_set(&mut env.connection, &env.progress_bar, &env.tmp_directory).await;
+    let system = import_split_set(&mut env).await;
     let system_directory = get_system_directory(&mut env.connection, &system)
         .await
         .unwrap();

@@ -1,40 +1,21 @@
 use super::*;
-use crate::import_clone_lists;
-use crate::import_dats;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
+    let mut env = TestEnv::with_dat("Test System (20261111) (Clone Lists).dat").await;
 
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand().get_matches_from([
-        "import-dats",
-        "tests/Test System (20261111) (Clone Lists).dat",
-    ]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let matches = import_clone_lists::subcommand().get_matches_from([
+    env.run(&[
         "import-clone-lists",
-        "tests/Test System (Clone Lists) (Redump).json",
-    ]);
-    import_clone_lists::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+        env.fixture_source("Test System (Clone Lists) (Redump).json")
+            .to_str()
+            .unwrap(),
+    ])
+    .await
+    .unwrap();
 
-    let system = find_systems(&mut connection).await.remove(0);
+    let system = env.system().await;
 
     let all_regions = vec![];
     let one_regions = vec![
@@ -46,8 +27,8 @@ async fn test() {
 
     // when
     sort_system(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         true,
         false,
         &system,
@@ -74,7 +55,7 @@ async fn test() {
     .unwrap();
 
     // then
-    let games = find_games_by_system_id(&mut connection, system.id).await;
+    let games = find_games_by_system_id(&mut env.connection, system.id).await;
     assert_eq!(14, games.len());
 
     let sortings: Vec<(&str, i64)> = games

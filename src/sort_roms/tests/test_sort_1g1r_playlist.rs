@@ -1,40 +1,15 @@
 use super::*;
 use crate::config::{PreferredRegion, PreferredVersion};
-use crate::generate_playlists;
-use crate::import_dats;
-use crate::import_roms;
-use std::path::Path;
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 use tokio::fs;
 
 #[tokio::test]
 async fn test() {
     // given
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
+    let mut env = TestEnv::with_dat("Test System (20230105) (Multiple Discs).dat").await;
 
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand().get_matches_from([
-        "import-dats",
-        "tests/Test System (20230105) (Multiple Discs).dat",
-    ]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system)
-        .await
-        .unwrap();
+    let system = env.system().await;
+    let system_directory = env.system_directory(&system).await;
 
     let mut romfile_names: Vec<String> = vec![];
     for i in 1..=2 {
@@ -42,29 +17,22 @@ async fn test() {
     }
 
     for romfile_name in &romfile_names {
-        let romfile_path = tmp_directory.join(romfile_name);
-        fs::copy(test_directory.join(romfile_name), &romfile_path)
+        let romfile_path = env.tmp_directory.join(romfile_name);
+        fs::copy(env.fixture_source(romfile_name), &romfile_path)
             .await
             .unwrap();
-        let matches = import_roms::subcommand()
-            .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
-            .await
-            .unwrap();
+        env.import_roms(&[&romfile_path]).await;
     }
 
-    let matches = generate_playlists::subcommand().get_matches_from(["generate-playlists", "-a"]);
-    generate_playlists::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    env.run(&["generate-playlists", "-a"]).await.unwrap();
 
     let all_regions = vec![];
     let one_regions = vec![Region::UnitedStates, Region::Europe];
 
     // when
     sort_system(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         true,
         false,
         &system,
@@ -91,7 +59,7 @@ async fn test() {
     .unwrap();
 
     // then
-    let romfiles = find_romfiles(&mut connection).await;
+    let romfiles = find_romfiles(&mut env.connection).await;
     assert_eq!(romfiles.len(), 3);
 
     let roms_indices = vec![0, 1];
@@ -102,14 +70,14 @@ async fn test() {
             &system_directory
                 .join("1G1R")
                 .join(romfile_names.get(i).unwrap())
-                .strip_prefix(&rom_directory)
+                .strip_prefix(&env.rom_directory)
                 .unwrap()
                 .as_os_str()
                 .to_str()
                 .unwrap(),
             &romfile.path
         );
-        assert!(rom_directory.path().join(&romfile.path).is_file());
+        assert!(env.rom_directory.join(&romfile.path).is_file());
     }
 
     let romfile = romfiles.get(2).unwrap();
@@ -117,12 +85,12 @@ async fn test() {
         &system_directory
             .join("1G1R")
             .join("Test Game (USA, Europe).m3u")
-            .strip_prefix(&rom_directory)
+            .strip_prefix(&env.rom_directory)
             .unwrap()
             .as_os_str()
             .to_str()
             .unwrap(),
         &romfile.path
     );
-    assert!(rom_directory.path().join(&romfile.path).is_file());
+    assert!(env.rom_directory.join(&romfile.path).is_file());
 }

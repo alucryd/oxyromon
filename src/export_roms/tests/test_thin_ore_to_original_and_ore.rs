@@ -1,55 +1,21 @@
 use super::*;
-use crate::convert_roms;
-use crate::import_dats;
-use crate::import_roms;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 use tokio::fs;
 
 #[tokio::test]
 async fn test() {
     // given
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
+    let mut env = TestEnv::with_dat("Test System (20261114) (Game Boy).dat").await;
 
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
+    let romfile_path = env.fixture("Test Game (USA, Europe).gb.7z").await;
 
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
+    let system = env.system().await;
 
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20261114) (Game Boy).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe).gb.7z");
-    fs::copy(
-        test_directory.join("Test Game (USA, Europe).gb.7z"),
-        &romfile_path,
-    )
-    .await
-    .unwrap();
-
-    let system = find_systems(&mut connection).await.remove(0);
-
-    let matches = import_roms::subcommand()
-        .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    env.import_roms(&[&romfile_path]).await;
 
     // a thin ORE, its chunks in the system's store
-    set_bool(&mut connection, "ORE_STORE", true, Some(system.id)).await;
-    let matches = convert_roms::subcommand().get_matches_from(["convert-roms", "-f", "ORE", "-a"]);
-    convert_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    set_bool(&mut env.connection, "ORE_STORE", true, Some(system.id)).await;
+    env.run(&["convert-roms", "-f", "ORE", "-a"]).await.unwrap();
 
     let load = async |connection: &mut SqliteConnection| {
         let roms = find_roms_with_romfile_by_system_id(connection, system.id).await;
@@ -61,24 +27,24 @@ async fn test() {
         romfiles_by_id.insert(romfile.id, romfile);
         (roms_by_game_id, romfiles_by_id)
     };
-    let rom = fs::read(test_directory.join("Test Game (USA, Europe).gb"))
+    let rom = fs::read(env.fixture_source("Test Game (USA, Europe).gb"))
         .await
         .unwrap();
 
     // when exported as its original
-    let original_directory = tmp_directory.join("original");
-    create_directory(&progress_bar, &original_directory, true)
+    let original_directory = env.tmp_directory.join("original");
+    create_directory(&env.progress_bar, &original_directory, true)
         .await
         .unwrap();
-    let (roms_by_game_id, romfiles_by_id) = load(&mut connection).await;
-    let games_by_id: HashMap<i64, Game> = find_games_by_system_id(&mut connection, system.id)
+    let (roms_by_game_id, romfiles_by_id) = load(&mut env.connection).await;
+    let games_by_id: HashMap<i64, Game> = find_games_by_system_id(&mut env.connection, system.id)
         .await
         .into_iter()
         .map(|game| (game.id, game))
         .collect();
     to_original(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         &original_directory,
         &system,
         games_by_id,
@@ -95,14 +61,14 @@ async fn test() {
     assert!(exported == rom);
 
     // when exported as an ORE
-    let ore_directory = tmp_directory.join("ore");
-    create_directory(&progress_bar, &ore_directory, true)
+    let ore_directory = env.tmp_directory.join("ore");
+    create_directory(&env.progress_bar, &ore_directory, true)
         .await
         .unwrap();
-    let (roms_by_game_id, romfiles_by_id) = load(&mut connection).await;
+    let (roms_by_game_id, romfiles_by_id) = load(&mut env.connection).await;
     to_ore(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         &ore_directory,
         roms_by_game_id,
         romfiles_by_id,

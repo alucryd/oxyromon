@@ -1,50 +1,20 @@
 use super::*;
-use crate::import_dats;
-use crate::import_roms;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
-use tokio::fs;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
+    let mut env = TestEnv::with_dat("Test System (20261025) (WUD).dat").await;
 
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
+    let romfile_path = env.fixture("Test Game (USA).wux").await;
 
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
+    let system = env.system().await;
+    let system_directory = env.system_directory(&system).await;
 
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20261025) (WUD).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    env.import_roms(&[&romfile_path]).await;
 
-    let romfile_path = tmp_directory.join("Test Game (USA).wux");
-    fs::copy(test_directory.join("Test Game (USA).wux"), &romfile_path)
-        .await
-        .unwrap();
-
-    let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system)
-        .await
-        .unwrap();
-
-    let matches = import_roms::subcommand()
-        .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-    let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
+    let roms = find_roms_with_romfile_by_system_id(&mut env.connection, system.id).await;
+    let romfile = find_romfile_by_id(&mut env.connection, roms[0].romfile_id.unwrap()).await;
     let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     roms_by_game_id.insert(roms[0].game_id, roms);
     let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -52,8 +22,8 @@ async fn test() {
 
     // when
     to_wua(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         &system,
         roms_by_game_id,
         romfiles_by_id,
@@ -64,21 +34,15 @@ async fn test() {
     .unwrap();
 
     // then the WUA rebuilds the disc, its update partition in the store
-    let romfiles = find_romfiles(&mut connection).await;
+    let romfiles = find_romfiles(&mut env.connection).await;
     assert_eq!(romfiles.len(), 1);
     let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
-        system_directory
-            .join("Test Game (USA).wua")
-            .strip_prefix(&rom_directory)
-            .unwrap()
-            .as_os_str()
-            .to_str()
-            .unwrap(),
+        env.stored_path(&system_directory.join("Test Game (USA).wua")),
     );
     assert!(!system_directory.join("Test Game (USA).wux").exists());
-    let wua = rom_directory.path().join(&romfile.path);
+    let wua = env.rom_directory.join(&romfile.path);
     let entries = wux_rs::store_entries(&wua).unwrap();
     assert_eq!(entries.len(), 1);
     assert!(
@@ -90,7 +54,7 @@ async fn test() {
     // and it weighs its file and the partition, which only it needs
     let partition = system_directory.join(wux_rs::STORE_DIR).join(&entries[0]);
     assert_eq!(
-        crate::ore::actual_size(&mut connection, &romfiles)
+        crate::ore::actual_size(&mut env.connection, &romfiles)
             .await
             .unwrap(),
         romfile.size as u64 + partition.metadata().unwrap().len()
@@ -99,21 +63,24 @@ async fn test() {
     let copy = system_directory.join("Test Game (Copy).wua");
     std::fs::copy(&wua, &copy).unwrap();
     create_romfile(
-        &mut connection,
-        copy.strip_prefix(&rom_directory).unwrap().to_str().unwrap(),
+        &mut env.connection,
+        copy.strip_prefix(&env.rom_directory)
+            .unwrap()
+            .to_str()
+            .unwrap(),
         romfile.size as u64,
         RomfileType::Romfile,
     )
     .await;
     assert_eq!(
-        crate::ore::actual_size(&mut connection, &romfiles)
+        crate::ore::actual_size(&mut env.connection, &romfiles)
             .await
             .unwrap(),
         romfile.size as u64 + partition.metadata().unwrap().len() / 2
     );
     std::fs::remove_file(&copy).unwrap();
     let info = wux_rs::disc_info(&wua).unwrap().unwrap();
-    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+    let roms = find_roms_with_romfile_by_system_id(&mut env.connection, system.id).await;
     assert_eq!(Some(hex(&info.sha1)), roms[0].sha1);
 }
 

@@ -1,60 +1,35 @@
 use super::*;
-use crate::import_dats;
-use crate::import_roms;
-use tempfile::TempDir;
-use tokio::fs;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
+    let mut env = TestEnv::new().await;
 
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand().get_matches_from([
+    env.run(&[
         "import-dats",
         "-e",
         "ext",
-        "tests/Test System (20000000).dat",
-    ]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom.7z");
-    fs::copy(
-        test_directory.join("Test Game (USA, Europe).rom.7z"),
-        &romfile_path,
-    )
+        env.fixture_source("Test System (20000000).dat")
+            .to_str()
+            .unwrap(),
+    ])
     .await
     .unwrap();
-    let matches = import_roms::subcommand()
-        .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
 
-    let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system)
-        .await
-        .unwrap();
+    let romfile_path = env.fixture("Test Game (USA, Europe).rom.7z").await;
+    env.import_roms(&[&romfile_path]).await;
+
+    let system = env.system().await;
+    let system_directory = env.system_directory(&system).await;
 
     let all_regions = vec![];
     let one_regions = vec![Region::UnitedStates, Region::Europe];
 
     // when
     sort_system(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         true,
         false,
         &system,
@@ -81,7 +56,7 @@ async fn test() {
     .unwrap();
 
     // then
-    let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+    let romfiles = find_romfiles_by_system_id(&mut env.connection, system.id).await;
     assert_eq!(1, romfiles.len());
 
     let romfile = romfiles.first().unwrap();
@@ -89,12 +64,12 @@ async fn test() {
         &system_directory
             .join("1G1R")
             .join("Test Game (USA, Europe).7z")
-            .strip_prefix(&rom_directory)
+            .strip_prefix(&env.rom_directory)
             .unwrap()
             .as_os_str()
             .to_str()
             .unwrap(),
         &romfile.path
     );
-    assert!(rom_directory.path().join(&romfile.path).is_file());
+    assert!(env.rom_directory.join(&romfile.path).is_file());
 }

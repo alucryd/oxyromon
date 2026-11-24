@@ -3,23 +3,22 @@
 // have "Test Clones.rom", which their parent does not.
 
 use super::super::check_roms;
-use super::super::import_dats;
-use super::super::import_roms;
 use super::*;
+use crate::test_support::TestEnv;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use zip::ZipWriter;
 use zip::write::SimpleFileOptions;
 
-fn write_zip(path: &Path, entries: &[(&str, &str)]) {
+fn write_zip(env: &TestEnv, path: &Path, entries: &[(&str, &str)]) {
     let mut writer = ZipWriter::new(File::create(path).unwrap());
     for (name, fixture) in entries {
         writer
             .start_file(*name, SimpleFileOptions::default())
             .unwrap();
         writer
-            .write_all(&std::fs::read(Path::new("tests").join(fixture)).unwrap())
+            .write_all(&std::fs::read(env.fixture_source(fixture)).unwrap())
             .unwrap();
     }
     writer.finish().unwrap();
@@ -44,21 +43,12 @@ pub const MERGED_ENTRIES: [&str; 4] = [
 ];
 
 /// Imports the set as split ZIPs and returns its system.
-pub async fn import_split_set(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-    tmp_directory: &Path,
-) -> System {
-    let matches = import_dats::subcommand().get_matches_from([
-        "import-dats",
-        "tests/Test System (20200721) (MAME Merged).dat",
-    ]);
-    import_dats::main(connection, &matches, progress_bar)
-        .await
-        .unwrap();
+pub async fn import_split_set(env: &mut TestEnv) -> System {
+    env.import_dats(&["Test System (20200721) (MAME Merged).dat"])
+        .await;
 
-    let system = find_arcade_systems(connection).await.remove(0);
-    let system_directory = get_system_directory(connection, &system).await.unwrap();
+    let system = find_arcade_systems(&mut env.connection).await.remove(0);
+    let system_directory = env.system_directory(&system).await;
 
     for (game, entries) in [
         (
@@ -80,25 +70,19 @@ pub async fn import_split_set(
             vec![("Test Clones.rom", "Test Game (USA, Europe) (Beta).rom")],
         ),
     ] {
-        let path = tmp_directory.join(format!("{}.zip", game));
-        write_zip(&path, &entries);
-        let matches = import_roms::subcommand().get_matches_from([
-            "import-roms",
-            "-u",
-            "skip",
-            path.to_str().unwrap(),
-        ]);
-        import_roms::main(connection, &matches, progress_bar)
+        let path = env.tmp_directory.join(format!("{}.zip", game));
+        write_zip(env, &path, &entries);
+        env.run(&["import-roms", "-u", "skip", path.to_str().unwrap()])
             .await
             .unwrap();
         assert!(system_directory.join(format!("{}.zip", game)).is_file());
     }
 
-    let system = find_system_by_id(connection, system.id).await;
-    compute_system_completion(connection, progress_bar, &system)
+    let system = find_system_by_id(&mut env.connection, system.id).await;
+    compute_system_completion(&mut env.connection, &env.progress_bar, &system)
         .await
         .unwrap();
-    find_system_by_id(connection, system.id).await
+    find_system_by_id(&mut env.connection, system.id).await
 }
 
 pub async fn rebuild(

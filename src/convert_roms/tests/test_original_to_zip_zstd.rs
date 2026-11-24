@@ -7,57 +7,24 @@
 
 use super::*;
 use crate::archive::ArchiveCompression;
-use crate::import_dats;
-use crate::import_roms;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
-use tokio::fs;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
+    let mut env = TestEnv::with_dat("Test System (20200721).dat").await;
 
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
+    let romfile_path = env.fixture("Test Game (USA, Europe).rom").await;
 
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
+    let system = env.system().await;
+    let system_directory = env.system_directory(&system).await;
 
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    env.import_roms(&[&romfile_path]).await;
 
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
-    fs::copy(
-        test_directory.join("Test Game (USA, Europe).rom"),
-        &romfile_path,
-    )
-    .await
-    .unwrap();
-
-    let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system)
-        .await
-        .unwrap();
-
-    let matches = import_roms::subcommand()
-        .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let games = find_full_games_by_system_id(&mut connection, system.id).await;
+    let games = find_full_games_by_system_id(&mut env.connection, system.id).await;
     let roms =
-        find_roms_with_romfile_by_game_ids(&mut connection, &[games.first().unwrap().id]).await;
-    let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
+        find_roms_with_romfile_by_game_ids(&mut env.connection, &[games.first().unwrap().id]).await;
+    let romfile = find_romfile_by_id(&mut env.connection, roms[0].romfile_id.unwrap()).await;
     let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     roms_by_game_id.insert(roms[0].game_id, roms);
     let games_by_id: HashMap<i64, Game> = games.into_iter().map(|game| (game.id, game)).collect();
@@ -66,8 +33,8 @@ async fn test() {
 
     // when
     to_archive(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         &system,
         games_by_id,
         roms_by_game_id,
@@ -83,9 +50,9 @@ async fn test() {
     .unwrap();
 
     // then
-    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+    let roms = find_roms_with_romfile_by_system_id(&mut env.connection, system.id).await;
     assert_eq!(roms.len(), 1);
-    let romfiles = find_romfiles(&mut connection).await;
+    let romfiles = find_romfiles(&mut env.connection).await;
     assert_eq!(romfiles.len(), 1);
 
     let rom = roms.first().unwrap();
@@ -94,22 +61,16 @@ async fn test() {
     let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
-        system_directory
-            .join("Test Game (USA, Europe).zip")
-            .strip_prefix(&rom_directory)
-            .unwrap()
-            .as_os_str()
-            .to_str()
-            .unwrap(),
+        env.stored_path(&system_directory.join("Test Game (USA, Europe).zip")),
     );
-    assert!(rom_directory.path().join(&romfile.path).is_file());
+    assert!(env.rom_directory.join(&romfile.path).is_file());
     assert_eq!(rom.romfile_id, Some(romfile.id));
 
     let archive_romfiles = romfile
-        .as_common(&mut connection)
+        .as_common(&mut env.connection)
         .await
         .unwrap()
-        .as_archive(&progress_bar, None)
+        .as_archive(&env.progress_bar, None)
         .await
         .unwrap();
     assert_eq!(archive_romfiles.len(), 1);
