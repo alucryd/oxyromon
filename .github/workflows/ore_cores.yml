@@ -20,7 +20,7 @@ on:
         description: "Core to build"
         type: choice
         default: all
-        options: [all, beetle-psx, parallel-ps2, pcee2, dolphin, mesen, mesen-s, sameboy, mgba, melonds-ds, azahar, parallel-n64, cemu, beetle-vb, pokemini, genesis-plus-gx, picodrive, beetle-saturn]
+        options: [all, beetle-psx, parallel-ps2, pcee2, dolphin, mesen, mesen-s, sameboy, mgba, melonds-ds, azahar, parallel-n64, cemu, beetle-vb, pokemini, genesis-plus-gx, picodrive, beetle-saturn, flycast]
 
 concurrency:
   group: ore-cores-${{ github.ref }}
@@ -672,3 +672,46 @@ jobs:
         with:
           name: mednafen_saturn_libretro-ore-linux-x86_64
           path: core/mednafen_saturn_libretro.so
+
+  flycast:
+    name: Flycast
+    runs-on: ubuntu-24.04
+    if: ${{ !inputs.core || inputs.core == 'all' || inputs.core == 'flycast' }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: oxyromon
+      - uses: actions/checkout@v7
+        with:
+          repository: alucryd/flycast
+          ref: ${{ env.CORE_REF }}
+          path: core
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: oxyromon/crates/smelt-rs
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install ninja-build libgl1-mesa-dev libzip-dev
+      - name: Build libsmelt
+        run: cargo build --release --manifest-path "$SMELT_DIR/Cargo.toml"
+      # As Flycast's own libretro build configures it
+      - name: Build core
+        run: |
+          cmake -S core -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DLIBRETRO=ON \
+            -DORE=ON -DSMELT_DIR="$SMELT_DIR"
+          cmake --build build
+      # No ORE test in the core: at least the reader is in it. Release
+      # builds are stripped (-s), so nm sees nothing: its strings tell
+      - name: Check the ORE reader is linked
+        run: |
+          grep -qa 'holds no CD or GD-ROM' build/flycast_libretro.so
+          grep -qa 'smelt panicked' build/flycast_libretro.so
+      - uses: actions/upload-artifact@v7
+        with:
+          name: flycast_libretro-ore-linux-x86_64
+          path: build/flycast_libretro.so

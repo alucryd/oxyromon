@@ -1,7 +1,7 @@
 #!/bin/sh
 # Build the ORE cores locally, as .github/workflows/ore_cores.yml does in CI,
 # against this checkout's libsmelt:
-#   ./ore_cores.sh [beetle-psx|parallel-ps2|pcee2|dolphin|mesen|mesen-s|sameboy|mgba|melonds-ds|azahar|parallel-n64|cemu|beetle-vb|pokemini|genesis-plus-gx|picodrive|beetle-saturn ...]
+#   ./ore_cores.sh [beetle-psx|parallel-ps2|pcee2|dolphin|mesen|mesen-s|sameboy|mgba|melonds-ds|azahar|parallel-n64|cemu|beetle-vb|pokemini|genesis-plus-gx|picodrive|beetle-saturn|flycast ...]
 # No argument builds them all. The cores are the checkouts next to oxyromon
 # (CORES_DIR, default ..), built in place on whatever branch they are on.
 set -eu
@@ -104,6 +104,16 @@ beetle_saturn() {
     make -C "$core" -j"$JOBS" HAVE_ORE=1 SMELT_DIR="$SMELT_DIR"
 }
 
+flycast() {
+    core="$CORES_DIR/flycast"
+    # Its dependencies are submodules
+    git -C "$core" submodule update --init --recursive
+    cmake -S "$core" -B "$core/build" -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release -DLIBRETRO=ON \
+        -DORE=ON -DSMELT_DIR="$SMELT_DIR"
+    cmake --build "$core/build"
+}
+
 mgba() {
     core="$CORES_DIR/mgba"
     cmake -S "$core" -B "$core/build" \
@@ -148,10 +158,10 @@ cemu() {
 
 cargo build --release --manifest-path "$SMELT_DIR/Cargo.toml"
 
-[ $# -gt 0 ] || set -- beetle-psx parallel-ps2 pcee2 dolphin mesen mesen-s sameboy mgba melonds-ds azahar parallel-n64 cemu beetle-vb pokemini genesis-plus-gx picodrive beetle-saturn
+[ $# -gt 0 ] || set -- beetle-psx parallel-ps2 pcee2 dolphin mesen mesen-s sameboy mgba melonds-ds azahar parallel-n64 cemu beetle-vb pokemini genesis-plus-gx picodrive beetle-saturn flycast
 for c in "$@"; do
     case "$c" in
-        beetle-psx | parallel-ps2 | pcee2 | dolphin | mesen | mesen-s | sameboy | mgba | melonds-ds | azahar | parallel-n64 | cemu | beetle-vb | pokemini | genesis-plus-gx | picodrive | beetle-saturn) echo "== $c"; "$(echo "$c" | tr - _)" ;;
+        beetle-psx | parallel-ps2 | pcee2 | dolphin | mesen | mesen-s | sameboy | mgba | melonds-ds | azahar | parallel-n64 | cemu | beetle-vb | pokemini | genesis-plus-gx | picodrive | beetle-saturn | flycast) echo "== $c"; "$(echo "$c" | tr - _)" ;;
         *) echo "unknown core: $c" >&2; exit 1 ;;
     esac
 done
