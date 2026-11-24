@@ -1,7 +1,7 @@
 ---
 type: concept
 title: "GameCube and Wii formats: rvz-rs, wbfs-rs and the gcwii embedded crate"
-description: How oxyromon reads and writes RVZ and writes WBFS in-process through rvz-rs (a port of Dolphin's RVZ code) and wbfs-rs (a port of wit's WBFS writer), which share GameCube and Wii disc code through the unpublished, symlinked gcwii crate; where the Wii common key is and is not needed, and how the crates are tested against Dolphin and wit.
+description: How oxyromon reads and writes RVZ and writes WBFS in-process through rvz-rs (a port of Dolphin's RVZ code) and wbfs-rs (a port of wit's WBFS writer), which share GameCube and Wii disc code through the unpublished gcwii crate, embedded as a source copy in both; where the Wii common key is and is not needed, and how the crates are tested against Dolphin and wit.
 tags:
   [
     rvz,
@@ -17,7 +17,7 @@ tags:
   ]
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-13T20:59:45.363Z
+    at: 2026-11-23T22:34:01.701Z
 sources:
   - id: openwiki-source-8bd2a10a08a7d902fe9f5c52
     resource: repo://crates/gcwii/Cargo.toml
@@ -51,7 +51,7 @@ sources:
     resource: repo://src/wbfs.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
+generated: { by: "unknown", at: "2026-11-23T22:34:01.701Z" }
 ---
 
 # GameCube and Wii formats: rvz-rs, wbfs-rs and gcwii
@@ -128,11 +128,13 @@ rvz-rs and wbfs-rs both need the same disc code, but a format crate may depend
 on no other crate of this repository: each must publish standalone. `gcwii`
 resolves that by being embedded rather than depended on:
 
-- `crates/rvz-rs/src/gcwii` and `crates/wbfs-rs/src/gcwii` are symlinks to
-  `../../gcwii/src`, declared as `#[path = "gcwii/lib.rs"] mod gcwii;`. `cargo
-package` follows the symlink, so each published crate carries a copy.
-- The shared test fixtures go the same way: each crate's `tests/common` links
-  to `crates/gcwii/tests/common`.
+- `crates/rvz-rs/src/gcwii` and `crates/wbfs-rs/src/gcwii` are copies of
+  `crates/gcwii/src`, declared as `#[path = "gcwii/lib.rs"] mod gcwii;` —
+  copies rather than symlinks, because a symlink checks out on Windows as a
+  text file.
+- What the tests share is not copied in: the synthetic-disc builders live in
+  `crates/test-support`, a dev-dependency no host publishes, so the hosts'
+  suites build the same discs without embedding anything.
 - Within gcwii, paths go through `super::`, never `crate::`, because embedded,
   its root is the host's.
 - gcwii's `error::Error` (`Io`, `BadMagic`, `Unsupported`, `InvalidOption`,
@@ -147,11 +149,14 @@ a `depth` through its recursion and rejects the table past 256 directory levels,
 far beyond any real disc, where a chain of nested directories could otherwise
 nest as deep as the table is long.
 
-- `tests/crates.rs` enforces the arrangement: `embedded_crates_are_symlinked_in`
-  checks that every link listed in `EMBEDDED` resolves to gcwii's `src` or
-  `tests/common`, and `embedded_crates_never_name_their_root` fails on any
-  `crate::` in gcwii's source. A change to gcwii is a change to both hosts, each
-  getting a changelog entry and a release.
+- `tests/crates.rs` enforces the arrangement: `embedded_crates_are_copied_in`
+  checks that every copy listed in `EMBEDDED` is byte-identical to the embedded
+  crate's `src` and is not a symlink — `EMBEDDED` covers `cd`, `gcwii` and
+  `wiiu` — and `embedded_crates_never_name_their_root` fails on any `crate::`
+  in the embedded source. `EMBEDDED`'s own comment records that what the tests
+  share is not copied: it lives in `crates/test-support`, used as a
+  dev-dependency. A change to gcwii is a change to both hosts, each getting a
+  changelog entry and a release.
 
 ## The oxyromon side
 
@@ -195,7 +200,7 @@ flowchart LR
   RVZ -->|"HashAndSize"| READER["rvz_rs::Reader into hash_reader"]
   ISO -->|"ToWbfs, Wii keys"| WC["wbfs_rs::create"]
   RVZ -->|"ToWbfs, RvzSource title keys"| WCF["wbfs_rs::create_from"]
-  subgraph embedded["gcwii, symlinked into both crates"]
+  subgraph embedded["gcwii, copied into both crates"]
     DISC["disc, wii, crypto, fst, keys, scrub"]
   end
   RVZC --- DISC
@@ -217,7 +222,7 @@ Wii RVZs are Dolphin's byte for byte. `crates/wbfs-rs/tests/interop.rs` runs `wi
 `$WIT`, and compares the WBFS and the extracted disc with wit's. Real dumps are
 opt-in, through `$RVZ_RS_REAL` and `$WBFS_RS_REAL`. Neither tool is installed in
 CI. `roundtrip.rs` in each crate covers what needs no reference tool, on the
-synthetic discs from the shared `tests/common`. On the oxyromon side, the
+synthetic discs built by `crates/test-support`. On the oxyromon side, the
 `export_roms` and `convert_roms` tests (`test_iso_to_rvz`, `test_rvz_to_rvz`,
 `test_iso_to_wbfs`, `test_rvz_to_wbfs`, `test_rvz_to_rvz_should_copy`) run the
 real pipeline.

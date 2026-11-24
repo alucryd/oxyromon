@@ -1,8 +1,6 @@
 //! A small synthetic Wii U disc, laid out as Cemu reads one, encrypted with
 //! made-up keys: no real disc or key is needed, nor shipped.
 
-#![allow(dead_code)]
-
 use aes::Aes128;
 use aes::cipher::{Array, BlockCipherEncrypt, KeyInit};
 use sha1::{Digest, Sha1};

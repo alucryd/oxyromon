@@ -15,8 +15,8 @@ use std::process::Command;
 use rvz_rs::{Compression, Options};
 use tempfile::TempDir;
 
-mod common;
 use common::{COMMON_KEY, dolphin_tool, gamecube_disc, wii_disc, write};
+use test_support::gcwii as common;
 
 fn tool() -> Option<PathBuf> {
     let tool = dolphin_tool();

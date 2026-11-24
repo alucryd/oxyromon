@@ -1,54 +1,26 @@
 use super::*;
-use crate::import_dats;
-use crate::import_roms;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
+    let mut env = TestEnv::with_dat("Test System (20261025) (CDN).dat").await;
 
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20261025) (CDN).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-    let update_directory = tmp_directory.join("Test Game (USA) (Update)");
-    std::fs::create_dir(&update_directory).unwrap();
-    for entry in std::fs::read_dir(test_directory.join("Test Game (USA) (Update)")).unwrap() {
-        let path = entry.unwrap().path();
-        std::fs::copy(&path, update_directory.join(path.file_name().unwrap())).unwrap();
-    }
-    let matches = import_roms::subcommand()
-        .get_matches_from(["import-roms", update_directory.to_str().unwrap()]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
+    let update_directory = env.fixture("Test Game (USA) (Update)").await;
+    env.run(&["import-roms", update_directory.to_str().unwrap()])
         .await
         .unwrap();
 
-    let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system)
-        .await
-        .unwrap();
+    let system = env.system().await;
+    let system_directory = env.system_directory(&system).await;
     let matches = subcommand().get_matches_from(["convert-roms", "-f", "7Z", "-a"]);
-    main(&mut connection, &matches, &progress_bar)
+    main(&mut env.connection, &matches, &env.progress_bar)
         .await
         .unwrap();
 
     // when
     let matches = subcommand().get_matches_from(["convert-roms", "-f", "ORIGINAL", "-a", "-c"]);
-    main(&mut connection, &matches, &progress_bar)
+    main(&mut env.connection, &matches, &env.progress_bar)
         .await
         .unwrap();
 
@@ -59,7 +31,7 @@ async fn test() {
             .exists()
     );
     let game_directory = system_directory.join("Test Game (USA) (Update)");
-    let romfiles = find_romfiles(&mut connection).await;
+    let romfiles = find_romfiles(&mut env.connection).await;
     assert_eq!(romfiles.len(), 6);
     for name in [
         "00000010",
@@ -71,7 +43,11 @@ async fn test() {
     ] {
         let path = game_directory.join(name);
         assert!(path.is_file(), "{}", path.display());
-        let relative = path.strip_prefix(&rom_directory).unwrap().to_str().unwrap();
+        let relative = path
+            .strip_prefix(&env.rom_directory)
+            .unwrap()
+            .to_str()
+            .unwrap();
         assert!(romfiles.iter().any(|romfile| romfile.path == relative));
     }
 }

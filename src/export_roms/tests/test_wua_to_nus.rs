@@ -1,38 +1,18 @@
 use super::*;
-use crate::import_dats;
-use crate::import_roms;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 use tokio::fs;
 
 #[tokio::test]
 async fn test() {
     // given
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
-
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20261025) (WUD).dat"]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    let mut env = TestEnv::with_dat("Test System (20261025) (WUD).dat").await;
 
     // a lossless WUA in the library, its update partition in the system's store
-    let staging = tmp_directory.join("staging");
+    let staging = env.tmp_directory.join("staging");
     fs::create_dir(&staging).await.unwrap();
-    let keys = wux_rs::load_keys(&test_directory.join("Test Game (USA).keys.txt")).unwrap();
+    let keys = wux_rs::load_keys(&env.fixture_source("Test Game (USA).keys.txt")).unwrap();
     wux_rs::to_wua(
-        &[&test_directory.join("Test Game (USA).wux")],
+        &[&env.fixture_source("Test Game (USA).wux")],
         &staging.join("Test Game (USA).wua"),
         &keys,
         Some(&staging.join(wux_rs::STORE_DIR)),
@@ -40,16 +20,12 @@ async fn test() {
     )
     .unwrap();
 
-    let system = find_systems(&mut connection).await.remove(0);
+    let system = env.system().await;
 
-    let matches = import_roms::subcommand()
-        .get_matches_from(["import-roms", staging.as_os_str().to_str().unwrap()]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    env.import_roms(&[&staging]).await;
 
-    let destination_directory = tmp_directory.join("destination");
-    create_directory(&progress_bar, &destination_directory, true)
+    let destination_directory = env.tmp_directory.join("destination");
+    create_directory(&env.progress_bar, &destination_directory, true)
         .await
         .unwrap();
     let output = destination_directory.join("Test Game (USA)");
@@ -60,16 +36,16 @@ async fn test() {
         if output.is_dir() && results.len() == 2 {
             fs::write(output.join("save.dat"), b"mine").await.unwrap();
         }
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut env.connection, system.id).await;
+        let romfile = find_romfile_by_id(&mut env.connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
         romfiles_by_id.insert(romfile.id, romfile);
         results.push(
             to_nus(
-                &mut connection,
-                &progress_bar,
+                &mut env.connection,
+                &env.progress_bar,
                 &destination_directory,
                 roms_by_game_id,
                 romfiles_by_id,

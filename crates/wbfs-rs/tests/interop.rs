@@ -12,7 +12,7 @@ use std::process::Command;
 
 use tempfile::TempDir;
 
-mod common;
+use test_support::gcwii as common;
 mod rvz_source;
 use common::{gamecube_disc, write};
 

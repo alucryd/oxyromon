@@ -1,8 +1,5 @@
 use super::*;
-use crate::import_dats;
-use crate::import_roms;
-use std::path::{Path, PathBuf};
-use tempfile::TempDir;
+use crate::test_support::TestEnv;
 use tokio::fs;
 
 /// The only byte the clone's disc differs from its parent's, in a run of
@@ -12,40 +9,16 @@ const CLONE_OFFSET: usize = 0xc0000;
 #[tokio::test]
 async fn test() {
     // given
-    let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
+    let mut env = TestEnv::with_dat("Test System (20261115) (CHD Clone).dat").await;
 
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-
-    let rom_directory = TempDir::new_in(test_directory).unwrap();
-    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(test_directory).unwrap();
-    let tmp_directory =
-        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
-
-    let matches = import_dats::subcommand().get_matches_from([
-        "import-dats",
-        "tests/Test System (20261115) (CHD Clone).dat",
-    ]);
-    import_dats::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system)
-        .await
-        .unwrap();
+    let system = env.system().await;
+    let system_directory = env.system_directory(&system).await;
 
     // a disc and a clone of it, differing by a byte of padding
-    let iso_path = tmp_directory.join("Test Game (USA).iso");
-    fs::copy(test_directory.join("Test Game (USA).iso"), &iso_path)
-        .await
-        .unwrap();
+    let iso_path = env.fixture("Test Game (USA).iso").await;
     let mut clone = fs::read(&iso_path).await.unwrap();
     clone[CLONE_OFFSET] = 0xff;
-    let clone_path = tmp_directory.join("Test Game (USA) (Rev 1).iso");
+    let clone_path = env.tmp_directory.join("Test Game (USA) (Rev 1).iso");
     fs::write(&clone_path, &clone).await.unwrap();
 
     // a CHD of each, the clone's reading from the parent's
@@ -53,7 +26,7 @@ async fn test() {
         .unwrap()
         .as_iso()
         .unwrap()
-        .to_chd(&progress_bar, &tmp_directory, &[], &None, None)
+        .to_chd(&env.progress_bar, &env.tmp_directory, &[], &None, None)
         .await
         .unwrap()
         .romfile;
@@ -62,8 +35,8 @@ async fn test() {
         .as_iso()
         .unwrap()
         .to_chd(
-            &progress_bar,
-            &tmp_directory,
+            &env.progress_bar,
+            &env.tmp_directory,
             &[],
             &None,
             Some(parent_chd.clone()),
@@ -73,24 +46,23 @@ async fn test() {
         .romfile;
 
     // import them: only the CHDs themselves keep the clone and its parent together
-    let matches = import_roms::subcommand().get_matches_from([
+    env.run(&[
         "import-roms",
         parent_chd.path.as_os_str().to_str().unwrap(),
         clone_chd.path.as_os_str().to_str().unwrap(),
-    ]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    ])
+    .await
+    .unwrap();
 
-    let games = find_full_games_by_system_id(&mut connection, system.id).await;
+    let games = find_full_games_by_system_id(&mut env.connection, system.id).await;
     assert_eq!(games.len(), 2);
     // the parent before the clone, the order the games are stored in
     assert_eq!(games.first().unwrap().name, "Test Game (USA)");
-    let romfiles = find_romfiles(&mut connection).await;
+    let romfiles = find_romfiles(&mut env.connection).await;
     assert!(romfiles.iter().all(|romfile| romfile.parent_id.is_none()));
 
     // the clone is nothing without its parent
-    let orphan_path = tmp_directory.join("orphan.chd");
+    let orphan_path = env.tmp_directory.join("orphan.chd");
     fs::copy(
         system_directory.join("Test Game (USA) (Rev 1).chd"),
         &orphan_path,
@@ -103,9 +75,9 @@ async fn test() {
     let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
     for game in &games {
-        let roms = find_roms_with_romfile_by_game_ids(&mut connection, &[game.id]).await;
+        let roms = find_roms_with_romfile_by_game_ids(&mut env.connection, &[game.id]).await;
         for rom in &roms {
-            let romfile = find_romfile_by_id(&mut connection, rom.romfile_id.unwrap()).await;
+            let romfile = find_romfile_by_id(&mut env.connection, rom.romfile_id.unwrap()).await;
             romfiles_by_id.insert(romfile.id, romfile);
         }
         roms_by_game_id.insert(game.id, roms);
@@ -113,8 +85,8 @@ async fn test() {
 
     // when
     to_ore(
-        &mut connection,
-        &progress_bar,
+        &mut env.connection,
+        &env.progress_bar,
         roms_by_game_id,
         romfiles_by_id,
         false,
@@ -130,11 +102,11 @@ async fn test() {
 
     // then
     // the clone converted first, and its parent after it, both into complete OREs
-    let romfiles = find_romfiles(&mut connection).await;
+    let romfiles = find_romfiles(&mut env.connection).await;
     assert_eq!(romfiles.len(), 2);
     for romfile in &romfiles {
         assert!(romfile.path.ends_with(".ore"), "{}", romfile.path);
-        assert!(rom_directory.path().join(&romfile.path).is_file());
+        assert!(env.rom_directory.join(&romfile.path).is_file());
     }
     for name in ["Test Game (USA)", "Test Game (USA) (Rev 1)"] {
         assert!(!system_directory.join(format!("{name}.chd")).exists());

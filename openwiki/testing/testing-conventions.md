@@ -104,7 +104,7 @@ sources:
     resource: repo://tests/mcp_stdio.rs
   - id: openwiki-source-4090e615029907c2fb175f07
     resource: repo://tests/plain_output.rs
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "unknown", at: "2026-11-23T22:34:01.701Z" }
 verified:
   - by: openwiki/0.9.0
     at: 2026-11-13T20:59:45.363Z
@@ -121,6 +121,7 @@ under test with `use super::*` (and `use super::super::import_dats;` to drive a
 neighbouring subcommand). Because they compile *into* the `oxyromon` bin target's
 test harness, they can touch private items and call a subcommand's `main()`
 directly with a synthesized clap `ArgMatches` — no process is spawned
+<!-- openwiki: broken internal link [../../src/config/test_cli.rs#L5-L35] file "../../src/config/test_cli.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/config/test_cli.rs](../../src/config/test_cli.rs#L5-L35)).
 
 Roughly 300 such modules exist; `src/sort_roms/` alone holds 42, one per sorting
@@ -194,6 +195,7 @@ suites factor the preamble into an `async fn setup(dat: &str)` helper — and it
 must return the `NamedTempFile` and both `TempDir`s so the caller keeps them
 alive; the comment in that file says so explicitly, because a dropped `TempDir`
 deletes the directory the pool and the assertions still point at
+<!-- openwiki: broken internal link [../../src/import_roms/test_prefer_format.rs#L9-L42] file "../../src/import_roms/test_prefer_format.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/import_roms/test_prefer_format.rs](../../src/import_roms/test_prefer_format.rs#L9-L42)).
 
 ## Isolation: temp database, temp directories, one filesystem
@@ -255,9 +257,11 @@ run alone ([AGENTS.md](../../AGENTS.md#L119-L120)).
 The lock is *not* universal, and the exceptions are deliberate: tests with no
 process-wide footprint skip it. Pure `#[test]` units — the `mimetype` matchers,
 `crc32`, the GraphQL validators, `compute_alpha_subfolder`, `prompt_for_games` —
+<!-- openwiki: broken internal link [../../src/util/test_compute_alpha_subfolder.rs#L1-L21] file "../../src/util/test_compute_alpha_subfolder.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 take nothing ([src/util/test_compute_alpha_subfolder.rs](../../src/util/test_compute_alpha_subfolder.rs#L1-L21)),
 and a database-only test like `sort_roms/test_all_regions_from_matches.rs` reads
 a setting from its own temp DB without touching the filesystem, so it acquires no
+<!-- openwiki: broken internal link [../../src/sort_roms/test_all_regions_from_matches.rs#L1-L23] file "../../src/sort_roms/test_all_regions_from_matches.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 guard ([src/sort_roms/test_all_regions_from_matches.rs](../../src/sort_roms/test_all_regions_from_matches.rs#L1-L23)).
 The rule of thumb: if the test writes to `ROM_DIRECTORY`/`TMP_DIRECTORY`, boots a
 server, or relies on the settings bootstrap, it locks.
@@ -279,6 +283,7 @@ a TTY under test. Three mechanisms carry this:
   `-u/--unattended` flag parses — and tests pass `Skip` (or `First`) rather than
   relying on `cfg!(test)`
   ([src/import_roms.rs](../../src/import_roms.rs#L39-L54),
+<!-- openwiki: broken internal link [../../src/import_roms/test_original.rs#L44-L57] file "../../src/import_roms/test_original.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   [src/import_roms/test_original.rs](../../src/import_roms/test_original.rs#L44-L57)).
   When the mode is not `None`, multi-match resolution returns early — `Skip`
   yields `MatchState::Skipped`, `First` takes the first candidate — so
@@ -293,11 +298,13 @@ a TTY under test. Three mechanisms carry this:
   (`Some(0)`) at the ROM prompt, then asserts the queue was drained, so the
   prompt was reached exactly once
   ([src/prompt.rs](../../src/prompt.rs#L258-L291),
+<!-- openwiki: broken internal link [../../src/import_roms/test_none_selected.rs] file "../../src/import_roms/test_none_selected.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   [src/import_roms/test_none_selected.rs](../../src/import_roms/test_none_selected.rs)).
 
 The other `dialoguer` paths (`multiselect`, `confirm`, `editor`) still read the
 terminal, so `src/prompt/test_prompt_for_games_single_match.rs` covers only the
 early return (`len() <= 1` answers the question already)
+<!-- openwiki: broken internal link [../../src/prompt/test_prompt_for_games_single_match.rs#L1-L30] file "../../src/prompt/test_prompt_for_games_single_match.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/prompt/test_prompt_for_games_single_match.rs](../../src/prompt/test_prompt_for_games_single_match.rs#L1-L30)).
 Without a terminal `FuzzySelect` spins rather than failing, which is why the
 scripted queue panics instead of falling through: a test reaching an unscripted
@@ -342,6 +349,7 @@ directory, so the WUA and NUS export tests need no `import-keys` run and never
 touch a real key.
 `src/import_roms/test_cia.rs` therefore has no probe and no early return: it takes
 the mutex and runs the real CIA import on every machine, CI included
+<!-- openwiki: broken internal link [../../src/import_roms/test_cia.rs#L7-L12] file "../../src/import_roms/test_cia.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/import_roms/test_cia.rs](../../src/import_roms/test_cia.rs#L7-L12)).
 
 Those functions are also the application's only notion of "available": the same
@@ -372,23 +380,28 @@ the two together:
 - `sort_roms/test_sort.rs` checks the four `romfiles` rows **and** that each
   `path` equals the expected relative path under the system directory, then that
   `rom_directory.join(&romfile.path).is_file()`
+<!-- openwiki: broken internal link [../../src/sort_roms/test_sort.rs#L82-L102] file "../../src/sort_roms/test_sort.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   ([src/sort_roms/test_sort.rs](../../src/sort_roms/test_sort.rs#L82-L102)).
 - `purge_roms/test_orphans.rs` deletes a game row out from under an imported
   romfile, purges, then asserts `find_romfiles()` is empty **and** the system
+<!-- openwiki: broken internal link [../../src/purge_roms/test_orphans.rs#L54-L72] file "../../src/purge_roms/test_orphans.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   directory has zero entries ([src/purge_roms/test_orphans.rs](../../src/purge_roms/test_orphans.rs#L54-L72)).
 - `check_roms/test_check_by_name.rs` overwrites the imported file *after* import
   (so the fixture stays intact), runs `check-roms -s <system>` (`-s` is
   `--system` there, `--size` having no short form), and asserts the
   surviving row's path contains `/Trash/` and that the file really exists there
+<!-- openwiki: broken internal link [../../src/check_roms/test_check_by_name.rs#L50-L73] file "../../src/check_roms/test_check_by_name.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   ([src/check_roms/test_check_by_name.rs](../../src/check_roms/test_check_by_name.rs#L50-L73)).
 
 Comparing the stored path against `system_directory.join(…).strip_prefix(&rom_directory)`
 encodes the invariant that **`romfiles.path` is relative to `ROM_DIRECTORY`**; an
 implementation that starts storing absolute paths fails here and nowhere else
+<!-- openwiki: broken internal link [../../src/import_roms/test_original.rs#L82-L94] file "../../src/import_roms/test_original.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/import_roms/test_original.rs](../../src/import_roms/test_original.rs#L82-L94)).
 Tests that only need "it ran and the catalog agrees" assert the cheaper pair —
 `info/test_info.rs` runs the whole dependency-and-statistics report and then checks
 `count_systems`/`count_games`/`count_roms`
+<!-- openwiki: broken internal link [../../src/info/test_info.rs#L29-L36] file "../../src/info/test_info.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/info/test_info.rs](../../src/info/test_info.rs#L29-L36)).
 
 ## Tests that cross an HTTP boundary
@@ -396,7 +409,9 @@ Tests that only need "it ran and the catalog agrees" assert the cheaper pair —
 Two patterns, neither of which touches the network. DAT downloads take a base URL
 as a parameter, so the test mounts a `wiremock` `MockServer` and passes
 `mock_server.uri()` into the function under test — dependency injection rather
+<!-- openwiki: broken internal link [../../src/download_dats/test_nointro.rs#L35-L51] file "../../src/download_dats/test_nointro.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 than an environment variable ([src/download_dats/test_nointro.rs](../../src/download_dats/test_nointro.rs#L35-L51),
+<!-- openwiki: broken internal link [../../src/download_dats/test_redump_failures.rs#L39-L58] file "../../src/download_dats/test_redump_failures.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [src/download_dats/test_redump_failures.rs](../../src/download_dats/test_redump_failures.rs#L39-L58)).
 `wiremock` is the root package's only dev-dependency
 ([Cargo.toml](../../Cargo.toml#L157-L158)).
@@ -405,7 +420,9 @@ The server suites build the same temp DB/directories, then run the *real* Axum
 `main(pool, &matches)` in one future and the requests in another, racing them with
 `tokio::select!` after a fixed warm-up sleep (100 ms, or 1000 ms for the larger
 first case) whose only purpose is to let the listener come up
+<!-- openwiki: broken internal link [../../src/server/test_queries.rs#L48-L117] file "../../src/server/test_queries.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/server/test_queries.rs](../../src/server/test_queries.rs#L48-L117),
+<!-- openwiki: broken internal link [../../src/server/test_server.rs#L85-L98] file "../../src/server/test_server.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [src/server/test_server.rs](../../src/server/test_server.rs#L85-L98)):
 
 ```mermaid
@@ -433,6 +450,7 @@ query string to its own port and hands back parsed JSON:
   `dependencies` (asserting the list is name-sorted and that an absent tool
   reports a null version), `downloadableSystems`, `systemSettings`,
   `gameInformation` and `roms.ignored`
+<!-- openwiki: broken internal link [../../src/server/test_queries.rs#L11-L109] file "../../src/server/test_queries.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   ([src/server/test_queries.rs](../../src/server/test_queries.rs#L11-L109)).
 - `test_mutations.rs` (port 8010) drives the settings mutations against the
   running server — `setBool`, `addToList`/`removeFromList`,
@@ -442,19 +460,24 @@ query string to its own port and hands back parsed JSON:
   panic, and actions that cannot run (`sortRoms(systemId: 999)`, `purgeIrds`,
   `convertRoms`, a `purgeRoms` with nothing selected) answer with their exact
   message before queueing anything
+<!-- openwiki: broken internal link [../../src/server/test_mutations.rs#L57-L171] file "../../src/server/test_mutations.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   ([src/server/test_mutations.rs](../../src/server/test_mutations.rs#L57-L171)).
 - `test_uploads.rs` (port 8012) asserts only HTTP status codes on the upload
   routes: `/roms`, `/patches` and `/irds` answer 400 for a malformed field set and
+<!-- openwiki: broken internal link [../../src/server/test_uploads.rs#L81-L118] file "../../src/server/test_uploads.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   202 once queued ([src/server/test_uploads.rs](../../src/server/test_uploads.rs#L81-L118)).
 - `test_server.rs` holds the older, larger suite: the default port 8000 GraphQL
   smoke test, the `/dats` upload cases on 8001–8003, and two pure `#[test]`
   helpers (`url_filename`, `safe_filename`) that pin path-traversal handling for
   client-chosen names without a server at all
+<!-- openwiki: broken internal link [../../src/server/test_server.rs#L517-L547] file "../../src/server/test_server.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   ([src/server/test_server.rs](../../src/server/test_server.rs#L517-L547)).
 
 Multipart bodies are hand-assembled byte buffers rather than a client helper
+<!-- openwiki: broken internal link [../../src/server/test_uploads.rs#L13-L46] file "../../src/server/test_uploads.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/server/test_uploads.rs](../../src/server/test_uploads.rs#L13-L46)), and
 background imports are awaited by sleeping 500 ms and then re-querying
+<!-- openwiki: broken internal link [../../src/server/test_server.rs#L249-L292] file "../../src/server/test_server.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/server/test_server.rs](../../src/server/test_server.rs#L249-L292)). Each
 server test holds the `MUTEX` and pins its own loopback port — the default 8000 or
 an explicit `--port` of 8001, 8002, 8003, 8010, 8011 or 8012 — so at most one of
@@ -558,6 +581,7 @@ scenario per file, named for the behaviour (`test_sort_1g1r_strict.rs`,
 system under test through `import_dats::main` rather than by inserting rows —
 except for the handful of pure helpers that build a `System`/`Game`/`Rom` struct
 in place, which is how `common/test_path_*.rs` pins the path-building logic
+<!-- openwiki: broken internal link [../../src/common/test_path_original.rs#L5-L18] file "../../src/common/test_path_original.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/common/test_path_original.rs](../../src/common/test_path_original.rs#L5-L18)).
 
 See also [Test Fixtures and End-to-End Suites](test-fixtures.md) for the DAT and

@@ -2,7 +2,7 @@
 //! ZArchive reader.
 
 mod archive;
-mod common;
+use test_support::wiiu as common;
 
 use std::path::Path;
 

@@ -23,22 +23,15 @@ fn every_cli_shares_one_ui() {
 
 /// Crates embedded rather than published, each copied into the source of the
 /// crates using it, by where each copy sits: a symlink checks out on Windows as
-/// a text file.
+/// a text file. What the tests share is not copied: it lives in
+/// `crates/test-support`, used as a dev-dependency.
 const EMBEDDED: &[(&str, &[&str])] = &[
     ("crates/cd", &["crates/chd-rs/src/cd"]),
     (
         "crates/gcwii",
-        &[
-            "crates/rvz-rs/src/gcwii",
-            "crates/rvz-rs/tests/common",
-            "crates/wbfs-rs/src/gcwii",
-            "crates/wbfs-rs/tests/common",
-        ],
+        &["crates/rvz-rs/src/gcwii", "crates/wbfs-rs/src/gcwii"],
     ),
-    (
-        "crates/wiiu",
-        &["crates/wux-rs/src/wiiu", "crates/wux-rs/tests/common"],
-    ),
+    ("crates/wiiu", &["crates/wux-rs/src/wiiu"]),
 ];
 
 /// Every file under `dir`, by its path relative to `dir`, and its bytes.
@@ -63,11 +56,7 @@ fn files(dir: &std::path::Path) -> std::collections::BTreeMap<std::path::PathBuf
 fn embedded_crates_are_copied_in() {
     for (embedded, copies) in EMBEDDED {
         for copy in *copies {
-            let source = std::path::Path::new(embedded).join(if copy.ends_with("common") {
-                "tests/common"
-            } else {
-                "src"
-            });
+            let source = std::path::Path::new(embedded).join("src");
             // Reading follows a symlink, which would then pass
             assert!(
                 !std::path::Path::new(copy).is_symlink(),

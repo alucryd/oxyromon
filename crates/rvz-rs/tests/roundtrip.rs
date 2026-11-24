@@ -7,8 +7,8 @@ use std::path::Path;
 use rvz_rs::{Compression, Error, Options, Reader};
 use tempfile::TempDir;
 
-mod common;
 use common::{COMMON_KEY, WII_PARTITION_DATA, gamecube_disc, wii_disc, write};
+use test_support::gcwii as common;
 
 const METHODS: [(Compression, i32); 5] = [
     (Compression::None, 0),

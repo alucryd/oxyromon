@@ -227,9 +227,10 @@ holds a copy and stands alone:
   `#[allow(dead_code, unused_imports)] #[path = "<embedded>/lib.rs"] mod
   <embedded>;`. Edit `crates/<embedded>`, then copy it over every host's.
   A `#[path]` reaching outside the crate builds here but not once packaged,
-  and a symlink checks out on Windows as a text file. Shared test fixtures go
-  the same way, as `tests/common`. `tests/crates.rs` checks every copy matches,
-  listed in its `EMBEDDED`.
+  and a symlink checks out on Windows as a text file. `tests/crates.rs` checks
+  every copy matches, listed in its `EMBEDDED`. What the tests share is not
+  copied: the synthetic discs and titles live in `crates/test-support`,
+  unpublished, one feature per family, used as a `path` dev-dependency.
   ore-rs, never published, holds no copies: its `#[path]`s reach
   `crates/<embedded>` where it is.
 - **`super::`, never `crate::`,** within the embedded crate: embedded, its root

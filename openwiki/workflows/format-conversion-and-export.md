@@ -114,7 +114,7 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "zed", at: "2026-11-13T20:59:45.363Z" }
+generated: { by: "unknown", at: "2026-11-23T22:34:01.701Z" }
 verified:
   - by: openwiki/0.9.0
     at: 2026-11-13T20:59:45.363Z
@@ -454,7 +454,9 @@ loop; the leftover loop is what packs plain loose files
   the archive is rebuilt into the tmp directory and renamed over the original
   path. The two tests assert exactly that distinction through the file's mtime
   ([src/convert_roms.rs](../../src/convert_roms.rs#L961-L1050),
+<!-- openwiki: broken internal link [../../src/convert_roms/test_zip_to_zip_should_do_nothing.rs#L66-L112] file "../../src/convert_roms/test_zip_to_zip_should_do_nothing.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   [test_zip_to_zip_should_do_nothing.rs](../../src/convert_roms/test_zip_to_zip_should_do_nothing.rs#L66-L112),
+<!-- openwiki: broken internal link [../../src/convert_roms/test_zip_to_zip.rs#L66-L112] file "../../src/convert_roms/test_zip_to_zip.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   [test_zip_to_zip.rs](../../src/convert_roms/test_zip_to_zip.rs#L66-L112)).
 - Multi-file games collapse: each loose file is added to one archive named
   after the game, and for arcade systems the archive is written one directory up
@@ -487,15 +489,18 @@ recompression only ever rewrites a child, never the parent —
 `test_chd_parents_to_chd_should_not_touch_parent` asserts the parent's mtime is
 unchanged while the child's moves forward
 ([src/convert_roms.rs](../../src/convert_roms.rs#L1725-L1755),
+<!-- openwiki: broken internal link [../../src/convert_roms/test_chd_parents_to_chd_should_not_touch_parent.rs#L144-L211] file "../../src/convert_roms/test_chd_parents_to_chd_should_not_touch_parent.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [test_chd_parents_to_chd_should_not_touch_parent.rs](../../src/convert_roms/test_chd_parents_to_chd_should_not_touch_parent.rs#L144-L211)).
 `test_iso_to_chd_parents` pins the same playlist-driven link on the forward
 ISO→CHD path
+<!-- openwiki: broken internal link [../../src/convert_roms/test_iso_to_chd_parents.rs#L95-L131] file "../../src/convert_roms/test_iso_to_chd_parents.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([test_iso_to_chd_parents.rs](../../src/convert_roms/test_iso_to_chd_parents.rs#L95-L131)).
 
 CUE/BIN → CHD is the one branch that leaves two romfiles behind: the generated
 `.cue` is renamed next to the source and kept as its own row, while every BIN
 rom is re-pointed at the new CHD row
 ([src/convert_roms.rs](../../src/convert_roms.rs#L1481-L1557),
+<!-- openwiki: broken internal link [../../src/convert_roms/test_multiple_tracks_cue_bin_to_chd.rs] file "../../src/convert_roms/test_multiple_tracks_cue_bin_to_chd.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [test_multiple_tracks_cue_bin_to_chd.rs](../../src/convert_roms/test_multiple_tracks_cue_bin_to_chd.rs)).
 More than one archive or more than one CHD inside a single game is a hard
 failure: `bail!("Multiple archives found")` /
@@ -515,6 +520,7 @@ These accept only a narrow source set and silently ignore the rest by
   `chd_to_iso` returns `None` for anything that is not a DVD CHD — that is what
   `test_multiple_tracks_chd_to_cso_should_do_nothing` pins
   ([src/transcode.rs](../../src/transcode.rs#L80-L99),
+<!-- openwiki: broken internal link [../../src/convert_roms/test_multiple_tracks_chd_to_cso_should_do_nothing.rs#L71-L103] file "../../src/convert_roms/test_multiple_tracks_chd_to_cso_should_do_nothing.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   [test_multiple_tracks_chd_to_cso_should_do_nothing.rs](../../src/convert_roms/test_multiple_tracks_chd_to_cso_should_do_nothing.rs#L71-L103)).
 - `to_nsz`: NSPs and archives holding a single NSP; NSZ→NSZ only under
   `recompress`, in place
@@ -552,6 +558,7 @@ RVZ→ISO and WUX or WUA→WUD. Two behaviours stand out:
 - A multi-track CD CHD explodes into one row per track plus the `.cue`, which is
   the inverse of the CUE/BIN→CHD collapse
   ([src/convert_roms.rs](../../src/convert_roms.rs#L2614-L2683),
+<!-- openwiki: broken internal link [../../src/convert_roms/test_multiple_tracks_chd_to_cue_bin.rs#L70-L138] file "../../src/convert_roms/test_multiple_tracks_chd_to_cue_bin.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   [test_multiple_tracks_chd_to_cue_bin.rs](../../src/convert_roms/test_multiple_tracks_chd_to_cue_bin.rs#L70-L138)).
 
 There is no "the tool disappeared mid-run" path any more: because CHD work is a
@@ -604,7 +611,9 @@ guard that makes it a no-op in `convert-roms` applies here, and
 is _absent_ — with no tool-version early return in front of them, as there used
 to be
 ([src/export_roms.rs](../../src/export_roms.rs#L1016-L1031),
+<!-- openwiki: broken internal link [../../src/export_roms/test_multiple_tracks_chd_to_cso_should_do_nothing.rs#L73-L91] file "../../src/export_roms/test_multiple_tracks_chd_to_cso_should_do_nothing.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [test_multiple_tracks_chd_to_cso_should_do_nothing.rs](../../src/export_roms/test_multiple_tracks_chd_to_cso_should_do_nothing.rs#L73-L91),
+<!-- openwiki: broken internal link [../../src/export_roms/test_multiple_tracks_chd_to_zso_should_do_nothing.rs#L73-L91] file "../../src/export_roms/test_multiple_tracks_chd_to_zso_should_do_nothing.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [test_multiple_tracks_chd_to_zso_should_do_nothing.rs](../../src/export_roms/test_multiple_tracks_chd_to_zso_should_do_nothing.rs#L73-L91)).
 
 The export-only targets:
@@ -671,6 +680,7 @@ Conversion tests are one file per transition, named
 `test_<source>_to_<target>.rs`, and they drive the private `to_*` functions
 directly rather than the clap entry point, so `recompress`/`diff`/`check` and
 the CHD settings are passed positionally
+<!-- openwiki: broken internal link [../../src/convert_roms/test_iso_to_chd.rs#L60-L106] file "../../src/convert_roms/test_iso_to_chd.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/convert_roms/test_iso_to_chd.rs](../../src/convert_roms/test_iso_to_chd.rs#L60-L106)).
 Each sets up a temp `ROM_DIRECTORY` and `TMP_DIRECTORY` under `tests/`, imports
 a DAT plus ROMs, converts, then asserts on `romfiles.path`, the existence of the
@@ -681,6 +691,7 @@ explicitly — `*_should_do_nothing` for convert, `*_should_copy` for export.
 a `chdman` binary, the multi-track CHD tests run unconditionally: they import a
 committed multi-track CHD and assert the real round trip — three rows and three
 files for CHD→CUE/BIN, no destination file for CHD→CSO/ZSO
+<!-- openwiki: broken internal link [../../src/convert_roms/test_multiple_tracks_chd_to_cue_bin.rs#L82-L138] file "../../src/convert_roms/test_multiple_tracks_chd_to_cue_bin.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/convert_roms/test_multiple_tracks_chd_to_cue_bin.rs](../../src/convert_roms/test_multiple_tracks_chd_to_cue_bin.rs#L82-L138)).
 `chdman` survives only inside `crates/chd-rs`' own interop tests, where it is an
 optional oracle that skips when absent

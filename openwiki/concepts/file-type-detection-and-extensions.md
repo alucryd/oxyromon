@@ -62,7 +62,7 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-11-05T21:35:44.503Z" }
+generated: { by: "unknown", at: "2026-11-23T22:34:01.701Z" }
 verified:
   - by: openwiki/0.9.0
     at: 2026-11-13T20:59:45.363Z
@@ -376,6 +376,7 @@ list itself.
 
 The LD and HD CHD paths are covered by fixtures rather than by an import test of their
 own. `tests/Test Game (USA, Europe) (LD).riff` feeds
+<!-- openwiki: broken internal link [../../src/chd/test_ld.rs] file "../../src/chd/test_ld.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [`src/chd/test_ld.rs`](../../src/chd/test_ld.rs), the round-trip test that asserts a
 RIFF → CHD → RIFF → CHD cycle yields a byte-identical second CHD and that the parsed
 container reports `ChdType::Ld` with a non-zero size.

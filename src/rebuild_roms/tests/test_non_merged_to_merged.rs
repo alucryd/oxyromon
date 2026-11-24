@@ -6,7 +6,7 @@ use crate::test_support::TestEnv;
 async fn test() {
     // given
     let mut env = TestEnv::new().await;
-    import_split_set(&mut env.connection, &env.progress_bar, &env.tmp_directory).await;
+    import_split_set(&mut env).await;
     let system = rebuild(&mut env.connection, &env.progress_bar, "NON_MERGED").await;
     assert_eq!(system.merging, Merging::NonMerged as i64);
 

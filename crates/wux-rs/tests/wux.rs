@@ -1,6 +1,6 @@
 //! WUD to WUX and back, on generated images.
 
-mod common;
+use test_support::wiiu as common;
 
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;

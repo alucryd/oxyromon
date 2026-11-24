@@ -102,7 +102,7 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-11-02T21:30:44.962Z" }
+generated: { by: "unknown", at: "2026-11-23T22:34:01.701Z" }
 verified:
   - by: openwiki/0.9.0
     at: 2026-11-13T20:59:45.363Z
@@ -143,6 +143,7 @@ The second pattern is the 0.25 fix, and it matters: `import-roms -t` files a ROM
 that matches **no** system into the *ROM directory's* own `Trash`, whose stored
 path begins with `Trash/` rather than containing `/Trash/`. Without that clause
 `purge-roms -t` never saw them
+<!-- openwiki: broken internal link [../../src/purge_roms/test_trashed_rom_directory.rs#L33-L79] file "../../src/purge_roms/test_trashed_rom_directory.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/purge_roms/test_trashed_rom_directory.rs](../../src/purge_roms/test_trashed_rom_directory.rs#L33-L79)).
 
 Both patterns are substring/prefix matches, which is what makes the convention
@@ -391,6 +392,7 @@ Key behaviours:
 `ROM_DIRECTORY` can be set per system, and `CommonRomfile::get_relative_path`
 honours that override when turning an absolute path into the stored
 `romfiles.path` ([src/common.rs](../../src/common.rs#L354-L367),
+<!-- openwiki: broken internal link [../../src/import_roms/test_per_system_rom_directory.rs#L49-L64] file "../../src/import_roms/test_per_system_rom_directory.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [src/import_roms/test_per_system_rom_directory.rs](../../src/import_roms/test_per_system_rom_directory.rs#L49-L64)).
 `AsCommon for Romfile` however always joins the **global** `ROM_DIRECTORY` to the
 stored relative path ([src/common.rs](../../src/common.rs#L740-L745)), and
@@ -527,6 +529,7 @@ selected one at a time in a loop that shrinks as it goes
 The parent rom and its file survive; a test asserts a 208-rom IRD game is back
 to a single rom with `jbfolder = false`
 ([src/purge_irds.rs](../../src/purge_irds.rs#L97-L172),
+<!-- openwiki: broken internal link [../../src/purge_irds/test_ird.rs#L37-L56] file "../../src/purge_irds/test_ird.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [src/purge_irds/test_ird.rs](../../src/purge_irds/test_ird.rs#L37-L56)). Note the
 trash directory here is built as `system_directory.join("Trash")` rather than
 through `get_trash_directory`.
@@ -621,7 +624,9 @@ row survives with `/Trash/` in its path and the file still on disk, and
 unattended selection path is covered; `test_iso_chd` and
 `test_multiple_tracks_chd` assert a DVD CHD and a multi-track CD CHD each pass
 without being moved
+<!-- openwiki: broken internal link [../../src/check_roms/test_check_by_name.rs#L59-L72] file "../../src/check_roms/test_check_by_name.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/check_roms/test_check_by_name.rs](../../src/check_roms/test_check_by_name.rs#L59-L72),
+<!-- openwiki: broken internal link [../../src/check_roms/test_multiple_tracks_chd.rs#L51-L63] file "../../src/check_roms/test_multiple_tracks_chd.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [src/check_roms/test_multiple_tracks_chd.rs](../../src/check_roms/test_multiple_tracks_chd.rs#L51-L63));
 `test_missing_subfolder` and `test_orphans_subfolder` assert the emptied alpha
 subfolder is gone while the system directory remains;
@@ -631,8 +636,11 @@ WUA's store entry survives while a stray file in the store is deleted, and
 `test_foreign_store_unreadable_wua` that both survive when the WUA is cut short; `test_trashed` asserts the system
 `Trash` directory itself is left in place, empty; and
 `test_trashed_rom_directory` asserts the same for the **ROM directory's** `Trash`
+<!-- openwiki: broken internal link [../../src/purge_roms/test_foreign_subfolder.rs#L32-L42] file "../../src/purge_roms/test_foreign_subfolder.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 holding an `import-roms` reject ([src/purge_roms/test_foreign_subfolder.rs](../../src/purge_roms/test_foreign_subfolder.rs#L32-L42),
+<!-- openwiki: broken internal link [../../src/purge_roms/test_trashed.rs#L58-L75] file "../../src/purge_roms/test_trashed.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [src/purge_roms/test_trashed.rs](../../src/purge_roms/test_trashed.rs#L58-L75),
+<!-- openwiki: broken internal link [../../src/purge_roms/test_trashed_rom_directory.rs#L69-L79] file "../../src/purge_roms/test_trashed_rom_directory.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [src/purge_roms/test_trashed_rom_directory.rs](../../src/purge_roms/test_trashed_rom_directory.rs#L69-L79)).
 
 The purge-games tests each pin one safety rule. `test_purge_games_shared` keeps a file that
@@ -642,5 +650,7 @@ when the Trash path is taken. `test_purge_games_missing` drops the row of a file
 already deleted by hand. `test_purge_games_folder` moves a Wii U NUS title folder
 whole into Trash and runs `sort-roms` afterwards to show it stays there, and
 `test_purge_games_playlist` trashes the M3U only once its last disc is purged
+<!-- openwiki: broken internal link [../../src/purge_games/test_purge_games_folder.rs#L56-L82] file "../../src/purge_games/test_purge_games_folder.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/purge_games/test_purge_games_folder.rs](../../src/purge_games/test_purge_games_folder.rs#L56-L82),
+<!-- openwiki: broken internal link [../../src/purge_games/test_purge_games_clash.rs#L44-L80] file "../../src/purge_games/test_purge_games_clash.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 [src/purge_games/test_purge_games_clash.rs](../../src/purge_games/test_purge_games_clash.rs#L44-L80)).

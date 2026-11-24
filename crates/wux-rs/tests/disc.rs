@@ -3,7 +3,7 @@
 //! one, and sectors the layout gets wrong kept whole.
 
 mod archive;
-mod common;
+use test_support::wiiu as common;
 
 use std::path::{Path, PathBuf};
 

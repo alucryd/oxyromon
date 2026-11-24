@@ -116,8 +116,9 @@ WBFS_RS_REAL=game.rvz cargo test --release -p wbfs-rs -- --ignored
 
 The GameCube and Wii disc specifics, partitions, encryption, the file system,
 keys and what a disc uses, live in oxyROMon's unpublished `gcwii` crate,
-shared with rvz-rs. `src/gcwii` is a copy of its source, and so is
-`tests/common` of its synthetic discs, so this crate stands alone.
+shared with rvz-rs. `src/gcwii` is a copy of its source, so this crate stands
+alone. The synthetic discs the tests run on come from oxyROMon's unpublished
+`test-support` crate, a dev-dependency.
 
 ## Credits
 

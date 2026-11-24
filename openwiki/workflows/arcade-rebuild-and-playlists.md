@@ -84,7 +84,7 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-af9ca7a4de06de516c2bef85
     resource: repo://tests/Test%20System%20(20200721)%20(MAME%20Rebuild).dat
-generated: { by: "claude-code", at: "2026-11-09T21:55:13.223Z" }
+generated: { by: "unknown", at: "2026-11-23T22:34:01.701Z" }
 verified:
   - by: openwiki/0.9.0
     at: 2026-11-13T20:59:45.363Z
@@ -314,6 +314,7 @@ Some(destination_id))` — the clone's `roms` row now points at a file inside th
 clone's own directory, and the parent's file is untouched. That is the invariant
 the tests assert: the parent's romfile still resolves under
 `system_directory/Test Parent` after a clone has been expanded
+<!-- openwiki: broken internal link [../../src/rebuild_roms/test_split_to_non_merged.rs#L146-L167] file "../../src/rebuild_roms/test_split_to_non_merged.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/rebuild_roms/test_split_to_non_merged.rs](../../src/rebuild_roms/test_split_to_non_merged.rs#L146-L167)).
 
 ### trim_game: the inverse
@@ -425,6 +426,7 @@ The rules worth knowing before changing this function:
   `Completion::Full`, the whole playlist is skipped, and the games keep
   `playlist_id = NULL`
   ([src/generate_playlists.rs](../../src/generate_playlists.rs#L73-L79),
+<!-- openwiki: broken internal link [../../src/generate_playlists/test_iso_incomplete.rs#L48-L61] file "../../src/generate_playlists/test_iso_incomplete.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   [src/generate_playlists/test_iso_incomplete.rs](../../src/generate_playlists/test_iso_incomplete.rs#L48-L61)).
 - **One media format per playlist, by priority.** The romfiles are filtered to the
   first non-empty bucket among `chd`, `cso`, `cue`, `iso`, `rvz`; a mixed set
@@ -433,6 +435,7 @@ The rules worth knowing before changing this function:
 - **Entries are bare filenames**, one per line with a trailing newline, so the
   playlist works when the M3U sits next to the images — exactly what
   `test_iso_complete` asserts, including the empty final line
+<!-- openwiki: broken internal link [../../src/generate_playlists/test_iso_complete.rs#L82-L91] file "../../src/generate_playlists/test_iso_complete.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   ([src/generate_playlists/test_iso_complete.rs](../../src/generate_playlists/test_iso_complete.rs#L82-L91)).
 - **The playlist lands in the directory of the first matching romfile**
   (`set_file_name`), which is the game's already-sorted location.
@@ -499,6 +502,7 @@ lookup short-circuits to `None` and the CHDs are written parentless. This is the
 ordering `test_iso_to_chd_parents` encodes — `generate-playlists` runs before
 `to_chd`, and Disc 2's romfile ends up with `parent_id == Some(disc1_id)` while
 Disc 1's stays `None`
+<!-- openwiki: broken internal link [../../src/convert_roms/test_iso_to_chd_parents.rs#L53-L137] file "../../src/convert_roms/test_iso_to_chd_parents.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([src/convert_roms/test_iso_to_chd_parents.rs](../../src/convert_roms/test_iso_to_chd_parents.rs#L53-L137)).
 
 `convert-roms` `--parents` is the escape hatch when the playlist guess is wrong:
@@ -553,6 +557,7 @@ LaserDisc, `lzma,zlib,huff,flac` for HD).
   `test_sort_1g1r_playlist`: after importing two discs, generating playlists and
   sorting with one-region settings, both ISOs **and** `Test Game (USA, Europe).m3u`
   live under `system_directory/1G1R`
+<!-- openwiki: broken internal link [../../src/sort_roms/test_sort_1g1r_playlist.rs#L58-L126] file "../../src/sort_roms/test_sort_1g1r_playlist.rs" does not exist. Fix the href or restore the target, then delete this comment. -->
   ([src/sort_roms/test_sort_1g1r_playlist.rs](../../src/sort_roms/test_sort_1g1r_playlist.rs#L58-L126)).
 - **Export.** `export-roms` calls `find_parent_chd_romfile_by_game` unconditionally
   for the archive, CUE/BIN, ISO, CSO/ZSO and CHD export paths, with no `CHD_PARENTS`

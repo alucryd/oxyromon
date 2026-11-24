@@ -1,20 +1,18 @@
 use super::*;
+use crate::test_support::TestEnv;
 
 #[tokio::test]
 async fn test() {
     // given
-    let db_file = crate::config::TestDatabase::new();
-    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-    let mut connection = pool.acquire().await.unwrap();
-    let progress_bar = get_progress_bar(0, get_none_progress_style());
+    let mut env = TestEnv::new().await;
 
     let key = "REGIONS_ONE";
 
-    add_to_list(&mut connection, &progress_bar, key, "US", None).await;
+    add_to_list(&mut env.connection, &env.progress_bar, key, "US", None).await;
     let matches = subcommand().get_matches_from(["sort-roms", "-y"]);
 
     // when
-    let all_regions = get_regions(&mut connection, &matches, key, None).await;
+    let all_regions = get_regions(&mut env.connection, &matches, key, None).await;
 
     // then
     assert_eq!(all_regions.len(), 1);

@@ -32,10 +32,12 @@ console = { workspace = true, optional = true }
 indicatif = { workspace = true, optional = true }
 
 [dev-dependencies]
-# What the tests check against: the clusters a disc uses, and RVZs as sources;
-# neither is published with the crate, nor are the tests
+# What the tests check against: the clusters a disc uses, and RVZs as
+# sources, and the synthetic discs they run on; none is published with the
+# crate, nor are the tests
 gcwii = { path = "../gcwii" }
 rvz-rs = { path = "../rvz-rs" }
+test-support = { path = "../test-support", features = ["gcwii"] }
 tempfile.workspace = true
 
 [features]
