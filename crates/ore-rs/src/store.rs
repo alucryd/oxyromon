@@ -26,7 +26,7 @@ mod write;
 #[cfg(feature = "write")]
 pub(super) use write::StoreWriter;
 #[cfg(feature = "write")]
-pub use write::{Compacted, compact, create_store, set_parity};
+pub use write::{Compacted, compact, create_store, recount, set_parity};
 
 /// The name of a store's directory.
 pub const STORE_DIR: &str = ".ore-store";

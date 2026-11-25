@@ -1119,6 +1119,15 @@ pub async fn sync_store(
         if let Some(batch) = batch {
             batch.commit(&mut |_| {})?;
         }
+        // The run before this one may have taken OREs out of the store and
+        // back in, a standalone written over the path a thin one had: the
+        // copy it replaced keeps references no batch can give back. One
+        // recount makes the sizes true from now, not from the next check.
+        // The run before this one may have taken OREs out of the store and
+        // back in, a standalone written over the path a thin one had: the
+        // copy it replaced keeps references no batch can give back. One
+        // recount makes the sizes true from now, not from the next check.
+        ore_rs::recount(&store)?;
         Ok(())
     })
     .await
@@ -1133,9 +1142,22 @@ pub async fn check_store(progress_bar: &ProgressBar, store: &Path) -> Result<()>
     print_action(progress_bar, &format!("Checking \"{}\"", store.display()));
     let path = store.to_path_buf();
     let size = ore_rs::store_size(store)?;
-    let checked = run_blocking(progress_bar, size, move |progress| {
-        ore_rs::check_store(&path, true, progress)
-    })
+    let checked = run_blocking(
+        progress_bar,
+        size,
+        move |progress| -> ore_rs::Result<ore_rs::StoreChecked> {
+            let checked = ore_rs::check_store(&path, true, progress)?;
+            // Whole in its bytes, the store is made whole in its counts too:
+            // a game purged, detached or rewritten since the last compaction
+            // leaves `refs` behind, and every size the store reports divides
+            // by them. A store with groups past repair is not recounted: its
+            // unreadable games would fail the count for a worse message.
+            if checked.lost_groups == 0 {
+                ore_rs::recount(&path)?;
+            }
+            Ok(checked)
+        },
+    )
     .await
     .with_context(|| format!("Failed to check \"{}\"", store.display()))?;
     stop_action(progress_bar);

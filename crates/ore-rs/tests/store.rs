@@ -330,6 +330,76 @@ fn purging_a_game_keeps_the_others() {
 }
 
 #[test]
+fn rewriting_a_game_keeps_its_share_true() {
+    let library = Library::new(&StoreOptions::default());
+    let discs = discs();
+    library.add("a.ore", &discs[0], &[]);
+    let b = library.add("1G1R/b.ore", &discs[1], &[]);
+    let before = ore_rs::store_stats(&library.store).unwrap();
+    // Written again over itself, as recompressing a game does: the old
+    // thin ORE's references go with the copy it replaces
+    let a = library.add("a.ore", &discs[0], &[]);
+    check(&a, &discs[0]);
+    check(&b, &discs[1]);
+
+    // The shares still add up to the store: the chunks a names twice are
+    // still only its game's once
+    let sizes = [&a, &b].map(|ore| Reader::open(ore).unwrap().sizes());
+    let shares: u64 = sizes.iter().map(|size| size.share).sum();
+    let store = library.store_size();
+    let files = len(&a) + len(&b);
+    assert!(
+        shares.abs_diff(store + files) < 0x400,
+        "{shares} against {store} + {files}"
+    );
+    // and the rewrite left no references behind: the same chunks, shared
+    // by no more games than they were
+    let after = ore_rs::store_stats(&library.store).unwrap();
+    assert_eq!(after.chunks, before.chunks);
+    assert_eq!(after.stored, before.stored);
+    assert_eq!(after.dedup_saved, before.dedup_saved);
+}
+
+#[test]
+fn recount_gives_back_the_refs_a_removal_leaves() {
+    let library = Library::new(&StoreOptions::default());
+    let discs = discs();
+    let a = library.add("a.ore", &discs[0], &[]);
+    let b = library.add("1G1R/b.ore", &discs[1], &[]);
+
+    // A game leaves and nothing tells the store: the chunks it shared keep
+    // counting it, and b's share says half the truth
+    std::fs::remove_file(&a).unwrap();
+    let lied = Reader::open(&b).unwrap().sizes();
+
+    // A recount, segments untouched, finds the one game there is and b's
+    // share stops lying: the chunks they shared count for b whole
+    assert_eq!(ore_rs::recount(&library.store).unwrap(), 1);
+    let truth = Reader::open(&b).unwrap().sizes();
+    assert!(
+        truth.share > lied.share,
+        "{} against {}",
+        truth.share,
+        lied.share
+    );
+    // The recount also knows what is dead, so a compaction takes a's
+    // private file out and b's share is the store's whole
+    let compacted =
+        ore_rs::compact(&library.store, &Options::default(), 0.0, false, &mut |_| {}).unwrap();
+    assert_eq!(compacted.games, 1);
+    let store = library.store_size();
+    let sizes = Reader::open(&b).unwrap().sizes();
+    assert!(
+        sizes.share.abs_diff(store + len(&b)) < 0x400,
+        "{} against {} + {}",
+        sizes.share,
+        store,
+        len(&b)
+    );
+    check(&b, &discs[1]);
+}
+
+#[test]
 fn a_game_that_cannot_be_read_stops_a_compaction() {
     let library = Library::new(&StoreOptions::default());
     let ore = library.add("a.ore", &discs()[0], &[]);

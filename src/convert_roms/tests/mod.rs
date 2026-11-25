@@ -26,6 +26,7 @@ mod test_nus_ore_recompress_with_kept_ticket;
 mod test_nus_sevenzip_to_original;
 mod test_nus_to_ore_to_original;
 mod test_nus_to_sevenzip;
+mod test_ore_store_recompress_keeps_the_sizes;
 mod test_original_to_sevenzip_zstd;
 mod test_original_to_zip_multiple_roms;
 mod test_original_to_zip_with_correct_name;
