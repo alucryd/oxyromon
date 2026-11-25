@@ -133,6 +133,13 @@ pub struct AppState {
     pub purge_game_modal_open: RwSignal<bool>,
     /// The game the purge dialog is about, picked from its row's menu.
     pub purge_game_target: RwSignal<Option<Game>>,
+    pub game_info_open: RwSignal<bool>,
+    /// The game the info dialog is about, picked from its row's menu.
+    pub game_info_target: RwSignal<Option<Game>>,
+    pub rom_info_open: RwSignal<bool>,
+    /// The ROM the info dialog is about, picked from its row. Every field
+    /// it shows is already in the row, so this carries the whole ROM.
+    pub rom_info_target: RwSignal<Option<Rom>>,
     pub convert_rom_modal_open: RwSignal<bool>,
     pub convert_rom_system_id: RwSignal<i64>,
     pub import_patch_modal_open: RwSignal<bool>,
@@ -393,6 +400,10 @@ impl AppState {
             purge_rom_modal_open: RwSignal::new(false),
             purge_game_modal_open: RwSignal::new(false),
             purge_game_target: RwSignal::new(None),
+            game_info_open: RwSignal::new(false),
+            game_info_target: RwSignal::new(None),
+            rom_info_open: RwSignal::new(false),
+            rom_info_target: RwSignal::new(None),
             convert_rom_modal_open: RwSignal::new(false),
             convert_rom_system_id: RwSignal::new(-1),
             import_patch_modal_open: RwSignal::new(false),

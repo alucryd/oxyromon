@@ -305,7 +305,10 @@ impl Index {
     /// that already holds the index. An ORE that cannot be read, or that
     /// names a chunk the store lacks, is `None`.
     pub fn game_sizes(&self, paths: &[&Path]) -> Vec<Option<Sizes>> {
-        paths.iter().map(|path| reader_sizes(path, Some(self))).collect()
+        paths
+            .iter()
+            .map(|path| reader_sizes(path, Some(self)))
+            .collect()
     }
 
     /// What the OREs at `paths` weigh in full, classed by [`ore_weights`]

@@ -12,7 +12,10 @@ use crate::api::purge_game;
 use crate::api::purge_irds;
 use crate::api::purge_system;
 use crate::api::sort_roms;
+use crate::components::game_info_modal::GameInfoModal;
+use crate::components::rom_info_modal::RomInfoModal;
 use crate::components::settings_modal::SettingsModal;
+use crate::components::system_info_modal::SystemInfoModal;
 use crate::model::{Game, Rom, Romfile, Sizes, System};
 use crate::state::{AppState, ROW_HEIGHT};
 use crate::ui::{DeleteDialog, SizeTile, StatTile, control_number, use_media_query};
@@ -147,6 +150,25 @@ struct SystemModals {
     settings_title: RwSignal<String>,
     delete_open: RwSignal<bool>,
     delete_target: RwSignal<Option<System>>,
+    info_open: RwSignal<bool>,
+    info_id: RwSignal<i64>,
+    info_title: RwSignal<String>,
+}
+
+impl SystemModals {
+    fn new() -> Self {
+        Self {
+            // Per-system settings modal state (distinct from the global one).
+            settings_open: RwSignal::new(false),
+            settings_id: RwSignal::new(Option::<i64>::None),
+            settings_title: RwSignal::new("Settings".to_string()),
+            delete_open: RwSignal::new(false),
+            delete_target: RwSignal::new(Option::<System>::None),
+            info_open: RwSignal::new(false),
+            info_id: RwSignal::new(-1),
+            info_title: RwSignal::new("System".to_string()),
+        }
+    }
 }
 
 /// Widths of the two dividers, as a percentage of their container, remembered
@@ -184,14 +206,8 @@ fn remember_position(event: &web_sys::Event, key: &str) {
 
 #[component]
 pub fn Page() -> impl IntoView {
-    let modals = SystemModals {
-        // Per-system settings modal state (distinct from the global one).
-        settings_open: RwSignal::new(false),
-        settings_id: RwSignal::new(Option::<i64>::None),
-        settings_title: RwSignal::new("Settings".to_string()),
-        delete_open: RwSignal::new(false),
-        delete_target: RwSignal::new(Option::<System>::None),
-    };
+    let state = expect_context::<AppState>();
+    let modals = SystemModals::new();
 
     view! {
         <div class="page">
@@ -210,9 +226,19 @@ pub fn Page() -> impl IntoView {
             title=modals.settings_title
         />
 
+        <SystemInfoModal
+            open=modals.info_open
+            system_id=modals.info_id
+            title=modals.info_title
+        />
+
         <DeleteModal open=modals.delete_open target=modals.delete_target />
 
         <PurgeGameModal />
+
+        <GameInfoModal open=state.game_info_open target=state.game_info_target />
+
+        <RomInfoModal open=state.rom_info_open target=state.rom_info_target />
 
         <Toast />
     }
@@ -288,6 +314,9 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
         settings_title: sys_settings_title,
         delete_open,
         delete_target,
+        info_open,
+        info_id,
+        info_title,
     } = modals;
     let state = expect_context::<AppState>();
     let rows = move || {
@@ -342,6 +371,7 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                         }
                                         fallback=move || {
                                             let name_for_settings = name_for_settings.clone();
+                                            let name_for_info = name_for_settings.clone();
                                             let system_for_delete = system_for_delete.clone();
                                             // The IRD actions only make sense on PlayStation 3, mirroring
                                             // the name filter the backend's import-irds and purge-irds use.
@@ -359,6 +389,15 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                                     >
                                                         <wa-icon name="ellipsis-vertical"></wa-icon>
                                                     </button>
+                                                    <wa-dropdown-item on:click=move |_| {
+                                                        info_id.set(id);
+                                                        info_title
+                                                            .set(format!("{name_for_info} — System"));
+                                                        info_open.set(true);
+                                                    }>
+                                                        <wa-icon slot="icon" name="circle-info"></wa-icon>
+                                                        Info
+                                                    </wa-dropdown-item>
                                                     <wa-dropdown-item on:click=move |_| {
                                                         if state.checking_system_id.get() == -1 {
                                                             spawn_local(async move {
@@ -618,6 +657,7 @@ fn GamesCard() -> impl IntoView {
                                         when=move || state.purging_game_id.get() == id
                                         fallback=move || {
                                             let game = game.clone();
+                                            let game_for_info = game.clone();
                                             view! {
                                                 <wa-dropdown>
                                                     <button
@@ -627,6 +667,13 @@ fn GamesCard() -> impl IntoView {
                                                     >
                                                         <wa-icon name="ellipsis-vertical"></wa-icon>
                                                     </button>
+                                                    <wa-dropdown-item on:click=move |_| {
+                                                        state.game_info_target.set(Some(game_for_info.clone()));
+                                                        state.game_info_open.set(true);
+                                                    }>
+                                                        <wa-icon slot="icon" name="circle-info"></wa-icon>
+                                                        Info
+                                                    </wa-dropdown-item>
                                                     <wa-dropdown-item
                                                         variant="danger"
                                                         disabled=!has_files
@@ -676,6 +723,18 @@ fn RomsCard() -> impl IntoView {
                                 <span class=format!("row-label {color}")>
                                     {name}
                                 </span>
+                                <button
+                                    class="plain-button icon-button"
+                                    aria-label="ROM information"
+                                    title="Information"
+                                    style="margin-inline-end: var(--wa-space-2xs);"
+                                    on:click=move |_| {
+                                        state.rom_info_target.set(Some(rom.clone()));
+                                        state.rom_info_open.set(true);
+                                    }
+                                >
+                                    <wa-icon name="circle-info"></wa-icon>
+                                </button>
                             </div>
                         }
                     }
@@ -743,16 +802,13 @@ fn StatsCard() -> impl IntoView {
         })
     };
     let sized = move |value: fn(&Sizes) -> i64| Signal::derive(move || state.sizes.with(value));
-    let sized_opt = move |value: fn(&Sizes) -> Option<i64>| {
-        Signal::derive(move || state.sizes.with(value).unwrap_or_default())
-    };
 
     view! {
         <div class="panel" style="flex: none;">
             <div class="panel-header">Statistics</div>
             <div
                 class="wa-grid wa-gap-s"
-                style="--min-column-size: 9rem; padding: var(--wa-space-m);"
+                style="--min-column-size: 8rem; padding: var(--wa-space-m);"
             >
                 <StatTile
                     label="Systems"
@@ -790,22 +846,10 @@ fn StatsCard() -> impl IntoView {
                     bytes=sized(|sizes| sizes.one_region_actual_size)
                     loading=state.loading_sizes
                 />
-                // The store's two, shown when the system uses one: what
-                // its dedup saved and what its parity costs
-                <Show
-                    when=move || state.sizes.with(|sizes| sizes.store_dedup_saved.is_some())
-                >
-                    <SizeTile
-                        label="Dedup Saved (Store)"
-                        bytes=sized_opt(|sizes| sizes.store_dedup_saved)
-                        loading=state.loading_sizes
-                    />
-                    <SizeTile
-                        label="Parity Cost (Store)"
-                        bytes=sized_opt(|sizes| sizes.store_parity_cost)
-                        loading=state.loading_sizes
-                    />
-                </Show>
+                // The store's two figures are not here: they describe the
+                // store, not the selection, and a shared store repeats them
+                // across every system in its group. The system info modal
+                // shows them where they belong, with the group beside them.
             </div>
         </div>
     }

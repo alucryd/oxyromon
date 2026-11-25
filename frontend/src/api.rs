@@ -13,7 +13,9 @@ use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 
-use crate::model::{Game, Info, NotificationKind, Rom, Setting, Sizes, System};
+use crate::model::{
+    Game, GameSizes, Info, NotificationKind, Rom, Setting, Sizes, System, SystemDetails,
+};
 use crate::notify::{Notifier, push_notification};
 use crate::state::AppState;
 
@@ -204,7 +206,7 @@ pub async fn fetch_roms(notifier: Notifier, game_id: i64, system_id: i64) -> Vec
         return Vec::new();
     }
     let query = format!(
-        "{{ roms(gameId: {}) {{ id name size romfile {{ id path size }} ignored(systemId: {}) }} }}",
+        "{{ roms(gameId: {}) {{ id name size crc md5 sha1 romfile {{ id path size }} ignored(systemId: {}) }} }}",
         game_id, system_id
     );
     match graphql::<RomsData>(&query, Value::Null).await {
@@ -216,13 +218,26 @@ pub async fn fetch_roms(notifier: Notifier, game_id: i64, system_id: i64) -> Vec
     }
 }
 
+/// The roms of one game, for its info modal: the same rows the ROMs panel
+/// shows, for a game that may not be the selected one, and without the
+/// `ignored` flag, which needs the system and belongs to the lists anyway.
+pub async fn fetch_game_roms(game_id: i64) -> Result<Vec<Rom>, String> {
+    let query = format!(
+        "{{ roms(gameId: {}) {{ id name size crc md5 sha1 romfile {{ id path size }} }} }}",
+        game_id
+    );
+    graphql::<RomsData>(&query, Value::Null)
+        .await
+        .map(|data| data.roms)
+}
+
 /// Fetch the aggregate sizes of a system.
 pub async fn fetch_sizes(notifier: Notifier, system_id: i64) -> Sizes {
     if system_id < 0 {
         return Sizes::default();
     }
     let query = format!(
-        "{{ totalOriginalSize(systemId: {id}) oneRegionOriginalSize(systemId: {id}) totalActualSize(systemId: {id}) oneRegionActualSize(systemId: {id}) storeDedupSaved(systemId: {id}) storeParityCost(systemId: {id}) }}",
+        "{{ totalOriginalSize(systemId: {id}) oneRegionOriginalSize(systemId: {id}) totalActualSize(systemId: {id}) oneRegionActualSize(systemId: {id}) }}",
         id = system_id
     );
     match graphql::<Sizes>(&query, Value::Null).await {
@@ -232,6 +247,39 @@ pub async fn fetch_sizes(notifier: Notifier, system_id: i64) -> Sizes {
             Sizes::default()
         }
     }
+}
+
+/// Everything the system info modal shows, in one request: the counts the
+/// row already had, the DAT, the four sizes, and the store beneath it.
+/// The sizes are the expensive part and only the modal asks them, so the
+/// statistics card's own `fetch_sizes` stays free of the DAT and store.
+pub async fn fetch_system_details(system_id: i64) -> Result<SystemDetails, String> {
+    let query = format!(
+        "{{ system(systemId: {id}) {{ name header {{ name version }} gamesComplete gamesTotal completion }} \
+         totalOriginalSize(systemId: {id}) oneRegionOriginalSize(systemId: {id}) \
+         totalActualSize(systemId: {id}) oneRegionActualSize(systemId: {id}) \
+         systemStore(systemId: {id}) {{ path size dedupSaved parityCost systemDedupSaved systemParityCost systems }} }}",
+        id = system_id
+    );
+    graphql(&query, Value::Null).await
+}
+
+/// What one game weighs, for its info modal: the DAT's figure, the disk's,
+/// and the three an ORE adds. The store's index is read server-side only
+/// when the question needs it.
+pub async fn fetch_game_sizes(game_id: i64) -> Result<GameSizes, String> {
+    let query = format!(
+        "{{ gameSizes(gameId: {id}) {{ originalSize actualSize oreOwn oreShare oreStandalone }} }}",
+        id = game_id
+    );
+    #[derive(Deserialize)]
+    struct Data {
+        #[serde(rename = "gameSizes")]
+        sizes: GameSizes,
+    }
+    graphql::<Data>(&query, Value::Null)
+        .await
+        .map(|data| data.sizes)
 }
 
 // === Mutations ===
