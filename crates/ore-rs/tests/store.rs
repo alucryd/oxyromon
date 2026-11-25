@@ -413,6 +413,42 @@ fn a_game_that_cannot_be_read_stops_a_compaction() {
 }
 
 #[test]
+fn a_corrupt_game_in_the_trash_does_not_stop_a_recount() {
+    let library = Library::new(&StoreOptions::default());
+    let discs = discs();
+    let a = library.add("a.ore", &discs[0], &[]);
+    let b = library.add("1G1R/b.ore", &discs[1], &[]);
+
+    // The shape a failed check leaves behind: a corrupt thin ORE, magic
+    // intact and body unreadable, moved to the Trash beneath the walk
+    // root of the recount that follows it.
+    let mut bytes = std::fs::read(&a).unwrap();
+    let meta = u64::from_be_bytes(bytes[72..80].try_into().unwrap()) as usize;
+    bytes[meta + 3] ^= 0x40;
+    let trash = library.store.parent().unwrap().join("Trash");
+    std::fs::create_dir(&trash).unwrap();
+    std::fs::write(trash.join("a.ore"), &bytes).unwrap();
+    std::fs::remove_file(&a).unwrap();
+
+    // A game the store still counts for two, but no recount will ever see
+    let lied = Reader::open(&b).unwrap().sizes();
+    // The recount skips the corrupt file, counts the one game the store
+    // really has, and b's share stops being halved for a game in the Trash
+    assert_eq!(ore_rs::recount(&library.store).unwrap(), 1);
+    let truth = Reader::open(&b).unwrap().sizes();
+    assert!(
+        truth.share > lied.share,
+        "{} against {}",
+        truth.share,
+        lied.share
+    );
+    check(&b, &discs[1]);
+    // A compaction still refuses to rewrite the store on counts that
+    // skipped a file: the corrupt ORE must be purged first.
+    assert!(ore_rs::compact(&library.store, &Options::default(), 0.0, false, &mut |_| {}).is_err());
+}
+
+#[test]
 fn the_index_copy_stands_in_for_a_damaged_index() {
     let library = Library::new(&StoreOptions::default());
     let disc = &discs()[0];
