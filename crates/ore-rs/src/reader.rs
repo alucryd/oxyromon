@@ -835,16 +835,21 @@ impl Reader {
     }
 
     /// The platform it was written as: `gamecube`, `ps2` or `snes`, say,
-    /// one of [`crate::CARTRIDGE_PLATFORMS`] for a cartridge's ROM.
+    /// one of [`crate::CARTRIDGE_PLATFORMS`] for a cartridge's ROM, of
+    /// [`crate::FLOPPY_PLATFORMS`] for a floppy's image.
     pub fn platform(&self) -> &str {
         &self.meta.media.platform
     }
 
-    /// A cartridge ROM's file name, as it was written from.
+    /// A cartridge ROM's or a floppy image's file name, as it was written
+    /// from.
     pub fn file_name(&self) -> Option<&str> {
-        (self.header.media_class == MEDIA_ROM_CARTRIDGE)
-            .then(|| self.meta.media.areas.first()?.file.as_deref())
-            .flatten()
+        matches!(
+            self.header.media_class,
+            MEDIA_ROM_FLAT | MEDIA_ROM_CARTRIDGE
+        )
+        .then(|| self.meta.media.areas.first()?.file.as_deref())
+        .flatten()
     }
 
     /// Whether it holds a CD, as a cue sheet and its tracks, rather than a

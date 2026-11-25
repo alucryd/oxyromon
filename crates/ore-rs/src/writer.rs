@@ -43,6 +43,7 @@ pub struct Options {
     pub profile: Profile,
     pub codec: Codec,
     /// The cartridge the input is the ROM of, one of [`CARTRIDGE_PLATFORMS`],
+    /// or the floppy it is the image of, one of [`FLOPPY_PLATFORMS`],
     /// when the caller knows it, as a ROM manager does from its DAT: the ROM
     /// is then taken whole, its header not checked, which a console such as
     /// the NES or the PC Engine has none of. `None` recognises a disc or a
@@ -84,6 +85,11 @@ pub const CARTRIDGE_PLATFORMS: [&str; 31] = [
     "ws",
     "wsc",
 ];
+
+/// The floppies an image can be named the image of, in
+/// [`Options::platform`]: taken whole as a cartridge's ROM is, as class 16
+/// rather than 17.
+pub const FLOPPY_PLATFORMS: [&str; 3] = ["amiga", "fds", "st"];
 
 /// How much of a raw area is read at a time.
 const WINDOW: u64 = 4 << 20;
@@ -829,8 +835,13 @@ fn encode(
     // and a cartridge are one area, their zeros and the rest
     let mut hashes = Hashes::default();
     let cartridge = match options.platform {
-        Some(platform) if !CARTRIDGE_PLATFORMS.contains(&platform) => {
-            return Err(Error::Unsupported(format!("no cartridge named {platform}")));
+        Some(platform)
+            if !CARTRIDGE_PLATFORMS.contains(&platform)
+                && !FLOPPY_PLATFORMS.contains(&platform) =>
+        {
+            return Err(Error::Unsupported(format!(
+                "no cartridge or floppy named {platform}"
+            )));
         }
         Some(platform) if !(1..=cartridge_max(platform)).contains(&size) => {
             return Err(Error::Unsupported(format!(
@@ -993,10 +1004,10 @@ fn encode(
                 ticket: None,
                 size,
                 areas,
-                class: if cartridge.is_some() {
-                    MEDIA_ROM_CARTRIDGE
-                } else {
-                    MEDIA_DVD_2048
+                class: match cartridge {
+                    Some(platform) if FLOPPY_PLATFORMS.contains(&platform) => MEDIA_ROM_FLAT,
+                    Some(_) => MEDIA_ROM_CARTRIDGE,
+                    None => MEDIA_DVD_2048,
                 },
                 platform: platform.into(),
             },

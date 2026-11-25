@@ -485,9 +485,9 @@ impl CommonRomfile {
     }
 }
 
-/// The cartridge platform ore-rs knows a system's ROMs as, by its DAT's
-/// name, any suffix such as `(Headered)` aside: its ROMs are then taken
-/// whole, the DAT vouching for them, whether or not they carry a header.
+/// The cartridge or floppy platform ore-rs knows a system's ROMs as, by
+/// its DAT's name, any suffix such as `(Headered)` aside: its ROMs are then
+/// taken whole, a game of several disks an ORE a disk, the DAT vouching for them, whether or not they carry a header.
 pub fn cartridge_platform(system: &System) -> Option<&'static str> {
     let name = system.name.split(" (").next().unwrap_or_default();
     Some(match name {
@@ -496,12 +496,15 @@ pub fn cartridge_platform(system: &System) -> Option<&'static str> {
         "Atari - Atari 7800" | "Atari - 7800" => "a7800",
         "Atari - Atari Jaguar" | "Atari - Jaguar" => "jaguar",
         "Atari - Atari Lynx" | "Atari - Lynx" => "lynx",
+        "Atari - Atari ST" | "Atari - ST" => "st",
         "Bandai - WonderSwan" => "ws",
         "Bandai - WonderSwan Color" => "wsc",
         "Coleco - ColecoVision" => "colecovision",
+        "Commodore - Amiga" => "amiga",
         "Magnavox - Odyssey 2" | "Magnavox - Odyssey2" => "odyssey2",
         "NEC - PC Engine - TurboGrafx-16" | "NEC - PC Engine - TurboGrafx 16" => "pce",
         "NEC - PC Engine SuperGrafx" => "sgx",
+        "Nintendo - Family Computer Disk System" => "fds",
         "Nintendo - Game Boy" => "gb",
         "Nintendo - Game Boy Advance" => "gba",
         "Nintendo - Game Boy Color" => "gbc",

@@ -24,6 +24,9 @@ const REQ_KNOWN: u32 = REQ_VARIABLE_CHUNKS | REQ_LIBRARY | REQ_SOLID_GROUPS;
 pub const INDEX_FLAT: u8 = 0;
 pub const INDEX_LIBRARY: u8 = 2;
 
+/// A file taken whole, as a DAT hashes it: a floppy's image, an FDS
+/// disk's or an IPF.
+pub const MEDIA_ROM_FLAT: u16 = 16;
 /// A cartridge's ROM, as a ROM dump holds it.
 pub const MEDIA_ROM_CARTRIDGE: u16 = 17;
 pub const MEDIA_CD_2352: u16 = 32;
@@ -250,6 +253,7 @@ impl Header {
             return Err(Error::Unsupported(format!("required flags {unknown:#x}")));
         }
         if ![
+            MEDIA_ROM_FLAT,
             MEDIA_ROM_CARTRIDGE,
             MEDIA_CD_2352,
             MEDIA_CD_MIXED,

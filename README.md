@@ -248,7 +248,7 @@ WBFS files are those `wit copy --wbfs` writes: only what the disc points to is k
 Exporting an RVZ to WBFS needs no key and decodes no ISO on the way; exporting a Wii ISO needs the Wii common key, as compressing it to RVZ does.
 
 ORE is oxyROMon's own format, specified as ORE 1.0 in [crates/ore-rs/SPEC.md](crates/ore-rs/SPEC.md) with conformance vectors: an ORE this version writes opens in every later one.
-An ORE holds a GameCube, Wii, PlayStation 2 or PSP disc, a cartridge's ROM, or a CD or a Dreamcast GD-ROM as its cue sheet and tracks, an ORE a disc: the cue sheet is inside it, so a CD is one file, which every ROM of the game points to.
+An ORE holds a GameCube, Wii, PlayStation 2 or PSP disc, a cartridge's ROM, a floppy's image, or a CD or a Dreamcast GD-ROM as its cue sheet and tracks, an ORE a disc: the cue sheet is inside it, so a CD is one file, which every ROM of the game points to.
 Importing a CD ORE needs every track it holds to match the DAT; when its cue sheet is not the DAT's, import the DAT's, and it goes into the ORE in its place, its metadata alone written again.
 Like RVZ, compressing a Wii ISO needs the Wii common key, and reading an ORE needs none.
 No emulator reads ORE yet.
@@ -687,6 +687,7 @@ Converts ROM files between lossless formats and back to their originals:
 - ISO to and from CSO, ZSO and RVZ.
 - GameCube, Wii, PlayStation 2 and PSP ISOs, CUE/BIN and CHD to and from ORE, with OREs restored to their cue sheet and tracks; an ISO of another system is skipped.
 - Cartridge ROMs, loose or in an archive, to and from ORE, restored under their name: every ROM of a cartridge system ORE knows by its DAT's name, the Atari consoles, ColecoVision, Odyssey 2, PC Engine and SuperGrafx, the Nintendo handhelds and consoles from the NES to the 3DS, its cards but not its eShop's CIAs, the NeoGeo Pocket, the Sega consoles from the SG-1000 to the 32X, and the WonderSwan, headerless or not, BIOSes included; in any other system, Game Boy, Game Boy Advance, DS, 3DS, N64 and Mega Drive ROMs ORE recognises by their header, the rest skipped.
+- Floppy images, loose or in an archive, to and from ORE, restored under their name: the Amiga's and the Atari ST's IPFs and the Famicom Disk System's disks, an ORE a disk, a game of several disks converted all at once or not at all.
 - NSP to and from NSZ.
 - Wii U discs between ISO, WUX and lossless WUA.
 

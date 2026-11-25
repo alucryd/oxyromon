@@ -566,6 +566,7 @@ holding no directory, or that another file of the same output takes.
 
 | Id | Class | What | `platform` | Areas |
 | --- | --- | --- | --- | --- |
+| 16 | `rom-flat` | a file taken whole, as a DAT hashes it: a floppy's image | §11.1 | `raw` |
 | 17 | `rom-cartridge` | a cartridge's ROM, as its dump holds it | §11.1 | `raw` |
 | 32 | `cd-2352` | a CD of data tracks, 2,352-byte sectors | `cd` | `cd-data` |
 | 33 | `cd-mixed` | a CD with audio tracks | `cd` | `cd-data`, `cd-audio` |
@@ -575,8 +576,7 @@ holding no directory, or that another file of the same output takes.
 
 The class tells a reader what an emulator is handed: sectors of 2,352 bytes
 with a cue sheet's tracks, an image, a ROM, or a folder of files. Ids the
-draft's registry names and 1.0 does not build are reserved: 0 `opaque`, 16
-`rom-flat`, 49 `gdr1`, 65 `dvd-raw-2352`, 80 `bd-2048`, 96 `gamecard`, 112
+draft's registry names and 1.0 does not build are reserved: 0 `opaque`, 49 `gdr1`, 65 `dvd-raw-2352`, 80 `bd-2048`, 96 `gamecard`, 112
 `nand`, 128-130 `hdd-512`, `hdd-4096`, `mo`, 144 `av-frames`, 160
 `folder`, 240 `flux-track`, 241 `tape-pulse`.
 
@@ -587,7 +587,8 @@ change how the ORE decodes. A cartridge's is one of `32x`, `3ds`, `a2600`,
 `a5200`, `a7800`, `colecovision`, `dsi`, `gb`, `gba`, `gbc`, `gg`, `jaguar`,
 `lynx`, `md`, `n64`, `nds`, `nes`, `ngp`, `ngpc`, `odyssey2`, `pce`,
 `pokemini`, `satellaview`, `sg1000`, `sgx`, `sms`, `snes`, `sufami`, `vb`,
-`ws` and `wsc`. A reader SHOULD accept a platform it does not know.
+`ws` and `wsc`; a floppy's, of class 16, one of `amiga`, `fds` and `st`,
+the image an FDS disk's or an IPF as the DAT lists it. A reader SHOULD accept a platform it does not know.
 
 ## 12. Stores
 

@@ -171,8 +171,10 @@ partition's title key, so reading one needs no key, nor does a GameCube disc.
   and its length. A ROM named a cartridge's, by `Options::platform` or
   `--platform`, is taken whole, its header not checked: a NES, SNES, PC
   Engine, Master System or Atari ROM, which none says, or a BIOS, the
-  caller vouching for it, as a ROM manager does from its DAT. Anything else
-  is refused.
+  caller vouching for it, as a ROM manager does from its DAT. A floppy's
+  image named one of `FLOPPY_PLATFORMS`, `amiga`, `fds` or `st`, an FDS
+  disk's or an IPF, is taken whole the same way, as media class 16.
+  Anything else is refused.
 - **Not yet in the file**: the Merkle tree, parity, the tail index and the
   `deep` profile of the spec, beyond a store's segment parity.
 
@@ -200,7 +202,7 @@ orers --compact --recompress GB/.ore-store  # and pack every group again, the sm
 | `-o DIR` | output directory (default: next to each input) |
 | `-p PROFILE` | `stream` (default): 1 MiB groups, quick enough to play from; `archive`: 4 MiB groups, smaller, to keep rather than play, as a read away from the last decodes a whole group |
 | `-c CODEC` | `zstd` or `lzma2`; by default `lzma2` for a cartridge's ROM, which Zstandard loses to 7z on, and `zstd` otherwise, a 3DS card's included |
-| `--platform NAME` | the cartridge the inputs are ROMs of, taken whole, their headers not checked: `32x`, `3ds`, `a2600`, `a5200`, `a7800`, `colecovision`, `dsi`, `gb`, `gba`, `gbc`, `gg`, `jaguar`, `lynx`, `md`, `n64`, `nds`, `nes`, `ngp`, `ngpc`, `odyssey2`, `pce`, `pokemini`, `satellaview`, `sg1000`, `sgx`, `sms`, `snes`, `sufami`, `vb`, `ws`, `wsc` (default: recognised by their headers) |
+| `--platform NAME` | the cartridge the inputs are ROMs of, or the floppy they are images of (`amiga`, `fds`, `st`), taken whole, their headers not checked: `32x`, `3ds`, `a2600`, `a5200`, `a7800`, `colecovision`, `dsi`, `gb`, `gba`, `gbc`, `gg`, `jaguar`, `lynx`, `md`, `n64`, `nds`, `nes`, `ngp`, `ngpc`, `odyssey2`, `pce`, `pokemini`, `satellaview`, `sg1000`, `sgx`, `sms`, `snes`, `sufami`, `vb`, `ws`, `wsc` (default: recognised by their headers) |
 | `--store DIR` | write ISOs as thin OREs, their chunks in the store `DIR`, made if missing; attach OREs to it; every input as one write, committed after the last |
 | `--detach` | write OREs as standalone OREs |
 | `--parity N` | parity shards a store's segment gets, 0 to 16 against its 239 data shards: a store made with it, or an existing one set to it, its segments sealed otherwise written again by `--compact` (default: 16 for a store made) |
