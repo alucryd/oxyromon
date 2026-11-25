@@ -2991,6 +2991,29 @@ pub async fn find_romfiles_of_tmds(connection: &mut SqliteConnection) -> Vec<Rom
     .expect("Error while finding the romfiles of TMDs")
 }
 
+/// The files holding one game: what its ROMs point at, deduplicated, a
+/// multi-file game answering with all of its containers. The web's game
+/// info modal weighs these and lists them.
+#[cfg(feature = "server")]
+pub async fn find_romfiles_by_game_id(
+    connection: &mut SqliteConnection,
+    game_id: i64,
+) -> Vec<Romfile> {
+    sqlx::query_as::<_, Romfile>(AssertSqlSafe(
+        "
+        SELECT DISTINCT romfiles.*
+        FROM romfiles
+        JOIN roms ON roms.romfile_id = romfiles.id
+        WHERE roms.game_id = ?
+        ORDER BY romfiles.path
+        ",
+    ))
+    .bind(game_id)
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding romfiles with game id {}", game_id))
+}
+
 pub async fn find_romfiles_by_ids(connection: &mut SqliteConnection, ids: &[i64]) -> Vec<Romfile> {
     let sql = format!(
         "

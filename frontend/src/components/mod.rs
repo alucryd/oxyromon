@@ -1,11 +1,15 @@
 pub mod about_modal;
 pub mod convert_rom_modal;
 pub mod download_dat_modal;
+pub mod game_info_modal;
 pub mod import_dat_modal;
 pub mod import_ird_modal;
 pub mod import_patch_modal;
 pub mod import_rom_modal;
+pub mod info;
 pub mod navbar;
 pub mod notifications;
 pub mod purge_rom_modal;
+pub mod rom_info_modal;
 pub mod settings_modal;
+pub mod system_info_modal;

@@ -2,6 +2,7 @@
 //! file's `use super::*;` pointing at the subcommand's namespace.
 pub use super::*;
 
+mod test_info_fields;
 mod test_mutations;
 mod test_queries;
 mod test_server;

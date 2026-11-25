@@ -134,7 +134,8 @@ fn a_loaded_index_answers_for_its_store() {
     let b = library.add("1G1R/b.ore", &discs[1], &[]);
 
     // the index read once answers, alone, what the store answers to
-    // whoever loads it afresh: the same stats, the same shares
+    // whoever loads it afresh: the same stats, the same shares, the same
+    // full sizes
     let index = ore_rs::Index::load(&library.store).unwrap();
     assert_eq!(index.stats(), ore_rs::store_stats(&library.store).unwrap());
     let paths = [a.as_path(), b.as_path()];
@@ -142,6 +143,42 @@ fn a_loaded_index_answers_for_its_store() {
         index.shares(&paths),
         ore_rs::shares(&library.store, &paths).unwrap()
     );
+    let sizes = index.game_sizes(&paths);
+    assert_eq!(sizes, ore_rs::game_sizes(&library.store, &paths).unwrap());
+    for size in sizes.into_iter().map(Option::unwrap) {
+        assert_eq!(size.uncompressed, 0x580000);
+        assert!(size.own > 0 && size.own < size.share && size.share < size.standalone);
+    }
+
+    // A standalone ORE, weighed beside the thin ones: it classes on its
+    // own, no index serves it, and its file is its whole weight
+    let alone_iso = library.root.join("alone.iso");
+    let alone = library.root.join("alone.ore");
+    write(&alone_iso, &discs[0]);
+    ore_rs::compress(
+        &alone_iso,
+        &alone,
+        &ore_rs::Options::default(),
+        &[],
+        &mut |_| {},
+    )
+    .unwrap();
+    let mixed = [a.as_path(), b.as_path(), alone.as_path()];
+    let weights = ore_rs::ore_weights(&mixed);
+    assert!(matches!(weights[2], ore_rs::OreWeight::Standalone));
+    let empty = ore_rs::Index::weighed_sizes(&mixed, &weights, &[]);
+    assert!(empty[0].is_none() && empty[1].is_none());
+    let alone_sizes = empty[2].unwrap();
+    assert_eq!(alone_sizes.own, len(&alone));
+    assert_eq!(alone_sizes.share, len(&alone));
+    assert_eq!(alone_sizes.standalone, len(&alone));
+    // the same pass, with the index in hand, answers every file at once
+    let served = ore_rs::Index::weighed_sizes(&mixed, &weights, &[&index]);
+    assert_eq!(
+        served[..2],
+        index.game_sizes(&[a.as_path(), b.as_path()])[..]
+    );
+    assert_eq!(served[2], Some(alone_sizes));
 }
 
 #[test]
