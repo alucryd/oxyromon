@@ -600,6 +600,16 @@ impl QueryRoot {
         Ok(find_systems(&mut pool.acquire().await.unwrap()).await)
     }
 
+    /// One system by id, through the loader the games' `system` field
+    /// already uses: the info modal asks a single system its DAT and its
+    /// counts, and fetching every system to pick a row out of the answer
+    /// is not an answer.
+    async fn system(&self, ctx: &Context<'_>, system_id: i64) -> Result<Option<System>> {
+        ctx.data_unchecked::<DataLoader<SystemLoader>>()
+            .load_one(system_id)
+            .await
+    }
+
     /// Games of a system, ordered by name.
     ///
     /// `offset` and `limit` let a client pull a large system in pieces rather
@@ -738,7 +748,13 @@ impl QueryRoot {
         } else {
             None
         };
-        let stats = ore_rs::store_stats(&store).ok();
+        let stats = spawn_blocking({
+            let store = store.clone();
+            move || ore_rs::store_stats(&store)
+        })
+        .await
+        .ok()
+        .and_then(|stats| stats.ok());
         let size = spawn_blocking({
             let store = store.clone();
             move || ore_rs::store_size(&store)

@@ -74,6 +74,57 @@ async fn test() {
     );
     assert_eq!(store_info["systems"].as_array().unwrap().len(), 1);
 
+    // and the request the system modal actually sends — this text, verbatim
+    // from `frontend/src/api.rs` — validates against the schema and answers
+    // in the shape `frontend/src/model.rs::SystemDetails` deserializes: the
+    // system's facts nested under `system`, the four sizes as root siblings,
+    // and the store under the server's key, `systemStore`. Nothing else in
+    // the pipeline checks the modal's query text against the live schema:
+    // clippy cannot see the string, and the frontend has no native test.
+    let response = schema
+        .execute(
+            "{ system(systemId: 1) { name version gamesComplete gamesTotal completion } \
+             totalOriginalSize(systemId: 1) oneRegionOriginalSize(systemId: 1) \
+             totalActualSize(systemId: 1) oneRegionActualSize(systemId: 1) \
+             systemStore(systemId: 1) { path size dedupSaved parityCost systemDedupSaved systemParityCost systems } }",
+        )
+        .await;
+    assert!(response.errors.is_empty(), "{:?}", response.errors);
+    let data = response.data.into_json().unwrap();
+    assert_eq!(
+        data["system"]["name"].as_str().unwrap(),
+        "Test System (Game Boy)"
+    );
+    assert_eq!(data["system"]["version"].as_str().unwrap(), "20261114");
+    assert_eq!(data["system"]["gamesComplete"].as_i64().unwrap(), 1);
+    assert_eq!(data["system"]["gamesTotal"].as_i64().unwrap(), 1);
+    assert!(data["system"]["completion"].is_i64());
+    // The four sizes answer as root siblings. Their exact figures are the
+    // sizes' own tests' business (test_server.rs); here the point is that
+    // the modal's one-request query validates and returns each as a number
+    // beside the nested system, not buried inside it. (Post-conversion the
+    // original sizes read 0 — the ROM rows shed their romfile links to the
+    // old files, and the original-size query counts only linked ROMs.)
+    assert!(data["totalOriginalSize"].is_i64());
+    assert!(data["oneRegionOriginalSize"].is_i64());
+    assert!(data["totalActualSize"].is_i64());
+    assert!(data["oneRegionActualSize"].is_i64());
+    assert!(data["systemStore"]["path"].as_str().unwrap() == store.to_str().unwrap());
+
+    // and the game modal's other literal request, the one that feeds its
+    // ROM and file lists
+    let response = schema
+        .execute("{ roms(gameId: 1) { id name size crc md5 sha1 romfile { id path size } } }")
+        .await;
+    assert!(response.errors.is_empty(), "{:?}", response.errors);
+    let roms = response.data.into_json().unwrap()["roms"]
+        .as_array()
+        .unwrap()
+        .clone();
+    assert_eq!(roms.len(), 1);
+    assert!(roms[0]["crc"].is_string());
+    assert!(roms[0]["romfile"]["path"].is_string());
+
     // and when the game's own modal asks what the game weighs: the DAT's
     // figure is the file it declared, the disk's weighs the share of one
     // game alone in its store, and the ORE's three figures answer
