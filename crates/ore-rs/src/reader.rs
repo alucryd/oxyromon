@@ -238,6 +238,35 @@ pub fn game_sizes(store: &Path, paths: &[&Path]) -> Result<Vec<Option<Sizes>>> {
     Ok(Index::load(store)?.game_sizes(paths))
 }
 
+/// How a caller that has store indexes at hand must weigh one ORE: from
+/// its file alone, from the index of the store it names, or not at all.
+pub enum OreWeight {
+    /// Not a thin ORE: its file's own sizes, shared with no store.
+    Standalone,
+    /// Thin on the store `uuid`, whose chunks lie at `store`.
+    Thin { store: PathBuf, uuid: [u8; 16] },
+    /// Not an ORE, or unreadable, or thin with no store above it.
+    Unknown,
+}
+
+/// How each ORE at `paths` must be weighed: what [`Reader::inspect`]
+/// reads of its header, with [`find_store`](crate::find_store) resolving
+/// a thin one's store, so a caller holding those stores' indexes weighs
+/// every file itself and needs no reader beyond this pass.
+pub fn ore_weights(paths: &[&Path]) -> Vec<OreWeight> {
+    paths
+        .iter()
+        .map(|path| match Reader::inspect(path) {
+            Ok(reader) => match (reader.store_uuid(), find_store(path)) {
+                (Some(uuid), Some(store)) => OreWeight::Thin { store, uuid },
+                (None, _) => OreWeight::Standalone,
+                (Some(_), None) => OreWeight::Unknown,
+            },
+            Err(_) => OreWeight::Unknown,
+        })
+        .collect()
+}
+
 impl Index {
     /// The [`Sizes::share`] of each ORE at `paths` in the store this is
     /// the index of; `None` for one that can't be read: what [`shares`]
@@ -276,14 +305,41 @@ impl Index {
     /// that already holds the index. An ORE that cannot be read, or that
     /// names a chunk the store lacks, is `None`.
     pub fn game_sizes(&self, paths: &[&Path]) -> Vec<Option<Sizes>> {
+        paths.iter().map(|path| reader_sizes(path, Some(self))).collect()
+    }
+
+    /// What the OREs at `paths` weigh in full, classed by [`ore_weights`]
+    /// and served by the first of `indexes` whose uuid a thin one names:
+    /// its [`Sizes`] through that store's index; a standalone one's from
+    /// its file; `None` for one that cannot be read, for one no index
+    /// here serves, and for one naming a chunk its store lacks. Weighing
+    /// a game whose OREs may lie in more than one store, from indexes
+    /// already in hand, is what this answers in one pass.
+    pub fn weighed_sizes(
+        paths: &[&Path],
+        weights: &[OreWeight],
+        indexes: &[&Index],
+    ) -> Vec<Option<Sizes>> {
         paths
             .iter()
-            .map(|path| {
-                let reader = Reader::inspect(path).ok()?;
-                reader.sizes_in(Some(self))
+            .zip(weights)
+            .map(|(path, weight)| match weight {
+                OreWeight::Unknown => None,
+                OreWeight::Standalone => reader_sizes(path, None),
+                OreWeight::Thin { uuid, .. } => indexes
+                    .iter()
+                    .find(|index| index.uuid == *uuid)
+                    .and_then(|index| reader_sizes(path, Some(index))),
             })
             .collect()
     }
+}
+
+/// The sizes of the ORE at `path`, its chunks counted in `index`:
+/// [`Reader::sizes_in`] at a free function's reach.
+fn reader_sizes(path: &Path, index: Option<&Index>) -> Option<Sizes> {
+    let reader = Reader::inspect(path).ok()?;
+    reader.sizes_in(index)
 }
 
 /// An ORE, read as the disc it holds.

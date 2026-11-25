@@ -1,5 +1,6 @@
 use super::database::*;
 use super::download_dats::find_redump_systems;
+use super::mimetype::ORE_EXTENSION;
 use super::model::*;
 use async_graphql::dataloader::{DataLoader, Loader};
 use async_graphql::{ComplexObject, Context, Error, Object, Result};
@@ -93,6 +94,120 @@ async fn store_savings_of(ctx: &Context<'_>, system_id: i64) -> Option<ore_rs::S
         .await
         .ok()?;
     crate::ore::store_savings_loaded(&mut connection, &romfiles, None).await
+}
+
+/// What the files of `romfiles` weigh, a thin ORE's its share of its
+/// store and a WUA's the partitions it keeps in its own, the system's
+/// store index asked of the request's loader first so one read serves
+/// every share: [`actual_size_loaded`] for a game instead of a system.
+async fn romfiles_size_loaded(
+    ctx: &Context<'_>,
+    system_id: i64,
+    romfiles: Vec<Romfile>,
+) -> Result<i64> {
+    let pool = ctx.data_unchecked::<SqlitePool>();
+    let store = ctx
+        .data_unchecked::<DataLoader<StoreIndexLoader>>()
+        .load_one(system_id)
+        .await
+        .ok()
+        .flatten();
+    let mut connection = pool.acquire().await.unwrap();
+    Ok(crate::ore::actual_size_loaded(&mut connection, &romfiles, store).await? as i64)
+}
+
+/// What the OREs of `romfiles` weigh in full: each one's own bytes, its
+/// share of its store, and what it would weigh detached, summed. The
+/// request's loader answers for the system's own store; one beneath a
+/// directory the preload never heard of — a grouped subsystem moved, a
+/// misplaced file — reads itself, as the sizes do. A standalone ORE
+/// counts its file: an own size with nothing shared and nothing saved.
+/// `None` when no file of the game is an ORE at all, or none of them can
+/// be weighed.
+async fn game_ore_sizes(
+    ctx: &Context<'_>,
+    system_id: i64,
+    romfiles: &[Romfile],
+) -> Result<Option<(i64, i64, i64)>> {
+    let pool = ctx.data_unchecked::<SqlitePool>();
+    let rom_directory = crate::config::get_rom_directory(&mut pool.acquire().await.unwrap()).await;
+    let paths: Vec<PathBuf> = romfiles
+        .iter()
+        .filter(|romfile| {
+            Path::new(&romfile.path)
+                .extension()
+                .is_some_and(|extension| extension == ORE_EXTENSION)
+        })
+        .map(|romfile| rom_directory.join(&romfile.path))
+        .collect();
+    if paths.is_empty() {
+        return Ok(None);
+    }
+    let store = ctx
+        .data_unchecked::<DataLoader<StoreIndexLoader>>()
+        .load_one(system_id)
+        .await
+        .ok()
+        .flatten();
+    // The headers read off disk, in one pass: what each ORE is, and the
+    // distinct stores a thin one names.
+    let (weights, stores) = {
+        let paths = paths.clone();
+        spawn_blocking(move || {
+            let weights = ore_rs::ore_weights(&paths.iter().map(AsRef::as_ref).collect::<Vec<_>>());
+            let stores: Vec<PathBuf> = weights
+                .iter()
+                .filter_map(|weight| match weight {
+                    ore_rs::OreWeight::Thin { store, .. } => Some(store.clone()),
+                    _ => None,
+                })
+                .unique()
+                .collect();
+            (weights, stores)
+        })
+        .await?
+    };
+    // One index per store: the preload answers its own, whatever the
+    // rest are; the others read themselves.
+    let mut indexes: Vec<Arc<ore_rs::Index>> = vec![];
+    for store_path in &stores {
+        // the preload answers its own store; the rest read themselves
+        if let Some(index) = &store
+            && index.store == *store_path
+        {
+            indexes.push(index.index.clone());
+            continue;
+        }
+        let store_path = store_path.clone();
+        if let Some(index) =
+            spawn_blocking(move || ore_rs::Index::load(&store_path).ok().map(Arc::new))
+                .await?
+        {
+            indexes.push(index);
+        }
+    }
+    let totals = spawn_blocking(move || {
+        let refs: Vec<&ore_rs::Index> = indexes.iter().map(AsRef::as_ref).collect();
+        let paths: Vec<&Path> = paths.iter().map(PathBuf::as_path).collect();
+        let sizes = ore_rs::Index::weighed_sizes(&paths, &weights, &refs);
+        let weighed = sizes.iter().filter_map(|size| size.as_ref()).count();
+        // A game only shows its three figures when every file answered:
+        // half a total misleads where no total simply does not.
+        (weighed == sizes.len()).then(|| {
+            sizes.iter().map(|size| size.unwrap()).fold(
+                (0i64, 0i64, 0i64),
+                |a, size| {
+                    (
+                        a.0 + i64::try_from(size.own).unwrap_or(i64::MAX),
+                        a.1 + i64::try_from(size.share).unwrap_or(i64::MAX),
+                        a.2 + i64::try_from(size.standalone).unwrap_or(i64::MAX),
+                    )
+                },
+            )
+        })
+    })
+    .await?;
+    Ok(totals)
 }
 
 #[ComplexObject]
@@ -585,5 +700,89 @@ impl QueryRoot {
         Ok(store_savings_of(ctx, system_id)
             .await
             .map(|savings| savings.parity as i64))
+    }
+
+    /// The ORE store a system's thin OREs live in: its path and weight,
+    /// what it saves and costs as a whole, this system's part of that,
+    /// and every system sharing it. `None` when none exists above the
+    /// system's directory: the info modal's store section, like the
+    /// stats, is an extra an ordinary folder never shows.
+    async fn system_store(&self, ctx: &Context<'_>, system_id: i64) -> Result<Option<StoreInfo>> {
+        let pool = ctx.data_unchecked::<SqlitePool>();
+        let connection = &mut *pool.acquire().await.unwrap();
+        let Some(system) = find_system_by_id_opt(connection, system_id).await else {
+            return Ok(None);
+        };
+        let Ok(store) = crate::ore::system_store(connection, &system).await else {
+            return Ok(None);
+        };
+        if !store.is_dir() {
+            return Ok(None);
+        }
+        // Every system whose directory holds this store: the group
+        // `GROUP_SUBSYSTEMS` builds, this system named too. The directory
+        // walk is disk work, but a system's directory is one stat per
+        // system, and only the info modal asks.
+        let mut systems = Vec::new();
+        let mut shared = false;
+        for other in find_systems(connection).await {
+            if let Ok(other_store) = crate::ore::system_store(connection, &other).await
+                && other_store == store
+            {
+                shared |= other.id == system_id;
+                systems.push(other.name);
+            }
+        }
+        let savings = if shared {
+            let romfiles = find_system_romfiles(connection, system_id, false).await?;
+            crate::ore::store_savings_loaded(connection, &romfiles, None).await
+        } else {
+            None
+        };
+        let stats = ore_rs::store_stats(&store).ok();
+        let size = spawn_blocking({
+            let store = store.clone();
+            move || ore_rs::store_size(&store)
+        })
+        .await
+        .ok()
+        .and_then(|size| size.ok())
+        .unwrap_or(0);
+        Ok(stats.map(|stats| StoreInfo {
+            path: store.display().to_string(),
+            size: size as i64,
+            dedup_saved: stats.dedup_saved as i64,
+            parity_cost: stats.parity as i64,
+            system_dedup_saved: savings.map_or(0, |savings| savings.dedup_saved as i64),
+            system_parity_cost: savings.map_or(0, |savings| savings.parity as i64),
+            systems,
+        }))
+    }
+
+    /// What one game weighs: what its DAT declares, what it weighs on
+    /// disk, and — its files being thin OREs — what it owns, shares, and
+    /// would weigh detached. Asked lazily by the info modal, the store
+    /// index served by the same request loader the sizes share.
+    async fn game_sizes(&self, ctx: &Context<'_>, game_id: i64) -> Result<GameSizes> {
+        let pool = ctx.data_unchecked::<SqlitePool>();
+        let connection = &mut *pool.acquire().await.unwrap();
+        let romfiles = find_romfiles_by_game_id(connection, game_id).await;
+        let original_size: i64 = sqlx::query_as::<_, (i64,)>(AssertSqlSafe(
+            "SELECT COALESCE(SUM(size), 0) FROM roms WHERE game_id = ?",
+        ))
+        .bind(game_id)
+        .fetch_one(&mut *connection)
+        .await
+        .map(|row| row.0)?;
+        let game = find_game_by_id(connection, game_id).await;
+        let actual_size = romfiles_size_loaded(ctx, game.system_id, romfiles.clone()).await?;
+        let ore = game_ore_sizes(ctx, game.system_id, &romfiles).await?;
+        Ok(GameSizes {
+            original_size,
+            actual_size,
+            ore_own: ore.map(|ore| ore.0),
+            ore_share: ore.map(|ore| ore.1),
+            ore_standalone: ore.map(|ore| ore.2),
+        })
     }
 }
