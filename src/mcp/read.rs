@@ -15,7 +15,7 @@ use super::{OxyromonMcp, internal};
 use crate::config::{get_rom_directory, get_tmp_directory};
 use crate::database::*;
 use crate::download_dats::find_redump_systems;
-use crate::model::{Game, Rom, Romfile};
+use crate::model::{Game, Rom, Romfile, System};
 use itertools::Itertools;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::CallToolResult;
@@ -44,14 +44,7 @@ async fn system_size(
     let sorting = if one_region { "AND g.sorting = 1" } else { "" };
     let error = |e: &dyn std::fmt::Display| format!("failed to compute sizes: {e}");
     if actual {
-        let sql = format!(
-            "SELECT * FROM romfiles AS rf WHERE rf.id IN (
-                 SELECT DISTINCT(r.romfile_id) FROM roms AS r
-                 JOIN games AS g ON r.game_id = g.id
-                 WHERE r.romfile_id IS NOT NULL {sorting} AND g.system_id = {system_id})"
-        );
-        let romfiles: Vec<Romfile> = sqlx::query_as(AssertSqlSafe(sql.as_str()))
-            .fetch_all(&mut *connection)
+        let romfiles = find_system_romfiles(connection, system_id, one_region)
             .await
             .map_err(|e| error(&e))?;
         return crate::ore::actual_size(connection, &romfiles)
@@ -69,6 +62,29 @@ async fn system_size(
         .await
         .map_err(|e| error(&e))?;
     Ok(row.0)
+}
+
+/// Build the `get_system` payload: the four sizes of the system's games
+/// and, when those games live in a readable store, the system's own part
+/// of what they saved and paid. Shared by the tool and its tests, like
+/// [`build_status`].
+pub(crate) async fn build_system_detail(
+    connection: &mut SqliteConnection,
+    system: &System,
+) -> Result<SystemDetailOut, String> {
+    let romfiles = find_system_romfiles(connection, system.id, false)
+        .await
+        .map_err(|e| format!("failed to read the romfiles: {e}"))?;
+    let savings = crate::ore::store_savings(connection, &romfiles).await;
+    Ok(SystemDetailOut {
+        system: SystemOut::from_system(system),
+        total_original_size: system_size(connection, system.id, false, false).await?,
+        one_region_original_size: system_size(connection, system.id, false, true).await?,
+        total_actual_size: system_size(connection, system.id, true, false).await?,
+        one_region_actual_size: system_size(connection, system.id, true, true).await?,
+        store_dedup_saved: savings.map(|savings| savings.dedup_saved as i64),
+        store_parity_cost: savings.map(|savings| savings.parity as i64),
+    })
 }
 
 /// Build the status payload; shared by the `status` tool and the
@@ -129,7 +145,7 @@ impl OxyromonMcp {
     }
 
     #[tool(
-        description = "One system with its stats: game counts, completion, the expected vs actual size of its imported ROMs, all and 1G1R only, and, when its ROMs live in a readable ORE store, what the store's dedup saved and its parity costs.",
+        description = "One system with its stats: game counts, completion, the expected vs actual size of its imported ROMs, all and 1G1R only, and, when its ROMs live in a readable ORE store, what they saved by its dedup and what its parity costs them — the system's own part, when grouped systems share the store.",
         annotations(read_only_hint = true)
     )]
     async fn get_system(
@@ -144,24 +160,9 @@ impl OxyromonMcp {
                 params.system_id
             )));
         };
-        let stats = crate::ore::system_store_stats(connection, &system).await;
-        let detail = SystemDetailOut {
-            system: SystemOut::from_system(&system),
-            total_original_size: system_size(connection, system.id, false, false)
-                .await
-                .map_err(internal)?,
-            one_region_original_size: system_size(connection, system.id, false, true)
-                .await
-                .map_err(internal)?,
-            total_actual_size: system_size(connection, system.id, true, false)
-                .await
-                .map_err(internal)?,
-            one_region_actual_size: system_size(connection, system.id, true, true)
-                .await
-                .map_err(internal)?,
-            store_dedup_saved: stats.map(|stats| stats.dedup_saved as i64),
-            store_parity_cost: stats.map(|stats| stats.parity as i64),
-        };
+        let detail = build_system_detail(connection, &system)
+            .await
+            .map_err(internal)?;
         Ok(ok_json(&detail))
     }
 
