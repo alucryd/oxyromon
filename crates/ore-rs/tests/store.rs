@@ -134,7 +134,8 @@ fn a_loaded_index_answers_for_its_store() {
     let b = library.add("1G1R/b.ore", &discs[1], &[]);
 
     // the index read once answers, alone, what the store answers to
-    // whoever loads it afresh: the same stats, the same shares
+    // whoever loads it afresh: the same stats, the same shares, the same
+    // full sizes
     let index = ore_rs::Index::load(&library.store).unwrap();
     assert_eq!(index.stats(), ore_rs::store_stats(&library.store).unwrap());
     let paths = [a.as_path(), b.as_path()];
@@ -142,6 +143,12 @@ fn a_loaded_index_answers_for_its_store() {
         index.shares(&paths),
         ore_rs::shares(&library.store, &paths).unwrap()
     );
+    let sizes = index.game_sizes(&paths);
+    assert_eq!(sizes, ore_rs::game_sizes(&library.store, &paths).unwrap());
+    for size in sizes.into_iter().map(Option::unwrap) {
+        assert_eq!(size.uncompressed, 0x580000);
+        assert!(size.own > 0 && size.own < size.share && size.share < size.standalone);
+    }
 }
 
 #[test]

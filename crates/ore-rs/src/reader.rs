@@ -232,6 +232,12 @@ pub fn savings(store: &Path, paths: &[&Path]) -> Result<Vec<Option<Savings>>> {
     Ok(Index::load(store)?.savings(paths))
 }
 
+/// What each ORE at `paths` weighs, as [`Index::game_sizes`] answers it:
+/// a standalone ORE's, or one of another store's, counted from its file.
+pub fn game_sizes(store: &Path, paths: &[&Path]) -> Result<Vec<Option<Sizes>>> {
+    Ok(Index::load(store)?.game_sizes(paths))
+}
+
 impl Index {
     /// The [`Sizes::share`] of each ORE at `paths` in the store this is
     /// the index of; `None` for one that can't be read: what [`shares`]
@@ -261,6 +267,20 @@ impl Index {
                     dedup_saved: sizes.standalone - sizes.share,
                     parity: sizes.parity,
                 })
+            })
+            .collect()
+    }
+
+    /// What each ORE at `paths` weighs in full — its [`Sizes`], own, share
+    /// and standalone included: what [`game_sizes`] answers, for a caller
+    /// that already holds the index. An ORE that cannot be read, or that
+    /// names a chunk the store lacks, is `None`.
+    pub fn game_sizes(&self, paths: &[&Path]) -> Vec<Option<Sizes>> {
+        paths
+            .iter()
+            .map(|path| {
+                let reader = Reader::inspect(path).ok()?;
+                reader.sizes_in(Some(self))
             })
             .collect()
     }
