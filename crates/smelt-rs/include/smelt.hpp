@@ -76,6 +76,17 @@ public:
         return out;
     }
 
+    /* The file it was written from, a ROM's or a floppy's image's; throws
+       for a disc, a CD or a title. */
+    std::string file_name() const {
+        std::size_t len = 0;
+        ask(smelt_file_name(raw_, nullptr, &len));
+        std::string out(len, '\0');
+        check(smelt_file_name(raw_, &out[0], &len));
+        out.resize(len - 1);
+        return out;
+    }
+
     /* The hash `scheme` recorded of what it holds: "sha-1", "md5"... */
     std::vector<std::uint8_t> identity(const char *scheme) const {
         std::size_t len = 0;

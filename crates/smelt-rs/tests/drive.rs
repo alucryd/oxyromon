@@ -68,6 +68,13 @@ fn a_cd_reads_as_a_drive_reads_it() {
     let (bytes, ore) = cd(dir.path());
     let ingot = open(&ore);
 
+    // A CD names no file: its cue sheet's tracks are its drive view
+    let mut len = 0;
+    assert_eq!(
+        unsafe { smelt_file_name(ingot, ptr::null_mut(), &mut len) },
+        SmeltErr::SmeltErrUnsupported
+    );
+
     let mut count = 0;
     assert_eq!(
         unsafe { smelt_track_count(ingot, &mut count) },

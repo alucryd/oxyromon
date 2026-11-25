@@ -236,13 +236,25 @@ enum smelt_err smelt_precache_progress(const struct smelt_ingot *ingot,
 
 /**
  * The platform the ORE was written as, NUL-terminated: `gamecube`, `ps2`,
- * `snes` and so on, as ore-rs names them.
+ * `snes`, `amiga` and so on, as ore-rs names them.
  *
  * # Safety
  *
  * `ingot` is an open ingot, `len` valid, `buf` NULL or of `*len` bytes.
  */
 enum smelt_err smelt_platform(const struct smelt_ingot *ingot, char *buf, size_t *len);
+
+/**
+ * The name of the file the ORE was written from, NUL-terminated: a
+ * cartridge's ROM's or a floppy's image's, `Game (Disk 1).ipf` say, for an
+ * emulator that picks its loader by extension. SMELT_ERR_UNSUPPORTED for a
+ * disc, a CD or a title, which name none.
+ *
+ * # Safety
+ *
+ * `ingot` is an open ingot, `len` valid, `buf` NULL or of `*len` bytes.
+ */
+enum smelt_err smelt_file_name(const struct smelt_ingot *ingot, char *buf, size_t *len);
 
 /**
  * The hash `scheme` of what the ORE holds, as recorded when it was

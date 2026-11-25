@@ -391,7 +391,7 @@ pub unsafe extern "C" fn smelt_precache_progress(
 }
 
 /// The platform the ORE was written as, NUL-terminated: `gamecube`, `ps2`,
-/// `snes` and so on, as ore-rs names them.
+/// `snes`, `amiga` and so on, as ore-rs names them.
 ///
 /// # Safety
 ///
@@ -410,6 +410,37 @@ pub unsafe extern "C" fn smelt_platform(
             return fail(SmeltErrCorrupt, "a platform holding a NUL");
         };
         unsafe { give(platform.as_bytes_with_nul(), buf.cast(), len) }
+    })
+}
+
+/// The name of the file the ORE was written from, NUL-terminated: a
+/// cartridge's ROM's or a floppy's image's, `Game (Disk 1).ipf` say, for an
+/// emulator that picks its loader by extension. SMELT_ERR_UNSUPPORTED for a
+/// disc, a CD or a title, which name none.
+///
+/// # Safety
+///
+/// `ingot` is an open ingot, `len` valid, `buf` NULL or of `*len` bytes.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn smelt_file_name(
+    ingot: *const Ingot,
+    buf: *mut c_char,
+    len: *mut usize,
+) -> SmeltErr {
+    guard(|| {
+        let (Some(ingot), false) = (unsafe { ingot.as_ref() }, len.is_null()) else {
+            return fail(SmeltErrArgument, "a NULL argument");
+        };
+        let Some(name) = ingot.reader.file_name() else {
+            return fail(
+                SmeltErrUnsupported,
+                "no file name: not a cartridge's ROM or a floppy's image",
+            );
+        };
+        let Ok(name) = CString::new(name) else {
+            return fail(SmeltErrCorrupt, "a file name holding a NUL");
+        };
+        unsafe { give(name.as_bytes_with_nul(), buf.cast(), len) }
     })
 }
 
