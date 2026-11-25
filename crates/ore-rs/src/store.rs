@@ -26,7 +26,7 @@ mod write;
 #[cfg(feature = "write")]
 pub(super) use write::StoreWriter;
 #[cfg(feature = "write")]
-pub use write::{Compacted, compact, create_store, set_parity};
+pub use write::{Compacted, compact, create_store, recount, set_parity};
 
 /// The name of a store's directory.
 pub const STORE_DIR: &str = ".ore-store";
@@ -533,15 +533,19 @@ fn lock(dir: &Path) -> Result<File> {
 
 /// Call `f` with every thin ORE of the store `uuid` at `store` and the
 /// chunks it uses, from beneath the store's parent directory, which is
-/// where a game finds its store from. A game that cannot be read fails.
+/// where a game finds its store from. A game that cannot be read fails,
+/// unless `skip_unreadable`: a file whose ORE cannot be parsed then gives
+/// no ids and no error, so it contributes nothing and the walk goes on.
 fn for_each_game(
     store: &Path,
     uuid: &[u8; 16],
+    skip_unreadable: bool,
     f: &mut dyn FnMut(&Path, Vec<u64>) -> Result<()>,
 ) -> Result<()> {
     fn beneath(
         dir: &Path,
         uuid: &[u8; 16],
+        skip_unreadable: bool,
         depth: u32,
         f: &mut dyn FnMut(&Path, Vec<u64>) -> Result<()>,
     ) -> Result<()> {
@@ -550,7 +554,7 @@ fn for_each_game(
             if path.is_dir() {
                 // Links may loop
                 if depth < 32 && path.file_name().is_some_and(|name| name != STORE_DIR) {
-                    beneath(&path, uuid, depth + 1, f)?;
+                    beneath(&path, uuid, skip_unreadable, depth + 1, f)?;
                 }
                 continue;
             }
@@ -561,7 +565,11 @@ fn for_each_game(
                 continue;
             }
             let named = |error| Error::Corrupt(format!("{}: {error}", path.display()));
-            let reader = Reader::inspect(&path).map_err(named)?;
+            let reader = match Reader::inspect(&path) {
+                Ok(reader) => reader,
+                Err(_) if skip_unreadable => continue,
+                Err(error) => return Err(named(error)),
+            };
             if let Some(ids) = reader.store_ids(uuid) {
                 f(&path, ids)?;
             }
@@ -569,7 +577,13 @@ fn for_each_game(
         Ok(())
     }
     let store = std::path::absolute(store)?;
-    beneath(store.parent().unwrap_or(&store), uuid, 0, f)
+    beneath(
+        store.parent().unwrap_or(&store),
+        uuid,
+        skip_unreadable,
+        0,
+        f,
+    )
 }
 
 /// What checking a store found.
@@ -796,7 +810,7 @@ pub fn check_store(
             .iter()
             .flat_map(|&number| chunks[number].iter().map(|&id| id as u64))
             .collect();
-        for_each_game(store, &index.uuid, &mut |path, used| {
+        for_each_game(store, &index.uuid, false, &mut |path, used| {
             if used.iter().any(|id| ids.contains(id)) {
                 checked.lost_games.push(path.to_path_buf());
             }

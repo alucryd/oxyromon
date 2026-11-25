@@ -763,8 +763,24 @@ impl StoreBatch {
         write: impl FnOnce(&Path, &mut StoreWriter) -> Result<Stats>,
     ) -> Result<Stats> {
         let part = io::part(output);
+        // The thin ORE at `output`, if it is this store's, already counts
+        // its chunks as the game's: give those references back once the
+        // new one is written, or a rewrite over a game would leave the
+        // copy it replaces holding references of its own. An output the
+        // batch has written before takes them back once only.
+        let replaced = match self.parts.iter().any(|(_, out)| out == output) {
+            true => None,
+            false => Reader::inspect(output)
+                .ok()
+                .and_then(|reader| reader.store_ids(&self.writer.uuid())),
+        };
         match write(&part, &mut self.writer) {
             Ok(stats) => {
+                if let Some(ids) = replaced {
+                    for id in ids {
+                        self.writer.unreference(id);
+                    }
+                }
                 self.parts.push((part, output.to_path_buf()));
                 Ok(stats)
             }

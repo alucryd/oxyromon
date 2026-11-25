@@ -757,6 +757,7 @@ Hashes every ROM file of the selected systems again and moves corrupt ones to `T
 `--size` also recomputes stored file sizes.
 A system's ORE store is checked whole too, what its parity covers repaired, and the check fails naming the games past repair.
 The store check reports its chunk count, what its dedup saved and what its parity costs.
+After the check, the store's chunk references are counted again: a store whose sizes drifted while games were rewritten or purged heals without a compaction.
 
 ```text
 Usage: oxyromon check-roms [OPTIONS]
