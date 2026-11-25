@@ -3014,7 +3014,8 @@ pub async fn find_romfiles_by_game_id(
     .unwrap_or_else(|_| panic!("Error while finding romfiles with game id {}", game_id))
 }
 
-pub async fn find_romfiles_by_ids(connection: &mut SqliteConnection, ids: &[i64]) -> Vec<Romfile> {    let sql = format!(
+pub async fn find_romfiles_by_ids(connection: &mut SqliteConnection, ids: &[i64]) -> Vec<Romfile> {
+    let sql = format!(
         "
     SELECT *
     FROM romfiles

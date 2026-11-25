@@ -180,8 +180,7 @@ async fn game_ore_sizes(
         }
         let store_path = store_path.clone();
         if let Some(index) =
-            spawn_blocking(move || ore_rs::Index::load(&store_path).ok().map(Arc::new))
-                .await?
+            spawn_blocking(move || ore_rs::Index::load(&store_path).ok().map(Arc::new)).await?
         {
             indexes.push(index);
         }
@@ -194,16 +193,16 @@ async fn game_ore_sizes(
         // A game only shows its three figures when every file answered:
         // half a total misleads where no total simply does not.
         (weighed == sizes.len()).then(|| {
-            sizes.iter().map(|size| size.unwrap()).fold(
-                (0i64, 0i64, 0i64),
-                |a, size| {
+            sizes
+                .iter()
+                .map(|size| size.unwrap())
+                .fold((0i64, 0i64, 0i64), |a, size| {
                     (
                         a.0 + i64::try_from(size.own).unwrap_or(i64::MAX),
                         a.1 + i64::try_from(size.share).unwrap_or(i64::MAX),
                         a.2 + i64::try_from(size.standalone).unwrap_or(i64::MAX),
                     )
-                },
-            )
+                })
         })
     })
     .await?;
