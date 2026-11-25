@@ -3007,6 +3007,29 @@ pub async fn find_romfiles_by_ids(connection: &mut SqliteConnection, ids: &[i64]
         .expect("Error while finding romfiles")
 }
 
+/// The romfiles of the system's games, with the 1G1R selection or without
+/// it: the files the actual sizes weigh and the store savings split. One
+/// helper for the web and the MCP, so the two can never show different
+/// numbers for one system. `Err`, not a panic: the savings treat an
+/// unreadable query as an absent store, and no flow fails over it.
+#[cfg(any(feature = "mcp", feature = "server"))]
+pub async fn find_system_romfiles(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+    one_region: bool,
+) -> Result<Vec<Romfile>, sqlx::Error> {
+    let sorting = if one_region { "AND g.sorting = 1" } else { "" };
+    let sql = format!(
+        "SELECT * FROM romfiles AS rf WHERE rf.id IN (
+             SELECT DISTINCT(r.romfile_id) FROM roms AS r
+             JOIN games AS g ON r.game_id = g.id
+             WHERE r.romfile_id IS NOT NULL {sorting} AND g.system_id = {system_id})"
+    );
+    sqlx::query_as::<_, Romfile>(AssertSqlSafe(sql.as_str()))
+        .fetch_all(connection)
+        .await
+}
+
 pub async fn find_romfiles_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,

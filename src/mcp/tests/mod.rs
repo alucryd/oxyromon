@@ -2,4 +2,5 @@
 //! file's `use super::*;` pointing at the subcommand's namespace.
 pub use super::*;
 
+mod test_system_store;
 mod test_write_lock;

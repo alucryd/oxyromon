@@ -55,6 +55,14 @@ async fn test() {
         "the sizes took the preloaded index, not their own read"
     );
 
+    // and the two stats fields shared one walk: the savings were computed
+    // once for the request, not once per field
+    assert_eq!(
+        counted.walks(),
+        1,
+        "the two stats fields ask for one walk of the system's OREs"
+    );
+
     // and the answer is the game's own: one game alone in the store, its
     // chunks shared with nobody — no dedup to save it, and its part of
     // the parity, the whole footers less the room no game lies in

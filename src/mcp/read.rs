@@ -15,7 +15,7 @@ use super::{OxyromonMcp, internal};
 use crate::config::{get_rom_directory, get_tmp_directory};
 use crate::database::*;
 use crate::download_dats::find_redump_systems;
-use crate::model::{Game, Rom, Romfile};
+use crate::model::{Game, Rom, Romfile, System};
 use itertools::Itertools;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::CallToolResult;
@@ -44,7 +44,7 @@ async fn system_size(
     let sorting = if one_region { "AND g.sorting = 1" } else { "" };
     let error = |e: &dyn std::fmt::Display| format!("failed to compute sizes: {e}");
     if actual {
-        let romfiles = system_romfiles(connection, system_id, one_region)
+        let romfiles = find_system_romfiles(connection, system_id, one_region)
             .await
             .map_err(|e| error(&e))?;
         return crate::ore::actual_size(connection, &romfiles)
@@ -64,24 +64,27 @@ async fn system_size(
     Ok(row.0)
 }
 
-/// Every romfile of the system's games, with the 1G1R selection or
-/// without it: the files the actual sizes weigh and the store savings
-/// split by game.
-async fn system_romfiles(
+/// Build the `get_system` payload: the four sizes of the system's games
+/// and, when those games live in a readable store, the system's own part
+/// of what they saved and paid. Shared by the tool and its tests, like
+/// [`build_status`].
+pub(crate) async fn build_system_detail(
     connection: &mut SqliteConnection,
-    system_id: i64,
-    one_region: bool,
-) -> Result<Vec<Romfile>, sqlx::Error> {
-    let sorting = if one_region { "AND g.sorting = 1" } else { "" };
-    let sql = format!(
-        "SELECT * FROM romfiles AS rf WHERE rf.id IN (
-             SELECT DISTINCT(r.romfile_id) FROM roms AS r
-             JOIN games AS g ON r.game_id = g.id
-             WHERE r.romfile_id IS NOT NULL {sorting} AND g.system_id = {system_id})"
-    );
-    sqlx::query_as(AssertSqlSafe(sql.as_str()))
-        .fetch_all(&mut *connection)
+    system: &System,
+) -> Result<SystemDetailOut, String> {
+    let romfiles = find_system_romfiles(connection, system.id, false)
         .await
+        .map_err(|e| format!("failed to read the romfiles: {e}"))?;
+    let savings = crate::ore::store_savings(connection, &romfiles).await;
+    Ok(SystemDetailOut {
+        system: SystemOut::from_system(system),
+        total_original_size: system_size(connection, system.id, false, false).await?,
+        one_region_original_size: system_size(connection, system.id, false, true).await?,
+        total_actual_size: system_size(connection, system.id, true, false).await?,
+        one_region_actual_size: system_size(connection, system.id, true, true).await?,
+        store_dedup_saved: savings.map(|savings| savings.dedup_saved as i64),
+        store_parity_cost: savings.map(|savings| savings.parity as i64),
+    })
 }
 
 /// Build the status payload; shared by the `status` tool and the
@@ -157,27 +160,9 @@ impl OxyromonMcp {
                 params.system_id
             )));
         };
-        let romfiles = system_romfiles(connection, system.id, false)
+        let detail = build_system_detail(connection, &system)
             .await
             .map_err(internal)?;
-        let savings = crate::ore::store_savings(connection, &romfiles).await;
-        let detail = SystemDetailOut {
-            system: SystemOut::from_system(&system),
-            total_original_size: system_size(connection, system.id, false, false)
-                .await
-                .map_err(internal)?,
-            one_region_original_size: system_size(connection, system.id, false, true)
-                .await
-                .map_err(internal)?,
-            total_actual_size: system_size(connection, system.id, true, false)
-                .await
-                .map_err(internal)?,
-            one_region_actual_size: system_size(connection, system.id, true, true)
-                .await
-                .map_err(internal)?,
-            store_dedup_saved: savings.map(|savings| savings.dedup_saved as i64),
-            store_parity_cost: savings.map(|savings| savings.parity as i64),
-        };
         Ok(ok_json(&detail))
     }
 

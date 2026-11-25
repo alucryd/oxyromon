@@ -16,6 +16,7 @@ use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use tokio::sync::OnceCell;
 use tokio::task::spawn_blocking;
 
 async fn system_size(
@@ -44,7 +45,7 @@ async fn system_size(
             .ok()
             .flatten();
         let mut connection = pool.acquire().await.unwrap();
-        let romfiles = system_romfiles(&mut connection, system_id, one_region).await?;
+        let romfiles = find_system_romfiles(&mut connection, system_id, one_region).await?;
         return Ok(crate::ore::actual_size_loaded(&mut connection, &romfiles, store).await? as i64);
     }
     let mut connection = pool.acquire().await.unwrap();
@@ -64,54 +65,20 @@ async fn system_size(
     Ok(row.0)
 }
 
-/// The romfiles of the system's games, with the 1G1R selection or without
-/// it: the files the actual sizes weigh and the store savings split.
-async fn system_romfiles(
-    connection: &mut sqlx::SqliteConnection,
-    system_id: i64,
-    one_region: bool,
-) -> Result<Vec<Romfile>> {
-    let sorting = if one_region {
-        "AND g.sorting = 1\n                    "
-    } else {
-        ""
-    };
-    let sql = format!(
-        "
-            SELECT *
-            FROM romfiles AS rf
-            WHERE rf.id IN (
-                SELECT DISTINCT(r.romfile_id) FROM roms AS r
-                JOIN games AS g ON r.game_id = g.id
-                WHERE r.romfile_id IS NOT NULL
-                {}AND g.system_id = {}
-            );
-        ",
-        sorting, system_id
-    );
-    Ok(sqlx::query_as(AssertSqlSafe(sql.as_str()))
-        .fetch_all(&mut *connection)
-        .await?)
-}
-
 /// The advanced stats of the system's OREs in their store: what they save
 /// by dedup and what their parity costs, each game paying its own part.
 /// A store shared by grouped systems gives every system its own numbers,
 /// which add up across the group to the store's whole. Like the sizes,
 /// the field asks for the store by system id and asks first: one
-/// request's stats fields share the one index read.
+/// request's stats fields share the one index read — and, through the
+/// index, the one walk of the ORE headers that computes the savings.
 async fn store_savings_of(ctx: &Context<'_>, system_id: i64) -> Option<ore_rs::Savings> {
     let store = ctx
         .data_unchecked::<DataLoader<StoreIndexLoader>>()
         .load_one(system_id)
         .await
-        .ok()?;
-    let pool = ctx.data_unchecked::<SqlitePool>();
-    let mut connection = pool.acquire().await.ok()?;
-    let romfiles = system_romfiles(&mut connection, system_id, false)
-        .await
-        .ok()?;
-    crate::ore::store_savings_loaded(&mut connection, &romfiles, store).await
+        .ok()??;
+    store.savings(system_id).await
 }
 
 #[ComplexObject]
@@ -297,6 +264,10 @@ pub struct StoreIndexLoader {
     /// asked for early, not a store whose path disagreed with the system's.
     #[cfg_attr(not(test), allow(dead_code))]
     hits: Arc<AtomicUsize>,
+    /// Savings walks run: proves the stats fields of one request shared
+    /// the one walk of the system's ORE headers, rather than each paying.
+    #[cfg_attr(not(test), allow(dead_code))]
+    walks: Arc<AtomicUsize>,
 }
 
 impl StoreIndexLoader {
@@ -305,6 +276,7 @@ impl StoreIndexLoader {
             pool,
             loads: Arc::new(AtomicUsize::new(0)),
             hits: Arc::new(AtomicUsize::new(0)),
+            walks: Arc::new(AtomicUsize::new(0)),
         }
     }
 
@@ -321,14 +293,27 @@ impl StoreIndexLoader {
     pub fn hits(&self) -> usize {
         self.hits.load(Ordering::Relaxed)
     }
+
+    /// How many savings walks ran: one per system whose stats were asked,
+    /// however many of its fields asked.
+    #[cfg(test)]
+    pub fn walks(&self) -> usize {
+        self.walks.load(Ordering::Relaxed)
+    }
 }
 
 /// A store's index, with the store it was read from: sizes that find a
-/// different store than the system names read that one themselves.
+/// different store than the system names read that one themselves. It
+/// also remembers the system's savings once they have been asked for:
+/// the two stats fields of one request reach this value through the same
+/// key, and the walk that answers the first serves the second too.
 pub struct StoreIndex {
     pub store: PathBuf,
     pub index: Arc<ore_rs::Index>,
     hits: Arc<AtomicUsize>,
+    pool: SqlitePool,
+    walks: Arc<AtomicUsize>,
+    savings: OnceCell<Option<ore_rs::Savings>>,
 }
 
 impl StoreIndex {
@@ -345,6 +330,26 @@ impl StoreIndex {
             .await
             .ok()
             .flatten()
+    }
+
+    /// The savings of the system named by `system_id`, computed once and
+    /// kept: the romfiles, the walk of the ORE headers, and the sum run
+    /// once however many stats fields ask. A `None` is kept as readily as
+    /// a number — files that live in no readable store save and pay
+    /// nothing, on every asking.
+    async fn savings(self: &Arc<Self>, system_id: i64) -> Option<ore_rs::Savings> {
+        *self
+            .savings
+            .get_or_init(|| async {
+                let mut connection = self.pool.acquire().await.ok()?;
+                let romfiles = find_system_romfiles(&mut connection, system_id, false)
+                    .await
+                    .ok()?;
+                self.walks.fetch_add(1, Ordering::Relaxed);
+                crate::ore::store_savings_loaded(&mut connection, &romfiles, Some(self.clone()))
+                    .await
+            })
+            .await
     }
 }
 
@@ -369,6 +374,8 @@ impl Loader<i64> for StoreIndexLoader {
         drop(connection);
         let loads = self.loads.clone();
         let hits = self.hits.clone();
+        let pool = self.pool.clone();
+        let walks = self.walks.clone();
         Ok(spawn_blocking(move || {
             let mut indexes = HashMap::new();
             for (system_id, store) in stores {
@@ -380,6 +387,9 @@ impl Loader<i64> for StoreIndexLoader {
                             store,
                             index: Arc::new(index),
                             hits: hits.clone(),
+                            pool: pool.clone(),
+                            walks: walks.clone(),
+                            savings: OnceCell::new(),
                         }),
                     );
                 }
