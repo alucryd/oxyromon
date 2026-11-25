@@ -8,7 +8,7 @@ use leptos::task::spawn_local;
 
 use crate::api::{fetch_system_details, report_error};
 use crate::components::info::{InfoBytes, InfoRow, Mono, completion_word};
-use crate::model::SystemDetails;
+use crate::model::{SystemDetails, SystemFacts};
 use crate::state::AppState;
 use crate::ui::Modal;
 
@@ -27,8 +27,7 @@ pub fn SystemInfoModal(
 
     // Ask each time the modal opens: the DAT, the sizes and the store move
     // between visits — a check, an import, a conversion — and one request
-    // is cheap next to being wrong. A fetch still in flight when a second
-    // open asks its question is simply answered into a closed dialog.
+    // is cheap next to being wrong.
     Effect::new(move |_| {
         let shown = if open.get() {
             Some(system_id.get())
@@ -37,8 +36,17 @@ pub fn SystemInfoModal(
         };
         if let Some(id) = shown {
             details.set(None);
+            // An answer to this request only belongs to the dialog if it is
+            // still open and still about this same system: a fetch that was
+            // overtaken by a close, or by a reopen on another system, would
+            // otherwise answer the new dialog with the old system's facts.
+            let still_asking = move || open.get_untracked() && system_id.get_untracked() == id;
             spawn_local(async move {
-                match fetch_system_details(id).await {
+                let fetched = fetch_system_details(id).await;
+                if !still_asking() {
+                    return;
+                }
+                match fetched {
                     Ok(fetched) => details.set(Some(fetched)),
                     Err(e) => report_error(state.notifier, "Loading system information", &e),
                 }
@@ -51,11 +59,14 @@ pub fn SystemInfoModal(
             {move || {
                 details.get().map(|details| {
                     let SystemDetails {
-                        name,
-                        header,
-                        games_complete,
-                        games_total,
-                        completion,
+                        system:
+                            SystemFacts {
+                                name,
+                                version,
+                                games_complete,
+                                games_total,
+                                completion,
+                            },
                         total_original_size,
                         one_region_original_size,
                         total_actual_size,
@@ -66,14 +77,9 @@ pub fn SystemInfoModal(
                         <div class="wa-stack wa-gap-l">
                             <div class="wa-stack wa-gap-3xs">
                                 <span class="wa-font-weight-semibold">{name.clone()}</span>
-                                {header
-                                    .map(|header| {
-                                        view! {
-                                            <small style="color: var(--wa-color-text-quiet);">
-                                                {format!("{} — {}", header.name, header.version)}
-                                            </small>
-                                        }
-                                    })}
+                                <small style="color: var(--wa-color-text-quiet);">
+                                    {format!("DAT {}", version)}
+                                </small>
                             </div>
 
                             <div class="wa-stack wa-gap-xs">

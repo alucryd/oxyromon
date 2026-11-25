@@ -38,18 +38,29 @@ pub fn GameInfoModal(open: RwSignal<bool>, target: RwSignal<Option<Game>>) -> im
             sizes.set(None);
             roms.set(Vec::new());
             loading.set(true);
+            // An answer belongs to this dialog only while it is open and
+            // still about this same game: the weigh in particular can
+            // outlive its game, and an overtaken arrival must not write
+            // the old game's roms and sizes into the new one's dialog, nor
+            // drop its spinner while the new game's own fetch is running.
+            let still_asking = move || {
+                open.get_untracked()
+                    && target.with_untracked(|game| game.as_ref().is_some_and(|game| game.id == id))
+            };
             spawn_local(async move {
                 let fetched = fetch_game_roms(id).await;
-                // A different game may have been opened while this was in
-                // flight; its answer belongs to a closed dialog.
-                if !open.get_untracked() {
+                if !still_asking() {
                     return;
                 }
                 match fetched {
                     Ok(fetched) => roms.set(fetched),
                     Err(e) => report_error(state.notifier, "Loading game information", &e),
                 }
-                match fetch_game_sizes(id).await {
+                let fetched = fetch_game_sizes(id).await;
+                if !still_asking() {
+                    return;
+                }
+                match fetched {
                     Ok(fetched) => sizes.set(Some(fetched)),
                     Err(e) => report_error(state.notifier, "Loading game information", &e),
                 }

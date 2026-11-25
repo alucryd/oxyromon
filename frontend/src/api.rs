@@ -253,9 +253,12 @@ pub async fn fetch_sizes(notifier: Notifier, system_id: i64) -> Sizes {
 /// row already had, the DAT, the four sizes, and the store beneath it.
 /// The sizes are the expensive part and only the modal asks them, so the
 /// statistics card's own `fetch_sizes` stays free of the DAT and store.
+///
+/// The query text is pinned verbatim by `src/server/tests/test_info_fields.rs`
+/// against the live schema — change one, change the other.
 pub async fn fetch_system_details(system_id: i64) -> Result<SystemDetails, String> {
     let query = format!(
-        "{{ system(systemId: {id}) {{ name header {{ name version }} gamesComplete gamesTotal completion }} \
+        "{{ system(systemId: {id}) {{ name version gamesComplete gamesTotal completion }} \
          totalOriginalSize(systemId: {id}) oneRegionOriginalSize(systemId: {id}) \
          totalActualSize(systemId: {id}) oneRegionActualSize(systemId: {id}) \
          systemStore(systemId: {id}) {{ path size dedupSaved parityCost systemDedupSaved systemParityCost systems }} }}",
@@ -266,7 +269,8 @@ pub async fn fetch_system_details(system_id: i64) -> Result<SystemDetails, Strin
 
 /// What one game weighs, for its info modal: the DAT's figure, the disk's,
 /// and the three an ORE adds. The store's index is read server-side only
-/// when the question needs it.
+/// when the question needs it. Its query text is pinned by
+/// `src/server/tests/test_info_fields.rs`.
 pub async fn fetch_game_sizes(game_id: i64) -> Result<GameSizes, String> {
     let query = format!(
         "{{ gameSizes(gameId: {id}) {{ originalSize actualSize oreOwn oreShare oreStandalone }} }}",

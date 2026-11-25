@@ -90,27 +90,34 @@ pub struct Sizes {
 }
 
 /// One system, with the figures its info modal shows and no other list
-/// needs: the DAT it was imported from, and the four sizes.
+/// needs: the DAT it was imported from, and the four sizes. Mirrors the
+/// response shape of `fetch_system_details`: the system's own facts are
+/// nested under `system`, the four sizes are root siblings, and the store
+/// answers under the server's own key, `systemStore`.
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemDetails {
-    pub name: String,
-    pub header: Option<Dat>,
-    pub games_complete: i64,
-    pub games_total: i64,
-    pub completion: i64,
+    pub system: SystemFacts,
     pub total_original_size: i64,
     pub one_region_original_size: i64,
     pub total_actual_size: i64,
     pub one_region_actual_size: i64,
+    #[serde(rename = "systemStore")]
     pub store: Option<StoreInfo>,
 }
 
-/// The DAT a system was imported from.
+/// The system part of the info modal's payload: what the row menu's query
+/// selects under `system`, and nothing the lists already carry. `name` and
+/// `version` are the DAT it was imported from — the system row keeps both;
+/// the GraphQL `header` field is the header rule, which most DATs have none of.
 #[derive(Clone, Debug, Deserialize, PartialEq)]
-pub struct Dat {
+#[serde(rename_all = "camelCase")]
+pub struct SystemFacts {
     pub name: String,
     pub version: String,
+    pub games_complete: i64,
+    pub games_total: i64,
+    pub completion: i64,
 }
 
 /// The ORE store beneath a system: its path and weight, what it saves and
