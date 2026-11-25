@@ -72,13 +72,27 @@ async fn system_size(
 /// the field asks for the store by system id and asks first: one
 /// request's stats fields share the one index read — and, through the
 /// index, the one walk of the ORE headers that computes the savings.
+/// A system the preload cannot answer for — a store that would not open,
+/// or no store where the settings name one — is asked of the disk, the
+/// way the sizes weigh a misplaced file: every ORE of every store it
+/// actually lies above is counted, as the MCP does. The walk is not
+/// shared there; the edge is rare and the answer is the same number.
 async fn store_savings_of(ctx: &Context<'_>, system_id: i64) -> Option<ore_rs::Savings> {
+    let pool = ctx.data_unchecked::<SqlitePool>();
     let store = ctx
         .data_unchecked::<DataLoader<StoreIndexLoader>>()
         .load_one(system_id)
         .await
-        .ok()??;
-    store.savings(system_id).await
+        .ok()
+        .flatten();
+    if let Some(store) = store {
+        return store.savings(system_id).await;
+    }
+    let mut connection = pool.acquire().await.ok()?;
+    let romfiles = find_system_romfiles(&mut connection, system_id, false)
+        .await
+        .ok()?;
+    crate::ore::store_savings_loaded(&mut connection, &romfiles, None).await
 }
 
 #[ComplexObject]
@@ -369,8 +383,8 @@ impl Loader<i64> for StoreIndexLoader {
         }
         // The parse reads no database: the connection goes back to the pool
         // before the multi-second read, not after it. Failing the batch is
-        // graceful too — the fields treat a refused index as an absent one
-        // and read their stores off disk.
+        // graceful too — a field that reaches no store here weighs or walks
+        // what lies under the system itself, off disk.
         drop(connection);
         let loads = self.loads.clone();
         let hits = self.hits.clone();

@@ -3010,8 +3010,9 @@ pub async fn find_romfiles_by_ids(connection: &mut SqliteConnection, ids: &[i64]
 /// The romfiles of the system's games, with the 1G1R selection or without
 /// it: the files the actual sizes weigh and the store savings split. One
 /// helper for the web and the MCP, so the two can never show different
-/// numbers for one system. `Err`, not a panic: the savings treat an
-/// unreadable query as an absent store, and no flow fails over it.
+/// numbers for one system. `Err`, not a panic: the web's savings treat an
+/// unreadable query as an absent store; the sizes and the MCP's
+/// `get_system` report the failure themselves.
 #[cfg(any(feature = "mcp", feature = "server"))]
 pub async fn find_system_romfiles(
     connection: &mut SqliteConnection,
