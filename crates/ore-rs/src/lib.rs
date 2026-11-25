@@ -98,8 +98,8 @@ pub use format::{Codec, Profile};
 pub use keys::{is_bootmii, load_keys, parse_key_file, parse_keys, parse_otp};
 pub use precache::Progress;
 pub use reader::{
-    DEFAULT_READ_AHEAD, READ_AHEAD_OFF, Reader, Sizes, Stats, Track, TrackMode, decompress, is_ore,
-    shares,
+    DEFAULT_READ_AHEAD, READ_AHEAD_OFF, Reader, Savings, Sizes, Stats, Track, TrackMode,
+    decompress, is_ore, savings, shares,
 };
 pub use store::Index;
 #[cfg(feature = "write")]

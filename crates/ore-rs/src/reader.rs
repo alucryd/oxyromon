@@ -196,6 +196,26 @@ pub struct Sizes {
     pub share: u64,
     /// About what it would weigh detached.
     pub standalone: u64,
+    /// The part of the parity footers of the segments its chunks lie in
+    /// that it pays for: [`Sizes::share`] minus what its chunks would
+    /// weigh with no footer. Summed over a store's games, the store's
+    /// parity, give or take the envelope overhead and a last segment
+    /// nothing has filled up.
+    pub parity: u64,
+}
+
+/// What one game's chunks save and cost a store, in bytes, on the same
+/// ledger as [`Sizes::share`]: [`Savings::dedup_saved`] is what dedup kept
+/// from being written twice for this game, [`Savings::parity`] what its
+/// share of the parity footers adds. Summed over every game of a store,
+/// the two are what [`StoreStats`](crate::StoreStats) tells of the store.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Savings {
+    /// [`Sizes::standalone`] minus [`Sizes::share`]: what this game saved
+    /// by sharing its chunks with the games that name them too.
+    pub dedup_saved: u64,
+    /// Its [`Sizes::parity`].
+    pub parity: u64,
 }
 
 /// The [`Sizes::share`] of each ORE at `paths` in the store at `store`, its
@@ -203,6 +223,13 @@ pub struct Sizes {
 /// standalone ORE's, or one of another store's, is its file's size.
 pub fn shares(store: &Path, paths: &[&Path]) -> Result<Vec<Option<u64>>> {
     Ok(Index::load(store)?.shares(paths))
+}
+
+/// What each ORE at `paths` gives its store and takes from it, as
+/// [`Index::savings`] answers it: a standalone ORE's, or one of another
+/// store's, saves nothing and pays nothing.
+pub fn savings(store: &Path, paths: &[&Path]) -> Result<Vec<Option<Savings>>> {
+    Ok(Index::load(store)?.savings(paths))
 }
 
 impl Index {
@@ -215,6 +242,25 @@ impl Index {
             .map(|path| {
                 let reader = Reader::inspect(path).ok()?;
                 Some(reader.sizes_in(Some(self))?.share)
+            })
+            .collect()
+    }
+
+    /// What each ORE at `paths` gives the store this is the index of and
+    /// takes from it: what [`savings`] answers, for a caller that already
+    /// holds the index. An ORE that cannot be read, or that names a chunk
+    /// the store lacks, is `None`; a standalone one, or one of another
+    /// store, saves nothing and pays nothing.
+    pub fn savings(&self, paths: &[&Path]) -> Vec<Option<Savings>> {
+        paths
+            .iter()
+            .map(|path| {
+                let reader = Reader::inspect(path).ok()?;
+                let sizes = reader.sizes_in(Some(self))?;
+                Some(Savings {
+                    dedup_saved: sizes.standalone - sizes.share,
+                    parity: sizes.parity,
+                })
             })
             .collect()
     }
@@ -720,7 +766,8 @@ impl Reader {
     /// of them is not in it, as `attach_store` would refuse.
     fn sizes_in(&self, index: Option<&Index>) -> Option<Sizes> {
         let file = self.file_size;
-        let (mut own, mut share, mut standalone) = (file as f64, file as f64, file as f64);
+        let (mut own, mut share, mut standalone, mut parity) =
+            (file as f64, file as f64, file as f64, 0f64);
         if let Some(index) = index {
             for id in self.store_ids(&index.uuid).unwrap_or_default() {
                 let chunk = index
@@ -728,11 +775,13 @@ impl Reader {
                     .get(id as usize)
                     .filter(|chunk| chunk.group != NOWHERE)?;
                 let weight = index.weight(chunk);
+                let refs = chunk.refs.max(1) as f64;
                 if chunk.refs <= 1 {
                     own += weight;
                 }
-                share += weight / chunk.refs.max(1) as f64;
+                share += weight / refs;
                 standalone += weight;
+                parity += (weight - index.data_weight(chunk)) / refs;
             }
         }
         Some(Sizes {
@@ -740,6 +789,7 @@ impl Reader {
             own: own as u64,
             share: share as u64,
             standalone: standalone as u64,
+            parity: parity.round() as u64,
         })
     }
 

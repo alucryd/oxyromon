@@ -194,6 +194,64 @@ fn store_stats_tell_the_dedup_from_the_parity() {
 }
 
 #[test]
+fn the_store_stats_add_up_over_the_games() {
+    let library = Library::new(&StoreOptions::default());
+    let discs = discs();
+    let a = library.add("first-system/a.ore", &discs[0], &[]);
+    let b = library.add("second-system/b.ore", &discs[1], &[]);
+    // A copy of a, as an update shared between systems names: its chunks
+    // count for three games where b's private ones count for one
+    let c = library.add("second-system/c.ore", &discs[0], &[]);
+    let index = ore_rs::Index::load(&library.store).unwrap();
+    let stats = index.stats();
+
+    let savings = index.savings(&[a.as_path(), b.as_path(), c.as_path()]);
+    let (a, b, c) = (
+        savings[0].unwrap(),
+        savings[1].unwrap(),
+        savings[2].unwrap(),
+    );
+
+    // The dedup saved over the games is what the store says it saved, to
+    // the rounding of the shares: every game past the first owes a copy
+    let saved = a.dedup_saved + b.dedup_saved + c.dedup_saved;
+    assert!(
+        saved.abs_diff(stats.dedup_saved) < 0x400,
+        "{saved} against {}",
+        stats.dedup_saved
+    );
+    // And the parity they paid totals the footers, give or take the
+    // envelope headers and the last segment's unused room: nobody's game
+    // lies in those, so the games' sum falls just short of the store's
+    let paid = a.parity + b.parity + c.parity;
+    assert!(paid > 0, "the store has parity and the games pay it");
+    assert!(
+        paid.abs_diff(stats.parity) < stats.parity / 8,
+        "{paid} against {}",
+        stats.parity
+    );
+    // Two copies of one disc pay exactly the same
+    assert_eq!(a, c);
+    // And a different disc pays differently: a's private chunks are shared
+    // with c and save it, b's are its own alone — the two systems' tiles
+    // are their own numbers, not the store's shown twice
+    assert_ne!(a, b);
+    assert!(a.dedup_saved > b.dedup_saved);
+    // A standalone ORE saves nothing and pays nothing of this store's
+    let iso = library.root.join("in.iso");
+    write(&iso, &discs[1]);
+    let alone = library.root.join("standalone.ore");
+    ore_rs::compress(&iso, &alone, &Options::default(), &[], &mut |_| {}).unwrap();
+    assert_eq!(
+        index.savings(&[alone.as_path()])[0],
+        Some(ore_rs::Savings {
+            dedup_saved: 0,
+            parity: 0
+        })
+    );
+}
+
+#[test]
 fn a_wii_disc_round_trips_through_a_store() {
     let library = Library::new(&StoreOptions::default());
     let disc = wii_disc();

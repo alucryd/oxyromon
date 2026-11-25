@@ -3,6 +3,7 @@
 ## Changes
 
 - The metadata writes as RFC 8949 §4.2.1 core deterministic CBOR, every map's keys shortest first and then bytewise, where they were written in declaration order: what a reader takes back is unchanged, keys of any order still read, and once the metadata's bytes must be one encoding — for signing, or for two writers agreeing — there now is one; SPEC.md §7 says so, `format.rs` holds a test that a field declared out of order fails, and a `compat` vector keeps the old order readable
+- The `dedup_saved` of `store_stats` is what every shared copy saved, `refs-1` copies of each shared chunk, as its own telling has it: it counted one game's share of each chunk before, which is what one game of several saves, not what the sharing kept from the store
 
 ## Features
 
@@ -11,6 +12,7 @@
 - Added `store_stats`, what a store's tricks get it and what they cost it: its distinct chunks and what they weigh where they lie, the bytes its dedup kept from being stored twice, and the footers of parity over its segments, all read off its index alone, no data
 - Added `SPEC.md`, ORE 1.0's specification, its codecs `xa`, `vag` and `str` among it, and its conformance vectors in `spec/vectors`: every media class, record kind and codec, a store and its thin OREs, what a later writer adds and what a reader refuses
 - Added `shares`, the `Sizes::share` of many OREs of one store, its index loaded once for them all
+- Added `savings` and `Sizes::parity` among the sizes: what each ORE of a store saves by its dedup, `standalone` less `share`, and pays for its parity, its part of the footers of the segments its chunks lie in — a game's own two numbers, which summed over the store's games give `store_stats`' two
 - Added 3DS card images, `3ds` among `CARTRIDGE_PLATFORMS`: a ROM whose NCSD header says it is no larger than the card, a trimmed one too, up to 4 GiB; `default_codec` gives Zstandard for one, read as a disc is rather than whole
 - Added Wii U eShop titles, games, updates and DLC as NUS folders, CDN or downloader named: their files end to end, each content stored decrypted by its title key when the folder holds its ticket, kept as it is otherwise, the ticket kept beside them as an SBI is beside a cue sheet, each file's hashes recorded as a DAT lists them; decompressed back to the folder, file for file. `is_title_folder` tells such a folder, and orers compresses one
 - Added Wii U discs, from a WUD, WUX or ISO, laid out as wux-rs lays out a lossless WUA: each partition's regions stored decrypted, by the disc key and by their titles' keys, the system titles of the update partition included, and encrypted back on read, every 64 KiB of a chain's IV kept so a read starts anywhere; the free space a partition's mastering fills with the region before it a repeat; each region checked at encode to encrypt back. The disc and title keys are kept in the ORE, so reading needs no keys file; writing needs the disc key and the Wii U common key, and the vWii common key for a vWii title to be decrypted

@@ -44,14 +44,7 @@ async fn system_size(
     let sorting = if one_region { "AND g.sorting = 1" } else { "" };
     let error = |e: &dyn std::fmt::Display| format!("failed to compute sizes: {e}");
     if actual {
-        let sql = format!(
-            "SELECT * FROM romfiles AS rf WHERE rf.id IN (
-                 SELECT DISTINCT(r.romfile_id) FROM roms AS r
-                 JOIN games AS g ON r.game_id = g.id
-                 WHERE r.romfile_id IS NOT NULL {sorting} AND g.system_id = {system_id})"
-        );
-        let romfiles: Vec<Romfile> = sqlx::query_as(AssertSqlSafe(sql.as_str()))
-            .fetch_all(&mut *connection)
+        let romfiles = system_romfiles(connection, system_id, one_region)
             .await
             .map_err(|e| error(&e))?;
         return crate::ore::actual_size(connection, &romfiles)
@@ -69,6 +62,26 @@ async fn system_size(
         .await
         .map_err(|e| error(&e))?;
     Ok(row.0)
+}
+
+/// Every romfile of the system's games, with the 1G1R selection or
+/// without it: the files the actual sizes weigh and the store savings
+/// split by game.
+async fn system_romfiles(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+    one_region: bool,
+) -> Result<Vec<Romfile>, sqlx::Error> {
+    let sorting = if one_region { "AND g.sorting = 1" } else { "" };
+    let sql = format!(
+        "SELECT * FROM romfiles AS rf WHERE rf.id IN (
+             SELECT DISTINCT(r.romfile_id) FROM roms AS r
+             JOIN games AS g ON r.game_id = g.id
+             WHERE r.romfile_id IS NOT NULL {sorting} AND g.system_id = {system_id})"
+    );
+    sqlx::query_as(AssertSqlSafe(sql.as_str()))
+        .fetch_all(&mut *connection)
+        .await
 }
 
 /// Build the status payload; shared by the `status` tool and the
@@ -129,7 +142,7 @@ impl OxyromonMcp {
     }
 
     #[tool(
-        description = "One system with its stats: game counts, completion, the expected vs actual size of its imported ROMs, all and 1G1R only, and, when its ROMs live in a readable ORE store, what the store's dedup saved and its parity costs.",
+        description = "One system with its stats: game counts, completion, the expected vs actual size of its imported ROMs, all and 1G1R only, and, when its ROMs live in a readable ORE store, what they saved by its dedup and what its parity costs them — the system's own part, when grouped systems share the store.",
         annotations(read_only_hint = true)
     )]
     async fn get_system(
@@ -144,7 +157,10 @@ impl OxyromonMcp {
                 params.system_id
             )));
         };
-        let stats = crate::ore::system_store_stats(connection, &system).await;
+        let romfiles = system_romfiles(connection, system.id, false)
+            .await
+            .map_err(internal)?;
+        let savings = crate::ore::store_savings(connection, &romfiles).await;
         let detail = SystemDetailOut {
             system: SystemOut::from_system(&system),
             total_original_size: system_size(connection, system.id, false, false)
@@ -159,8 +175,8 @@ impl OxyromonMcp {
             one_region_actual_size: system_size(connection, system.id, true, true)
                 .await
                 .map_err(internal)?,
-            store_dedup_saved: stats.map(|stats| stats.dedup_saved as i64),
-            store_parity_cost: stats.map(|stats| stats.parity as i64),
+            store_dedup_saved: savings.map(|savings| savings.dedup_saved as i64),
+            store_parity_cost: savings.map(|savings| savings.parity as i64),
         };
         Ok(ok_json(&detail))
     }

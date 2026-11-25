@@ -44,22 +44,7 @@ async fn system_size(
             .ok()
             .flatten();
         let mut connection = pool.acquire().await.unwrap();
-        let sql = format!(
-            "
-                SELECT *
-                FROM romfiles AS rf
-                WHERE rf.id IN (
-                    SELECT DISTINCT(r.romfile_id) FROM roms AS r
-                    JOIN games AS g ON r.game_id = g.id
-                    WHERE r.romfile_id IS NOT NULL
-                    {}AND g.system_id = {}
-                );
-            ",
-            sorting, system_id
-        );
-        let romfiles: Vec<Romfile> = sqlx::query_as(AssertSqlSafe(sql.as_str()))
-            .fetch_all(&mut *connection)
-            .await?;
+        let romfiles = system_romfiles(&mut connection, system_id, one_region).await?;
         return Ok(crate::ore::actual_size_loaded(&mut connection, &romfiles, store).await? as i64);
     }
     let mut connection = pool.acquire().await.unwrap();
@@ -79,17 +64,54 @@ async fn system_size(
     Ok(row.0)
 }
 
-/// The advanced stats of the system's ORE store, `None` when it uses none:
-/// what its dedup saved and what its parity costs, read off its index.
-/// Like the sizes, the field asks for the store by system id and asks
-/// first: one request's stats fields share the one index read.
-async fn store_stats_of(ctx: &Context<'_>, system_id: i64) -> Option<ore_rs::StoreStats> {
+/// The romfiles of the system's games, with the 1G1R selection or without
+/// it: the files the actual sizes weigh and the store savings split.
+async fn system_romfiles(
+    connection: &mut sqlx::SqliteConnection,
+    system_id: i64,
+    one_region: bool,
+) -> Result<Vec<Romfile>> {
+    let sorting = if one_region {
+        "AND g.sorting = 1\n                    "
+    } else {
+        ""
+    };
+    let sql = format!(
+        "
+            SELECT *
+            FROM romfiles AS rf
+            WHERE rf.id IN (
+                SELECT DISTINCT(r.romfile_id) FROM roms AS r
+                JOIN games AS g ON r.game_id = g.id
+                WHERE r.romfile_id IS NOT NULL
+                {}AND g.system_id = {}
+            );
+        ",
+        sorting, system_id
+    );
+    Ok(sqlx::query_as(AssertSqlSafe(sql.as_str()))
+        .fetch_all(&mut *connection)
+        .await?)
+}
+
+/// The advanced stats of the system's OREs in their store: what they save
+/// by dedup and what their parity costs, each game paying its own part.
+/// A store shared by grouped systems gives every system its own numbers,
+/// which add up across the group to the store's whole. Like the sizes,
+/// the field asks for the store by system id and asks first: one
+/// request's stats fields share the one index read.
+async fn store_savings_of(ctx: &Context<'_>, system_id: i64) -> Option<ore_rs::Savings> {
     let store = ctx
         .data_unchecked::<DataLoader<StoreIndexLoader>>()
         .load_one(system_id)
         .await
         .ok()?;
-    Some(store?.index.stats())
+    let pool = ctx.data_unchecked::<SqlitePool>();
+    let mut connection = pool.acquire().await.ok()?;
+    let romfiles = system_romfiles(&mut connection, system_id, false)
+        .await
+        .ok()?;
+    crate::ore::store_savings_loaded(&mut connection, &romfiles, store).await
 }
 
 #[ComplexObject]
@@ -530,14 +552,14 @@ impl QueryRoot {
     }
 
     async fn store_dedup_saved(&self, ctx: &Context<'_>, system_id: i64) -> Result<Option<i64>> {
-        Ok(store_stats_of(ctx, system_id)
+        Ok(store_savings_of(ctx, system_id)
             .await
-            .map(|stats| stats.dedup_saved as i64))
+            .map(|savings| savings.dedup_saved as i64))
     }
 
     async fn store_parity_cost(&self, ctx: &Context<'_>, system_id: i64) -> Result<Option<i64>> {
-        Ok(store_stats_of(ctx, system_id)
+        Ok(store_savings_of(ctx, system_id)
             .await
-            .map(|stats| stats.parity as i64))
+            .map(|savings| savings.parity as i64))
     }
 }

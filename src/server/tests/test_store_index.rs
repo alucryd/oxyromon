@@ -55,13 +55,21 @@ async fn test() {
         "the sizes took the preloaded index, not their own read"
     );
 
-    // and the answer is still the store's own
+    // and the answer is the game's own: one game alone in the store, its
+    // chunks shared with nobody — no dedup to save it, and its part of
+    // the parity, the whole footers less the room no game lies in
     let data = response.data.into_json().unwrap();
     let system_directory = env.system_directory(&system).await;
     let store = system_directory.join(ore_rs::STORE_DIR);
     let stats = ore_rs::store_stats(&store).unwrap();
-    assert_eq!(data["storeDedupSaved"], stats.dedup_saved as i64);
-    assert_eq!(data["storeParityCost"], stats.parity as i64);
+    assert_eq!(data["storeDedupSaved"].as_i64().unwrap(), 0);
+    let paid = data["storeParityCost"].as_i64().unwrap();
+    assert!(paid > 0, "the game pays its part of the parity");
+    assert!(
+        (stats.parity as i64 - paid).abs() < stats.parity as i64 / 8,
+        "{paid} against the store's {}",
+        stats.parity
+    );
     assert!(data["totalActualSize"].as_i64().unwrap() > 0);
     assert_eq!(
         data["totalActualSize"], data["oneRegionActualSize"],

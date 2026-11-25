@@ -311,12 +311,18 @@ impl Index {
         Ok(())
     }
 
+    /// What a chunk weighs without the parity of its segment: its part of
+    /// its group's stored bytes, in proportion to its length.
+    pub(crate) fn data_weight(&self, chunk: &Chunk) -> f64 {
+        let group = &self.groups[chunk.group as usize].group;
+        group.stored_len as f64 * chunk.len as f64 / group.logical_len as f64
+    }
+
     /// What a chunk weighs: its part of its group's stored bytes, in
     /// proportion to its length, and of its segment's parity, in
     /// proportion to those.
     pub(crate) fn weight(&self, chunk: &Chunk) -> f64 {
         let at = &self.groups[chunk.group as usize];
-        let group = &at.group;
         // Segments stay in the order of their numbers
         let sealed = self
             .segments
@@ -325,7 +331,7 @@ impl Index {
                 let segment = &self.segments[i];
                 self.file_len(segment) as f64 / segment.len as f64
             });
-        group.stored_len as f64 * chunk.len as f64 / group.logical_len as f64 * sealed
+        self.data_weight(chunk) * sealed
     }
 
     /// The size of a segment's file, sealed.
@@ -671,7 +677,10 @@ pub fn store_stats(store: &Path) -> Result<StoreStats> {
 impl Index {
     /// What the store this is the index of saves by dedup and what its
     /// parity costs, counted off the index alone: what [`store_stats`]
-    /// answers, for a caller that already holds the index.
+    /// answers, for a caller that already holds the index. Summed over the
+    /// store's games, [`Index::savings`] adds up to these: the dedup of
+    /// every game that names a chunk, and the parity paid by the games
+    /// whose chunks lie in each segment.
     pub fn stats(&self) -> StoreStats {
         let mut stored = 0f64;
         let mut dedup_saved = 0f64;
@@ -679,7 +688,9 @@ impl Index {
             let weight = self.weight(chunk);
             stored += weight;
             if chunk.refs > 1 {
-                dedup_saved += weight * (f64::from(chunk.refs - 1) / f64::from(chunk.refs));
+                // Every game past the first would have stored the chunk
+                // again: what refs-1 copies of it weigh
+                dedup_saved += weight * f64::from(chunk.refs - 1);
             }
         }
         let parity = self
