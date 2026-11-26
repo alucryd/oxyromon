@@ -587,8 +587,8 @@ change how the ORE decodes. A cartridge's is one of `32x`, `3ds`, `a2600`,
 `a5200`, `a7800`, `colecovision`, `dsi`, `gb`, `gba`, `gbc`, `gg`, `jaguar`,
 `lynx`, `md`, `n64`, `nds`, `nes`, `ngp`, `ngpc`, `odyssey2`, `pce`,
 `pokemini`, `satellaview`, `sg1000`, `sgx`, `sms`, `snes`, `sufami`, `vb`,
-`ws` and `wsc`; a floppy's, of class 16, one of `amiga`, `fds` and `st`,
-the image an FDS disk's or an IPF as the DAT lists it. A reader SHOULD accept a platform it does not know.
+`ws` and `wsc`; a floppy's, of class 16, one of `amiga`, `fds`, `n64dd` and `st`,
+the image an FDS or a 64DD disk's, its BIOS's, or an IPF as the DAT lists it. A reader SHOULD accept a platform it does not know.
 
 ## 12. Stores
 

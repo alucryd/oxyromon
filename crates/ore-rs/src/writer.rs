@@ -89,7 +89,7 @@ pub const CARTRIDGE_PLATFORMS: [&str; 31] = [
 /// The floppies an image can be named the image of, in
 /// [`Options::platform`]: taken whole as a cartridge's ROM is, as class 16
 /// rather than 17.
-pub const FLOPPY_PLATFORMS: [&str; 3] = ["amiga", "fds", "st"];
+pub const FLOPPY_PLATFORMS: [&str; 4] = ["amiga", "fds", "n64dd", "st"];
 
 /// How much of a raw area is read at a time.
 const WINDOW: u64 = 4 << 20;
