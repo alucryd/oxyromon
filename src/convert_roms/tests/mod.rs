@@ -3,6 +3,10 @@
 pub use super::*;
 
 mod matrix;
+mod test_amiga_disks_ore_recompress;
+mod test_amiga_disks_ore_to_original;
+mod test_amiga_disks_ore_to_sevenzip;
+mod test_amiga_disks_to_ore;
 mod test_chd_children_to_ore_before_parents;
 mod test_chd_parents_to_chd_should_not_touch_parent;
 mod test_chd_parents_to_iso;
@@ -32,6 +36,8 @@ mod test_original_to_zip_multiple_roms;
 mod test_original_to_zip_with_correct_name;
 mod test_original_to_zip_with_incorrect_name;
 mod test_original_to_zip_zstd;
+mod test_sevenzip_amiga_disks_to_ore;
+mod test_sevenzip_amiga_disks_to_ore_store;
 mod test_sevenzip_gb_to_ore;
 mod test_sevenzip_gb_to_ore_store;
 mod test_sevenzip_gb_to_ore_store_run;

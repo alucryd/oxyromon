@@ -79,6 +79,15 @@ fn an_ore_reads_through_an_ingot_as_ore_rs_reads_it() {
     );
     assert_eq!(platform, b"nes\0");
 
+    // The name of the ROM it was written from
+    let mut name = [0u8; 32];
+    let mut len = name.len();
+    assert_eq!(
+        unsafe { smelt_file_name(ingot, name.as_mut_ptr().cast(), &mut len) },
+        SmeltErr::SmeltOk
+    );
+    assert_eq!(&name[..len], b"Game (USA).nes\0");
+
     // Its SHA-1, as ore-rs recorded it, and a hash it did not
     let expected = ore_rs::Reader::open(&ore)
         .unwrap()
@@ -333,5 +342,47 @@ fn a_precached_ingot_reports_its_progress_and_reads_from_ram() {
         (0, 0, 0),
         "no precache, no progress: a frontend that waits anyway waits for nothing"
     );
+    unsafe { smelt_close(ingot) };
+}
+
+#[test]
+fn a_floppys_image_reads_whole_under_its_name() {
+    let dir = TempDir::new().unwrap();
+    let (rom, bytes) = rom(dir.path());
+    let input = dir.path().join("Game (Europe) (Disk 1).ipf");
+    std::fs::rename(&rom, &input).unwrap();
+    let ore = dir.path().join("disk.ore");
+    let amiga = Options {
+        platform: Some("amiga"),
+        ..Options::default()
+    };
+    ore_rs::compress(&input, &ore, &amiga, &[], &mut |_| {}).unwrap();
+    let ingot = open(&ore).unwrap();
+
+    let mut size = 0;
+    assert_eq!(
+        unsafe { smelt_logical_size(ingot, &mut size) },
+        SmeltErr::SmeltOk
+    );
+    assert_eq!(size, bytes.len() as u64);
+    let mut read = vec![0u8; bytes.len()];
+    assert_eq!(
+        unsafe { smelt_read(ingot, 0, read.as_mut_ptr(), read.len()) },
+        SmeltErr::SmeltOk
+    );
+    assert_eq!(read, bytes);
+    let mut text = [0u8; 64];
+    let mut len = text.len();
+    assert_eq!(
+        unsafe { smelt_platform(ingot, text.as_mut_ptr().cast(), &mut len) },
+        SmeltErr::SmeltOk
+    );
+    assert_eq!(&text[..len], b"amiga\0");
+    let mut len = text.len();
+    assert_eq!(
+        unsafe { smelt_file_name(ingot, text.as_mut_ptr().cast(), &mut len) },
+        SmeltErr::SmeltOk
+    );
+    assert_eq!(&text[..len], b"Game (Europe) (Disk 1).ipf\0");
     unsafe { smelt_close(ingot) };
 }

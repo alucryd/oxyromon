@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Commodore - Amiga</name>
+		<description>Commodore - Amiga</description>
+		<version>20261125</version>
+		<date>20261125</date>
+		<author>Maxime Gauduin</author>
+	</header>
+	<game name="Test Game (Europe)">
+		<description>Test Game (Europe)</description>
+		<release name="Test Game (Europe)" region="EUR" />
+		<rom name="Test Game (Europe) (Disk 1).ipf" size="4108" crc="715101a5"
+			md5="09098ae1a5e89be59de19aadb0f3dbd0" sha1="216a8acd6f1ca30986e17f189fcd637cde1d016b" />
+		<rom name="Test Game (Europe) (Disk 2).ipf" size="4108" crc="36a797b2"
+			md5="f19e3784eed5390d110587c3f6840c26" sha1="2d79cac079cef259798ea191800ed1bf872b0487" />
+	</game>
+</datafile>

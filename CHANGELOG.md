@@ -2,6 +2,7 @@
 
 ## Features
 
+- ORE takes floppy images, the Amiga's and the Atari ST's IPFs and the Famicom Disk System's disks, known by their DAT's name and taken whole, as ORE's media class 16; a game of several disks becomes an ORE a disk, from an archive all of them persisted at once, into the store's batch too, loose each as it converts; recompressing, converting back and exporting take every disk of such a game, converting to an archive puts them all in one
 - Systems, games and ROMs tell what they are: each list grew an info modal, a system naming its DAT, completion, sizes and — over a store — the store's weight, what it saves and costs, this system's part of both and the systems it shares it with, a game what the DAT declares against what the disk weighs and, its files being OREs, what it owns, shares and would weigh detached beside its ROMs and their files, and a ROM its hashes and the file it lives in; the statistics card gave up its two store tiles to fit the selection's tiles on one row (#346)
 - A store tells what its tricks cost and save: `check-roms` on one reports its chunk count, what its dedup saved and what its parity costs, a system's info modal shows both beside its store when its ROMs live in one, and MCP's `system-detail` names them beside the four sizes
 - ORE takes 3DS card images, of the 3DS and New 3DS DATs, decrypted or not, trimmed or not, Zstandard by default as for a disc; an eShop DAT's CIAs are left out

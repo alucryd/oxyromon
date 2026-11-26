@@ -16,7 +16,9 @@ Unpublished, and its ABI unstable, until ORE's specification is.
 - **The byte view**: `smelt_open`, `smelt_clone`, `smelt_close`,
   `smelt_logical_size`, `smelt_platform`, `smelt_identity` and
   `smelt_read`, what the ORE holds read as one run of bytes, a CD's tracks
-  end to end. A thin ORE reads through its store, the nearest `.ore-store`
+  end to end, and `smelt_file_name`, the name of a cartridge's ROM or a
+  floppy's image, an Amiga or Atari ST IPF or an FDS disk, as it was
+  written from. A thin ORE reads through its store, the nearest `.ore-store`
   up from its folder; one away from it is `SMELT_ERR_MISSING_STORE`.
 - **The drive view**, for a CD: `smelt_track_count` and `smelt_track_at`,
   each track's number, mode, LBA, the pregap its file holds, its length,

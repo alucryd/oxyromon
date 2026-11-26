@@ -7,6 +7,7 @@
 
 ## Features
 
+- Added floppies' images, media class 16 `rom-flat`: an image named one of `FLOPPY_PLATFORMS`, `amiga`, `fds` or `st`, by `Options::platform` or `--platform`, an FDS disk's or an IPF, taken whole as a cartridge's ROM is; a `rom-flat.ore` vector among the conformance vectors
 - Added `Reader::title_files` and `Reader::ticket`: a Wii U eShop title's files, each its name and where it lies in the byte view, and its ticket, so a reader gives a file of the title without writing the folder out
 - Added `Index` among the exports, a store's index as a value: `Index::load` reads one from a store, and its `stats` and `shares` answer from what is already read what `store_stats` and `shares` answer from the store's path, so a caller that asks the same store many times parses it once
 - Added `store_stats`, what a store's tricks get it and what they cost it: its distinct chunks and what they weigh where they lie, the bytes its dedup kept from being stored twice, and the footers of parity over its segments, all read off its index alone, no data

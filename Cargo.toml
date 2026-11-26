@@ -185,6 +185,13 @@ opt-level = 3
 [profile.dev]
 opt-level = 2
 
+# ... but not oxyromon itself: its tests spend their time in the codecs and
+# in I/O, and optimising its own code saves them nothing (508 tests in 25 s at
+# opt-level 2, 26 s at 0) while costing a full rebuild 1,540 s instead of 63,
+# and an incremental one 39 s instead of 9.
+[profile.dev.package.oxyromon]
+opt-level = 0
+
 [profile.release]
 lto = "thin"
 strip = true

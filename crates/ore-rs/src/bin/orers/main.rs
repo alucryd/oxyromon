@@ -6,6 +6,7 @@ mod ui;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
+use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command, value_parser};
 use ore_rs::{Codec, Options, Profile, StoreBatch};
 
@@ -56,8 +57,8 @@ fn cli() -> Command {
         .arg(
             Arg::new("platform")
                 .long("platform")
-                .help("Cartridge the inputs are ROMs of, taken whole, their headers not checked [default: recognised by their headers]")
-                .value_parser(ore_rs::CARTRIDGE_PLATFORMS),
+                .help("Cartridge the inputs are ROMs of, or floppy they are images of, taken whole, their headers not checked [default: recognised by their headers]")
+                .value_parser(PossibleValuesParser::new(platforms())),
         )
         .arg(
             Arg::new("store")
@@ -325,12 +326,17 @@ fn store(input: &Path, matches: &ArgMatches, options: &Options) -> Result<String
     Ok(message)
 }
 
+/// The platforms an input can be named: cartridges, then floppies.
+fn platforms() -> impl Iterator<Item = &'static str> {
+    ore_rs::CARTRIDGE_PLATFORMS
+        .into_iter()
+        .chain(ore_rs::FLOPPY_PLATFORMS)
+}
+
 fn options(matches: &ArgMatches, input: &Path) -> Options {
-    let platform = matches.get_one::<String>("platform").and_then(|name| {
-        ore_rs::CARTRIDGE_PLATFORMS
-            .into_iter()
-            .find(|known| known == name)
-    });
+    let platform = matches
+        .get_one::<String>("platform")
+        .and_then(|name| platforms().find(|known| known == name));
     Options {
         profile: match matches.get_one::<String>("profile").unwrap().as_str() {
             "archive" => Profile::Archive,

@@ -8,8 +8,8 @@ use super::mimetype::*;
 use super::model::*;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
 use super::ore::{
-    AsOre, OreCompressionAlgorithm, OreProfile, OreRomfile, StoreSink, ToOre, cartridge_platform,
-    store_settings_system_id, sync_store, wiiu_to_ore,
+    AsOre, OreCompressionAlgorithm, OreProfile, OreRomfile, StoreSink, ToOre, by_ore,
+    cartridge_platform, store_settings_system_id, sync_store, wiiu_to_ore,
 };
 use super::progress::*;
 use super::prompt::*;
@@ -983,8 +983,33 @@ async fn to_archive(
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         let ore_romfile = romfile.as_common(&mut transaction).await?.as_ore()?;
         let directory = ore_romfile.romfile.path.parent().unwrap();
+        // the game's other OREs, a disk each, for a game of several
+        let mut others: Vec<(i64, OreRomfile)> = Vec::new();
+        let mut mixed = false;
+        for other in roms {
+            let id = other.romfile_id.unwrap();
+            if id != romfile.id && !others.iter().any(|(known, _)| *known == id) {
+                let other = romfiles_by_id.get(&id).unwrap();
+                // a disk not converted yet, as a run that failed leaves it
+                mixed |= !other.path.ends_with(ORE_EXTENSION);
+                if !mixed {
+                    others.push((id, other.as_common(&mut transaction).await?.as_ore()?));
+                }
+            }
+        }
+        if mixed || !others.is_empty() && !ore_romfile.is_rom()? {
+            print_skip(
+                progress_bar,
+                &format!(
+                    "\"{}\" is a game of several files, not all of them ROMs' OREs, skipping",
+                    game.name
+                ),
+            );
+            continue;
+        }
 
-        // a CD's cue sheet and tracks, each ROM's file; a disc image's ISO
+        // a CD's cue sheet and tracks, each ROM's file, each disk's of a game
+        // of several; a disc image's ISO
         let files: Vec<(CommonRomfile, &Rom)> = if ore_romfile.is_cd()? {
             let cue_name = roms
                 .iter()
@@ -995,10 +1020,19 @@ async fn to_archive(
                 .await?;
             files_for_roms(cue_bin_romfile, roms)?
         } else if ore_romfile.is_rom()? {
-            let rom_romfile = ore_romfile
-                .to_rom(progress_bar, &tmp_directory.path(), &rom.name)
-                .await?;
-            vec![(rom_romfile, rom)]
+            let mut files = Vec::new();
+            for rom in roms {
+                let ore = match others.iter().find(|(id, _)| rom.romfile_id == Some(*id)) {
+                    Some((_, other)) => other,
+                    None => &ore_romfile,
+                };
+                files.push((
+                    ore.to_rom(progress_bar, &tmp_directory.path(), &rom.name)
+                        .await?,
+                    rom,
+                ));
+            }
+            files
         } else {
             let iso_romfile = ore_romfile
                 .to_iso(progress_bar, &tmp_directory.path())
@@ -1052,16 +1086,26 @@ async fn to_archive(
             .await?;
 
         if diff {
+            let mut sources = vec![&ore_romfile.romfile];
+            sources.extend(others.iter().map(|(_, other)| &other.romfile));
             print_diff(
                 &mut transaction,
                 progress_bar,
                 &roms.iter().collect::<Vec<&Rom>>(),
-                &[&ore_romfile.romfile],
+                &sources,
                 &[archive_romfile],
             )
             .await?;
         }
 
+        // every disk's ROM in the one archive, the other OREs' romfiles gone
+        for (id, other) in &others {
+            for rom in roms.iter().filter(|rom| rom.romfile_id == Some(*id)) {
+                update_rom_romfile(&mut transaction, rom.id, Some(romfile.id)).await;
+            }
+            delete_romfile_by_id(&mut transaction, *id).await;
+            other.romfile.delete(progress_bar, false).await?;
+        }
         ore_romfile.romfile.delete(progress_bar, false).await?;
 
         commit_transaction(transaction).await;
@@ -2792,6 +2836,7 @@ async fn to_ore(
 
     // partition OREs
     let (ores, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ORE_EXTENSION]);
+    let ores = by_ore(ores, &romfiles_by_id);
 
     // partition Wii U WUXs and WUAs
     let (wuxs, others) =
@@ -2863,6 +2908,77 @@ async fn to_ore(
             }
             continue;
         }
+        // a game of several disks, of a system ore-rs takes whole: an ORE a
+        // disk, all of them persisted at once
+        if roms.len() > 1 && platform.is_some() {
+            let tmp_directory = create_tmp_directory(connection).await?;
+            let mut transaction = begin_transaction(connection).await;
+            let mut disks = Vec::new();
+            let mut sources: Vec<(i64, CommonRomfile)> = Vec::new();
+            let written: Result<()> = async {
+                for rom in roms {
+                    let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                    let decoded = archive_to_common(
+                        &mut transaction,
+                        progress_bar,
+                        rom,
+                        romfile,
+                        &tmp_directory,
+                    )
+                    .await?;
+                    let destination = decoded.source.path.parent().unwrap().to_path_buf();
+                    let ore_romfile = decoded
+                        .inner
+                        .to_ore_rom(
+                            progress_bar,
+                            &destination,
+                            compression_algorithm,
+                            profile,
+                            platform,
+                            sink.as_deref_mut(),
+                        )
+                        .await?;
+                    disks.push((rom, ore_romfile));
+                    if !sources.iter().any(|(id, _)| *id == romfile.id) {
+                        sources.push((romfile.id, decoded.source));
+                    }
+                }
+                Ok(())
+            }
+            .await;
+            if let Err(error) = written {
+                // the disks already written, standalone, would be left beside
+                // the archive; a store's land only once committed
+                if sink.is_none() {
+                    for (_, ore) in &disks {
+                        ore.romfile.delete(progress_bar, false).await?;
+                    }
+                }
+                return Err(error);
+            }
+            if let Some(sink) = sink.as_deref_mut() {
+                drop(transaction);
+                pending.push(Pending::Disks { disks, sources });
+                if sink.per_game {
+                    persist_pending(connection, progress_bar, sink, &mut pending, check, diff)
+                        .await?;
+                }
+                continue;
+            }
+            if persist_disks(
+                &mut transaction,
+                progress_bar,
+                &disks,
+                &sources,
+                check,
+                diff,
+            )
+            .await?
+            {
+                commit_transaction(transaction).await;
+            }
+            continue;
+        }
         let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
             .iter()
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
@@ -2912,7 +3028,7 @@ async fn to_ore(
             };
             if let Some(sink) = sink.as_deref_mut() {
                 drop(transaction);
-                pending.push(Pending {
+                pending.push(Pending::Game {
                     roms: roms.iter().collect(),
                     source: decoded.source,
                     ore: ore_romfile,
@@ -3056,7 +3172,7 @@ async fn to_ore(
         };
         if let Some(sink) = sink.as_deref_mut() {
             drop(transaction);
-            pending.push(Pending {
+            pending.push(Pending::Game {
                 roms: roms.iter().collect(),
                 source: decoded.source,
                 ore: ore_romfile,
@@ -3109,7 +3225,7 @@ async fn to_ore(
         };
         if let Some(sink) = sink.as_deref_mut() {
             drop(transaction);
-            pending.push(Pending {
+            pending.push(Pending::Game {
                 roms: roms.iter().collect(),
                 source: decoded.source,
                 ore: ore_romfile,
@@ -3138,12 +3254,14 @@ async fn to_ore(
     }
 
     // convert cartridges' ROMs
-    for roms in cartridges.values() {
-        if roms.len() != 1 {
-            continue;
-        }
+    // a game of several disks, of a system ore-rs takes whole, an ORE a disk
+    let loose: Vec<&Rom> = cartridges
+        .values()
+        .filter(|roms| roms.len() == 1 || platform.is_some())
+        .flatten()
+        .collect();
+    for rom in loose {
         let mut transaction = begin_transaction(connection).await;
-        let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         let decoded = common_as_source(&mut transaction, romfile).await?;
         let Some(ore_romfile) = skip_unsupported(
@@ -3165,8 +3283,8 @@ async fn to_ore(
         };
         if let Some(sink) = sink.as_deref_mut() {
             drop(transaction);
-            pending.push(Pending {
-                roms: roms.iter().collect(),
+            pending.push(Pending::Game {
+                roms: vec![rom],
                 source: decoded.source,
                 ore: ore_romfile,
                 romfile_id: romfile.id,
@@ -3223,7 +3341,7 @@ async fn to_ore(
         .await?;
         if let Some(sink) = sink.as_deref_mut() {
             drop(transaction);
-            pending.push(Pending {
+            pending.push(Pending::Game {
                 roms: roms.iter().collect(),
                 source,
                 ore: ore_romfile,
@@ -3519,12 +3637,18 @@ async fn to_ore(
 }
 
 /// A game written into the store, checked and persisted once its batch is
-/// committed.
-struct Pending<'a> {
-    roms: Vec<&'a Rom>,
-    source: CommonRomfile,
-    ore: OreRomfile,
-    romfile_id: i64,
+/// committed: its ORE, or a game of several disks, an ORE a disk.
+enum Pending<'a> {
+    Game {
+        roms: Vec<&'a Rom>,
+        source: CommonRomfile,
+        ore: OreRomfile,
+        romfile_id: i64,
+    },
+    Disks {
+        disks: Vec<(&'a Rom, OreRomfile)>,
+        sources: Vec<(i64, CommonRomfile)>,
+    },
 }
 
 /// Commit `sink`, landing the thin OREs of `pending`, then check and
@@ -3540,23 +3664,96 @@ async fn persist_pending(
     sink.commit(progress_bar).await?;
     for game in pending.drain(..) {
         let mut transaction = begin_transaction(connection).await;
-        if check_and_persist(
-            &mut transaction,
-            progress_bar,
-            &game.roms,
-            &game.source,
-            &game.ore,
-            game.romfile_id,
-            check,
-            diff,
-            false,
-        )
-        .await?
-        {
+        let persisted = match game {
+            Pending::Game {
+                roms,
+                source,
+                ore,
+                romfile_id,
+            } => {
+                check_and_persist(
+                    &mut transaction,
+                    progress_bar,
+                    &roms,
+                    &source,
+                    &ore,
+                    romfile_id,
+                    check,
+                    diff,
+                    false,
+                )
+                .await?
+            }
+            Pending::Disks { disks, sources } => {
+                persist_disks(
+                    &mut transaction,
+                    progress_bar,
+                    &disks,
+                    &sources,
+                    check,
+                    diff,
+                )
+                .await?
+            }
+        };
+        if persisted {
             commit_transaction(transaction).await;
         }
     }
     Ok(())
+}
+
+/// A game of several disks from its archives `sources`, an ORE a disk:
+/// each ORE its own romfile, the archives dropped once every disk is in,
+/// or none of it when a disk fails its check.
+async fn persist_disks(
+    transaction: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    disks: &[(&Rom, OreRomfile)],
+    sources: &[(i64, CommonRomfile)],
+    check: bool,
+    diff: bool,
+) -> Result<bool> {
+    if check {
+        for (rom, ore) in disks {
+            if ore
+                .check(transaction, progress_bar, &None, &[*rom])
+                .await
+                .is_err()
+            {
+                print_error(progress_bar, "Integrity check failed, reverting conversion");
+                for (_, ore) in disks {
+                    ore.romfile.delete(progress_bar, false).await?;
+                }
+                return Ok(false);
+            }
+        }
+    }
+    if diff {
+        print_diff(
+            transaction,
+            progress_bar,
+            &disks.iter().map(|(rom, _)| *rom).collect::<Vec<_>>(),
+            &sources.iter().map(|(_, source)| source).collect::<Vec<_>>(),
+            &disks
+                .iter()
+                .map(|(_, ore)| &ore.romfile)
+                .collect::<Vec<_>>(),
+        )
+        .await?;
+    }
+    for (rom, ore) in disks {
+        let ore_romfile_id = ore
+            .romfile
+            .create(transaction, progress_bar, RomfileType::Romfile)
+            .await?;
+        update_rom_romfile(transaction, rom.id, Some(ore_romfile_id)).await;
+    }
+    for (romfile_id, source) in sources {
+        delete_romfile_by_id(transaction, *romfile_id).await;
+        source.delete(progress_bar, false).await?;
+    }
+    Ok(true)
 }
 
 /// A Wii U title's NUS `folder` into an ORE in `destination_directory`;
@@ -3889,6 +4086,7 @@ async fn to_original(
 
     // partition OREs
     let (ores, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ORE_EXTENSION]);
+    let ores = by_ore(ores, &romfiles_by_id);
 
     // partition RVZs
     let (rvzs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[RVZ_EXTENSION]);

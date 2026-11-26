@@ -15,6 +15,7 @@ use super::progress::*;
 use super::query::StoreIndex;
 use super::util::*;
 use anyhow::{Context, Result, bail};
+use indexmap::IndexMap;
 use indicatif::{HumanBytes, ProgressBar};
 use ore_rs::{Codec, Options, Profile, Reader, StoreBatch, StoreOptions};
 use sqlx::SqliteConnection;
@@ -485,9 +486,26 @@ impl CommonRomfile {
     }
 }
 
-/// The cartridge platform ore-rs knows a system's ROMs as, by its DAT's
-/// name, any suffix such as `(Headered)` aside: its ROMs are then taken
-/// whole, the DAT vouching for them, whether or not they carry a header.
+/// The ROMs of `games` by the ORE they are in, so that a game of several
+/// disks, an ORE a disk, is taken a disk at a time; a disk not converted
+/// yet, as a failed run leaves it, is left out.
+pub fn by_ore(
+    games: IndexMap<i64, Vec<Rom>>,
+    romfiles_by_id: &HashMap<i64, Romfile>,
+) -> IndexMap<i64, Vec<Rom>> {
+    let mut ores: IndexMap<i64, Vec<Rom>> = IndexMap::new();
+    for rom in games.into_values().flatten() {
+        let id = rom.romfile_id.unwrap();
+        if romfiles_by_id[&id].path.ends_with(ORE_EXTENSION) {
+            ores.entry(id).or_default().push(rom);
+        }
+    }
+    ores
+}
+
+/// The cartridge or floppy platform ore-rs knows a system's ROMs as, by
+/// its DAT's name, any suffix such as `(Headered)` aside: its ROMs are then
+/// taken whole, a game of several disks an ORE a disk, the DAT vouching for them, whether or not they carry a header.
 pub fn cartridge_platform(system: &System) -> Option<&'static str> {
     let name = system.name.split(" (").next().unwrap_or_default();
     Some(match name {
@@ -496,12 +514,15 @@ pub fn cartridge_platform(system: &System) -> Option<&'static str> {
         "Atari - Atari 7800" | "Atari - 7800" => "a7800",
         "Atari - Atari Jaguar" | "Atari - Jaguar" => "jaguar",
         "Atari - Atari Lynx" | "Atari - Lynx" => "lynx",
+        "Atari - Atari ST" | "Atari - ST" => "st",
         "Bandai - WonderSwan" => "ws",
         "Bandai - WonderSwan Color" => "wsc",
         "Coleco - ColecoVision" => "colecovision",
+        "Commodore - Amiga" => "amiga",
         "Magnavox - Odyssey 2" | "Magnavox - Odyssey2" => "odyssey2",
         "NEC - PC Engine - TurboGrafx-16" | "NEC - PC Engine - TurboGrafx 16" => "pce",
         "NEC - PC Engine SuperGrafx" => "sgx",
+        "Nintendo - Family Computer Disk System" => "fds",
         "Nintendo - Game Boy" => "gb",
         "Nintendo - Game Boy Advance" => "gba",
         "Nintendo - Game Boy Color" => "gbc",

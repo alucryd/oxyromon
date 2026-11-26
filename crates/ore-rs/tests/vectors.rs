@@ -802,6 +802,20 @@ mod write {
             &rom,
             &image("Vector.nes", &rom),
         );
+        // A floppy's image, taken whole as a cartridge's ROM is
+        let input = tmp.join("Vector.fds");
+        std::fs::write(&input, &rom).unwrap();
+        let fds = Options {
+            platform: Some("fds"),
+            ..Options::default()
+        };
+        v.compress(&input, "rom-flat.ore", &fds, &[]);
+        v.ok(
+            "rom-flat.ore",
+            "class 16, a floppy's image",
+            &rom,
+            &image("Vector.fds", &rom),
+        );
 
         // A GameCube disc's padding, and a Wii partition's hashes
         let disc = gcwii::gamecube_disc(0x200000);

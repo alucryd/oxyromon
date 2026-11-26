@@ -4,6 +4,8 @@ vector	rom-zstd.ore	ok	524288	db3fc64a4a29a0a89feb7df1e718971cc37e0b4086f0384580
 file	rom-zstd.ore	Vector.gb	524288	d2131bc89c3e469664c48d3a58c0fc082e42f518
 vector	rom-lzma2.ore	ok	524288	db3fc64a4a29a0a89feb7df1e718971cc37e0b4086f0384580f412a4edca233b	class 17, lzma2, archive profile
 file	rom-lzma2.ore	Vector.nes	524288	d2131bc89c3e469664c48d3a58c0fc082e42f518
+vector	rom-flat.ore	ok	524288	db3fc64a4a29a0a89feb7df1e718971cc37e0b4086f0384580f412a4edca233b	class 16, a floppy's image
+file	rom-flat.ore	Vector.fds	524288	d2131bc89c3e469664c48d3a58c0fc082e42f518
 vector	gamecube.ore	ok	2097152	fdd33d5f4ce0520eff9c864041295b2258368e2a16dfe41b90c0b51d02ce42d6	class 64, gc-wii-filler-prng
 file	gamecube.ore	Vector (GameCube).iso	2097152	aa27cdeb8f5d84093ce8a62da4c5c9fc33fa919d
 vector	wii.ore	ok	6029312	47fb1d3815abdc456c47bdffe49c187310631eff4d91f794e359b36b013b299c	class 64, wii-partition, a hash exception

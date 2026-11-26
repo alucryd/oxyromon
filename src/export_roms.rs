@@ -8,7 +8,7 @@ use super::gdi::*;
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
-use super::ore::{AsOre, export_ore, ore_to_files};
+use super::ore::{AsOre, by_ore, export_ore, ore_to_files};
 use super::progress::*;
 use super::prompt::*;
 use super::rvz::{AsRvz, RvzCompressionAlgorithm, ToRvz};
@@ -430,6 +430,7 @@ async fn to_archive(
     // partition OREs
     let (ores, roms_by_game_id) =
         partition_games_by_extensions(roms_by_game_id, &romfiles_by_id, &[ORE_EXTENSION]);
+    let ores = by_ore(ores, &romfiles_by_id);
 
     // partition archives
     let (archives, roms_by_game_id) = partition_games_by_extensions(
@@ -838,7 +839,7 @@ async fn to_chd(
         if ore.is_rom()? {
             print_skip(
                 progress_bar,
-                &format!("\"{}\" is a cartridge's ROM", ore.romfile),
+                &format!("\"{}\" is a ROM or a floppy's image", ore.romfile),
             );
             continue;
         }
@@ -2036,6 +2037,7 @@ async fn to_original(
 
     // partition OREs
     let (ores, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ORE_EXTENSION]);
+    let ores = by_ore(ores, &romfiles_by_id);
 
     // export OREs, as the files they hold
     for roms in ores.values() {
