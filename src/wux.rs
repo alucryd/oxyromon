@@ -802,6 +802,20 @@ fn ticket_version(name: &str) -> Option<u16> {
     name.strip_prefix("cetk.")?.parse().ok()
 }
 
+/// The file `name` of the title the ORE at `path` holds, read through its
+/// store if it is thin.
+fn ore_title_file(path: &Path, name: &str) -> Result<Vec<u8>> {
+    let mut reader = ore_rs::Reader::open(path)?;
+    let (_, start, len) = reader
+        .title_files()?
+        .into_iter()
+        .find(|(file, ..)| file == name)
+        .with_context(|| format!("\"{name}\" is not in \"{}\"", path.display()))?;
+    let mut bytes = vec![0; len as usize];
+    reader.read_at(start, &mut bytes)?;
+    Ok(bytes)
+}
+
 /// Recompute the completion of a system's NUS titles whose DAT entry spans
 /// several versions, as No-Intro's CDN DAT lists them: each version's TMD, and
 /// every content any of them used. Nintendo's servers deliver the newest
@@ -839,11 +853,12 @@ pub async fn update_nus_games_completion(
             .as_common(connection)
             .await?
             .path;
-        let tmd = match tokio::fs::read(&path)
-            .await
-            .map_err(anyhow::Error::from)
-            .and_then(|bytes| Ok(wux_rs::parse_tmd(&bytes)?))
-        {
+        // A title converted to ORE holds its TMD among its files
+        let bytes = match has_extension(&path, ORE_EXTENSION) {
+            true => ore_title_file(&path, &newest.name),
+            false => tokio::fs::read(&path).await.map_err(anyhow::Error::from),
+        };
+        let tmd = match bytes.and_then(|bytes| Ok(wux_rs::parse_tmd(&bytes)?)) {
             Ok(tmd) => tmd,
             Err(e) => {
                 print_warning(
