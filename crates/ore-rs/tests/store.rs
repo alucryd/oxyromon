@@ -134,7 +134,8 @@ fn a_loaded_index_answers_for_its_store() {
     let b = library.add("1G1R/b.ore", &discs[1], &[]);
 
     // the index read once answers, alone, what the store answers to
-    // whoever loads it afresh: the same stats, the same shares
+    // whoever loads it afresh: the same stats, the same shares, the same
+    // full sizes
     let index = ore_rs::Index::load(&library.store).unwrap();
     assert_eq!(index.stats(), ore_rs::store_stats(&library.store).unwrap());
     let paths = [a.as_path(), b.as_path()];
@@ -142,6 +143,42 @@ fn a_loaded_index_answers_for_its_store() {
         index.shares(&paths),
         ore_rs::shares(&library.store, &paths).unwrap()
     );
+    let sizes = index.game_sizes(&paths);
+    assert_eq!(sizes, ore_rs::game_sizes(&library.store, &paths).unwrap());
+    for size in sizes.into_iter().map(Option::unwrap) {
+        assert_eq!(size.uncompressed, 0x580000);
+        assert!(size.own > 0 && size.own < size.share && size.share < size.standalone);
+    }
+
+    // A standalone ORE, weighed beside the thin ones: it classes on its
+    // own, no index serves it, and its file is its whole weight
+    let alone_iso = library.root.join("alone.iso");
+    let alone = library.root.join("alone.ore");
+    write(&alone_iso, &discs[0]);
+    ore_rs::compress(
+        &alone_iso,
+        &alone,
+        &ore_rs::Options::default(),
+        &[],
+        &mut |_| {},
+    )
+    .unwrap();
+    let mixed = [a.as_path(), b.as_path(), alone.as_path()];
+    let weights = ore_rs::ore_weights(&mixed);
+    assert!(matches!(weights[2], ore_rs::OreWeight::Standalone));
+    let empty = ore_rs::Index::weighed_sizes(&mixed, &weights, &[]);
+    assert!(empty[0].is_none() && empty[1].is_none());
+    let alone_sizes = empty[2].unwrap();
+    assert_eq!(alone_sizes.own, len(&alone));
+    assert_eq!(alone_sizes.share, len(&alone));
+    assert_eq!(alone_sizes.standalone, len(&alone));
+    // the same pass, with the index in hand, answers every file at once
+    let served = ore_rs::Index::weighed_sizes(&mixed, &weights, &[&index]);
+    assert_eq!(
+        served[..2],
+        index.game_sizes(&[a.as_path(), b.as_path()])[..]
+    );
+    assert_eq!(served[2], Some(alone_sizes));
 }
 
 #[test]
@@ -190,6 +227,64 @@ fn store_stats_tell_the_dedup_from_the_parity() {
         (shares - files).abs_diff(both.stored) < 0x400,
         "{shares} less {files} against {}",
         both.stored
+    );
+}
+
+#[test]
+fn the_store_stats_add_up_over_the_games() {
+    let library = Library::new(&StoreOptions::default());
+    let discs = discs();
+    let a = library.add("first-system/a.ore", &discs[0], &[]);
+    let b = library.add("second-system/b.ore", &discs[1], &[]);
+    // A copy of a, as an update shared between systems names: its chunks
+    // count for three games where b's private ones count for one
+    let c = library.add("second-system/c.ore", &discs[0], &[]);
+    let index = ore_rs::Index::load(&library.store).unwrap();
+    let stats = index.stats();
+
+    let savings = index.savings(&[a.as_path(), b.as_path(), c.as_path()]);
+    let (a, b, c) = (
+        savings[0].unwrap(),
+        savings[1].unwrap(),
+        savings[2].unwrap(),
+    );
+
+    // The dedup saved over the games is what the store says it saved, to
+    // the rounding of the shares: every game past the first owes a copy
+    let saved = a.dedup_saved + b.dedup_saved + c.dedup_saved;
+    assert!(
+        saved.abs_diff(stats.dedup_saved) < 0x400,
+        "{saved} against {}",
+        stats.dedup_saved
+    );
+    // And the parity they paid totals the footers, give or take the
+    // envelope headers and the last segment's unused room: nobody's game
+    // lies in those, so the games' sum falls just short of the store's
+    let paid = a.parity + b.parity + c.parity;
+    assert!(paid > 0, "the store has parity and the games pay it");
+    assert!(
+        paid.abs_diff(stats.parity) < stats.parity / 8,
+        "{paid} against {}",
+        stats.parity
+    );
+    // Two copies of one disc pay exactly the same
+    assert_eq!(a, c);
+    // And a different disc pays differently: a's private chunks are shared
+    // with c and save it, b's are its own alone — the two systems' tiles
+    // are their own numbers, not the store's shown twice
+    assert_ne!(a, b);
+    assert!(a.dedup_saved > b.dedup_saved);
+    // A standalone ORE saves nothing and pays nothing of this store's
+    let iso = library.root.join("in.iso");
+    write(&iso, &discs[1]);
+    let alone = library.root.join("standalone.ore");
+    ore_rs::compress(&iso, &alone, &Options::default(), &[], &mut |_| {}).unwrap();
+    assert_eq!(
+        index.savings(&[alone.as_path()])[0],
+        Some(ore_rs::Savings {
+            dedup_saved: 0,
+            parity: 0
+        })
     );
 }
 
@@ -330,6 +425,76 @@ fn purging_a_game_keeps_the_others() {
 }
 
 #[test]
+fn rewriting_a_game_keeps_its_share_true() {
+    let library = Library::new(&StoreOptions::default());
+    let discs = discs();
+    library.add("a.ore", &discs[0], &[]);
+    let b = library.add("1G1R/b.ore", &discs[1], &[]);
+    let before = ore_rs::store_stats(&library.store).unwrap();
+    // Written again over itself, as recompressing a game does: the old
+    // thin ORE's references go with the copy it replaces
+    let a = library.add("a.ore", &discs[0], &[]);
+    check(&a, &discs[0]);
+    check(&b, &discs[1]);
+
+    // The shares still add up to the store: the chunks a names twice are
+    // still only its game's once
+    let sizes = [&a, &b].map(|ore| Reader::open(ore).unwrap().sizes());
+    let shares: u64 = sizes.iter().map(|size| size.share).sum();
+    let store = library.store_size();
+    let files = len(&a) + len(&b);
+    assert!(
+        shares.abs_diff(store + files) < 0x400,
+        "{shares} against {store} + {files}"
+    );
+    // and the rewrite left no references behind: the same chunks, shared
+    // by no more games than they were
+    let after = ore_rs::store_stats(&library.store).unwrap();
+    assert_eq!(after.chunks, before.chunks);
+    assert_eq!(after.stored, before.stored);
+    assert_eq!(after.dedup_saved, before.dedup_saved);
+}
+
+#[test]
+fn recount_gives_back_the_refs_a_removal_leaves() {
+    let library = Library::new(&StoreOptions::default());
+    let discs = discs();
+    let a = library.add("a.ore", &discs[0], &[]);
+    let b = library.add("1G1R/b.ore", &discs[1], &[]);
+
+    // A game leaves and nothing tells the store: the chunks it shared keep
+    // counting it, and b's share says half the truth
+    std::fs::remove_file(&a).unwrap();
+    let lied = Reader::open(&b).unwrap().sizes();
+
+    // A recount, segments untouched, finds the one game there is and b's
+    // share stops lying: the chunks they shared count for b whole
+    assert_eq!(ore_rs::recount(&library.store).unwrap(), 1);
+    let truth = Reader::open(&b).unwrap().sizes();
+    assert!(
+        truth.share > lied.share,
+        "{} against {}",
+        truth.share,
+        lied.share
+    );
+    // The recount also knows what is dead, so a compaction takes a's
+    // private file out and b's share is the store's whole
+    let compacted =
+        ore_rs::compact(&library.store, &Options::default(), 0.0, false, &mut |_| {}).unwrap();
+    assert_eq!(compacted.games, 1);
+    let store = library.store_size();
+    let sizes = Reader::open(&b).unwrap().sizes();
+    assert!(
+        sizes.share.abs_diff(store + len(&b)) < 0x400,
+        "{} against {} + {}",
+        sizes.share,
+        store,
+        len(&b)
+    );
+    check(&b, &discs[1]);
+}
+
+#[test]
 fn a_game_that_cannot_be_read_stops_a_compaction() {
     let library = Library::new(&StoreOptions::default());
     let ore = library.add("a.ore", &discs()[0], &[]);
@@ -340,6 +505,42 @@ fn a_game_that_cannot_be_read_stops_a_compaction() {
     let before = library.store_size();
     assert!(ore_rs::compact(&library.store, &Options::default(), 0.0, false, &mut |_| {}).is_err());
     assert_eq!(library.store_size(), before);
+}
+
+#[test]
+fn a_corrupt_game_in_the_trash_does_not_stop_a_recount() {
+    let library = Library::new(&StoreOptions::default());
+    let discs = discs();
+    let a = library.add("a.ore", &discs[0], &[]);
+    let b = library.add("1G1R/b.ore", &discs[1], &[]);
+
+    // The shape a failed check leaves behind: a corrupt thin ORE, magic
+    // intact and body unreadable, moved to the Trash beneath the walk
+    // root of the recount that follows it.
+    let mut bytes = std::fs::read(&a).unwrap();
+    let meta = u64::from_be_bytes(bytes[72..80].try_into().unwrap()) as usize;
+    bytes[meta + 3] ^= 0x40;
+    let trash = library.store.parent().unwrap().join("Trash");
+    std::fs::create_dir(&trash).unwrap();
+    std::fs::write(trash.join("a.ore"), &bytes).unwrap();
+    std::fs::remove_file(&a).unwrap();
+
+    // A game the store still counts for two, but no recount will ever see
+    let lied = Reader::open(&b).unwrap().sizes();
+    // The recount skips the corrupt file, counts the one game the store
+    // really has, and b's share stops being halved for a game in the Trash
+    assert_eq!(ore_rs::recount(&library.store).unwrap(), 1);
+    let truth = Reader::open(&b).unwrap().sizes();
+    assert!(
+        truth.share > lied.share,
+        "{} against {}",
+        truth.share,
+        lied.share
+    );
+    check(&b, &discs[1]);
+    // A compaction still refuses to rewrite the store on counts that
+    // skipped a file: the corrupt ORE must be purged first.
+    assert!(ore_rs::compact(&library.store, &Options::default(), 0.0, false, &mut |_| {}).is_err());
 }
 
 #[test]

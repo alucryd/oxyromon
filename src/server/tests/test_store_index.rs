@@ -55,13 +55,29 @@ async fn test() {
         "the sizes took the preloaded index, not their own read"
     );
 
-    // and the answer is still the store's own
+    // and the two stats fields shared one walk: the savings were computed
+    // once for the request, not once per field
+    assert_eq!(
+        counted.walks(),
+        1,
+        "the two stats fields ask for one walk of the system's OREs"
+    );
+
+    // and the answer is the game's own: one game alone in the store, its
+    // chunks shared with nobody — no dedup to save it, and its part of
+    // the parity, the whole footers less the room no game lies in
     let data = response.data.into_json().unwrap();
     let system_directory = env.system_directory(&system).await;
     let store = system_directory.join(ore_rs::STORE_DIR);
     let stats = ore_rs::store_stats(&store).unwrap();
-    assert_eq!(data["storeDedupSaved"], stats.dedup_saved as i64);
-    assert_eq!(data["storeParityCost"], stats.parity as i64);
+    assert_eq!(data["storeDedupSaved"].as_i64().unwrap(), 0);
+    let paid = data["storeParityCost"].as_i64().unwrap();
+    assert!(paid > 0, "the game pays its part of the parity");
+    assert!(
+        (stats.parity as i64 - paid).abs() < stats.parity as i64 / 8,
+        "{paid} against the store's {}",
+        stats.parity
+    );
     assert!(data["totalActualSize"].as_i64().unwrap() > 0);
     assert_eq!(
         data["totalActualSize"], data["oneRegionActualSize"],
@@ -126,5 +142,40 @@ async fn test() {
         counted.hits(),
         0,
         "a store the system does not name is weighed off disk, not from its preload"
+    );
+
+    // when the system's own store cannot be read at all — a file where the
+    // index should be: the preload has nothing to answer with — while the
+    // ORE still lies above the readable store it was moved to
+    tokio::fs::remove_dir_all(&store).await.unwrap();
+    tokio::fs::write(&store, b"not a store").await.unwrap();
+
+    // and a fresh request asks the stats of the system: the loader misses,
+    // and the savings must be walked off disk, as the MCP walks them
+    let (sse_tx, _) = broadcast::channel::<SseMessage>(100);
+    let schema = build_schema(
+        env.pool.clone(),
+        sse_tx,
+        StoreIndexLoader::new(env.pool.clone()),
+    );
+    let response = schema
+        .execute("{ storeDedupSaved(systemId: 1), storeParityCost(systemId: 1) }")
+        .await;
+    assert!(response.errors.is_empty(), "{:?}", response.errors);
+
+    // then the misplaced ORE still reports its own numbers rather than
+    // nothing: the same game, the same store, so the same answer as when
+    // the system named it — alone, it saves nobody's dedup and pays its
+    // own part of the parity
+    let data = response.data.into_json().unwrap();
+    assert_eq!(data["storeDedupSaved"].as_i64(), Some(0));
+    let paid_again = data["storeParityCost"].as_i64().unwrap();
+    assert!(
+        paid_again > 0,
+        "a store the preload cannot open is still walked off disk"
+    );
+    assert_eq!(
+        paid_again, paid,
+        "the same ORE over the same store pays the same, read or preloaded"
     );
 }

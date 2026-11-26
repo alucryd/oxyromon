@@ -160,6 +160,16 @@ impl StoreWriter {
         *refs = refs.saturating_add(1);
     }
 
+    /// Count one game fewer as using a chunk: the thin ORE that named it is
+    /// gone, or is being written again over the one that did. An id the
+    /// index does not hold and a chunk without references say nothing, as
+    /// the count is already at the truth a recount would give.
+    pub fn unreference(&mut self, id: u64) {
+        if let Some(chunk) = self.index.chunks.get_mut(id as usize) {
+            chunk.refs = chunk.refs.saturating_sub(1);
+        }
+    }
+
     /// Put a chunk's bytes in the group being filled.
     fn place(&mut self, id: u64, bytes: &[u8]) {
         let (pending, offset) = self.packer.push(bytes);
@@ -350,30 +360,37 @@ impl StoreWriter {
 
     /// Count again how many games use each chunk, from the thin OREs
     /// beneath the store's parent directory, which is where a game finds
-    /// its store from. Returns how many games there are.
-    fn recount(&mut self) -> Result<u64> {
+    /// its store from. Returns how many games there are. An ORE that
+    /// cannot be read fails, unless `skip_unreadable`, which counts only
+    /// the games it can read.
+    fn recount(&mut self, skip_unreadable: bool) -> Result<u64> {
         let chunks = &mut self.index.chunks;
         for chunk in chunks.iter_mut() {
             chunk.refs = 0;
         }
         let mut games = 0;
-        for_each_game(&self.dir, &self.index.uuid, &mut |path, ids| {
-            for id in ids {
-                match chunks.get_mut(id as usize) {
-                    Some(chunk) if chunk.group != NOWHERE => {
-                        chunk.refs = chunk.refs.saturating_add(1)
-                    }
-                    _ => {
-                        return Err(Error::Corrupt(format!(
-                            "{}: chunk {id} is not in its store",
-                            path.display()
-                        )));
+        for_each_game(
+            &self.dir,
+            &self.index.uuid,
+            skip_unreadable,
+            &mut |path, ids| {
+                for id in ids {
+                    match chunks.get_mut(id as usize) {
+                        Some(chunk) if chunk.group != NOWHERE => {
+                            chunk.refs = chunk.refs.saturating_add(1)
+                        }
+                        _ => {
+                            return Err(Error::Corrupt(format!(
+                                "{}: chunk {id} is not in its store",
+                                path.display()
+                            )));
+                        }
                     }
                 }
-            }
-            games += 1;
-            Ok(())
-        })?;
+                games += 1;
+                Ok(())
+            },
+        )?;
         Ok(games)
     }
 
@@ -625,7 +642,7 @@ pub fn compact(
     // It copies the small segments itself
     writer.fold = false;
     let before = writer.index.size();
-    let games = writer.recount()?;
+    let games = writer.recount(false)?;
     writer.compact_segments(threshold, recompress, progress)?;
     let after = writer.index.size();
     // The index first, so it never lists a segment gone, then the
@@ -637,6 +654,37 @@ pub fn compact(
         before,
         after,
     })
+}
+
+/// Count again how many games use each chunk of the store at `store`,
+/// without touching its segments: what a store whose `refs` drifted from
+/// its games needs, as a removal or a rewrite past the batch's own
+/// bookkeeping leaves it, and a compaction does anyway. The index is
+/// saved only when a count actually changed. Returns how many games the
+/// store has.
+///
+/// Unlike [`compact`], an ORE under the walk whose header cannot be read
+/// is skipped, not fatal, and counts as no game at all: `check-roms`
+/// moves a corrupt one to `Trash` beneath the walk root, and the recount
+/// that follows must not sink every check, sync and purge after it. A
+/// readable game that names a chunk the store lacks still fails it, as
+/// in a compaction.
+pub fn recount(store: &Path) -> Result<u64> {
+    let mut writer = StoreWriter::open(store, Codec::Zstd, 1 << 20)?;
+    // Nothing is written, so the last segment is not folded either
+    writer.fold = false;
+    let before: Vec<u32> = writer.index.chunks.iter().map(|chunk| chunk.refs).collect();
+    let games = writer.recount(true)?;
+    let changed = writer
+        .index
+        .chunks
+        .iter()
+        .zip(&before)
+        .any(|(chunk, refs)| chunk.refs != *refs);
+    if changed {
+        writer.commit(&mut |_| {})?;
+    }
+    Ok(games)
 }
 
 /// Set the parity shards the store at `store` gives a segment, from 0 to

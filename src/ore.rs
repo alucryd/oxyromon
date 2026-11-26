@@ -871,16 +871,106 @@ pub async fn system_store(connection: &mut SqliteConnection, system: &System) ->
         .join(ore_rs::STORE_DIR))
 }
 
-/// What the system's store saves by dedup and what its parity costs,
-/// `None` when the system uses no store, or it cannot be read: the stats
-/// are an extra, no flow fails without them.
-#[cfg(feature = "mcp")]
-pub async fn system_store_stats(
+/// What the OREs of `romfiles` take from their stores and give them, all
+/// together: each game's dedup saving and parity cost, summed. A store
+/// shared with other systems, as `GROUP_SUBSYSTEMS` gives, is split by
+/// game too, so each system counts only its own part: the parts of a
+/// group add up to the whole `store_stats`, and no two systems show the
+/// same two numbers. `None` when none of the romfiles lives in a readable
+/// store: as the stats, the savings are an extra, no flow fails without.
+#[cfg(any(feature = "mcp", test))]
+pub async fn store_savings(
     connection: &mut SqliteConnection,
-    system: &System,
-) -> Option<ore_rs::StoreStats> {
-    let store = system_store(connection, system).await.ok()?;
-    ore_rs::store_stats(&store).ok()
+    romfiles: &[Romfile],
+) -> Option<ore_rs::Savings> {
+    store_savings_in(connection, romfiles, |store| async move {
+        spawn_blocking(move || ore_rs::Index::load(&store).ok().map(Arc::new))
+            .await
+            .ok()
+            .flatten()
+    })
+    .await
+}
+
+/// The same savings, with the system's store index already in hand —
+/// asked of the request's loader by the field before it weighed anything,
+/// as [`actual_size_loaded`] does for the sizes.
+#[cfg(feature = "server")]
+pub async fn store_savings_loaded(
+    connection: &mut SqliteConnection,
+    romfiles: &[Romfile],
+    store: Option<Arc<StoreIndex>>,
+) -> Option<ore_rs::Savings> {
+    store_savings_in(connection, romfiles, |path| async {
+        match &store {
+            Some(store) => store.index_for(&path).await,
+            None => spawn_blocking(move || ore_rs::Index::load(&path).ok().map(Arc::new))
+                .await
+                .ok()
+                .flatten(),
+        }
+    })
+    .await
+}
+
+/// The savings of `romfiles`, with every store's index obtained through
+/// `index_of`: every thin ORE asks its own store, as the sizes do, so a
+/// grouped subsystem beneath another directory's store counts its games
+/// into that store's numbers, and the index is read once per store.
+#[cfg(any(feature = "mcp", test))]
+async fn store_savings_in<F, Fut>(
+    connection: &mut SqliteConnection,
+    romfiles: &[Romfile],
+    index_of: F,
+) -> Option<ore_rs::Savings>
+where
+    F: Fn(PathBuf) -> Fut,
+    Fut: Future<Output = Option<Arc<ore_rs::Index>>>,
+{
+    let rom_directory = get_rom_directory(connection).await;
+    let paths: Vec<PathBuf> = romfiles
+        .iter()
+        .map(|romfile| rom_directory.join(&romfile.path))
+        .collect();
+    // the thin OREs, grouped by the store holding their chunks: what is
+    // not an ORE, and what no store lies above, saves and pays nothing
+    let ores = spawn_blocking(move || {
+        let mut ores: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();
+        for path in paths {
+            if path.extension().and_then(|extension| extension.to_str()) != Some(ORE_EXTENSION) {
+                continue;
+            }
+            if let Some(store) = ore_rs::find_store(&path) {
+                ores.entry(store).or_default().push(path);
+            }
+        }
+        ores
+    })
+    .await
+    .ok()?;
+    let mut savings = ore_rs::Savings {
+        dedup_saved: 0,
+        parity: 0,
+    };
+    let mut some_store = false;
+    for (store, paths) in ores {
+        // a store that cannot be read neither pays nor is paid for
+        let Some(index) = index_of(store).await else {
+            continue;
+        };
+        some_store = true;
+        let games = spawn_blocking(move || {
+            let paths: Vec<&Path> = paths.iter().map(PathBuf::as_path).collect();
+            index.savings(&paths)
+        })
+        .await
+        .ok()?;
+        for game in games.into_iter().flatten() {
+            savings.dedup_saved += game.dedup_saved;
+            savings.parity += game.parity;
+        }
+    }
+    some_store.then_some(savings)
 }
 
 /// What `romfiles` weigh on disk: their files, with a thin ORE's share of
@@ -1140,6 +1230,15 @@ pub async fn sync_store(
         if let Some(batch) = batch {
             batch.commit(&mut |_| {})?;
         }
+        // The run before this one may have taken OREs out of the store and
+        // back in, a standalone written over the path a thin one had: the
+        // copy it replaced keeps references no batch can give back. One
+        // recount makes the sizes true from now, not from the next check.
+        // The run before this one may have taken OREs out of the store and
+        // back in, a standalone written over the path a thin one had: the
+        // copy it replaced keeps references no batch can give back. One
+        // recount makes the sizes true from now, not from the next check.
+        ore_rs::recount(&store)?;
         Ok(())
     })
     .await
@@ -1154,9 +1253,22 @@ pub async fn check_store(progress_bar: &ProgressBar, store: &Path) -> Result<()>
     print_action(progress_bar, &format!("Checking \"{}\"", store.display()));
     let path = store.to_path_buf();
     let size = ore_rs::store_size(store)?;
-    let checked = run_blocking(progress_bar, size, move |progress| {
-        ore_rs::check_store(&path, true, progress)
-    })
+    let checked = run_blocking(
+        progress_bar,
+        size,
+        move |progress| -> ore_rs::Result<ore_rs::StoreChecked> {
+            let checked = ore_rs::check_store(&path, true, progress)?;
+            // Whole in its bytes, the store is made whole in its counts too:
+            // a game purged, detached or rewritten since the last compaction
+            // leaves `refs` behind, and every size the store reports divides
+            // by them. A store with groups past repair is not recounted: its
+            // unreadable games would fail the count for a worse message.
+            if checked.lost_groups == 0 {
+                ore_rs::recount(&path)?;
+            }
+            Ok(checked)
+        },
+    )
     .await
     .with_context(|| format!("Failed to check \"{}\"", store.display()))?;
     stop_action(progress_bar);

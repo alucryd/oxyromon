@@ -12,7 +12,7 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
 pub fn subcommand() -> Command {
@@ -94,11 +94,15 @@ async fn purge_missing_romfiles(
 
     let romfiles = find_romfiles(connection).await;
     let kept_directories = get_kept_directories(connection).await?;
+    let mut stores = HashSet::new();
     let mut count = 0;
 
     for romfile in romfiles {
         let path = romfile.as_common(connection).await?.path;
         if !path.is_file() {
+            if let Some(store) = store_of_ore(&path) {
+                stores.insert(store);
+            }
             delete_romfile_by_id(connection, romfile.id).await;
             if let Some(directory) = path.parent() {
                 remove_empty_directories(directory, &kept_directories).await?;
@@ -114,7 +118,7 @@ async fn purge_missing_romfiles(
         );
     }
 
-    Ok(())
+    recount_stores(progress_bar, stores).await
 }
 
 async fn purge_romfiles(
@@ -137,11 +141,15 @@ async fn purge_romfiles(
         if answer_yes || confirm(true)? {
             let kept_directories = get_kept_directories(connection).await?;
             let mut transaction = begin_transaction(connection).await;
+            let mut stores = HashSet::new();
 
             for romfile in &romfiles {
                 let common_romfile = romfile.as_common(&mut transaction).await?;
                 if common_romfile.path.is_file() {
                     let path = common_romfile.path.clone();
+                    if let Some(store) = store_of_ore(&path) {
+                        stores.insert(store);
+                    }
                     common_romfile.delete(progress_bar, false).await?;
                     delete_romfile_by_id(&mut transaction, romfile.id).await;
                     if let Some(directory) = path.parent() {
@@ -159,6 +167,8 @@ async fn purge_romfiles(
                     &format!("Deleted {} {} ROM file(s)", count, label),
                 );
             }
+
+            return recount_stores(progress_bar, stores).await;
         }
     }
 
@@ -215,6 +225,7 @@ async fn purge_foreign_romfiles(
         }
     }
     let mut emptied_directories: HashSet<PathBuf> = HashSet::new();
+    let mut stores = HashSet::new();
     let mut count = 0;
     for path in files {
         // An ORE store's segments and index belong to the thin OREs beneath
@@ -248,6 +259,9 @@ async fn purge_foreign_romfiles(
                     ),
                 );
                 if answer_yes || confirm(true)? {
+                    if let Some(store) = store_of_ore(&path) {
+                        stores.insert(store);
+                    }
                     remove_file(progress_bar, &path, false).await?;
                     if let Some(directory) = path.parent() {
                         emptied_directories.insert(directory.to_path_buf());
@@ -270,6 +284,32 @@ async fn purge_foreign_romfiles(
                 count
             ),
         );
+    }
+    recount_stores(progress_bar, stores).await
+}
+
+/// The ORE store whose chunks a game at `path` was using, if it had one:
+/// a thin ORE names its store in its header, but a deleted file cannot be
+/// read, so the nearest store above its path stands in. Only OREs ask.
+fn store_of_ore(path: &Path) -> Option<PathBuf> {
+    path.extension()
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("ore"))
+        .then(|| ore_rs::find_store(path))
+        .flatten()
+}
+
+/// Count the games of every store in `stores` again: a game purged never
+/// gave its chunks back, and the sizes the store reports divide by the
+/// references it still holds. One recount per store, however many of its
+/// games left.
+async fn recount_stores(progress_bar: &ProgressBar, stores: HashSet<PathBuf>) -> Result<()> {
+    for store in stores {
+        let name = store.display().to_string();
+        print_action(progress_bar, &format!("Recounting \"{name}\""));
+        run_blocking(progress_bar, 0, move |_| ore_rs::recount(&store))
+            .await
+            .with_context(|| format!("Failed to recount \"{name}\""))?;
+        stop_action(progress_bar);
     }
     Ok(())
 }

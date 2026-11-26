@@ -98,12 +98,12 @@ pub use format::{Codec, Profile};
 pub use keys::{is_bootmii, load_keys, parse_key_file, parse_keys, parse_otp};
 pub use precache::Progress;
 pub use reader::{
-    DEFAULT_READ_AHEAD, READ_AHEAD_OFF, Reader, Sizes, Stats, Track, TrackMode, decompress, is_ore,
-    shares,
+    DEFAULT_READ_AHEAD, OreWeight, READ_AHEAD_OFF, Reader, Savings, Sizes, Stats, Track, TrackMode,
+    decompress, game_sizes, is_ore, ore_weights, savings, shares,
 };
 pub use store::Index;
 #[cfg(feature = "write")]
-pub use store::{Compacted, compact, create_store, set_parity};
+pub use store::{Compacted, compact, create_store, recount, set_parity};
 pub use store::{STORE_DIR, StoreChecked, StoreOptions, check_store, find_store, store_size};
 pub use store::{StoreStats, store_stats};
 #[cfg(feature = "write")]

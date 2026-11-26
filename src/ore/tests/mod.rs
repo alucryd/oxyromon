@@ -3,4 +3,5 @@
 pub use super::*;
 
 mod test_cartridge_platform_3ds;
+mod test_store_savings_split;
 mod test_store_settings_base_system;

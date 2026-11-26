@@ -122,6 +122,49 @@ pub struct GameInformation {
     pub flags: Vec<String>,
 }
 
+/// The ORE store a system's thin OREs live in, as the web's system info
+/// modal shows it: what the store weighs and saves as a whole, what part
+/// of that this system's games account for — the same ledger as the
+/// per-system `storeDedupSaved` and `storeParityCost` — and every system
+/// sharing it, which `GROUP_SUBSYSTEMS` makes more than one.
+#[cfg(feature = "server")]
+#[derive(Clone, SimpleObject)]
+pub struct StoreInfo {
+    /// Absolute path of the store directory.
+    pub path: String,
+    /// Bytes of files in it: segments, index, everything.
+    pub size: i64,
+    /// What its dedup keeps from being stored twice.
+    pub dedup_saved: i64,
+    /// What its parity footers add.
+    pub parity_cost: i64,
+    /// This system's part of `dedup_saved`.
+    pub system_dedup_saved: i64,
+    /// This system's part of `parity_cost`.
+    pub system_parity_cost: i64,
+    /// Every system whose thin OREs share this store, this one named too.
+    pub systems: Vec<String>,
+}
+
+/// What one game weighs, as the web's game info modal shows it: the two
+/// figures every game has, and the three a thin ORE in a store adds.
+#[cfg(feature = "server")]
+#[derive(Clone, SimpleObject)]
+pub struct GameSizes {
+    /// What its DAT declares: the sum of its ROMs' sizes.
+    pub original_size: i64,
+    /// What it weighs on disk: its files, a thin ORE's its share of
+    /// its store.
+    pub actual_size: i64,
+    /// What deleting it frees once the store is compacted; null when
+    /// none of its files is a thin ORE.
+    pub ore_own: Option<i64>,
+    /// Its share of its stores' chunks; null as above.
+    pub ore_share: Option<i64>,
+    /// What it would weigh detached; null as above.
+    pub ore_standalone: Option<i64>,
+}
+
 #[derive(FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
 #[cfg_attr(feature = "server", graphql(complex))]
