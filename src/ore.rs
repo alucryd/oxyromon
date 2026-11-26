@@ -15,6 +15,7 @@ use super::progress::*;
 use super::query::StoreIndex;
 use super::util::*;
 use anyhow::{Context, Result, bail};
+use indexmap::IndexMap;
 use indicatif::{HumanBytes, ProgressBar};
 use ore_rs::{Codec, Options, Profile, Reader, StoreBatch, StoreOptions};
 use sqlx::SqliteConnection;
@@ -483,6 +484,23 @@ impl CommonRomfile {
         )
         .await
     }
+}
+
+/// The ROMs of `games` by the ORE they are in, so that a game of several
+/// disks, an ORE a disk, is taken a disk at a time; a disk not converted
+/// yet, as a failed run leaves it, is left out.
+pub fn by_ore(
+    games: IndexMap<i64, Vec<Rom>>,
+    romfiles_by_id: &HashMap<i64, Romfile>,
+) -> IndexMap<i64, Vec<Rom>> {
+    let mut ores: IndexMap<i64, Vec<Rom>> = IndexMap::new();
+    for rom in games.into_values().flatten() {
+        let id = rom.romfile_id.unwrap();
+        if romfiles_by_id[&id].path.ends_with(ORE_EXTENSION) {
+            ores.entry(id).or_default().push(rom);
+        }
+    }
+    ores
 }
 
 /// The cartridge or floppy platform ore-rs knows a system's ROMs as, by

@@ -201,7 +201,7 @@ orers --compact --recompress GB/.ore-store  # and pack every group again, the sm
 | --- | --- |
 | `-o DIR` | output directory (default: next to each input) |
 | `-p PROFILE` | `stream` (default): 1 MiB groups, quick enough to play from; `archive`: 4 MiB groups, smaller, to keep rather than play, as a read away from the last decodes a whole group |
-| `-c CODEC` | `zstd` or `lzma2`; by default `lzma2` for a cartridge's ROM, which Zstandard loses to 7z on, and `zstd` otherwise, a 3DS card's included |
+| `-c CODEC` | `zstd` or `lzma2`; by default `lzma2` for a cartridge's ROM or a floppy's image, which Zstandard loses to 7z on, and `zstd` otherwise, a 3DS card's included |
 | `--platform NAME` | the cartridge the inputs are ROMs of, or the floppy they are images of (`amiga`, `fds`, `st`), taken whole, their headers not checked: `32x`, `3ds`, `a2600`, `a5200`, `a7800`, `colecovision`, `dsi`, `gb`, `gba`, `gbc`, `gg`, `jaguar`, `lynx`, `md`, `n64`, `nds`, `nes`, `ngp`, `ngpc`, `odyssey2`, `pce`, `pokemini`, `satellaview`, `sg1000`, `sgx`, `sms`, `snes`, `sufami`, `vb`, `ws`, `wsc` (default: recognised by their headers) |
 | `--store DIR` | write ISOs as thin OREs, their chunks in the store `DIR`, made if missing; attach OREs to it; every input as one write, committed after the last |
 | `--detach` | write OREs as standalone OREs |

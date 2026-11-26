@@ -3,6 +3,9 @@
 pub use super::*;
 
 mod matrix;
+mod test_amiga_disks_ore_recompress;
+mod test_amiga_disks_ore_to_original;
+mod test_amiga_disks_ore_to_sevenzip;
 mod test_amiga_disks_to_ore;
 mod test_chd_children_to_ore_before_parents;
 mod test_chd_parents_to_chd_should_not_touch_parent;

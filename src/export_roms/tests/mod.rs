@@ -3,6 +3,7 @@
 pub use super::*;
 
 mod matrix;
+mod test_amiga_disks_ore_to_original;
 mod test_merged_to_original;
 mod test_multiple_tracks_chd_to_cso_should_do_nothing;
 mod test_multiple_tracks_chd_to_zso_should_do_nothing;

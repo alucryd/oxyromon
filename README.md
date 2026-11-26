@@ -687,7 +687,7 @@ Converts ROM files between lossless formats and back to their originals:
 - ISO to and from CSO, ZSO and RVZ.
 - GameCube, Wii, PlayStation 2 and PSP ISOs, CUE/BIN and CHD to and from ORE, with OREs restored to their cue sheet and tracks; an ISO of another system is skipped.
 - Cartridge ROMs, loose or in an archive, to and from ORE, restored under their name: every ROM of a cartridge system ORE knows by its DAT's name, the Atari consoles, ColecoVision, Odyssey 2, PC Engine and SuperGrafx, the Nintendo handhelds and consoles from the NES to the 3DS, its cards but not its eShop's CIAs, the NeoGeo Pocket, the Sega consoles from the SG-1000 to the 32X, and the WonderSwan, headerless or not, BIOSes included; in any other system, Game Boy, Game Boy Advance, DS, 3DS, N64 and Mega Drive ROMs ORE recognises by their header, the rest skipped.
-- Floppy images, loose or in an archive, to and from ORE, restored under their name: the Amiga's and the Atari ST's IPFs and the Famicom Disk System's disks, an ORE a disk, a game of several disks converted all at once or not at all.
+- Floppy images, loose or in an archive, to and from ORE, restored under their name: the Amiga's and the Atari ST's IPFs and the Famicom Disk System's disks, an ORE a disk: a game of several disks in an archive converted all at once or not at all, loose disks each persisted as it converts.
 - NSP to and from NSZ.
 - Wii U discs between ISO, WUX and lossless WUA.
 
