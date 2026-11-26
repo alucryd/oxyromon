@@ -31,6 +31,7 @@ mod test_order_prefer_versions_old_vanilla_vs_revision;
 mod test_search_term_title;
 mod test_sort_1g1r_catch_all;
 mod test_sort_1g1r_clone_lists;
+mod test_sort_1g1r_disk_ores;
 mod test_sort_1g1r_infer_clones_parent_clone;
 mod test_sort_1g1r_infer_clones_titles;
 mod test_sort_1g1r_playlist;

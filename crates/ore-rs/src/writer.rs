@@ -842,6 +842,12 @@ fn encode(
     if wiiu_disc::is_title_folder(input) {
         return wiiu_disc::encode_title(input, part, options, keys, store, progress);
     }
+    if input.is_dir()
+        && let Some(platform) = options.platform
+        && (CARTRIDGE_PLATFORMS.contains(&platform) || FLOPPY_PLATFORMS.contains(&platform))
+    {
+        return encode_set(input, part, platform, options, store, progress);
+    }
     if wiiu_disc::is_wiiu(input) {
         return wiiu_disc::encode(input, part, options, keys, store, progress);
     }
@@ -1280,6 +1286,128 @@ impl Cutter {
 }
 
 /// A file's name, as a cue sheet names it.
+/// Write the ROMs of a game of several, the files of the folder `input`, by
+/// name, as one ORE of `platform`: each file an area of its own, taken whole
+/// as a cartridge's ROM or a floppy's image is, and hashed on its own, as a
+/// DAT lists it.
+fn encode_set(
+    input: &Path,
+    part: &Path,
+    platform: &'static str,
+    options: &Options,
+    store: Option<&mut StoreWriter>,
+    progress: &mut dyn FnMut(u64),
+) -> Result<Stats> {
+    let mut files = Vec::new();
+    for entry in std::fs::read_dir(input)? {
+        let path = entry?.path();
+        if !path.is_file() {
+            return Err(Error::Unsupported(format!(
+                "a ROM set holding a folder: {}",
+                path.display()
+            )));
+        }
+        let len = path.metadata()?.len();
+        if !(1..=cartridge_max(platform)).contains(&len) {
+            return Err(Error::Unsupported(format!(
+                "a {platform} ROM of {len} bytes, past {} GiB or empty",
+                cartridge_max(platform) >> 30
+            )));
+        }
+        files.push((file_name(&path), path, len));
+    }
+    if files.is_empty() {
+        return Err(Error::Unsupported("an empty ROM set".into()));
+    }
+    // By name, so the same files always make the same ORE
+    files.sort();
+    let size = files.iter().map(|(_, _, len)| len).sum();
+    let mut encoder = Encoder::new(part, options, store)?;
+    encoder.set_codec(options.codec)?;
+    let mut logical = blake3::Hasher::new();
+    let mut identity = Vec::new();
+    let mut areas = Vec::new();
+    let mut buf = vec![0; (WINDOW + BLOCK) as usize];
+    let mut start = 0;
+    for (name, path, len) in files {
+        let records = encoder.records;
+        let mut iso = Iso::open(&path)?;
+        let mut hashes = Hashes::default();
+        let mut segmenter = Segmenter::without_padding(start);
+        let mut at = 0;
+        while at < len {
+            // Windows end on blocks of the logical stream, as in a ROM's
+            let end = (start + at + WINDOW).next_multiple_of(BLOCK) - start;
+            let length = (end.min(len) - at) as usize;
+            let buf = &mut buf[..length];
+            iso.read_at(at, buf)?;
+            // The logical stream is the files end to end
+            rayon::join(|| hashes.update(buf), || logical.update(buf));
+            segmenter.feed(buf, at, None, &mut |run| encoder.push(run));
+            encoder.flush(false)?;
+            progress(length as u64);
+            at += length as u64;
+        }
+        segmenter.finish(&mut |run| encoder.push(run));
+        let Hashes {
+            crc32, md5, sha1, ..
+        } = hashes;
+        identity.extend(file_identity(&name, crc32, md5, sha1));
+        areas.push(Area {
+            len,
+            file: Some(name),
+            kind: AreaKind::Raw,
+            frame: None,
+            start,
+            records: encoder.records - records,
+            sectors: None,
+            title_key: None,
+            codec: None,
+            exceptions: Vec::new(),
+            wiiu: None,
+            period: None,
+        });
+        start += len;
+    }
+    let logical_hash: [u8; 32] = logical.finalize().into();
+    identity.insert(
+        0,
+        Identity {
+            algo: "blake3-256".into(),
+            view: "logical".into(),
+            value: logical_hash.to_vec(),
+        },
+    );
+    let mut ledger = vec![step("zero", Some(encoder.zeros))];
+    if encoder.filled > 0 {
+        ledger.push(step("fill", Some(encoder.filled)));
+    }
+    ledger.push(step("mincdc-dedup", Some(encoder.deduped)));
+    let meta = Meta {
+        media: Media {
+            cue: None,
+            sbi: None,
+            ticket: None,
+            size,
+            areas,
+            class: if FLOPPY_PLATFORMS.contains(&platform) {
+                MEDIA_ROM_FLAT
+            } else {
+                MEDIA_ROM_CARTRIDGE
+            },
+            platform: platform.into(),
+        },
+        store: None,
+        ledger,
+        identity,
+        provenance: placeholder_provenance(options.codec),
+    };
+    Ok(Stats {
+        input_size: size,
+        output_size: encoder.finish(meta, options, logical_hash)?,
+    })
+}
+
 fn file_name(path: &Path) -> String {
     path.file_name()
         .unwrap_or_default()

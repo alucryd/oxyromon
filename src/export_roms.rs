@@ -836,10 +836,13 @@ async fn to_chd(
             .as_common(connection)
             .await?
             .as_ore()?;
-        if ore.is_rom()? {
+        if ore.is_rom()? || ore.is_set()? {
             print_skip(
                 progress_bar,
-                &format!("\"{}\" is a ROM or a floppy's image", ore.romfile),
+                &format!(
+                    "\"{}\" is a ROM or a floppy's image, or a set of them",
+                    ore.romfile
+                ),
             );
             continue;
         }
@@ -1838,7 +1841,7 @@ async fn to_iso(
             .as_common(connection)
             .await?
             .as_ore()?;
-        if ore.is_cd()? || ore.is_rom()? {
+        if ore.is_cd()? || ore.is_rom()? || ore.is_set()? {
             print_skip(progress_bar, &format!("\"{}\" holds no ISO", ore.romfile));
             continue;
         }

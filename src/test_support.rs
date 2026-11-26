@@ -293,6 +293,31 @@ impl TestEnv {
     /// The relative path a romfile under a system directory is stored as:
     /// the path's tail after the ROM directory, exactly as the database
     /// keeps it.
+    /// Assert the ORE at `ore` is one game's ROMs, the fixtures `names`, in
+    /// that order, each under its name and byte for byte, of `platform`.
+    pub fn assert_set(&self, ore: &Path, platform: &str, names: &[&str]) {
+        let reader = ore_rs::Reader::open(ore).unwrap();
+        assert!(reader.is_set(), "{} is no set", ore.display());
+        assert_eq!(reader.platform(), platform);
+        let files = reader.files().unwrap();
+        assert_eq!(
+            files
+                .iter()
+                .map(|(name, ..)| name.as_str())
+                .collect::<Vec<_>>(),
+            names
+        );
+        for (name, start, len) in files {
+            let rom = std::fs::read(self.fixture_source(&name)).unwrap();
+            let mut bytes = vec![0; len as usize];
+            ore_rs::Reader::open(ore)
+                .unwrap()
+                .read_at(start, &mut bytes)
+                .unwrap();
+            assert_eq!(bytes, rom, "{name}");
+        }
+    }
+
     pub fn stored_path(&self, path: &Path) -> String {
         path.strip_prefix(&self.rom_directory)
             .unwrap()

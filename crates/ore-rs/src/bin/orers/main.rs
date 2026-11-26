@@ -138,8 +138,10 @@ fn convert(
     batch: &mut Option<StoreBatch>,
 ) -> Result<String, String> {
     let options = options(matches, input);
-    // A folder is a store to check, or a Wii U title to compress
-    let title = ore_rs::is_title_folder(input);
+    // A folder is a store to check, or a Wii U title or, named its
+    // platform, a game's ROMs to compress
+    let title = ore_rs::is_title_folder(input)
+        || (input.is_dir() && options.platform.is_some() && !input.join("store.index").is_file());
     if input.is_dir() && !title {
         // Checking a store takes its lock, which an open batch holds
         if let Some(open) = batch.take() {
@@ -177,9 +179,12 @@ fn convert(
             return Ok(ui::wrote(&output));
         }
         // A CD comes back as its cue sheet, its tracks beside it; a title
-        // as its folder; a ROM with the extension it had
+        // or a set as its folder; a ROM with the extension it had
         let reader = ore_rs::Reader::inspect(input).ok();
-        if reader.as_ref().is_some_and(|reader| reader.is_title()) {
+        if reader
+            .as_ref()
+            .is_some_and(|reader| reader.is_title() || reader.is_set())
+        {
             let output = outputs.claim(dir.join(input.file_stem().unwrap_or_default()))?;
             let bar = ui::progress_bar(size, "Decompressing", input);
             let result = ore_rs::decompress(input, &output, &mut |n| bar.inc(n));
