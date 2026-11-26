@@ -469,7 +469,13 @@ fn recount_gives_back_the_refs_a_removal_leaves() {
 
     // A recount, segments untouched, finds the one game there is and b's
     // share stops lying: the chunks they shared count for b whole
-    assert_eq!(ore_rs::recount(&library.store).unwrap(), 1);
+    assert_eq!(
+        ore_rs::recount(&library.store).unwrap(),
+        ore_rs::Recounted {
+            games: 1,
+            unreadable: 0
+        }
+    );
     let truth = Reader::open(&b).unwrap().sizes();
     assert!(
         truth.share > lied.share,
@@ -529,7 +535,13 @@ fn a_corrupt_game_in_the_trash_does_not_stop_a_recount() {
     let lied = Reader::open(&b).unwrap().sizes();
     // The recount skips the corrupt file, counts the one game the store
     // really has, and b's share stops being halved for a game in the Trash
-    assert_eq!(ore_rs::recount(&library.store).unwrap(), 1);
+    assert_eq!(
+        ore_rs::recount(&library.store).unwrap(),
+        ore_rs::Recounted {
+            games: 1,
+            unreadable: 1
+        }
+    );
     let truth = Reader::open(&b).unwrap().sizes();
     assert!(
         truth.share > lied.share,

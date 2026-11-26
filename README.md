@@ -258,6 +258,7 @@ On the Game Boy libraries this was 11-34% under their 7z files, against about th
 ISOs and cartridge ROMs, loose or in an archive, are written straight into the store, compressed once; a game is checked and its original replaced once its batch is committed, the whole run's with `ORE_STORE_BATCH` at `run`, each game's with `game`, which writes far more as the store's last segment is copied each time, so a run that fails before leaves the originals and the database as they were.
 CD games and CHDs are converted to standalone OREs first, then attached, which takes about twice as long.
 Turning `ORE_STORE` off makes the run's OREs standalone again.
+A store no game uses any more, once `convert-roms` has taken a system's last thin ORE out of it, to another format or standalone, is deleted; one with an ORE beneath its directory that cannot be read is kept, as that ORE may still need its chunks.
 With `GROUP_SUBSYSTEMS` on, systems sharing a directory share its store, and its settings, `ORE_STORE`, `ORE_STORE_PARITY`, `ORE_STORE_BATCH` and `ORE_PROFILE`, are those of the base system, the one named as the directory is (`Nintendo - Wii U` for `Nintendo - Wii U (Digital) (CDN)`); a subsystem without its base system imported keeps its own.
 A thin ORE reads only beneath its store's directory, which `sort-roms`' folders are; `export-roms --format ORE` detaches it.
 
@@ -758,7 +759,7 @@ Hashes every ROM file of the selected systems again and moves corrupt ones to `T
 `--size` also recomputes stored file sizes.
 A system's ORE store is checked whole too, what its parity covers repaired, and the check fails naming the games past repair.
 The store check reports its chunk count, what its dedup saved and what its parity costs.
-After the check, the store's chunk references are counted again: a store whose sizes drifted while games were rewritten or purged heals without a compaction.
+After the check, the store's chunk references are counted again: a store whose sizes drifted while games were rewritten or purged heals without a compaction, and a store no game uses any more is deleted.
 
 ```text
 Usage: oxyromon check-roms [OPTIONS]
@@ -776,7 +777,7 @@ Options:
 Forgets ROM files that went missing or that no ROM references, and deletes the files in every `Trash` directory, the ROM directory's own included.
 `--foreign` deletes files in the ROM directory that the database doesn't know.
 Directories left empty are deleted, except the ROM, system and `Trash` directories.
-An ORE store's files are never foreign; the chunks of games purged stay in it until `compact-roms`.
+An ORE store's files are never foreign; the chunks of games purged stay in it until `compact-roms`, and the store is deleted once its last game is purged.
 
 ```text
 Usage: oxyromon purge-roms [OPTIONS]

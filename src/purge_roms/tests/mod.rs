@@ -7,6 +7,7 @@ mod test_foreign_store;
 mod test_foreign_store_unreadable_wua;
 mod test_foreign_subfolder;
 mod test_missing;
+mod test_missing_last_ore_of_a_store;
 mod test_missing_subfolder;
 mod test_orphans;
 mod test_orphans_game_subfolders;

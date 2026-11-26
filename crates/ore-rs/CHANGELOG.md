@@ -2,6 +2,7 @@
 
 ## Changes
 
+- `recount` returns a `Recounted`, the games it counted and the OREs beneath the store whose header it could not read, where it returned the games alone: a store with no game is only unused with nothing unreadable beside it, which a caller deleting an unused store must know
 - The metadata writes as RFC 8949 §4.2.1 core deterministic CBOR, every map's keys shortest first and then bytewise, where they were written in declaration order: what a reader takes back is unchanged, keys of any order still read, and once the metadata's bytes must be one encoding — for signing, or for two writers agreeing — there now is one; SPEC.md §7 says so, `format.rs` holds a test that a field declared out of order fails, and a `compat` vector keeps the old order readable
 - The `dedup_saved` of `store_stats` is what every shared copy saved, `refs-1` copies of each shared chunk, as its own telling has it: it counted one game's share of each chunk before, which is what one game of several saves, not what the sharing kept from the store
 
