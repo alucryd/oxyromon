@@ -338,7 +338,7 @@ pub fn StatTile(#[prop(into)] label: String, #[prop(into)] value: Signal<String>
 pub fn SizeTile(
     #[prop(into)] label: String,
     #[prop(into)] bytes: Signal<i64>,
-    #[prop(into)] loading: Signal<bool>,
+    #[prop(default = false.into(), into)] loading: Signal<bool>,
 ) -> impl IntoView {
     view! {
         <Tile label=label>

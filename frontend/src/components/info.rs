@@ -52,3 +52,24 @@ pub fn romfile_format(path: &str) -> String {
         _ => "Disc".to_string(),
     }
 }
+
+/// What an info modal shows while its request is out, or once it failed:
+/// a spinner, or the failure in words, so the dialog never opens blank.
+#[component]
+pub fn InfoPending(#[prop(into)] failed: Signal<bool>) -> impl IntoView {
+    view! {
+        <div class="wa-stack wa-align-items-center wa-gap-s" style="padding: var(--wa-space-xl) 0;">
+            <Show
+                when=move || !failed.get()
+                fallback=|| {
+                    view! {
+                        <wa-icon name="circle-exclamation"></wa-icon>
+                        <small style="color: var(--wa-color-text-quiet);">"Could not load this."</small>
+                    }
+                }
+            >
+                <wa-spinner style="font-size: var(--wa-font-size-2xl);"></wa-spinner>
+            </Show>
+        </div>
+    }
+}

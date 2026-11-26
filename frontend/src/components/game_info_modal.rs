@@ -6,10 +6,10 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 
 use crate::api::{fetch_game_roms, fetch_game_sizes, report_error};
-use crate::components::info::{InfoBytes, InfoRow, Mono, romfile_format};
+use crate::components::info::{InfoBytes, InfoPending, Mono, romfile_format};
 use crate::model::{Game, GameSizes};
 use crate::state::AppState;
-use crate::ui::Modal;
+use crate::ui::{Modal, SizeTile};
 
 /// The modal itself, driven by `open` and `target`: both lists and sizes
 /// are asked when it opens, so the dialog answers for the game it was
@@ -99,41 +99,22 @@ pub fn GameInfoModal(open: RwSignal<bool>, target: RwSignal<Option<Game>>) -> im
                     </small>
                 </Show>
 
-                <div class="wa-stack wa-gap-xs">
-                    <Show when=move || sizes.get().is_some()>
-                        {move || {
-                            sizes.get().map(|sizes| {
-                                view! {
-                                    <InfoRow label="Original Size">
-                                        <InfoBytes value=sizes.original_size/>
-                                    </InfoRow>
-                                    <InfoRow label="Actual Size">
-                                        <InfoBytes value=sizes.actual_size/>
-                                    </InfoRow>
-                                    <Show when=move || sizes.ore_own.is_some()>
-                                        <InfoRow label="Own (frees when deleted)">
-                                            <InfoBytes value=sizes.ore_own.unwrap_or_default()/>
-                                        </InfoRow>
-                                        <InfoRow label="Share (of its stores)">
-                                            <InfoBytes value=sizes.ore_share.unwrap_or_default()/>
-                                        </InfoRow>
-                                        <InfoRow label="Standalone (detached)">
-                                            <InfoBytes value=sizes.ore_standalone.unwrap_or_default()/>
-                                        </InfoRow>
-                                    </Show>
-                                }
-                            })
-                        }}
-                    </Show>
-                    <Show when=move || loading.get()>
-                        <div class="wa-cluster wa-gap-s wa-align-items-center">
-                            <wa-spinner></wa-spinner>
-                            <small style="color: var(--wa-color-text-quiet);">
-                                "Weighing the game…"
-                            </small>
+                {move || match sizes.get() {
+                    None => view! { <InfoPending failed=Signal::derive(move || !loading.get())/> }
+                        .into_any(),
+                    Some(sizes) => view! {
+                        <div class="wa-grid wa-gap-s" style="--min-column-size: 8rem;">
+                            <SizeTile label="Original Size" bytes=sizes.original_size/>
+                            <SizeTile label="Actual Size" bytes=sizes.actual_size/>
+                            {sizes.ore_own.map(|own| view! {
+                                <SizeTile label="Own (freed on delete)" bytes=own/>
+                                <SizeTile label="Share (of its stores)" bytes=sizes.ore_share.unwrap_or_default()/>
+                                <SizeTile label="Standalone (detached)" bytes=sizes.ore_standalone.unwrap_or_default()/>
+                            })}
                         </div>
-                    </Show>
-                </div>
+                    }
+                        .into_any(),
+                }}
 
                 <wa-divider></wa-divider>
 
