@@ -104,12 +104,12 @@ pub fn GameInfoModal(open: RwSignal<bool>, target: RwSignal<Option<Game>>) -> im
                         .into_any(),
                     Some(sizes) => view! {
                         <div class="wa-grid wa-gap-s" style="--min-column-size: 8rem;">
-                            <SizeTile label="Original Size" bytes=sizes.original_size loading=false/>
-                            <SizeTile label="Actual Size" bytes=sizes.actual_size loading=false/>
+                            <SizeTile label="Original Size" bytes=sizes.original_size/>
+                            <SizeTile label="Actual Size" bytes=sizes.actual_size/>
                             {sizes.ore_own.map(|own| view! {
-                                <SizeTile label="Own (freed on delete)" bytes=own loading=false/>
-                                <SizeTile label="Share (of its stores)" bytes=sizes.ore_share.unwrap_or_default() loading=false/>
-                                <SizeTile label="Standalone (detached)" bytes=sizes.ore_standalone.unwrap_or_default() loading=false/>
+                                <SizeTile label="Own (freed on delete)" bytes=own/>
+                                <SizeTile label="Share (of its stores)" bytes=sizes.ore_share.unwrap_or_default()/>
+                                <SizeTile label="Standalone (detached)" bytes=sizes.ore_standalone.unwrap_or_default()/>
                             })}
                         </div>
                     }

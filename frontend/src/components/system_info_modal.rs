@@ -107,10 +107,10 @@ pub fn SystemInfoModal(
                         </div>
 
                         <div class="wa-grid wa-gap-s" style="--min-column-size: 10rem;">
-                            <SizeTile label="Total Size (Original)" bytes=total_original_size loading=false/>
-                            <SizeTile label="1G1R Size (Original)" bytes=one_region_original_size loading=false/>
-                            <SizeTile label="Total Size (Actual)" bytes=total_actual_size loading=false/>
-                            <SizeTile label="1G1R Size (Actual)" bytes=one_region_actual_size loading=false/>
+                            <SizeTile label="Total Size (Original)" bytes=total_original_size/>
+                            <SizeTile label="1G1R Size (Original)" bytes=one_region_original_size/>
+                            <SizeTile label="Total Size (Actual)" bytes=total_actual_size/>
+                            <SizeTile label="1G1R Size (Actual)" bytes=one_region_actual_size/>
                         </div>
 
                         {store
@@ -125,7 +125,7 @@ pub fn SystemInfoModal(
                                     .cloned()
                                     .collect();
                                 view! {
-                                    <wa-card appearance="outlined">
+                                    <wa-card>
                                         <div slot="header" class="wa-flank wa-gap-s wa-align-items-center">
                                             <wa-icon name="database"></wa-icon>
                                             <span class="wa-font-weight-semibold">"ORE Store"</span>
@@ -133,9 +133,9 @@ pub fn SystemInfoModal(
                                         <div class="wa-stack wa-gap-m">
                                             <Mono>{store.path.clone()}</Mono>
                                             <div class="wa-grid wa-gap-s" style="--min-column-size: 8rem;">
-                                                <SizeTile label="Store Size" bytes=store.size loading=false/>
-                                                <SizeTile label="Dedup Saved" bytes=store.dedup_saved loading=false/>
-                                                <SizeTile label="Parity Cost" bytes=store.parity_cost loading=false/>
+                                                <SizeTile label="Store Size" bytes=store.size/>
+                                                <SizeTile label="Dedup Saved" bytes=store.dedup_saved/>
+                                                <SizeTile label="Parity Cost" bytes=store.parity_cost/>
                                             </div>
                                             <div class="wa-stack wa-gap-xs">
                                                 <InfoRow label="This System's Share of Dedup">
