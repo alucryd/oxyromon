@@ -71,6 +71,8 @@ async fn test() {
         .unwrap();
     assert!(!thin(&ore_path));
     assert!(reads_back(&ore_path));
+    // the store, used by no game any more, deleted
+    assert!(!store.exists());
 
     // and back in, a run at a time
     set_bool(&mut env.connection, "ORE_STORE", true, Some(system.id)).await;

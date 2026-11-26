@@ -33,6 +33,7 @@
 
 ## Fixes
 
+- An ORE store no game uses any more is deleted, once `convert-roms` takes a system's last thin ORE out of it, to another format or detached, and once `check-roms` or `purge-roms` finds it empty, where it stayed behind, checked and weighed as an empty store
 - The Dedup Saved and Parity Cost of a system, in its info modal and MCP's `get_system`, are its own games' part when systems share one store (`GROUP_SUBSYSTEMS`), where every system of a group showed the same store-wide numbers: each game's dedup saving is what it would weigh detached less its share, and its parity cost the part of the footers its chunks pay, and the parts of a group add up to the store's whole (#345)
 - What a store's `check-roms` reports as dedup saved is what every shared copy saved, as its own wording tells, rather than one game's share of each chunk
 - A Wii U update or DLC with a content of a size off the AES block, as *Nintendo Land*'s update has, converts to WUA, where wux-rs refused it as corrupt

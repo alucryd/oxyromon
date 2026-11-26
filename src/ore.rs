@@ -872,6 +872,25 @@ pub async fn system_store(connection: &mut SqliteConnection, system: &System) ->
         .join(ore_rs::STORE_DIR))
 }
 
+/// Count `store`'s games again, and delete it once no ORE beneath it uses
+/// it, as converting, detaching or purging a system's last thin OREs leaves
+/// it: left there, it would still be checked and weighed. Whether it is
+/// gone.
+pub async fn recount_store(progress_bar: &ProgressBar, store: &Path) -> Result<bool> {
+    if !store.is_dir() {
+        return Ok(false);
+    }
+    let path = store.to_path_buf();
+    let games = run_blocking(progress_bar, 0, move |_| ore_rs::recount(&path))
+        .await
+        .with_context(|| format!("Failed to recount \"{}\"", store.display()))?;
+    if games > 0 {
+        return Ok(false);
+    }
+    remove_directory(progress_bar, &store, false).await?;
+    Ok(true)
+}
+
 /// What the OREs of `romfiles` take from their stores and give them, all
 /// together: each game's dedup saving and parity cost, summed. A store
 /// shared with other systems, as `GROUP_SUBSYSTEMS` gives, is split by

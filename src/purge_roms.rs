@@ -3,6 +3,7 @@ use super::config::*;
 use super::database::*;
 use super::mimetype::WUA_EXTENSION;
 use super::model::Romfile;
+use super::ore::recount_store;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
@@ -306,9 +307,7 @@ async fn recount_stores(progress_bar: &ProgressBar, stores: HashSet<PathBuf>) ->
     for store in stores {
         let name = store.display().to_string();
         print_action(progress_bar, &format!("Recounting \"{name}\""));
-        run_blocking(progress_bar, 0, move |_| ore_rs::recount(&store))
-            .await
-            .with_context(|| format!("Failed to recount \"{name}\""))?;
+        recount_store(progress_bar, &store).await?;
         stop_action(progress_bar);
     }
     Ok(())

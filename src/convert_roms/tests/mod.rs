@@ -31,6 +31,7 @@ mod test_nus_sevenzip_to_original;
 mod test_nus_to_ore_to_original;
 mod test_nus_to_sevenzip;
 mod test_ore_store_recompress_keeps_the_sizes;
+mod test_ore_store_to_original_removes_the_store;
 mod test_original_to_sevenzip_zstd;
 mod test_original_to_zip_multiple_roms;
 mod test_original_to_zip_with_correct_name;
