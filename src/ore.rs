@@ -527,6 +527,7 @@ pub fn cartridge_platform(system: &System) -> Option<&'static str> {
         "Nintendo - Game Boy Advance" => "gba",
         "Nintendo - Game Boy Color" => "gbc",
         "Nintendo - Nintendo 64" => "n64",
+        "Nintendo - Nintendo 64DD" => "n64dd",
         // A card image; the eShop's DATs list CIAs' contents
         "Nintendo - Nintendo 3DS" | "Nintendo - New Nintendo 3DS"
             if !system.name.contains("(Digital)") =>
