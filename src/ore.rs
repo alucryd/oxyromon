@@ -872,6 +872,36 @@ pub async fn system_store(connection: &mut SqliteConnection, system: &System) ->
         .join(ore_rs::STORE_DIR))
 }
 
+/// Count `store`'s games again, and delete it once no ORE beneath it uses
+/// it, as converting, detaching or purging a system's last thin OREs leaves
+/// it: left there, it would still be checked and weighed. Whether it is
+/// gone.
+pub async fn recount_store(progress_bar: &ProgressBar, store: &Path) -> Result<bool> {
+    if !store.is_dir() {
+        return Ok(false);
+    }
+    let path = store.to_path_buf();
+    let recounted = run_blocking(progress_bar, 0, move |_| ore_rs::recount(&path))
+        .await
+        .with_context(|| format!("Failed to recount \"{}\"", store.display()))?;
+    remove_unused_store(progress_bar, store, recounted).await
+}
+
+/// Delete `store` when `recounted` found no game using it and no ORE it
+/// could not read, which may: one unreadable keeps the store, its chunks
+/// being all a damaged thin ORE has left. Whether it is gone.
+async fn remove_unused_store(
+    progress_bar: &ProgressBar,
+    store: &Path,
+    recounted: ore_rs::Recounted,
+) -> Result<bool> {
+    if recounted != ore_rs::Recounted::default() {
+        return Ok(false);
+    }
+    remove_directory(progress_bar, &store, false).await?;
+    Ok(true)
+}
+
 /// What the OREs of `romfiles` take from their stores and give them, all
 /// together: each game's dedup saving and parity cost, summed. A store
 /// shared with other systems, as `GROUP_SUBSYSTEMS` gives, is split by
@@ -1235,10 +1265,6 @@ pub async fn sync_store(
         // back in, a standalone written over the path a thin one had: the
         // copy it replaced keeps references no batch can give back. One
         // recount makes the sizes true from now, not from the next check.
-        // The run before this one may have taken OREs out of the store and
-        // back in, a standalone written over the path a thin one had: the
-        // copy it replaced keeps references no batch can give back. One
-        // recount makes the sizes true from now, not from the next check.
         ore_rs::recount(&store)?;
         Ok(())
     })
@@ -1254,25 +1280,33 @@ pub async fn check_store(progress_bar: &ProgressBar, store: &Path) -> Result<()>
     print_action(progress_bar, &format!("Checking \"{}\"", store.display()));
     let path = store.to_path_buf();
     let size = ore_rs::store_size(store)?;
-    let checked = run_blocking(
+    let (checked, recounted) = run_blocking(
         progress_bar,
         size,
-        move |progress| -> ore_rs::Result<ore_rs::StoreChecked> {
+        move |progress| -> ore_rs::Result<(ore_rs::StoreChecked, Option<ore_rs::Recounted>)> {
             let checked = ore_rs::check_store(&path, true, progress)?;
             // Whole in its bytes, the store is made whole in its counts too:
             // a game purged, detached or rewritten since the last compaction
             // leaves `refs` behind, and every size the store reports divides
             // by them. A store with groups past repair is not recounted: its
             // unreadable games would fail the count for a worse message.
-            if checked.lost_groups == 0 {
-                ore_rs::recount(&path)?;
-            }
-            Ok(checked)
+            let recounted = if checked.lost_groups == 0 {
+                Some(ore_rs::recount(&path)?)
+            } else {
+                None
+            };
+            Ok((checked, recounted))
         },
     )
     .await
     .with_context(|| format!("Failed to check \"{}\"", store.display()))?;
     stop_action(progress_bar);
+    // Whole, and no game's any more
+    if let Some(recounted) = recounted
+        && remove_unused_store(progress_bar, store, recounted).await?
+    {
+        return Ok(());
+    }
     // The store is whole: what its dedup saved and what its parity costs,
     // the numbers its size alone cannot tell
     if let Ok(stats) = ore_rs::store_stats(store) {

@@ -9,7 +9,8 @@ use super::model::*;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
 use super::ore::{
     AsOre, OreCompressionAlgorithm, OreProfile, OreRomfile, StoreSink, ToOre, by_ore,
-    cartridge_platform, store_settings_system_id, sync_store, wiiu_to_ore,
+    cartridge_platform, recount_store, store_settings_system_id, sync_store, system_store,
+    wiiu_to_ore,
 };
 use super::progress::*;
 use super::prompt::*;
@@ -415,6 +416,9 @@ pub async fn convert_system(
         }
         _ => bail!("Not supported"),
     }
+
+    // Converted out of ORE, or out of the store, its last game gone
+    recount_store(progress_bar, &system_store(connection, &system).await?).await?;
 
     print_separator(progress_bar);
 

@@ -26,7 +26,7 @@ mod write;
 #[cfg(feature = "write")]
 pub(super) use write::StoreWriter;
 #[cfg(feature = "write")]
-pub use write::{Compacted, compact, create_store, recount, set_parity};
+pub use write::{Compacted, Recounted, compact, create_store, recount, set_parity};
 
 /// The name of a store's directory.
 pub const STORE_DIR: &str = ".ore-store";
@@ -545,13 +545,13 @@ fn lock(dir: &Path) -> Result<File> {
 fn for_each_game(
     store: &Path,
     uuid: &[u8; 16],
-    skip_unreadable: bool,
+    mut unreadable: Option<&mut u64>,
     f: &mut dyn FnMut(&Path, Vec<u64>) -> Result<()>,
 ) -> Result<()> {
     fn beneath(
         dir: &Path,
         uuid: &[u8; 16],
-        skip_unreadable: bool,
+        unreadable: &mut Option<&mut u64>,
         depth: u32,
         f: &mut dyn FnMut(&Path, Vec<u64>) -> Result<()>,
     ) -> Result<()> {
@@ -560,7 +560,7 @@ fn for_each_game(
             if path.is_dir() {
                 // Links may loop
                 if depth < 32 && path.file_name().is_some_and(|name| name != STORE_DIR) {
-                    beneath(&path, uuid, skip_unreadable, depth + 1, f)?;
+                    beneath(&path, uuid, unreadable, depth + 1, f)?;
                 }
                 continue;
             }
@@ -571,10 +571,13 @@ fn for_each_game(
                 continue;
             }
             let named = |error| Error::Corrupt(format!("{}: {error}", path.display()));
-            let reader = match Reader::inspect(&path) {
-                Ok(reader) => reader,
-                Err(_) if skip_unreadable => continue,
-                Err(error) => return Err(named(error)),
+            let reader = match (Reader::inspect(&path), unreadable.as_deref_mut()) {
+                (Ok(reader), _) => reader,
+                (Err(_), Some(unreadable)) => {
+                    *unreadable += 1;
+                    continue;
+                }
+                (Err(error), None) => return Err(named(error)),
             };
             if let Some(ids) = reader.store_ids(uuid) {
                 f(&path, ids)?;
@@ -586,7 +589,7 @@ fn for_each_game(
     beneath(
         store.parent().unwrap_or(&store),
         uuid,
-        skip_unreadable,
+        &mut unreadable,
         0,
         f,
     )
@@ -821,7 +824,7 @@ pub fn check_store(
             .iter()
             .flat_map(|&number| chunks[number].iter().map(|&id| id as u64))
             .collect();
-        for_each_game(store, &index.uuid, false, &mut |path, used| {
+        for_each_game(store, &index.uuid, None, &mut |path, used| {
             if used.iter().any(|id| ids.contains(id)) {
                 checked.lost_games.push(path.to_path_buf());
             }
