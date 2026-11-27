@@ -32,6 +32,7 @@
 - Fixed `check-roms` overstating a store's dedup savings
 - Fixed Wii U updates and DLC with contents of a size off the AES block failing to convert to WUA
 - Fixed Wii U updates whose DAT lists an older version's ticket staying incomplete
+- Fixed Wii U updates and DLC listing several versions turning partial once converted to ORE, warning that their TMD was cut short
 - Fixed `import-dats` moving a cue sheet to `Trash` when an update renames its tracks
 - Fixed converting a CHD before its clones, which left them unreadable
 - Fixed progress bars stalling in `check-roms`, `compact-roms`, store commits and ORE extraction
