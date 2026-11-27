@@ -35,7 +35,8 @@ pub(crate) const BATCH_BYTES: u64 = 8 << 20;
 pub(crate) const BATCH_PAUSE: std::time::Duration = std::time::Duration::from_millis(1);
 
 /// A group's compressed bytes, by the position it occupies.
-type Spans = Mutex<BTreeMap<(u32, u64), Arc<[u8]>>>;
+/// `None` once cleared: the thread's plan is of the old index.
+type Spans = Mutex<Option<BTreeMap<(u32, u64), Arc<[u8]>>>>;
 
 /// The compressed bytes a precache thread has brought in, by the
 /// position each group occupies: `(0, offset)` in an ORE file — the
@@ -52,15 +53,22 @@ pub(crate) struct Warm {
 impl Warm {
     pub(crate) fn new() -> Arc<Self> {
         Arc::new(Self {
-            spans: Mutex::new(BTreeMap::new()),
+            spans: Mutex::new(Some(BTreeMap::new())),
             hits: AtomicU64::new(0),
         })
     }
 
-    /// One group's envelope and stored bytes, under its position.
-    pub(crate) fn insert(&self, at: (u32, u64), bytes: Vec<u8>) {
+    /// One group's envelope and stored bytes, under its position: false
+    /// once cleared, when the thread should stop bringing more.
+    pub(crate) fn insert(&self, at: (u32, u64), bytes: Vec<u8>) -> bool {
         let mut spans = self.spans.lock().unwrap_or_else(PoisonError::into_inner);
-        spans.insert(at, bytes.into());
+        match spans.as_mut() {
+            Some(spans) => {
+                spans.insert(at, bytes.into());
+                true
+            }
+            None => false,
+        }
     }
 
     /// The bytes a whole group spans, if the thread has reached them.
@@ -69,8 +77,8 @@ impl Warm {
             .spans
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
-            .get(&at)
-            .cloned();
+            .as_ref()
+            .and_then(|spans| spans.get(&at).cloned());
         if found.is_some() {
             self.hits.fetch_add(1, Ordering::Relaxed);
         }
@@ -81,14 +89,11 @@ impl Warm {
         self.hits.load(Ordering::Relaxed)
     }
 
-    /// Forget everything: a store whose index moved no longer keeps its
-    /// groups where these positions say, and a stale byte is worse than
-    /// a slow one.
+    /// Forget everything, for good: a store whose index moved no longer
+    /// keeps its groups where these positions say, the thread's plan
+    /// names the old ones, and a stale byte is worse than a slow one.
     pub(crate) fn clear(&self) {
-        self.spans
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner)
-            .clear();
+        *self.spans.lock().unwrap_or_else(PoisonError::into_inner) = None;
     }
 }
 
@@ -141,4 +146,18 @@ pub struct Progress {
     /// Whether the thread is still at it: a run that finished, or died
     /// trying, is not.
     pub running: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_cleared_warm_takes_nothing_more() {
+        let warm = Warm::new();
+        assert!(warm.insert((1, 0), vec![1]));
+        warm.clear();
+        assert!(!warm.insert((1, 0), vec![2]), "the thread is told to stop");
+        assert!(warm.get((1, 0)).is_none());
+    }
 }

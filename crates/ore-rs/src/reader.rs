@@ -1575,6 +1575,7 @@ impl Reader {
             }
             for (offset, len) in &own[next..upto] {
                 let from = (*offset - start) as usize;
+                // An ORE's own groups never move: its warm is never cleared.
                 filled.insert((0, *offset), bytes[from..from + *len as usize].to_vec());
                 counted.done.fetch_add(1, Ordering::Relaxed);
             }
@@ -1613,13 +1614,22 @@ impl Reader {
                 if io::read_exact_at(&file, &mut bytes, start).is_err() {
                     break;
                 }
+                // A compaction retires the store's warm: the plan is of
+                // the old index, and the run ends at what it brought.
+                let mut retired = false;
                 for (segment, offset, len) in &plan[next..upto] {
                     let from = (*offset - start) as usize;
-                    filled_store.insert(
+                    if !filled_store.insert(
                         (*segment, *offset),
                         bytes[from..from + *len as usize].to_vec(),
-                    );
+                    ) {
+                        retired = true;
+                        break;
+                    }
                     counted.done.fetch_add(1, Ordering::Relaxed);
+                }
+                if retired {
+                    break;
                 }
                 next = upto;
                 std::thread::sleep(BATCH_PAUSE);

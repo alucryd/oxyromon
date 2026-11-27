@@ -501,6 +501,41 @@ fn recount_gives_back_the_refs_a_removal_leaves() {
 }
 
 #[test]
+fn a_clone_still_on_the_old_index_never_feeds_the_reloaded_one() {
+    let library = Library::new(&StoreOptions {
+        segment_size: 0x40000,
+        id_bits: 32,
+        parity: 8,
+    });
+    let discs = discs();
+    let a = library.add("a.ore", &discs[0], &[]);
+    let b = library.add("b.ore", &discs[1], &[]);
+    let read_all = |reader: &mut Reader| {
+        let mut out = vec![0; reader.size() as usize];
+        reader.read_at(0, &mut out).unwrap();
+        out
+    };
+
+    // The clone reads first, so it holds every old segment open; the
+    // reader holds none, and meets the compaction as a segment gone.
+    let mut reader = Reader::open_ahead(&b, 0, ore_rs::READ_AHEAD_OFF).unwrap();
+    let mut clone = reader.try_clone().unwrap();
+    assert!(read_all(&mut clone) == discs[1]);
+    std::fs::remove_file(&a).unwrap();
+    ore_rs::compact(&library.store, &Options::default(), 0.0, false, &mut |_| {}).unwrap();
+
+    assert!(read_all(&mut reader) == discs[1], "the reader reloads");
+    assert!(
+        read_all(&mut clone) == discs[1],
+        "the clone, on its old handles"
+    );
+    assert!(
+        read_all(&mut reader) == discs[1],
+        "the reader, after the clone"
+    );
+}
+
+#[test]
 fn a_game_that_cannot_be_read_stops_a_compaction() {
     let library = Library::new(&StoreOptions::default());
     let ore = library.add("a.ore", &discs()[0], &[]);
