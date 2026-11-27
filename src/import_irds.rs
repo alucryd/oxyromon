@@ -280,6 +280,7 @@ pub async fn import_ird(
                 &file.path,
                 size,
                 &md5,
+                Some(game.system_id),
             )
             .await
         {

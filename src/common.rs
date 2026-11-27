@@ -30,12 +30,29 @@ use std::{fs::File, str::FromStr};
 /// Where a PS3 system's updates go, relative to its directory, one folder a
 /// firmware version.
 pub fn ps3_update_directory(version: &str) -> PathBuf {
-    // a version is digits and a dot; anything else must not climb out
+    // a version is digits and a dot, read from the PUP: anything else must
+    // not climb out
     let version: String = version
         .chars()
         .filter(|c| c.is_ascii_alphanumeric() || *c == '.')
         .collect();
-    Path::new("PS3_UPDATE").join(version.trim_matches('.'))
+    let version = match version.trim_matches('.') {
+        "" => "unknown",
+        version => version,
+    };
+    Path::new("PS3_UPDATE").join(version)
+}
+
+/// Where the PS3 system update of firmware `version` goes in `system`.
+pub async fn ps3_update_path(
+    connection: &mut SqliteConnection,
+    system: &System,
+    version: &str,
+) -> Result<PathBuf> {
+    Ok(get_system_directory(connection, system)
+        .await?
+        .join(ps3_update_directory(version))
+        .join("PS3UPDAT.PUP"))
 }
 
 pub(crate) fn to_hex(bytes: &[u8]) -> String {
@@ -454,10 +471,7 @@ impl CommonFile for CommonRomfile {
             && rom.name == ps3_rs::UPDATE_PATH
             && let Ok(version) = ps3_rs::pup_version(&self.path)
         {
-            return Ok(get_system_directory(connection, system)
-                .await?
-                .join(ps3_update_directory(&version))
-                .join("PS3UPDAT.PUP"));
+            return ps3_update_path(connection, system, &version).await;
         }
 
         // sorting

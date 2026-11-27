@@ -800,28 +800,34 @@ pub async fn find_child_roms_without_romfile_by_name_and_size_and_md5(
 }
 
 /// The file a ROM named `name` within a JB folder, of this size and MD5, is
-/// in already, if any.
+/// in already, if any, in `system_id` when given: a file is kept in its
+/// system's directory, which another system's games must not reach into.
 pub async fn find_child_romfile_id_by_name_and_size_and_md5(
     connection: &mut SqliteConnection,
     name: &str,
     size: i64,
     md5: &str,
+    system_id: Option<i64>,
 ) -> Option<i64> {
     let md5 = md5.to_lowercase();
     sqlx::query_scalar!(
         "
-        SELECT romfile_id AS \"romfile_id!\"
-        FROM roms
-        WHERE romfile_id IS NOT NULL
-        AND parent_id IS NOT NULL
-        AND name = ?
-        AND size = ?
-        AND md5 = ?
+        SELECT r.romfile_id AS \"romfile_id!\"
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NOT NULL
+        AND r.parent_id IS NOT NULL
+        AND r.name = ?
+        AND r.size = ?
+        AND r.md5 = ?
+        AND (? IS NULL OR g.system_id = ?)
         LIMIT 1
         ",
         name,
         size,
         md5,
+        system_id,
+        system_id,
     )
     .fetch_optional(connection)
     .await

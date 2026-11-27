@@ -21,3 +21,4 @@ mod test_path_playlist_subfolder_alpha;
 mod test_path_rvz;
 mod test_path_subfolder_alpha_letter;
 mod test_path_subfolder_alpha_other;
+mod test_ps3_update_directory;

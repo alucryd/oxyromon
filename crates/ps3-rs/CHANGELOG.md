@@ -2,7 +2,7 @@
 
 ## Features
 
-- Added IRD parsing, version 9, as ps3-disc-dumper and 3k3y's tools write them, gzipped or not, checked against its CRC32, with the disc key derived from its data1
+- Added IRD parsing, version 9, as ps3-disc-dumper and 3k3y's tools write them, gzipped or not, checked against its CRC32, with the disc key derived from its data1; an IRD, its header or its footer inflating past 64 MiB is refused
 - Added rebuilding a Redump ISO from a JB folder and its IRD, byte-identical, checking every file against the IRD's size and MD5 and returning the image's MD5
 - Added extracting an ISO to its JB folder with its disc key, returning each file's MD5
 - Added reading the firmware version a `PS3UPDAT.PUP` installs

@@ -12,6 +12,25 @@ use crate::{Error, Result};
 
 const MAGIC: &[u8; 4] = b"3IRD";
 const PIC_SIZE: usize = 115;
+/// The most an IRD, or the header or footer it holds, may inflate to: a
+/// disc's directories, a hundred thousand files' worth, take a few MiB.
+pub const MAX_INFLATED: u64 = 64 << 20;
+
+/// Inflate `bytes`, refusing past [`MAX_INFLATED`] rather than let a small
+/// hostile IRD inflate to gigabytes.
+fn inflate(bytes: &[u8], what: &str) -> Result<Vec<u8>> {
+    let mut out = Vec::new();
+    GzDecoder::new(bytes)
+        .take(MAX_INFLATED + 1)
+        .read_to_end(&mut out)?;
+    if out.len() as u64 > MAX_INFLATED {
+        return Err(Error::Corrupt(format!(
+            "an IRD {what} inflating past {} MiB",
+            MAX_INFLATED >> 20
+        )));
+    }
+    Ok(out)
+}
 
 /// An IRD's contents.
 #[derive(Clone, Debug)]
@@ -76,11 +95,9 @@ impl<'a> Fields<'a> {
         Err(Error::Corrupt("IRD name length".into()))
     }
 
-    fn gzipped(&mut self) -> Result<Vec<u8>> {
+    fn gzipped(&mut self, what: &str) -> Result<Vec<u8>> {
         let len = self.u32()? as usize;
-        let mut out = Vec::new();
-        GzDecoder::new(self.take(len)?).read_to_end(&mut out)?;
-        Ok(out)
+        inflate(self.take(len)?, what)
     }
 }
 
@@ -91,9 +108,9 @@ impl Ird {
 
     /// Parse an IRD, gzipped as they are shared or not.
     pub fn parse(bytes: &[u8]) -> Result<Ird> {
-        let mut unzipped = Vec::new();
+        let unzipped;
         let bytes = if bytes.starts_with(&[0x1f, 0x8b]) {
-            GzDecoder::new(bytes).read_to_end(&mut unzipped)?;
+            unzipped = inflate(bytes, "file")?;
             &unzipped[..]
         } else {
             bytes
@@ -118,8 +135,8 @@ impl Ird {
         let update_version = fields.text(4)?;
         let game_version = fields.text(5)?;
         let app_version = fields.text(5)?;
-        let header = fields.gzipped()?;
-        let footer = fields.gzipped()?;
+        let header = fields.gzipped("header")?;
+        let footer = fields.gzipped("footer")?;
         let regions = fields.take(1)?[0] as usize;
         let region_hashes = (0..regions)
             .map(|_| fields.array())

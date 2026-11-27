@@ -53,7 +53,8 @@ fn cli() -> Command {
 
 fn parse_key(value: &str) -> Result<[u8; 16], String> {
     let value = value.trim();
-    if value.len() != 32 {
+    // ASCII first, so that the slices below fall on characters
+    if !value.is_ascii() || value.len() != 32 {
         return Err("expected 32 hex digits".into());
     }
     let mut key = [0u8; 16];
@@ -154,6 +155,8 @@ mod tests {
         );
         assert!(parse_key("73819C").is_err());
         assert!(parse_key("zz819CEFE085B2C8FE8A92E7F81E84BC").is_err());
+        // 32 bytes, but 8 characters
+        assert!(parse_key("𝕩𝕩𝕩𝕩𝕩𝕩𝕩𝕩").is_err());
     }
 
     #[test]

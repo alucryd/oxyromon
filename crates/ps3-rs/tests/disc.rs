@@ -182,3 +182,17 @@ fn an_ird_damaged_fails_its_crc() {
     raw[20] ^= 1;
     assert!(matches!(Ird::parse(&raw), Err(Error::Corrupt(_))));
 }
+
+#[test]
+fn an_ird_inflating_past_its_bound_is_refused() {
+    use std::io::Write;
+    // a gzip bomb: little to read, far more than any IRD to inflate
+    let mut encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::best());
+    let zeros = vec![0u8; 1 << 20];
+    for _ in 0..=(ps3_rs::MAX_INFLATED >> 20) {
+        encoder.write_all(&zeros).unwrap();
+    }
+    let bomb = encoder.finish().unwrap();
+    assert!(bomb.len() < 1 << 20);
+    assert!(matches!(Ird::parse(&bomb), Err(Error::Corrupt(_))));
+}

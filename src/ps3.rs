@@ -43,8 +43,14 @@ pub async fn place_update(
     .await;
     let game_ids: HashSet<i64> = roms.iter().map(|rom| rom.game_id).collect();
     let romfile = CommonRomfile::from_path(&path)?;
-    match find_child_romfile_id_by_name_and_size_and_md5(connection, UPDATE_PATH, size as i64, md5)
-        .await
+    match find_child_romfile_id_by_name_and_size_and_md5(
+        connection,
+        UPDATE_PATH,
+        size as i64,
+        md5,
+        Some(system.id),
+    )
+    .await
     {
         Some(romfile_id) => {
             for rom in &roms {
@@ -55,10 +61,7 @@ pub async fn place_update(
         None => {
             let version = ps3_rs::pup_version(path)
                 .with_context(|| format!("Failed to read \"{}\"", path.display()))?;
-            let new_path = get_system_directory(connection, system)
-                .await?
-                .join(ps3_update_directory(&version))
-                .join("PS3UPDAT.PUP");
+            let new_path = ps3_update_path(connection, system, &version).await?;
             if new_path != path && new_path.exists() {
                 bail!(
                     "\"{}\" exists already, another update of firmware {version}",
@@ -99,6 +102,7 @@ pub async fn import_pup(
             UPDATE_PATH,
             size as i64,
             &md5,
+            system.map(|system| system.id),
         )
         .await
         .is_some()

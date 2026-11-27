@@ -25,7 +25,7 @@ mod ird;
 
 pub use disc::{File, Region, SECTOR, disc_key};
 pub use error::{Error, Result};
-pub use ird::Ird;
+pub use ird::{Ird, MAX_INFLATED};
 
 use std::collections::HashMap;
 use std::fs;
