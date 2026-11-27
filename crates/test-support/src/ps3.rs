@@ -257,11 +257,15 @@ pub fn disc() -> Disc {
     let mut contents = Vec::new();
     for (i, (path, extents)) in listed.iter().enumerate() {
         let size: u32 = extents.iter().map(|&(_, size)| size).sum();
-        let bytes = if path == UPDATE_PATH {
+        let mut bytes = if path == UPDATE_PATH {
             pup(UPDATE_VERSION, size as usize)
         } else {
             noise(size as usize, i as u32 + 1)
         };
+        // an executable starts as a SELF does, which tells a disc key right
+        if path.ends_with("EBOOT.BIN") {
+            bytes[..4].copy_from_slice(b"SCE\0");
+        }
         let mut offset = 0;
         for &(lba, len) in extents {
             let at = lba as usize * SECTOR;

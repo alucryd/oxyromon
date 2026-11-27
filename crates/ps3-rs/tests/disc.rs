@@ -196,3 +196,21 @@ fn an_ird_inflating_past_its_bound_is_refused() {
     assert!(bomb.len() < 1 << 20);
     assert!(matches!(Ird::parse(&bomb), Err(Error::Corrupt(_))));
 }
+
+#[test]
+fn a_disc_key_is_told_right_by_what_eboot_decrypts_to() {
+    let (_dir, disc, ird) = setup();
+    let mut read = |lba: u32, sector: &mut [u8; ps3::SECTOR]| {
+        let at = lba as usize * ps3::SECTOR;
+        sector.copy_from_slice(&disc.iso[at..at + ps3::SECTOR]);
+        Ok(())
+    };
+    assert_eq!(
+        ps3_rs::disc::opens(&mut read, &ird.disc_key()).unwrap(),
+        Some(true)
+    );
+    assert_eq!(
+        ps3_rs::disc::opens(&mut read, &[0x55; 16]).unwrap(),
+        Some(false)
+    );
+}

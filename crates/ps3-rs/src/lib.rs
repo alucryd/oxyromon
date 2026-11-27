@@ -19,13 +19,17 @@
 //! .unwrap();
 //! ```
 
-pub mod disc;
+// The disc model, shared with ore-rs: the ps3 crate's source, copied in
 mod error;
 mod ird;
+#[allow(dead_code, unused_imports)]
+#[path = "ps3/lib.rs"]
+mod ps3;
 
-pub use disc::{File, Region, SECTOR, disc_key};
 pub use error::{Error, Result};
 pub use ird::{Ird, MAX_INFLATED};
+pub use ps3::disc;
+pub use ps3::disc::{File, Region, SECTOR, disc_key};
 
 use std::collections::HashMap;
 use std::fs;
@@ -69,7 +73,10 @@ pub fn rebuild(
         )));
     }
     let footer_start = total - (ird.footer.len() / SECTOR) as u32;
-    let crypt = Crypt::new(&ird.disc_key(), disc::regions(&ird.header[..SECTOR])?);
+    let crypt = Crypt::new(
+        &ird.disc_key(),
+        disc::regions(&ird.header[..SECTOR]).map_err(Error::disc)?,
+    );
     let hashes: HashMap<u64, [u8; 16]> = ird.file_hashes.iter().copied().collect();
 
     // Every file found and the right size before anything is written
@@ -225,12 +232,13 @@ pub fn extract(
     let size = input.metadata()?.len();
     let mut sector0 = vec![0u8; SECTOR];
     read_exact_at(&input, &mut sector0, 0)?;
-    let crypt = Crypt::new(key, disc::regions(&sector0)?);
+    let crypt = Crypt::new(key, disc::regions(&sector0).map_err(Error::disc)?);
     let files = disc::files(&mut |lba, sector| {
         read_exact_at(&input, sector, lba as u64 * SECTOR as u64)?;
         crypt.decrypt(lba, sector);
         Ok(())
-    })?;
+    })
+    .map_err(Error::disc)?;
 
     let part = part(output);
     let result = (|| {
