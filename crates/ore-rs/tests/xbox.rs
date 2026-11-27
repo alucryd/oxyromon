@@ -31,10 +31,11 @@ fn noise(seed: u64, len: usize) -> Vec<u8> {
         .collect()
 }
 
-/// A disc of XGD1's layout, sparse: its video partition zeros but a
-/// volume descriptor, then its game partition's, whose tail repeats the
-/// magic unless `tail` is false, a file's worth of text, and filler.
-fn disc(dir: &Path, tail: bool) -> PathBuf {
+/// A disc of an XGD layout, sparse, its game partition at `game`: its video
+/// partition zeros but a volume descriptor, then its game partition's,
+/// whose tail repeats the magic unless `tail` is false, a file's worth of
+/// text, and filler.
+fn disc(dir: &Path, game: u64, tail: bool) -> PathBuf {
     let path = dir.join("Game (USA).iso");
     let mut file = File::create(&path).unwrap();
     file.seek(SeekFrom::Start(16 * SECTOR)).unwrap();
@@ -44,7 +45,7 @@ fn disc(dir: &Path, tail: bool) -> PathBuf {
     if tail {
         descriptor[SECTOR as usize - 20..].copy_from_slice(MAGIC);
     }
-    file.seek(SeekFrom::Start(GAME + 32 * SECTOR)).unwrap();
+    file.seek(SeekFrom::Start(game + 32 * SECTOR)).unwrap();
     file.write_all(&descriptor).unwrap();
     let text: Vec<u8> = (0..3 << 20).map(|i| b"default.xbe "[i % 12]).collect();
     file.write_all(&text).unwrap();
@@ -157,7 +158,7 @@ fn a_fourth_wave_tools_version_is_read_after_its_zeros() {
 #[test]
 fn an_xbox_disc_comes_back_byte_for_byte() {
     let dir = TempDir::new().unwrap();
-    let iso = disc(dir.path(), true);
+    let iso = disc(dir.path(), GAME, true);
     let ore = dir.path().join("Game (USA).ore");
     let stats = ore_rs::compress(&iso, &ore, &Options::default(), &[], &mut |_| {}).unwrap();
     let reader = Reader::open(&ore).unwrap();
@@ -174,9 +175,25 @@ fn an_xbox_disc_comes_back_byte_for_byte() {
 #[test]
 fn a_disc_whose_descriptor_lacks_its_tail_is_no_xbox_disc() {
     let dir = TempDir::new().unwrap();
-    let iso = disc(dir.path(), false);
+    let iso = disc(dir.path(), GAME, false);
     let ore = dir.path().join("Game (USA).ore");
     let error = ore_rs::compress(&iso, &ore, &Options::default(), &[], &mut |_| {}).unwrap_err();
     assert!(matches!(error, ore_rs::Error::Unsupported(_)), "{error}");
     assert!(!ore.exists());
+}
+
+#[test]
+fn xbox_360_discs_are_known_by_where_their_game_partition_starts() {
+    // XGD2, and XGD3, as Redump dumps them
+    for game in [0x0FD9_0000, 0x0208_0000] {
+        let dir = TempDir::new().unwrap();
+        let iso = disc(dir.path(), game, true);
+        let ore = dir.path().join("Game (USA).ore");
+        ore_rs::compress(&iso, &ore, &Options::default(), &[], &mut |_| {}).unwrap();
+        assert_eq!(Reader::open(&ore).unwrap().platform(), "xbox360");
+
+        let back = dir.path().join("back.iso");
+        ore_rs::decompress(&ore, &back, &mut |_| {}).unwrap();
+        assert!(std::fs::read(back).unwrap() == std::fs::read(iso).unwrap());
+    }
 }
