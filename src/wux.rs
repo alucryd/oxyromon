@@ -30,8 +30,10 @@ use super::util::*;
 use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
+use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tokio::task::spawn_blocking;
 
 pub use wux_rs::STORE_DIR;
@@ -803,14 +805,31 @@ fn ticket_version(name: &str) -> Option<u16> {
 }
 
 /// The file `name` of the title the ORE at `path` holds, read through its
-/// store if it is thin.
-fn ore_title_file(path: &Path, name: &str) -> Result<Vec<u8>> {
-    let mut reader = ore_rs::Reader::open(path)?;
+/// store if it is thin, whose index `indexes` keeps once loaded: a system's
+/// titles share one store.
+fn ore_title_file(
+    path: &Path,
+    name: &str,
+    indexes: &mut HashMap<PathBuf, Arc<ore_rs::Index>>,
+) -> Result<Vec<u8>> {
+    let mut reader = match ore_rs::find_store(path) {
+        Some(dir) => {
+            let index = match indexes.entry(dir) {
+                Entry::Occupied(entry) => entry.into_mut(),
+                Entry::Vacant(entry) => {
+                    let index = ore_rs::Index::load(entry.key())?;
+                    entry.insert(Arc::new(index))
+                }
+            };
+            index.open(path)?
+        }
+        None => ore_rs::Reader::open(path)?,
+    };
     let (_, start, len) = reader
-        .title_files()?
+        .files()?
         .into_iter()
         .find(|(file, ..)| file == name)
-        .with_context(|| format!("\"{name}\" is not in \"{}\"", path.display()))?;
+        .with_context(|| format!("\"{name}\" is not in it"))?;
     let mut bytes = vec![0; len as usize];
     reader.read_at(start, &mut bytes)?;
     Ok(bytes)
@@ -829,6 +848,7 @@ pub async fn update_nus_games_completion(
     progress_bar: &ProgressBar,
     system_id: i64,
 ) -> Result<()> {
+    let mut indexes = HashMap::new();
     for game_id in find_multi_version_nus_game_ids_by_system_id(connection, system_id).await {
         let roms = find_roms_by_game_id_no_parents(connection, game_id).await;
         let Some(newest) = roms
@@ -855,7 +875,7 @@ pub async fn update_nus_games_completion(
             .path;
         // A title converted to ORE holds its TMD among its files
         let bytes = match has_extension(&path, ORE_EXTENSION) {
-            true => ore_title_file(&path, &newest.name),
+            true => ore_title_file(&path, &newest.name, &mut indexes),
             false => tokio::fs::read(&path).await.map_err(anyhow::Error::from),
         };
         let tmd = match bytes.and_then(|bytes| Ok(wux_rs::parse_tmd(&bytes)?)) {

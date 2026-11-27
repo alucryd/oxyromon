@@ -9,6 +9,7 @@
 
 ## Features
 
+- Added `Index::open`, opening an ORE, a thin one through an index already loaded, for a caller opening many OREs of one store
 - Added sets, a game's several ROMs in one ORE, a floppy game's disks or a cartridge's chips: a folder named a cartridge's or a floppy's platform, by `Options::platform` or `--platform`, is written as one, each file an area of its own with its own hashes, of class 16 or 17, and written back as that folder; `Reader::is_set` tells one, `Reader::is_folder` one or a title, written back as a folder, `Reader::files`, which `Reader::title_files` became, lists a set's files as a title's, and `Reader::file_name` names none for a set
 - Added Xbox discs, XGD1 as Redump dumps them, recognised by their game partition's `MICROSOFT*XBOX*MEDIA` volume descriptor, platform `xbox`, media class 64
 - Added generator 7, `xbox-filler-prng`, SPEC.md Appendix H: the filler of an Xbox disc a layout tool before 4831 mastered, whose seed the writer finds by trying all 2³², its records regenerating it; JSRF's ORE goes from 5,353 MiB to 1,375 MiB; an `xbox.ore` vector among the conformance vectors, and a test that Appendix H's text alone gives the generator's output

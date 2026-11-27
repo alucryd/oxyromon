@@ -270,6 +270,16 @@ pub fn ore_weights(paths: &[&Path]) -> Vec<OreWeight> {
 }
 
 impl Index {
+    /// Open the ORE at `path`, a thin one through this, its store's index,
+    /// rather than loading the index again: what [`Reader::open`] does, for
+    /// a caller opening many OREs of one store.
+    pub fn open(self: &Arc<Self>, path: &Path) -> Result<Reader> {
+        let mut reader = Reader::inspect_with(path, 0)?;
+        reader.attach_found_store(path, Some(self), 0)?;
+        reader.ahead.window = DEFAULT_READ_AHEAD as usize;
+        Ok(reader)
+    }
+
     /// The [`Sizes::share`] of each ORE at `paths` in the store this is
     /// the index of; `None` for one that can't be read: what [`shares`]
     /// answers, for a caller that already holds the index.
@@ -444,20 +454,7 @@ impl Reader {
         precache: bool,
     ) -> Result<Self> {
         let mut reader = Self::inspect_with(path, cache_bytes)?;
-        if let Some(uuid) = reader.store_uuid() {
-            let missing = |found: String| {
-                Error::Io(std::io::Error::new(
-                    std::io::ErrorKind::NotFound,
-                    format!("needs the ORE store {}, {found}", hex(&uuid)),
-                ))
-            };
-            let dir = find_store(path).ok_or_else(|| missing("none found above it".into()))?;
-            let index = Index::load(&dir)?;
-            if index.uuid != uuid {
-                return Err(missing(format!("not {}", dir.display())));
-            }
-            reader.attach_store(StoreReader::new(dir, Arc::new(index), cache_bytes))?;
-        }
+        reader.attach_found_store(path, None, cache_bytes)?;
         reader.ahead.window = match read_ahead {
             0 => DEFAULT_READ_AHEAD as usize,
             READ_AHEAD_OFF => 0,
@@ -473,6 +470,35 @@ impl Reader {
 
     /// Check a thin ORE's records against its store's index, and read
     /// through it.
+    /// If it is thin, attach its store, the nearest `.ore-store` up from
+    /// `path`, through `index` when the caller holds it, or else its own
+    /// index, loaded now.
+    fn attach_found_store(
+        &mut self,
+        path: &Path,
+        index: Option<&Arc<Index>>,
+        cache_bytes: usize,
+    ) -> Result<()> {
+        let Some(uuid) = self.store_uuid() else {
+            return Ok(());
+        };
+        let missing = |found: String| {
+            Error::Io(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("needs the ORE store {}, {found}", hex(&uuid)),
+            ))
+        };
+        let dir = find_store(path).ok_or_else(|| missing("none found above it".into()))?;
+        let index = match index {
+            Some(index) => Arc::clone(index),
+            None => Arc::new(Index::load(&dir)?),
+        };
+        if index.uuid != uuid {
+            return Err(missing(format!("not {}", dir.display())));
+        }
+        self.attach_store(StoreReader::new(dir, index, cache_bytes))
+    }
+
     fn attach_store(&mut self, store: StoreReader) -> Result<()> {
         for area in &self.areas {
             for (record, window) in area.records.iter().zip(area.starts.windows(2)) {

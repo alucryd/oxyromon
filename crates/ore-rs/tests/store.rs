@@ -696,3 +696,23 @@ fn a_damaged_last_segment_is_not_folded_but_left_to_repair() {
     check(&a, &discs[0]);
     check(&b, &discs[1]);
 }
+
+#[test]
+fn thin_ores_open_through_an_index_loaded_once() {
+    let library = Library::new(&StoreOptions::default());
+    let other = Library::new(&StoreOptions::default());
+    let discs = discs();
+    let a = library.add("a.ore", &discs[0], &[]);
+    let b = library.add("1G1R/b.ore", &discs[1], &[]);
+    let foreign = other.add("c.ore", &discs[0], &[]);
+    let index = std::sync::Arc::new(ore_rs::Index::load(&library.store).unwrap());
+    for (ore, disc) in [(&a, &discs[0]), (&b, &discs[1])] {
+        let mut reader = index.open(ore).unwrap();
+        let mut out = vec![0; reader.size() as usize];
+        reader.read_at(0, &mut out).unwrap();
+        assert!(&out == disc);
+    }
+    // Another store's thin ORE is refused, as Reader::open refuses it
+    // beneath the wrong store
+    assert!(index.open(&foreign).is_err());
+}

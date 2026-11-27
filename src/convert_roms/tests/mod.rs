@@ -29,6 +29,7 @@ mod test_multiple_tracks_ore_to_ore;
 mod test_multiple_tracks_ore_to_sevenzip_cue_bin;
 mod test_nes_to_ore;
 mod test_nus_multi_version_to_ore;
+mod test_nus_multi_version_to_thin_ore;
 mod test_nus_ore_recompress_with_kept_ticket;
 mod test_nus_sevenzip_to_original;
 mod test_nus_to_ore_to_original;
