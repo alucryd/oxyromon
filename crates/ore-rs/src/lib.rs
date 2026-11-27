@@ -86,6 +86,7 @@ mod wiiu_crypt;
 #[cfg(feature = "write")]
 mod writer;
 mod xa;
+mod xbox;
 
 use gcwii::{crypto, error, io, lfg, wii};
 #[cfg(feature = "write")]

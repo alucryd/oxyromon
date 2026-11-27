@@ -37,9 +37,18 @@ const PROBE_LEVEL: i32 = 3;
 /// with Zstandard when it does better: some discs flag data as XA audio, a
 /// header can lie, and some CDs keep data in audio tracks. A quick try of
 /// Zstandard picks the groups worth its full level, which codes about a
-/// quarter smaller.
+/// quarter smaller. A group no quick try of Zstandard can shrink is that
+/// try's, whatever the codec.
 /// Returns the codec used.
 pub fn compress_best(codec: Codec, data: &[u8], group: usize) -> Result<(Codec, Vec<u8>)> {
+    // Noise, as an Xbox disc's filler is, codes no smaller at any level: a
+    // quick try that cannot shrink it at all is kept, sparing the full one
+    if matches!(codec, Codec::Zstd | Codec::Lzma2) {
+        let probe = zstd::bulk::compress(data, PROBE_LEVEL)?;
+        if probe.len() >= data.len() {
+            return Ok((Codec::Zstd, probe));
+        }
+    }
     let stored = compress(codec, data, group)?;
     if matches!(
         codec,

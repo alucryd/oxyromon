@@ -13,6 +13,10 @@ use sha1::{Digest, Sha1};
 #[allow(dead_code)]
 #[path = "../../gcwii/src/lfg.rs"]
 mod lfg;
+// And the Xbox filler generator
+#[allow(dead_code)]
+#[path = "../src/xbox.rs"]
+mod xbox;
 
 fn vectors() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("spec/vectors")
@@ -206,6 +210,40 @@ fn the_specs_padding_generator_is_the_discs() {
     let mut disc = vec![0; 3 * 2084 + 100];
     lfg.fill(&mut disc);
     assert!(spec(&seed, disc.len()) == disc);
+}
+
+/// SPEC.md's Appendix H, implemented from its text alone: an Xbox disc's
+/// filler from its seed, then the stream a record restarts from.
+fn xbox_spec(seed: u32, skip: usize, len: usize) -> Vec<u8> {
+    const P: u64 = 0xFFFFFFFB;
+    const B: [u32; 8] = [
+        0x52F690D5, 0x534D7DDE, 0x5B71A70F, 0x66793320, 0x9B7E5ED5, 0xA465265E, 0xA53F1D11,
+        0xB154430F,
+    ];
+    let (mut a, b, mut c) = (0u32, B[(seed & 7) as usize], seed);
+    let step = |a: u32, c: &mut u32| {
+        *c = ((*c as u64 + 1) * b as u64 % P) as u32;
+        *c ^ a
+    };
+    a = step(a, &mut c);
+    let mut out = Vec::new();
+    while out.len() < skip + len {
+        out.extend(((step(a, &mut c) >> 8) as u16).to_le_bytes());
+    }
+    out[skip..skip + len].to_vec()
+}
+
+#[test]
+fn the_specs_xbox_filler_generator_is_the_discs() {
+    let mut filler = xbox::Filler::new(0x4E99_8EB0);
+    let mut disc = vec![0; 3 * 2048 + 101];
+    filler.fill(0, &mut disc);
+    assert!(xbox_spec(0x4E99_8EB0, 0, disc.len()) == disc);
+    // A record's state, its bytes, restarts the stream where it stood
+    let mut later = xbox::Filler::from_bytes(&xbox::Filler::new(7).to_bytes());
+    let mut part = vec![0; 999];
+    later.fill(4097, &mut part);
+    assert!(xbox_spec(7, 4097, part.len()) == part);
 }
 
 // What the inputs are built with
@@ -706,6 +744,32 @@ mod write {
         iso
     }
 
+    /// An Xbox disc as an early layout tool masters one, its video
+    /// partition zeros: its game partition's reserved sectors filler, its
+    /// volume descriptor and the tool's signature, a file, a security range
+    /// of zeros the stream runs on through, and filler.
+    fn xbox_disc() -> Vec<u8> {
+        const GAME: usize = 0x1830_0000;
+        const S: usize = 2048;
+        let seed = 0x4E99_8EB0;
+        let filler = |from: usize, sectors: usize| xbox_spec(seed, from * S, sectors * S);
+        let mut disc = vec![0; GAME];
+        disc[16 * S..16 * S + 7].copy_from_slice(b"\x01CD001\x01");
+        disc.extend(filler(0, 32));
+        let mut descriptor = vec![0; S];
+        descriptor[..20].copy_from_slice(b"MICROSOFT*XBOX*MEDIA");
+        descriptor[S - 20..].copy_from_slice(b"MICROSOFT*XBOX*MEDIA");
+        disc.extend(descriptor);
+        let mut layout = vec![0x11; S];
+        layout[..24].copy_from_slice(b"XBOX_DVD_LAYOUT_TOOL_SIG");
+        layout[0x24..0x26].copy_from_slice(&3926u16.to_le_bytes());
+        disc.extend(layout);
+        disc.extend(text(64 * S, 3));
+        disc.extend(vec![0; 16 * S]);
+        disc.extend(filler(48, 64));
+        disc
+    }
+
     fn u64_at(bytes: &[u8], at: usize) -> u64 {
         u64::from_be_bytes(bytes[at..at + 8].try_into().unwrap())
     }
@@ -910,6 +974,18 @@ mod write {
             "class 64, areas out of disc order, pcm, vag",
             &disc,
             &image("Vector (PS2).iso", &disc),
+        );
+
+        // An Xbox disc's filler, from its seed, across a security range
+        let disc = xbox_disc();
+        let input = tmp.join("Vector (Xbox).iso");
+        std::fs::write(&input, &disc).unwrap();
+        v.compress(&input, "xbox.ore", &Options::default(), &[]);
+        v.ok(
+            "xbox.ore",
+            "class 64, xbox-filler-prng",
+            &disc,
+            &image("Vector (Xbox).iso", &disc),
         );
 
         // A Wii U disc and an eShop title

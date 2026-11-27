@@ -36,6 +36,7 @@ use super::wii::{
     GROUP_TOTAL_SIZE, HashBlock,
 };
 use super::xa;
+use super::xbox::Filler;
 
 /// How an ORE is written.
 #[derive(Clone, Copy, Debug, Default)]
@@ -329,6 +330,14 @@ impl<'a> Encoder<'a> {
                 put_uvarint(&mut self.index, n);
                 self.index.push(GEN_GC_WII_FILLER);
                 self.index.extend_from_slice(&seed);
+                self.padding += n;
+                n
+            }
+            Run::XboxFiller(n, state) => {
+                self.index.push(KIND_GENERATED);
+                put_uvarint(&mut self.index, n);
+                self.index.push(GEN_XBOX_FILLER);
+                self.index.extend_from_slice(&state);
                 self.padding += n;
                 n
             }
@@ -683,6 +692,49 @@ fn sony_platform(iso: &mut Iso) -> Result<Option<&'static str>> {
         .then_some("ps2"))
 }
 
+/// Where an XGD1 disc's game partition starts, after its video partition.
+const XGD1_GAME: u64 = 0x1830_0000;
+
+/// Whether `iso` is an Xbox disc as Redump dumps one, XGD1: its video
+/// partition, then its XDVDFS game partition, whose volume descriptor, 32
+/// sectors in, starts and ends with `MICROSOFT*XBOX*MEDIA`.
+fn is_xbox(iso: &mut Iso) -> Result<bool> {
+    const MAGIC: &[u8; 20] = b"MICROSOFT*XBOX*MEDIA";
+    let descriptor = XGD1_GAME + 32 * 2048;
+    if iso.size() < descriptor + 2048 {
+        return Ok(false);
+    }
+    let mut sector = [0; 2048];
+    iso.read_at(descriptor, &mut sector)?;
+    Ok(sector.starts_with(MAGIC) && sector.ends_with(MAGIC))
+}
+
+/// The seed of an Xbox disc's filler, if a layout tool before 4831
+/// mastered it, which seeded its generator with 32 bits: tried them all
+/// against the game partition's first sector, filler. Later tools use RC4,
+/// with a key no search finds.
+fn xbox_seed(iso: &mut Iso) -> Result<Option<u32>> {
+    if iso.size() < XGD1_GAME + 34 * 2048 {
+        return Ok(None);
+    }
+    let mut layout = [0; 2048];
+    iso.read_at(XGD1_GAME + 33 * 2048, &mut layout)?;
+    if !layout.starts_with(b"XBOX_DVD_LAYOUT_TOOL_SIG") {
+        return Ok(None);
+    }
+    // Its version moved in the fourth wave of tools, with zeros before it
+    let at = if layout[32..40] == [0; 8] { 0x34 } else { 0x24 };
+    if u16::from_le_bytes([layout[at], layout[at + 1]]) > 4830 {
+        return Ok(None);
+    }
+    let mut first = [0; 2048];
+    iso.read_at(XGD1_GAME, &mut first)?;
+    Ok((0..=u32::MAX).into_par_iter().find_any(|&seed| {
+        let mut filler = Filler::new(seed);
+        first.chunks(2).all(|pair| filler.word() == pair)
+    }))
+}
+
 /// Whether `input` is a cue sheet, by its extension: a CD, whose tracks it
 /// names.
 fn is_cue(input: &Path) -> bool {
@@ -874,6 +926,8 @@ fn encode(
         Some(platform) => Some(platform),
         None => cartridge_platform(&mut iso)?,
     };
+    // An Xbox disc's filler seed, when it has one to find
+    let mut xbox = None;
     let (plans, platform) = match cartridge.map(|platform| (vec![raw(0, size)], platform)) {
         Some(planned) => planned,
         None => match Volume::new(&mut iso, keys)? {
@@ -886,9 +940,13 @@ fn encode(
             }
             None => match sony_platform(&mut iso)? {
                 Some(platform) => (plan_sony(&mut iso, &mut hashes)?, platform),
+                None if is_xbox(&mut iso)? => {
+                    xbox = Some(xbox_seed(&mut iso)?);
+                    (vec![raw(0, size)], "xbox")
+                }
                 None => {
                     return Err(Error::Unsupported(
-                    "neither a GameCube, a Wii, a PlayStation 2 nor a PSP disc, nor a cartridge ROM recognised by its header: name its platform".into(),
+                    "neither a GameCube, a Wii, a PlayStation 2, a PSP nor an Xbox disc, nor a cartridge ROM recognised by its header: name its platform".into(),
                 ));
                 }
             },
@@ -930,6 +988,8 @@ fn encode(
                 AreaKind::Raw => {
                     let mut segmenter = if padded {
                         Segmenter::new(plan.start)
+                    } else if let Some(Some(seed)) = xbox {
+                        Segmenter::xbox(seed)
                     } else {
                         Segmenter::without_padding(plan.start)
                     };

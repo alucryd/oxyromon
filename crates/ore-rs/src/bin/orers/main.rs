@@ -13,7 +13,7 @@ use ore_rs::{Codec, Options, Profile, StoreBatch};
 fn cli() -> Command {
     Command::new("orers")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("ORE compression and decompression: GameCube, Wii, Wii U, PlayStation 2 and PSP ISOs, Wii U WUDs, WUXs and NUS folders, cartridge ROMs and CD and GD-ROM cue sheets are compressed, OREs decompressed, stores checked and repaired")
+        .about("ORE compression and decompression: GameCube, Wii, Wii U, PlayStation 2, PSP and Xbox ISOs, Wii U WUDs, WUXs and NUS folders, cartridge ROMs and CD and GD-ROM cue sheets are compressed, OREs decompressed, stores checked and repaired")
         .after_help(format!(
             "Writing an ORE from a Wii ISO needs the Wii common key among the keys, from a Wii U disc its\n\
              disc key and the Wii U common key, and the vWii common key for its vWii titles to be decrypted;\n\

@@ -51,6 +51,8 @@ pub const KIND_STORE: u8 = 9;
 pub const GEN_GC_WII_FILLER: u8 = 4;
 /// One byte repeated, the byte its payload: a ROM's padding.
 pub const GEN_FILL: u8 = 5;
+/// The filler of an Xbox disc mastered before layout tool 4831.
+pub const GEN_XBOX_FILLER: u8 = 7;
 
 /// Bounds a hostile file cannot push a reader past.
 pub const GROUP_MAX: u64 = 16 << 20;
@@ -593,6 +595,7 @@ pub fn from_cbor<T: for<'de> Deserialize<'de>>(bytes: &[u8]) -> Result<T> {
 }
 
 use super::lfg::SEED_BYTES;
+use super::xbox::STATE_BYTES;
 
 /// The block padding is generated in.
 pub const BLOCK: u64 = 0x8000;
@@ -608,6 +611,8 @@ pub enum Run<'a> {
     Fill(u64, u8),
     /// Padding: its length and the seed, big endian.
     Padding(u64, [u8; SEED_BYTES]),
+    /// An Xbox disc's filler: its length and the generator's state.
+    XboxFiller(u64, [u8; STATE_BYTES]),
     Chunk(&'a [u8]),
 }
 
