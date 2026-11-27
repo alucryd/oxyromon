@@ -1285,7 +1285,6 @@ impl Cutter {
     }
 }
 
-/// A file's name, as a cue sheet names it.
 /// Write the ROMs of a game of several, the files of the folder `input`, by
 /// name, as one ORE of `platform`: each file an area of its own, taken whole
 /// as a cartridge's ROM or a floppy's image is, and hashed on its own, as a
@@ -1408,6 +1407,7 @@ fn encode_set(
     })
 }
 
+/// A file's name, as a cue sheet names it.
 fn file_name(path: &Path) -> String {
     path.file_name()
         .unwrap_or_default()

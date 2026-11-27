@@ -9,19 +9,7 @@ const DISKS: [&str; 2] = [
 async fn test() {
     // given a game of two disks an ORE each, as earlier versions wrote them
     let mut env = TestEnv::with_dat("Commodore - Amiga (20261125).dat").await;
-    let staging = env.tmp_directory.join("staging");
-    std::fs::create_dir(&staging).unwrap();
-    let options = ore_rs::Options {
-        platform: Some("amiga"),
-        ..Default::default()
-    };
-    let mut ores = Vec::new();
-    for disk in DISKS {
-        let ore = staging.join(disk).with_extension("ore");
-        ore_rs::compress(&env.fixture_source(disk), &ore, &options, &[], &mut |_| {}).unwrap();
-        ores.push(ore);
-    }
-    env.import_roms(&[&ores[0], &ores[1]]).await;
+    env.import_disk_ores("amiga", &DISKS).await;
     let system = env.system().await;
     let system_directory = env.system_directory(&system).await;
     assert_eq!(env.romfiles().await.len(), 2);

@@ -1002,7 +1002,7 @@ impl Reader {
 
     /// Whether [`decompress`] writes it as a folder of files: a title or a
     /// set.
-    fn is_folder(&self) -> bool {
+    pub fn is_folder(&self) -> bool {
         self.is_title() || self.is_set()
     }
 

@@ -269,7 +269,7 @@ impl OreRomfile {
     /// Whether it holds a folder of files: a title's or a set's.
     pub fn is_folder(&self) -> Result<bool> {
         let reader = Reader::inspect(&self.romfile.path)?;
-        Ok(reader.is_title() || reader.is_set())
+        Ok(reader.is_folder())
     }
 
     /// Write a Wii U title's or a set's ORE out as its folder, `folder`, a

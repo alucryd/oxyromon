@@ -290,9 +290,33 @@ impl TestEnv {
         .await;
     }
 
-    /// The relative path a romfile under a system directory is stored as:
-    /// the path's tail after the ROM directory, exactly as the database
-    /// keeps it.
+    /// Import the fixtures `disks`, an ORE each of `platform`, as earlier
+    /// versions wrote a game of several: the OREs, staged.
+    pub async fn import_disk_ores(
+        &mut self,
+        platform: &'static str,
+        disks: &[&str],
+    ) -> Vec<PathBuf> {
+        let staging = self.tmp_directory.join("staging");
+        std::fs::create_dir_all(&staging).unwrap();
+        let options = ore_rs::Options {
+            platform: Some(platform),
+            ..Default::default()
+        };
+        let ores: Vec<PathBuf> = disks
+            .iter()
+            .map(|disk| {
+                let ore = staging.join(disk).with_extension("ore");
+                ore_rs::compress(&self.fixture_source(disk), &ore, &options, &[], &mut |_| {})
+                    .unwrap();
+                ore
+            })
+            .collect();
+        let paths: Vec<&Path> = ores.iter().map(PathBuf::as_path).collect();
+        self.import_roms(&paths).await;
+        ores
+    }
+
     /// Assert the ORE at `ore` is one game's ROMs, the fixtures `names`, in
     /// that order, each under its name and byte for byte, of `platform`.
     pub fn assert_set(&self, ore: &Path, platform: &str, names: &[&str]) {
@@ -318,6 +342,9 @@ impl TestEnv {
         }
     }
 
+    /// The relative path a romfile under a system directory is stored as:
+    /// the path's tail after the ROM directory, exactly as the database
+    /// keeps it.
     pub fn stored_path(&self, path: &Path) -> String {
         path.strip_prefix(&self.rom_directory)
             .unwrap()

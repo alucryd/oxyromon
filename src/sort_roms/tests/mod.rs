@@ -40,6 +40,7 @@ mod test_sort_1g1r_without_roms;
 mod test_sort_archive_custom_extension;
 mod test_sort_by_name;
 mod test_sort_custom_extension;
+mod test_sort_two_romfiles_onto_one_path;
 mod test_title;
 mod test_trim_categories;
 mod test_trim_ignored;

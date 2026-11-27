@@ -6,30 +6,12 @@ const DISKS: [&str; 2] = [
     "Test Game (Europe) (Disk 2).ipf",
 ];
 
-/// Two OREs, a disk each, as earlier versions wrote them, imported.
-async fn disk_ores(env: &mut TestEnv) -> Vec<std::path::PathBuf> {
-    let staging = env.tmp_directory.join("staging");
-    std::fs::create_dir(&staging).unwrap();
-    let options = ore_rs::Options {
-        platform: Some("amiga"),
-        ..Default::default()
-    };
-    let mut ores = Vec::new();
-    for disk in DISKS {
-        let ore = staging.join(disk).with_extension("ore");
-        ore_rs::compress(&env.fixture_source(disk), &ore, &options, &[], &mut |_| {}).unwrap();
-        ores.push(ore);
-    }
-    env.import_roms(&[&ores[0], &ores[1]]).await;
-    ores
-}
-
 #[tokio::test]
 async fn test() {
     // given a game of two disks an ORE each, the first's moved to the
     // game's name, as sort-roms once did
     let mut env = TestEnv::with_dat("Commodore - Amiga (20261125).dat").await;
-    disk_ores(&mut env).await;
+    env.import_disk_ores("amiga", &DISKS).await;
     let system = env.system().await;
     let system_directory = env.system_directory(&system).await;
     let path = system_directory.join("Test Game (Europe).ore");
