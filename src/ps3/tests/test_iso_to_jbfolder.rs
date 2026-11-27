@@ -35,6 +35,8 @@ async fn test() {
             "{path} differs"
         );
     }
+    // the update, kept apart, left no folder in the JB folder
+    assert!(!system_directory.join(GAME).join("PS3_UPDATE").exists());
     // the ISO is gone
     assert!(!system_directory.join(format!("{GAME}.iso")).exists());
     assert_eq!(game(&mut env).await.completion, 2);

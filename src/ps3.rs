@@ -237,8 +237,19 @@ pub async fn jbfolders_to_isos(
             sources.insert(rom.name.clone(), romfile.as_common(connection).await?.path);
         }
         let size = children.iter().map(|rom| rom.size as u64).sum();
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let output = tmp_directory.path().join(&iso_rom.name);
+        // written where it goes, as ps3-rs writes a .part first: a disc is too
+        // large to copy over from another file system
+        let output = CommonRomfile::from_path(&PathBuf::from(&iso_rom.name))?
+            .get_sorted_path(connection, system, &game, &iso_rom, &None, &None)
+            .await?;
+        if output.exists() {
+            print_warning(
+                progress_bar,
+                &format!("\"{}\" exists already, skipping", output.display()),
+            );
+            continue;
+        }
+        std::fs::create_dir_all(output.parent().unwrap())?;
         let iso_path = output.clone();
         let rebuilt = run_blocking(progress_bar, size, move |progress| {
             ps3_rs::rebuild(
@@ -264,19 +275,17 @@ pub async fn jbfolders_to_isos(
                     iso_rom.md5.as_deref().unwrap_or("none")
                 ),
             );
+            CommonRomfile::from_path(&output)?
+                .delete(progress_bar, true)
+                .await?;
             continue;
         }
 
         let mut transaction = begin_transaction(connection).await;
-        let romfile = CommonRomfile::from_path(&output)?;
-        let new_path = romfile
-            .get_sorted_path(&mut transaction, system, &game, &iso_rom, &None, &None)
-            .await?;
-        romfile.rename(progress_bar, &new_path, false).await?;
         create_or_update_romfile(
             &mut transaction,
             progress_bar,
-            &new_path,
+            &output,
             &[&iso_rom],
             Some(system.id),
         )
@@ -327,9 +336,27 @@ pub async fn isos_to_jbfolders(
             continue;
         };
 
+        // extracted where it goes, its root where the disc's root file sorts:
+        // a disc is too large to copy over from another file system
+        let Some(sfb) = find_rom_by_name_and_game_id(connection, "PS3_DISC.SFB", game.id).await
+        else {
+            print_warning(progress_bar, "The IRD lists no PS3_DISC.SFB, skipping");
+            continue;
+        };
+        let output = CommonRomfile::from_path(&PathBuf::from(&sfb.name))?
+            .get_sorted_path(connection, system, &game, &sfb, &None, &None)
+            .await?
+            .parent()
+            .unwrap()
+            .to_path_buf();
+        if output.exists() {
+            print_warning(
+                progress_bar,
+                &format!("\"{}\" exists already, skipping", output.display()),
+            );
+            continue;
+        }
         let key = ird.disc_key();
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let output = tmp_directory.path().join("jb");
         let (iso_path, jb_path) = (iso.path.clone(), output.clone());
         let size = std::fs::metadata(&iso.path)?.len();
         let extracted = match run_blocking(progress_bar, size, move |progress| {
@@ -354,22 +381,21 @@ pub async fn isos_to_jbfolders(
                 rom.size as u64 != file.size() || rom.md5.as_deref() != Some(&to_hex(md5))
             })
         });
-        if let Some((file, _)) = wrong {
-            print_error(
-                progress_bar,
-                &format!("\"{}\" does not match the IRD, keeping the ISO", file.path),
-            );
-            continue;
-        }
-        if extracted.len() != children.len() {
-            print_error(
-                progress_bar,
-                &format!(
-                    "{} files extracted, the IRD lists {}, keeping the ISO",
-                    extracted.len(),
-                    children.len()
-                ),
-            );
+        let mismatch = match wrong {
+            Some((file, _)) => Some(format!(
+                "\"{}\" does not match the IRD, keeping the ISO",
+                file.path
+            )),
+            None if extracted.len() != children.len() => Some(format!(
+                "{} files extracted, the IRD lists {}, keeping the ISO",
+                extracted.len(),
+                children.len()
+            )),
+            None => None,
+        };
+        if let Some(mismatch) = mismatch {
+            print_error(progress_bar, &mismatch);
+            remove_directory(progress_bar, &output, true).await?;
             continue;
         }
 
@@ -402,6 +428,14 @@ pub async fn isos_to_jbfolders(
                 Some(system.id),
             )
             .await?;
+        }
+        // the folder the update was extracted to, which it left
+        let update_directory = output.join(Path::new(UPDATE_PATH).parent().unwrap());
+        if update_directory
+            .read_dir()
+            .is_ok_and(|mut entries| entries.next().is_none())
+        {
+            remove_directory(progress_bar, &update_directory, true).await?;
         }
         update_rom_romfile(&mut transaction, iso_rom.id, None).await;
         iso.delete(progress_bar, false).await?;
