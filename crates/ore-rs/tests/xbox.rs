@@ -81,10 +81,20 @@ impl Filler {
     }
 }
 
-/// A disc an early layout tool mastered: its game partition's reserved
-/// sectors filler, its descriptor and the tool's signature, a file, a
-/// security range the stream runs on through, and filler to its end.
-fn seeded_disc(dir: &Path) -> PathBuf {
+/// The signature sector of layout tool `version`, as its first three waves
+/// lay it out, the version at 0x24.
+fn layout(version: u16) -> Vec<u8> {
+    let mut layout = vec![0x11; SECTOR as usize];
+    layout[..24].copy_from_slice(b"XBOX_DVD_LAYOUT_TOOL_SIG");
+    layout[0x24..0x26].copy_from_slice(&version.to_le_bytes());
+    layout
+}
+
+/// A disc an early layout tool mastered, its signature sector `layout`: its
+/// game partition's reserved sectors filler, its descriptor and the tool's
+/// signature, a file, a security range the stream runs on through, and
+/// filler to its end, past a record's 16 MiB.
+fn seeded_disc(dir: &Path, layout: &[u8]) -> PathBuf {
     let path = dir.join("Early (USA).iso");
     let mut file = File::create(&path).unwrap();
     file.seek(SeekFrom::Start(16 * SECTOR)).unwrap();
@@ -96,15 +106,12 @@ fn seeded_disc(dir: &Path) -> PathBuf {
     descriptor[..20].copy_from_slice(MAGIC);
     descriptor[SECTOR as usize - 20..].copy_from_slice(MAGIC);
     file.write_all(&descriptor).unwrap();
-    let mut layout = vec![0x11; SECTOR as usize];
-    layout[..24].copy_from_slice(b"XBOX_DVD_LAYOUT_TOOL_SIG");
-    layout[0x24..0x26].copy_from_slice(&4134u16.to_le_bytes());
-    file.write_all(&layout).unwrap();
+    file.write_all(layout).unwrap();
     let text: Vec<u8> = (0..1 << 20).map(|i| b"default.xbe "[i % 12]).collect();
     file.write_all(&text).unwrap();
     file.write_all(&noise(9, 16 * SECTOR as usize)).unwrap();
     filler.sectors(16);
-    file.write_all(&filler.sectors(3 << 9)).unwrap();
+    file.write_all(&filler.sectors(9000)).unwrap();
     drop(file);
     path
 }
@@ -112,7 +119,7 @@ fn seeded_disc(dir: &Path) -> PathBuf {
 #[test]
 fn an_early_xbox_discs_filler_is_regenerated() {
     let dir = TempDir::new().unwrap();
-    let iso = seeded_disc(dir.path());
+    let iso = seeded_disc(dir.path(), &layout(4134));
     let ore = dir.path().join("Early (USA).ore");
     let stats = ore_rs::compress(&iso, &ore, &Options::default(), &[], &mut |_| {}).unwrap();
     // The filler costs its records, the security range its noise
@@ -130,6 +137,21 @@ fn an_early_xbox_discs_filler_is_regenerated() {
     let back = dir.path().join("back.iso");
     ore_rs::decompress(&ore, &back, &mut |_| {}).unwrap();
     assert_eq!(std::fs::read(back).unwrap(), bytes);
+}
+
+#[test]
+fn a_fourth_wave_tools_version_is_read_after_its_zeros() {
+    // Zeros from 0x20, its version at 0x34: a later tool's, RC4, whose
+    // filler no seed makes, though this disc's does. Read at 0x24, a zero,
+    // it would be searched for and found
+    let mut fourth = vec![0; SECTOR as usize];
+    fourth[..24].copy_from_slice(b"XBOX_DVD_LAYOUT_TOOL_SIG");
+    fourth[0x34..0x36].copy_from_slice(&5849u16.to_le_bytes());
+    let dir = TempDir::new().unwrap();
+    let iso = seeded_disc(dir.path(), &fourth);
+    let ore = dir.path().join("Late (USA).ore");
+    let stats = ore_rs::compress(&iso, &ore, &Options::default(), &[], &mut |_| {}).unwrap();
+    assert!(stats.output_size > 16 << 20, "{}", stats.output_size);
 }
 
 #[test]

@@ -44,7 +44,10 @@ pub fn compress_best(codec: Codec, data: &[u8], group: usize) -> Result<(Codec, 
     // Noise, as an Xbox disc's filler is, codes no smaller at any level: a
     // quick try that cannot shrink it at all is kept, sparing the full one
     if matches!(codec, Codec::Zstd | Codec::Lzma2) {
-        let probe = zstd::bulk::compress(data, PROBE_LEVEL)?;
+        // with the full level's window, so no match it would find is missed
+        let mut compressor = zstd::bulk::Compressor::new(PROBE_LEVEL)?;
+        compressor.set_parameter(CParameter::WindowLog(window_log(group)))?;
+        let probe = compressor.compress(data)?;
         if probe.len() >= data.len() {
             return Ok((Codec::Zstd, probe));
         }
@@ -279,6 +282,22 @@ pub fn decompress(codec: Codec, data: &[u8], length: usize) -> Result<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn noise_repeated_past_a_quick_tries_window_is_not_kept_as_noise() {
+        let mut state = 7u64;
+        let mut data: Vec<u8> = (0..5 << 19)
+            .map(|_| {
+                state = state.wrapping_mul(6364136223846793005).wrapping_add(1);
+                (state >> 56) as u8
+            })
+            .collect();
+        // The repeat lies 2.5 MiB back, past level 3's own 2 MiB window
+        data.extend_from_within(..3 << 19);
+        let (codec, stored) = compress_best(Codec::Zstd, &data, 4 << 20).unwrap();
+        assert!(stored.len() < data.len() * 3 / 4, "{}", stored.len());
+        assert_eq!(decompress(codec, &stored, data.len()).unwrap(), data);
+    }
 
     #[test]
     fn data_in_an_audio_group_takes_zstd() {
