@@ -1,7 +1,7 @@
 # ore-rs
 
-ORE, oxyROMon's ROM enclosure, for GameCube, Wii, PlayStation 2, PSP, Xbox and Xbox 360
-discs, CDs, PlayStation's first, Dreamcast GD-ROMs, and cartridge ROMs,
+ORE, oxyROMon's ROM enclosure, for GameCube, Wii, PlayStation 2, PlayStation 3, PSP, Xbox and
+Xbox 360 discs, CDs, PlayStation's first, Dreamcast GD-ROMs, and cartridge ROMs,
 from the Atari 2600 to the DS. Part of
 [oxyROMon](https://github.com/alucryd/oxyromon), as a library and the
 `orers` CLI. An ORE gives back the disc that went in, byte for byte, and
@@ -156,16 +156,23 @@ common key. None ships with this crate: [`load_keys`] reads one from a text
 file of hex keys, a BootMii `keys.bin`, or an OTP dump. An ORE keeps each
 partition's title key, so reading one needs no key, nor does a GameCube disc.
 
+A PS3 disc's encrypted regions are stored decrypted when one of the keys is
+its disc key, as an IRD's data1 gives it or Redump publishes it as a `.dkey`,
+told among them by what the disc's encrypted EBOOT.BIN decrypts to; the ORE
+keeps it to encrypt them back. Without it, they are stored as they are:
+still bit-exact, but encrypted data compresses to nothing.
+
 ## Scope
 
-- **GameCube, Wii, PlayStation 2, PSP, Xbox and Xbox 360 discs, from an ISO; CDs, from a cue
+- **GameCube, Wii, PlayStation 2, PlayStation 3, PSP, Xbox and Xbox 360 discs, from an ISO; CDs, from a cue
   sheet whose tracks are a file each**, as Redump lists them; a GD-ROM's
   tracks after its `REM HIGH-DENSITY AREA` addressed from sector 45,000. An ISO is a
   PlayStation 2 DVD when its ISO 9660 `SYSTEM.CNF` boots a `BOOT2`
   executable, a PSP UMD when it holds `UMD_DATA.BIN` or
   `PSP_GAME/PARAM.SFO`, and an Xbox or Xbox 360 disc as Redump dumps one,
   XGD1, XGD2 or XGD3, by its game partition's `MICROSOFT*XBOX*MEDIA` volume
-  descriptor, where its kind starts it; an Xbox disc's filler
+  descriptor, where its kind starts it, and a PS3 disc by its sector 1's
+  `PlayStation3`, each region its sector 0 lists an area; an Xbox disc's filler
   regenerated when an early layout tool's 32-bit seed made it, found by
   trying every seed, and otherwise kept as it is: RC4 noise, which no codec
   shrinks; Game Boy, Game Boy Color and Game Boy Advance

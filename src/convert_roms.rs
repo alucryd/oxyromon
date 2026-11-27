@@ -3079,6 +3079,7 @@ async fn to_ore(
                         compression_algorithm,
                         profile,
                         sink.as_deref_mut(),
+                        ps3::disc_keys(&mut transaction, rom.game_id).await?,
                     )
                     .await
             } else {
@@ -3235,6 +3236,7 @@ async fn to_ore(
                     compression_algorithm,
                     profile,
                     sink.as_deref_mut(),
+                    ps3::disc_keys(&mut transaction, rom.game_id).await?,
                 )
                 .await,
         )?
@@ -3288,6 +3290,7 @@ async fn to_ore(
                     compression_algorithm,
                     profile,
                     sink.as_deref_mut(),
+                    Vec::new(),
                 )
                 .await,
         )?

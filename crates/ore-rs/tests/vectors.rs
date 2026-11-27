@@ -254,6 +254,8 @@ mod cd;
 #[cfg(feature = "write")]
 use test_support::gcwii;
 #[cfg(feature = "write")]
+use test_support::ps3;
+#[cfg(feature = "write")]
 use test_support::wiiu;
 
 #[cfg(feature = "write")]
@@ -1033,6 +1035,18 @@ mod write {
             "class 97, a title's files, its ticket",
             &logical,
             &files,
+        );
+
+        // A PS3 disc, its encrypted region stored decrypted
+        let disc = ps3::disc().iso;
+        let input = tmp.join("Vector (PS3).iso");
+        std::fs::write(&input, &disc).unwrap();
+        v.compress(&input, "ps3.ore", &Options::default(), &[ps3::DISC_KEY]);
+        v.ok(
+            "ps3.ore",
+            "class 64, ps3 between raw regions",
+            &disc,
+            &image("Vector (PS3).iso", &disc),
         );
 
         // A store, its segments sealed, and two ROMs sharing their text

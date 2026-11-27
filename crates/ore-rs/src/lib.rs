@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! ORE, oxyROMon's ROM enclosure, for GameCube, Wii, PlayStation 2 and PSP
-//! discs and CDs: part of oxyROMon.
+//! ORE, oxyROMon's ROM enclosure, for GameCube, Wii, PlayStation 2, PlayStation
+//! 3 and PSP discs and CDs: part of oxyROMon.
 //!
 //! An ORE holds a disc as Redump hashes it, and gives it back byte for byte.
 //! Wii partitions are stored decrypted and without their hashes, padding as
@@ -69,6 +69,12 @@ mod parity;
 mod precache;
 #[cfg(feature = "write")]
 mod ps2audio;
+// The PS3 disc specifics, shared with ps3-rs: the ps3 crate's source,
+// MIT OR Apache-2.0, reached outside this crate, which the reader puts a
+// disc's encryption back with
+#[allow(dead_code, unused_imports)]
+#[path = "../../ps3/src/lib.rs"]
+mod ps3;
 mod range;
 mod reader;
 #[cfg(feature = "write")]

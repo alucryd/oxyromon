@@ -439,6 +439,7 @@ impl ToOre for IsoRomfile {
             size,
             None,
             None,
+            Vec::new(),
         )
         .await
     }
@@ -454,6 +455,7 @@ impl IsoRomfile {
         compression_algorithm: &OreCompressionAlgorithm,
         profile: &OreProfile,
         sink: Option<&mut StoreSink>,
+        disc_keys: Vec<ore_rs::Key>,
     ) -> Result<OreRomfile> {
         let size = self.romfile.path.metadata()?.len();
         compress(
@@ -465,6 +467,7 @@ impl IsoRomfile {
             size,
             None,
             sink,
+            disc_keys,
         )
         .await
     }
@@ -493,6 +496,7 @@ impl CommonRomfile {
             size,
             platform,
             sink,
+            Vec::new(),
         )
         .await
     }
@@ -523,6 +527,7 @@ pub async fn rom_set_to_ore(
         size,
         Some(platform),
         sink,
+        Vec::new(),
     )
     .await
 }
@@ -608,6 +613,7 @@ async fn compress(
     size: u64,
     platform: Option<&'static str>,
     sink: Option<&mut StoreSink>,
+    disc_keys: Vec<ore_rs::Key>,
 ) -> Result<OreRomfile> {
     progress_bar.set_message("Creating ore");
 
@@ -664,7 +670,9 @@ async fn compress(
             }
         }
     }
-    let keys = load_wii_keys()?;
+    // a PS3 disc's key is told among them by what it decrypts
+    let mut keys = load_wii_keys()?;
+    keys.extend(disc_keys);
     let result = match sink {
         Some(sink) => {
             sink.compress(progress_bar, source, &path, options, keys, size)
@@ -723,6 +731,7 @@ pub async fn wiiu_to_ore(
         size,
         None,
         sink,
+        Vec::new(),
     )
     .await
 }
@@ -750,6 +759,7 @@ impl ToOre for CueBinRomfile {
             size,
             None,
             None,
+            Vec::new(),
         )
         .await
     }

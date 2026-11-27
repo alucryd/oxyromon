@@ -205,12 +205,7 @@ fn a_disc_key_is_told_right_by_what_eboot_decrypts_to() {
         sector.copy_from_slice(&disc.iso[at..at + ps3::SECTOR]);
         Ok(())
     };
-    assert_eq!(
-        ps3_rs::disc::opens(&mut read, &ird.disc_key()).unwrap(),
-        Some(true)
-    );
-    assert_eq!(
-        ps3_rs::disc::opens(&mut read, &[0x55; 16]).unwrap(),
-        Some(false)
-    );
+    let probe = ps3_rs::disc::Probe::find(&mut read).unwrap().unwrap();
+    assert!(probe.opens(&ird.disc_key()));
+    assert!(!probe.opens(&[0x55; 16]));
 }

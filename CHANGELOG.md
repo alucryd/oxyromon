@@ -23,6 +23,7 @@
 - `import-irds` keeps each IRD with its game, which an IRD imported before keeps once imported again
 - `import-roms` imports a PS3 system update, `PS3UPDAT.PUP`, loose or in a JB folder, once a system under `PS3_UPDATE/<version>/`, for every JB folder whose IRD lists it
 - `import-keys` imports PS3 disc keys from Redump's `.dkey` files, for ISOs with no IRD
+- PS3 ISOs convert to and from ORE, decrypted with the disc key their IRD or a `.dkey` gives
 
 ## Improvements
 

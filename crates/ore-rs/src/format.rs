@@ -462,7 +462,7 @@ pub struct Area {
     /// compressed (see [`super::cdtrack`]).
     #[serde(default, skip_serializing_if = "Option::is_none", with = "serde_bytes")]
     pub sectors: Option<Vec<u8>>,
-    /// A partition's title key.
+    /// A Wii partition's title key, or a PS3 region's disc key.
     #[serde(default, skip_serializing_if = "Option::is_none", with = "serde_bytes")]
     pub title_key: Option<Vec<u8>>,
     /// A partition's hash blocks recomputing does not give back.
@@ -535,6 +535,10 @@ pub enum AreaKind {
     /// The disc as it is `period` bytes before: a Wii U disc's mastering
     /// fills a partition's free space with the region before it.
     Repeat,
+    /// A PS3 disc's encrypted region, stored decrypted: each sector
+    /// AES-128-CBC under its `title_key`, the disc key, IV the sector's
+    /// number, big-endian.
+    Ps3,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -703,6 +707,7 @@ mod canonical {
                     AreaKind::CdAudio,
                     AreaKind::Wiiu,
                     AreaKind::Repeat,
+                    AreaKind::Ps3,
                 ]
                 .into_iter()
                 .map(area)

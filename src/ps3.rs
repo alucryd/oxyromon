@@ -10,6 +10,7 @@
 use super::common::*;
 use super::config::HashAlgorithm;
 use super::database::*;
+use super::import_keys::{PS3_KEYS_FILE, load_ps3_keys};
 use super::import_roms::create_or_update_romfile;
 use super::mimetype::ISO_EXTENSION;
 use super::model::*;
@@ -125,6 +126,21 @@ pub async fn import_pup(
         ),
     );
     Ok(Some((HashSet::from([system.id]), game_ids)))
+}
+
+/// The keys a game's PS3 disc may be opened with, which ore-rs tells apart
+/// by what the disc decrypts to: its IRD's, when one is kept, then the disc
+/// keys `import-keys` keeps, which tests leave out.
+pub async fn disc_keys(connection: &mut SqliteConnection, game_id: i64) -> Result<Vec<[u8; 16]>> {
+    let mut keys = Vec::new();
+    if let Some(data) = find_ird_by_game_id(connection, game_id).await {
+        keys.push(Ird::parse(&data)?.disc_key());
+    }
+    let path = super::config::get_data_directory()?.join(PS3_KEYS_FILE);
+    if !cfg!(test) && path.is_file() {
+        keys.extend(load_ps3_keys(&path)?);
+    }
+    Ok(keys)
 }
 
 /// A JB folder game's IRD, kept since it was imported.

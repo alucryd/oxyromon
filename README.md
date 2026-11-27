@@ -248,7 +248,7 @@ WBFS files are those `wit copy --wbfs` writes: only what the disc points to is k
 Exporting an RVZ to WBFS needs no key and decodes no ISO on the way; exporting a Wii ISO needs the Wii common key, as compressing it to RVZ does.
 
 ORE is oxyROMon's own format, specified as ORE 1.0 in [crates/ore-rs/SPEC.md](crates/ore-rs/SPEC.md) with conformance vectors: an ORE this version writes opens in every later one.
-An ORE holds a GameCube, Wii, PlayStation 2, PSP, Xbox or Xbox 360 disc, a cartridge's ROM, a floppy's image, or a CD or a Dreamcast GD-ROM as its cue sheet and tracks, an ORE a disc: the cue sheet is inside it, so a CD is one file, which every ROM of the game points to.
+An ORE holds a GameCube, Wii, PlayStation 2, PlayStation 3, PSP, Xbox or Xbox 360 disc, a cartridge's ROM, a floppy's image, or a CD or a Dreamcast GD-ROM as its cue sheet and tracks, an ORE a disc: the cue sheet is inside it, so a CD is one file, which every ROM of the game points to.
 Importing a CD ORE needs every track it holds to match the DAT; when its cue sheet is not the DAT's, import the DAT's, and it goes into the ORE in its place, its metadata alone written again.
 Like RVZ, compressing a Wii ISO needs the Wii common key, and reading an ORE needs none.
 No emulator reads ORE yet.
@@ -573,6 +573,7 @@ Nothing uses them yet: they are there for decrypting 3DS games to come.
 
 It imports PS3 disc keys from Redump's `.dkey` files, known by their extension, into `ps3_keys.txt` in the data directory, one key per line, each kept once, readable by its owner only.
 A disc's IRD gives its key already; a `.dkey` is for an ISO with none, and each key is tried against the disc, so a file's name does not matter.
+Converting a PS3 ISO to ORE decrypts it with its key, which the ORE keeps, so that its data compresses: without one, it is stored encrypted, still bit-exact, a few percent smaller.
 
 ```text
 Usage: oxyromon import-keys <KEYS>...
@@ -694,7 +695,7 @@ Converts ROM files between lossless formats and back to their originals:
 - Any original format to and from 7Z and ZIP.
 - CUE/BIN and ISO to and from CHD, with CHDs restored to their original split CUE/BIN.
 - ISO to and from CSO, ZSO and RVZ.
-- GameCube, Wii, PlayStation 2, PSP, Xbox and Xbox 360 ISOs, CUE/BIN and CHD to and from ORE, with OREs restored to their cue sheet and tracks; an ISO of another system is skipped.
+- GameCube, Wii, PlayStation 2, PlayStation 3, PSP, Xbox and Xbox 360 ISOs, CUE/BIN and CHD to and from ORE, with OREs restored to their cue sheet and tracks; an ISO of another system is skipped.
 - Cartridge ROMs, loose or in an archive, to and from ORE, restored under their name: every ROM of a cartridge system ORE knows by its DAT's name, the Atari consoles, ColecoVision, Odyssey 2, PC Engine and SuperGrafx, the Nintendo handhelds and consoles from the NES to the 3DS, its cards but not its eShop's CIAs, the NeoGeo Pocket, the Sega consoles from the SG-1000 to the 32X, and the WonderSwan, headerless or not, BIOSes included; in any other system, Game Boy, Game Boy Advance, DS, 3DS, N64 and Mega Drive ROMs ORE recognises by their header, the rest skipped.
 - Floppy images, loose or in an archive, to and from ORE, restored under their name: the Amiga's and the Atari ST's IPFs and the Famicom Disk System's and the 64DD's disks.
 - A game of several ROMs, a floppy game's disks or a cartridge's chips, as one ORE, as an archive holds them, each ROM a file of it, and back as the folder of its ROMs; the OREs a ROM each of an earlier build are gathered into one.

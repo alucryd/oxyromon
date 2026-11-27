@@ -266,6 +266,10 @@ pub fn disc() -> Disc {
         if path.ends_with("EBOOT.BIN") {
             bytes[..4].copy_from_slice(b"SCE\0");
         }
+        // game data that compresses once decrypted, as most does
+        if path.ends_with("Big.dat") {
+            bytes = (0..bytes.len()).map(|i| b"game data "[i % 10]).collect();
+        }
         let mut offset = 0;
         for &(lba, len) in extents {
             let at = lba as usize * SECTOR;

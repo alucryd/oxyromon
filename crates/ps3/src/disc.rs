@@ -308,32 +308,56 @@ fn magic(path: &str) -> Option<&'static [u8]> {
     }
 }
 
-/// Whether `key` is the disc key of the disc whose sectors `read` gives as
-/// they are: what the first encrypted sector of a file whose first bytes are
-/// known decrypts to, EBOOT.BIN's when it lies encrypted. `None` when no
-/// such file is encrypted, so no key can be told right.
-pub fn opens(
-    read: &mut dyn FnMut(u32, &mut [u8; SECTOR]) -> Result<()>,
-    key: &[u8; 16],
-) -> Result<Option<bool>> {
-    let mut sector = [0; SECTOR];
-    read(0, &mut sector)?;
-    let crypt = Crypt::new(key, regions(&sector)?);
-    let mut files = files(read)?;
-    // EBOOT.BIN first, every disc's executable
-    files.sort_by_key(|file| !file.path.eq_ignore_ascii_case("PS3_GAME/USRDIR/EBOOT.BIN"));
-    for file in files {
-        let (Some(magic), lba) = (magic(&file.path), file.lba()) else {
-            continue;
+/// The sector a disc key is told right by: the first encrypted sector of a
+/// file whose first bytes are known, EBOOT.BIN's when it lies encrypted.
+/// Found once, it tells any number of keys apart without reading again.
+pub struct Probe {
+    lba: u32,
+    magic: &'static [u8],
+    sector: [u8; SECTOR],
+}
+
+impl Probe {
+    /// The probe of the disc whose sectors `read` gives as they are; `None`
+    /// when no file whose first bytes are known is encrypted, so no key can
+    /// be told right.
+    pub fn find(
+        read: &mut dyn FnMut(u32, &mut [u8; SECTOR]) -> Result<()>,
+    ) -> Result<Option<Probe>> {
+        let mut sector = [0; SECTOR];
+        read(0, &mut sector)?;
+        let regions = regions(&sector)?;
+        let encrypted = |lba: u32| {
+            regions
+                .iter()
+                .any(|region| region.encrypted && (region.start..=region.end).contains(&lba))
         };
-        if file.size() < magic.len() as u64 || !crypt.encrypted(lba) {
-            continue;
+        let mut files = files(read)?;
+        // EBOOT.BIN first, every disc's executable
+        files.sort_by_key(|file| !file.path.eq_ignore_ascii_case("PS3_GAME/USRDIR/EBOOT.BIN"));
+        for file in files {
+            let (Some(magic), lba) = (magic(&file.path), file.lba()) else {
+                continue;
+            };
+            if file.size() >= magic.len() as u64 && encrypted(lba) {
+                read(lba, &mut sector)?;
+                return Ok(Some(Probe { lba, magic, sector }));
+            }
         }
-        read(lba, &mut sector)?;
-        crypt.decrypt(lba, &mut sector);
-        return Ok(Some(sector.starts_with(magic)));
+        Ok(None)
     }
-    Ok(None)
+
+    /// Whether `key` is the disc's key.
+    pub fn opens(&self, key: &[u8; 16]) -> bool {
+        let region = Region {
+            start: self.lba,
+            end: self.lba,
+            encrypted: true,
+        };
+        let mut sector = self.sector;
+        Crypt::new(key, vec![region]).decrypt(self.lba, &mut sector);
+        sector.starts_with(self.magic)
+    }
 }
 
 #[cfg(test)]
