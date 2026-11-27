@@ -969,6 +969,9 @@ async fn import_ore_title(
     let roms: Vec<&Rom> = matched.iter().map(|(_, rom)| rom).collect();
     let system_directory = get_system_directory(connection, &system).await?;
     let new_ore_path = system_directory.join(format!("{}.{}", game.name, ORE_EXTENSION));
+    if is_taken(progress_bar, &ore_romfile.romfile, &new_ore_path) {
+        return Ok(None);
+    }
     ore_romfile
         .romfile
         .rename(progress_bar, &new_ore_path, false)
@@ -1076,6 +1079,9 @@ async fn import_ore_set(
     }
     let system_directory = get_system_directory(connection, system).await?;
     let new_ore_path = system_directory.join(format!("{}.{}", game.name, ORE_EXTENSION));
+    if is_taken(progress_bar, &ore_romfile.romfile, &new_ore_path) {
+        return Ok(None);
+    }
     ore_romfile
         .romfile
         .rename(progress_bar, &new_ore_path, false)
@@ -2543,6 +2549,9 @@ async fn import_ore_cd(
         }
         let system_directory = get_system_directory(connection, system).await?;
         let new_ore_path = system_directory.join(format!("{}.{}", game.name, ORE_EXTENSION));
+        if is_taken(progress_bar, &ore_romfile.romfile, &new_ore_path) {
+            return Ok(None);
+        }
         ore_romfile
             .romfile
             .rename(progress_bar, &new_ore_path, false)
@@ -3516,6 +3525,25 @@ async fn find_sfb_rom_by_md5(
         hash_algorithm: Some(HashAlgorithm::Md5.to_string().to_lowercase()),
         hash: Some(md5.to_string()),
     })
+}
+
+/// Whether `path`, where an ORE `romfile` would be moved under its game's
+/// name, holds another file already: a file the database does not know, as
+/// an ORE an earlier version left there, which a move would replace. Both are
+/// left where they are.
+fn is_taken(progress_bar: &ProgressBar, romfile: &CommonRomfile, path: &Path) -> bool {
+    let taken = romfile.path != path && path.exists();
+    if taken {
+        print_skip(
+            progress_bar,
+            &format!(
+                "\"{}\" is already there, leaving \"{}\"",
+                path.display(),
+                romfile
+            ),
+        );
+    }
+    taken
 }
 
 async fn create_or_update_romfile<P: AsRef<Path>>(

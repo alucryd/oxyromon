@@ -2,50 +2,42 @@
 
 ## Features
 
-- ORE takes floppy images, the Amiga's and the Atari ST's IPFs and the Famicom Disk System's and the 64DD's disks, BIOSes included, known by their DAT's name and taken whole, as ORE's media class 16; a game of several disks becomes one ORE, as an archive holds them, each disk a file of it with its own hashes, from an archive or loose disks alike, into the store's batch too; recompressing, converting back, to its folder of disks, and exporting take every disk, and `import-roms` matches such an ORE made elsewhere by its disks and renames it after its game
-- Systems, games and ROMs tell what they are: each list grew an info modal, a system naming its DAT, completion, sizes and — over a store — the store's weight, what it saves and costs, this system's part of both and the systems it shares it with, a game what the DAT declares against what the disk weighs and, its files being OREs, what it owns, shares and would weigh detached beside its ROMs and their files, and a ROM its hashes and the file it lives in; the statistics card gave up its two store tiles to fit the selection's tiles on one row (#346)
-- A store tells what its tricks cost and save: `check-roms` on one reports its chunk count, what its dedup saved and what its parity costs, a system's info modal shows both beside its store when its ROMs live in one, and MCP's `system-detail` names them beside the four sizes
-- ORE takes 3DS card images, of the 3DS and New 3DS DATs, decrypted or not, trimmed or not, Zstandard by default as for a disc; an eShop DAT's CIAs are left out
-- `import-keys` imports 3DS keys from Azahar's `aes_keys.txt`, merged by name into `3ds_keys.txt` in the data directory, for decrypting 3DS games to come
-- Added ORE, oxyROMon's own format, from the new ore-rs crate: import, check and convert GameCube and Wii discs and CUE/BIN to and from ORE, RVZs included, through the ISO they hold, a CD's cue sheet inside its ORE with its tracks, set by `ORE_COMPRESSION_ALGORITHM` (`zstd` or `lzma2`) and `ORE_PROFILE` (`stream` or `archive`); the format is ORE 1.0, specified in `crates/ore-rs/SPEC.md` with conformance vectors, and an ORE written now opens in every later version
-- ORE takes Dreamcast GD-ROMs, from their Redump cue sheet or CHD
-- ORE takes PlayStation 2 DVDs too, and converts from CHD: a DVD's ISO, or a CD's tracks with its cue sheet; a disc of another system is skipped rather than failing the run
-- ORE takes PSP UMDs, from their ISO or CHD, as it takes PlayStation 2 DVDs
-- ORE takes Wii U discs, from their ISO, WUD, WUX or lossless WUA, and back as the ISO their DAT names; and Wii U eShop titles, games, updates and DLC, from their NUS folder, loose or in an archive, and back as that folder. Each is stored decrypted, so it compresses and, in a store, an update partition is kept once whatever the disc and version; a title's ticket goes in its ORE, the one `import-roms` kept for it when its folder has none, and a title without one is kept as it is. Converting needs the Wii U keys `import-keys` stores; reading an ORE back needs none
-- With `GROUP_SUBSYSTEMS`, a subsystem sharing its base system's directory, and so its ORE store, follows the base system's `ORE_STORE`, `ORE_STORE_PARITY`, `ORE_STORE_BATCH` and `ORE_PROFILE`, so systems set apart no longer set the store back to their own each run
-- `check-roms` checks an ORE store shared by systems, as `GROUP_SUBSYSTEMS` gives a system's DATs, once a run rather than once a system
-- `convert-roms --format ORE --recompress` writes a Wii U title's ORE again through its NUS folder, taking the ticket `import-roms` kept for it since when the ORE has none, so a DLC converted without its ticket is decrypted once it has one
-- `import-roms` imports a Wii U title's ORE made elsewhere, matched by the NUS folder it holds as that folder is, by its TMD then its files within the game, and renamed after it; a disc's ORE already imported
-- ORE takes Game Boy, Game Boy Color, Game Boy Advance, DS, N64 and Mega Drive ROMs, loose or in an archive, and gives them back under their name
-- ORE takes every ROM of 30 cartridge systems, known by their DAT's name, NES, SNES, PC Engine, Master System and Atari's among them, headerless or not, BIOSes included; a Game Boy, Game Boy Advance, DS, N64 or Mega Drive ROM whose header disagrees is taken with a warning
-- With `ORE_STORE` on, ISOs and cartridge ROMs are written straight into the store, compressed once rather than twice, each game checked and persisted once its batch is committed
-- `ORE_STORE_PARITY` sets how much parity an ORE store keeps, from 0 to 16 shards against 239, 16 by default; a store already written is sealed again with it as `compact-roms` compacts it
-- `export-roms` exports OREs, thin ones read through their store: as their original files, in 7Z or ZIP, as an ISO or a CHD, and with the new `ORE` format as standalone OREs, a thin one detached
-- ORE stores, opt-in a system with `ORE_STORE`: `convert-roms --format ORE` attaches a system's OREs to `.ore-store` in its directory, each game a thin ORE, as one batch a run or, with `ORE_STORE_BATCH` at `game`, one a game, and detaches them again when it is off; `check-roms` checks and repairs the store, the new `compact-roms` compacts it, recompressing it whole with `--recompress`, and `purge-roms --foreign` and `import-roms` leave its files alone
-- `ORE_COMPRESSION_ALGORITHM` defaults to `auto`: LZMA2 for a cartridge's ROM, where Zstandard loses to 7z, and Zstandard for a disc
-- ORE codes a PlayStation 2 DVD's audio as audio: its `VAGp` streams' SPU ADPCM and its 16-bit PCM, found by their headers, so a disc full of sound no longer loses to its CHD
-- Importing a cue sheet for a game whose tracks are in an ORE puts it in the ORE, in place of the dump's, writing the ORE's metadata alone again
-- Added `LANGUAGE_FIRST` and `PREFERRED_LANGUAGES`: with the first on, the 1G1R election ranks the language a game ships above its region, on the second's order, so a French user keeps a French release even in a lower-ranked region, a release whose languages the DAT doesn't tell stays below a preferred one and above one shipping only unwanted tongues, and a game whose only release speaks an unwanted language is kept, not trimmed; the `LANGUAGES` filter and the region order are untouched with it off (#331)
+- Added ORE, oxyROMon's own format, from the new ore-rs crate: import, check, convert and export GameCube and Wii discs and CUE/BIN to and from ORE, RVZs included, set by `ORE_COMPRESSION_ALGORITHM` and `ORE_PROFILE`; the format is ORE 1.0, specified in `crates/ore-rs/SPEC.md`
+- ORE takes Dreamcast GD-ROMs, PlayStation 2 DVDs, PSP UMDs, and Wii U discs and eShop titles, and converts from CHD
+- ORE takes cartridge ROMs of 30 systems, 3DS card images, and floppy images: the Amiga's and Atari ST's IPFs, and FDS and 64DD disks
+- A game of several ROMs, such as a floppy game's disks, is one ORE, as an archive holds them
+- Added ORE stores, opt-in per system with `ORE_STORE`, deduplicating a system's OREs, with `ORE_STORE_PARITY` and `ORE_STORE_BATCH`; `check-roms` checks and repairs them, and the new `compact-roms` compacts them
+- `ORE_COMPRESSION_ALGORITHM` defaults to `auto`: LZMA2 for cartridge ROMs, Zstandard for discs
+- ORE codes PlayStation 2 audio as audio, so audio-heavy discs no longer lose to CHD
+- `export-roms` exports OREs, and the new `ORE` export format writes standalone OREs
+- `import-roms` imports OREs made elsewhere, Wii U titles and multi-ROM games included, and puts an imported cue sheet into its game's ORE
+- `import-keys` imports 3DS keys from Azahar's `aes_keys.txt`
+- With `GROUP_SUBSYSTEMS`, subsystems follow their base system's ORE settings, and a shared store is checked once a run
+- `convert-roms --format ORE --recompress` writes a Wii U title's ORE again with the ticket kept for it since
+- Added info modals for systems, games and ROMs to the web UI, with store statistics (#346)
+- `check-roms` reports a store's chunk count, dedup savings and parity cost, also shown in the web UI and MCP
+- Added `LANGUAGE_FIRST` and `PREFERRED_LANGUAGES`, ranking a game's languages above its region in 1G1R (#331)
 
 ## Improvements
 
-- A web request reads a store's index once rather than once per size it answers: the two stats and the two actual sizes of a system parse their shared store together, where a refresh had parsed it four times
+- The web UI reads a store's index once a request rather than once per size
 
 ## Fixes
 
-- A game of several ROMs, of a system ORE takes whole, is one ORE, where it was an ORE a ROM: a floppy game's disks, an Amiga's, an Atari ST's or an FDS's, and a cartridge's chips, as Sonic & Knuckles and its Lock-On's; `convert-roms --format ORE` gathers the OREs a ROM each of an earlier build into one, without `--recompress`, even one `sort-roms` had moved under the game's name, and `sort-roms` kept them under their ROMs' names, where it named every one after the game: the second disk's move was dropped from the plan, and the next run moved it onto the first, overwriting it; a plan moving two files to one path now fails before moving anything
-- An ORE store no game uses any more is deleted, once `convert-roms` takes a system's last thin ORE out of it, to another format or detached, and once `check-roms` or `purge-roms` finds it empty, where it stayed behind, checked and weighed as an empty store; an ORE beneath it that cannot be read keeps it, as it may still need its chunks
-- The Dedup Saved and Parity Cost of a system, in its info modal and MCP's `get_system`, are its own games' part when systems share one store (`GROUP_SUBSYSTEMS`), where every system of a group showed the same store-wide numbers: each game's dedup saving is what it would weigh detached less its share, and its parity cost the part of the footers its chunks pay, and the parts of a group add up to the store's whole (#345)
-- What a store's `check-roms` reports as dedup saved is what every shared copy saved, as its own wording tells, rather than one game's share of each chunk
-- A Wii U update or DLC with a content of a size off the AES block, as *Nintendo Land*'s update has, converts to WUA, where wux-rs refused it as corrupt
-- A Wii U update whose CDN DAT entry lists an older version's ticket besides the newest, as *Mario Kart 8*'s, *Splatoon*'s and *Super Smash Bros.*'s do, counts as complete with its newest TMD and ticket, which are all Nintendo's servers deliver; the older ticket was required and the update stayed incomplete
-- Fixed `import-dats` moving a cue sheet to `Trash` when an update renames the tracks it names, as Redump renames a game, which left the game incomplete; the cue sheet is now rewritten with the new names and kept when the DAT lists it
-- Converting CHDs converts a clone before the CHD it reads from, in ORE as in every other format, and leaves a CHD whose clones are still on disk alone: a clone imported from outside keeps its link to its parent in its header alone, and converting its parent first used to leave it unreadable
-- `check-roms`, `compact-roms` and committing a store's batch show their progress as they go, rather than a bar left at the last ORE's size that never moved, and extracting an ORE moves its bar steadily rather than in jumps of a hundred megabytes or so
-- Fixed `import-roms` leaving a game incomplete when its disc has the same track more than once, as Redump lists some: every copy in a CHD, an ORE or an archive took the first copy's ROM, and the others got none, and a loose copy matched every copy's ROM, so it was asked about or, with `--unattended skip`, skipped; each copy now takes a ROM of its own, so a CHD or an ORE with more copies than its DAT lists is no longer imported as the game, but handled as one with a track the DAT doesn't list
-- The web UI's and MCP's actual sizes of a system, total and one-region, count each thin ORE's share of its store and each WUA's of the update partitions it keeps in `.update-partitions`, rather than their files alone, which only reference them; a store shared by grouped subsystems is split between them by game
-- Fixed `import-roms --unattended first`, which the web UI's and MCP's imports use, taking the ROM whose name is least like the file's when the file matches ROMs of several games: Jaro-Winkler scores similarity, not distance, and the candidates were sorted least similar first; the closest now comes first, in a JB folder too
-- A game written over another game's thin ORE, or purged from an ORE store, no longer leaves its chunk references behind: the batch gives back what the thin ORE it replaced named, `check-roms` and `sync` count the store's references again once a run is through and `purge-roms` after a purge, so the dedup a store claims and each game's share of it are the truth, and stores inflated before this heal without a compaction (#344)
+- Fixed importing a CD's, a Wii U title's or a multi-ROM game's ORE replacing an unknown file under the game's name
+- Fixed `sort-roms` naming every ORE of a multi-ROM game after the game, which overwrote one with another; a sort moving two files to one path now fails before moving anything
+- ORE stores no game uses any more are now deleted
+- Fixed systems sharing a store all showing the store-wide dedup savings and parity cost (#345)
+- Fixed `check-roms` overstating a store's dedup savings
+- Fixed Wii U updates and DLC with contents of a size off the AES block failing to convert to WUA
+- Fixed Wii U updates whose DAT lists an older version's ticket staying incomplete
+- Fixed `import-dats` moving a cue sheet to `Trash` when an update renames its tracks
+- Fixed converting a CHD before its clones, which left them unreadable
+- Fixed progress bars stalling in `check-roms`, `compact-roms`, store commits and ORE extraction
+- Fixed `import-roms` leaving a game incomplete when its disc has the same track more than once
+- Fixed system sizes in the web UI and MCP ignoring thin OREs' share of their store and WUAs' update partitions
+- Fixed `import-roms --unattended first` picking the least similar ROM
+- Fixed replacing or purging a thin ORE leaving its chunk references in the store (#344)
 
 # 0.25.0
 
