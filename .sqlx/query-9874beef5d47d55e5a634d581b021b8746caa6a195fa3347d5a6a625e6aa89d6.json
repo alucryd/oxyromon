@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT INTO irds (game_id, data)\n        VALUES (?, ?)\n        ON CONFLICT (game_id) DO UPDATE SET data = excluded.data\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "9874beef5d47d55e5a634d581b021b8746caa6a195fa3347d5a6a625e6aa89d6"
+}

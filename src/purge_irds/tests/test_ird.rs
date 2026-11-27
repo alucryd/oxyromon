@@ -19,6 +19,11 @@ async fn test() {
     // Refetch game to get updated jbfolder status
     let game = find_game_by_id(&mut env.connection, game.id).await;
     assert!(game.jbfolder);
+    assert!(
+        find_ird_by_game_id(&mut env.connection, game.id)
+            .await
+            .is_some()
+    );
 
     // when
     purge_ird(&mut env.connection, &env.progress_bar, &game)
@@ -31,4 +36,9 @@ async fn test() {
 
     let updated_game = find_game_by_id(&mut env.connection, game.id).await;
     assert!(!updated_game.jbfolder);
+    assert!(
+        find_ird_by_game_id(&mut env.connection, game.id)
+            .await
+            .is_none()
+    );
 }

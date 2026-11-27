@@ -12,6 +12,7 @@ use super::nsz::AsNsz;
 use super::ore::{AsOre, OreRomfile};
 use super::progress::*;
 use super::prompt::*;
+use super::ps3;
 use super::rvz::AsRvz;
 use super::util::*;
 use super::wux::{
@@ -721,6 +722,13 @@ pub async fn import_rom<P: AsRef<Path>>(
             system_ids.insert(ids[0]);
             game_ids.insert(ids[1]);
         };
+    } else if PUP_EXTENSION == extension
+        && !as_is
+        && let Some((new_system_ids, new_game_ids)) =
+            ps3::import_pup(&mut transaction, progress_bar, system, &romfile).await?
+    {
+        system_ids.extend(new_system_ids);
+        game_ids.extend(new_game_ids);
     } else if let Some(ids) = import_other(
         &mut transaction,
         progress_bar,
@@ -1283,6 +1291,20 @@ async fn import_jbfolder<P: AsRef<Path>>(
                             continue;
                         }
 
+                        // the system update, kept once for every JB folder listing it
+                        if rom.name == ps3_rs::UPDATE_PATH {
+                            ps3::place_update(
+                                &mut transaction,
+                                progress_bar,
+                                system,
+                                entry.path(),
+                                size,
+                                &md5,
+                            )
+                            .await?;
+                            continue;
+                        }
+
                         // put JB files in subdirectories
                         let new_path = system_directory.join(&game.name).join(&rom.name);
 
@@ -1552,7 +1574,7 @@ async fn import_archive(
         let system_directory = get_system_directory(connection, &system).await?;
 
         // put arcade roms and JB folders in subdirectories
-        let new_path = if system.arcade || game.jbfolder {
+        let new_path = if system.arcade || (game.jbfolder && rom.parent_id.is_some()) {
             let game = find_game_by_id(connection, rom.game_id).await;
             system_directory.join(game.name).join(&rom.name)
         } else {
@@ -3546,7 +3568,7 @@ fn is_taken(progress_bar: &ProgressBar, romfile: &CommonRomfile, path: &Path) ->
     taken
 }
 
-async fn create_or_update_romfile<P: AsRef<Path>>(
+pub(crate) async fn create_or_update_romfile<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     romfile_path: &P,

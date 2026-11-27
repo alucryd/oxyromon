@@ -15,6 +15,7 @@ use super::ore::{
 };
 use super::progress::*;
 use super::prompt::*;
+use super::ps3;
 use super::rvz::{AsRvz, RvzCompressionAlgorithm, ToRvz};
 use super::transcode::*;
 use super::util::*;
@@ -36,7 +37,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 pub const ALL_FORMATS: &[&str] = &[
-    "ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "ORE", "RVZ", "WUA", "WUX", "ZIP", "ZSO",
+    "ORIGINAL", "7Z", "CHD", "CSO", "JB", "NSZ", "ORE", "RVZ", "WUA", "WUX", "ZIP", "ZSO",
 ];
 pub const ARCADE_FORMATS: &[&str] = &["ORIGINAL", "ZIP"];
 
@@ -50,7 +51,17 @@ pub fn format_supported_for_system(system: &System, format: &str) -> bool {
 fn format_available(format: &str) -> bool {
     matches!(
         format,
-        "7Z" | "CHD" | "CSO" | "NSZ" | "ORE" | "ORIGINAL" | "RVZ" | "WUA" | "WUX" | "ZIP" | "ZSO"
+        "7Z" | "CHD"
+            | "CSO"
+            | "JB"
+            | "NSZ"
+            | "ORE"
+            | "ORIGINAL"
+            | "RVZ"
+            | "WUA"
+            | "WUX"
+            | "ZIP"
+            | "ZSO"
     )
 }
 
@@ -173,6 +184,13 @@ pub async fn convert_system(
         prompt_for_parents,
     } = opts;
 
+    // PS3 games with an IRD, whose files are not the DAT's own ROMs
+    let jbfolder_game_ids: Vec<i64> = games
+        .iter()
+        .filter(|game| game.jbfolder)
+        .map(|game| game.id)
+        .collect();
+
     let (roms_by_game_id, games_by_id, romfiles_by_id) =
         load_rom_data(connection, games, true).await;
 
@@ -186,7 +204,11 @@ pub async fn convert_system(
                 romfiles_by_id,
                 check,
             )
-            .await?
+            .await?;
+            ps3::jbfolders_to_isos(connection, progress_bar, &system, &jbfolder_game_ids).await?
+        }
+        "JB" => {
+            ps3::isos_to_jbfolders(connection, progress_bar, &system, &jbfolder_game_ids).await?
         }
         "7Z" => {
             let compression = archive::get_archive_compression(

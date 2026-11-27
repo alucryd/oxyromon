@@ -36,6 +36,7 @@ mod nsz;
 mod ore;
 mod progress;
 mod prompt;
+mod ps3;
 mod purge_games;
 mod purge_irds;
 mod purge_roms;

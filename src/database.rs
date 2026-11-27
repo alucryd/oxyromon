@@ -596,6 +596,14 @@ pub async fn update_jbfolder_games_completion_by_system_id(
         "
         UPDATE games
         SET completion = CASE
+            -- the disc whole, as its ISO
+            WHEN EXISTS (
+                SELECT 1
+                FROM roms
+                WHERE roms.game_id = games.id
+                AND roms.romfile_id IS NOT NULL
+                AND roms.parent_id IS NULL
+            ) THEN 2
             WHEN NOT EXISTS (
                 SELECT 1
                 FROM roms
@@ -706,6 +714,129 @@ pub async fn update_game_jbfolder(connection: &mut SqliteConnection, id: i64, jb
     .execute(connection)
     .await
     .unwrap_or_else(|_| panic!("Error while updating game with id {}", id));
+}
+
+/// Keep a game's IRD as imported, replacing any it had.
+pub async fn create_or_replace_ird(connection: &mut SqliteConnection, game_id: i64, data: &[u8]) {
+    sqlx::query!(
+        "
+        INSERT INTO irds (game_id, data)
+        VALUES (?, ?)
+        ON CONFLICT (game_id) DO UPDATE SET data = excluded.data
+        ",
+        game_id,
+        data,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while storing the IRD of game with id {}", game_id));
+}
+
+pub async fn find_ird_by_game_id(
+    connection: &mut SqliteConnection,
+    game_id: i64,
+) -> Option<Vec<u8>> {
+    sqlx::query_scalar!(
+        "
+        SELECT data
+        FROM irds
+        WHERE game_id = ?
+        ",
+        game_id,
+    )
+    .fetch_optional(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding the IRD of game with id {}", game_id))
+}
+
+pub async fn delete_ird_by_game_id(connection: &mut SqliteConnection, game_id: i64) {
+    sqlx::query!(
+        "
+        DELETE FROM irds
+        WHERE game_id = ?
+        ",
+        game_id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while deleting the IRD of game with id {}", game_id));
+}
+
+/// The ROMs named `name` within JB folders, with no file yet, of this size and
+/// MD5, in `system_id` when given: a PS3 system update every disc built on that
+/// firmware lists.
+pub async fn find_child_roms_without_romfile_by_name_and_size_and_md5(
+    connection: &mut SqliteConnection,
+    name: &str,
+    size: u64,
+    md5: &str,
+    system_id: Option<i64>,
+) -> Vec<Rom> {
+    let size = i64::try_from(size).unwrap();
+    let md5 = md5.to_lowercase();
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT r.*
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NULL
+        AND r.parent_id IS NOT NULL
+        AND r.name = ?
+        AND r.size = ?
+        AND r.md5 = ?
+        AND (? IS NULL OR g.system_id = ?)
+        ORDER BY g.name
+        ",
+        name,
+        size,
+        md5,
+        system_id,
+        system_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding roms named {} with MD5 {}", name, md5))
+}
+
+/// The file a ROM named `name` within a JB folder, of this size and MD5, is
+/// in already, if any, in `system_id` when given: a file is kept in its
+/// system's directory, which another system's games must not reach into.
+pub async fn find_child_romfile_id_by_name_and_size_and_md5(
+    connection: &mut SqliteConnection,
+    name: &str,
+    size: i64,
+    md5: &str,
+    system_id: Option<i64>,
+) -> Option<i64> {
+    let md5 = md5.to_lowercase();
+    sqlx::query_scalar!(
+        "
+        SELECT r.romfile_id AS \"romfile_id!\"
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NOT NULL
+        AND r.parent_id IS NOT NULL
+        AND r.name = ?
+        AND r.size = ?
+        AND r.md5 = ?
+        AND (? IS NULL OR g.system_id = ?)
+        LIMIT 1
+        ",
+        name,
+        size,
+        md5,
+        system_id,
+        system_id,
+    )
+    .fetch_optional(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding the romfile of {} with MD5 {}",
+            name, md5
+        )
+    })
 }
 
 pub async fn update_game_playlist(

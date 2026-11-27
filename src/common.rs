@@ -27,6 +27,34 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::{fs::File, str::FromStr};
 
+/// Where a PS3 system's updates go, relative to its directory, one folder a
+/// firmware version.
+pub fn ps3_update_directory(version: &str) -> PathBuf {
+    // a version is digits and a dot, read from the PUP: anything else must
+    // not climb out
+    let version: String = version
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '.')
+        .collect();
+    let version = match version.trim_matches('.') {
+        "" => "unknown",
+        version => version,
+    };
+    Path::new("PS3_UPDATE").join(version)
+}
+
+/// Where the PS3 system update of firmware `version` goes in `system`.
+pub async fn ps3_update_path(
+    connection: &mut SqliteConnection,
+    system: &System,
+    version: &str,
+) -> Result<PathBuf> {
+    Ok(get_system_directory(connection, system)
+        .await?
+        .join(ps3_update_directory(version))
+        .join("PS3UPDAT.PUP"))
+}
+
 pub(crate) fn to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{:02x}", b)).collect()
 }
@@ -437,6 +465,15 @@ impl CommonFile for CommonRomfile {
     ) -> Result<PathBuf> {
         let extension = extension.or_else(|| self.path.extension()?.to_str());
 
+        // a PS3 system update, one file for every JB folder built on its firmware
+        if game.jbfolder
+            && rom.parent_id.is_some()
+            && rom.name == ps3_rs::UPDATE_PATH
+            && let Ok(version) = ps3_rs::pup_version(&self.path)
+        {
+            return ps3_update_path(connection, system, &version).await;
+        }
+
         // sorting
         let mut sorted_path = match game.sorting {
             s if s == Sorting::OneRegion as i64 => {
@@ -476,7 +513,7 @@ impl CommonFile for CommonRomfile {
         // together. The discs of a game share one, named as their playlist is
         let is_archive = extension.is_some_and(|ext| ARCHIVE_EXTENSIONS.contains(&ext));
         if (system.arcade && !is_archive)
-            || game.jbfolder
+            || (game.jbfolder && rom.parent_id.is_some())
             || (!is_archive && is_nus_title(connection, game).await)
         {
             sorted_path.push(&game.name);

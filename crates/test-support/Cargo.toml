@@ -3,7 +3,7 @@ name = "test-support"
 version = "0.0.0"
 edition.workspace = true
 rust-version.workspace = true
-description = "Synthetic discs and titles for the format crates' tests: GameCube and Wii discs under one feature, Wii U discs and NUS titles under another"
+description = "Synthetic discs and titles for the format crates' tests: GameCube and Wii discs under one feature, Wii U discs and NUS titles under another, PlayStation 3 discs and their IRDs under a third"
 # The gcwii family ports Dolphin's junk generator and Wii hashing, GPL-2.0
 # or later; the wiiu family is that crate's disc model, GPL-3.0 or later
 license = "GPL-2.0-or-later AND GPL-3.0-or-later"
@@ -14,12 +14,18 @@ publish = false
 
 [dependencies]
 aes = "0.9"
-sha1.workspace = true
+crc32fast = { workspace = true, optional = true }
+flate2 = { workspace = true, optional = true }
+md-5 = { workspace = true, optional = true }
+sha1 = { workspace = true, optional = true }
 
 [features]
 # The synthetic GameCube and Wii discs, as rvz-rs, wbfs-rs and ore-rs are
 # tested on them
-gcwii = []
+gcwii = ["dep:sha1"]
 # The synthetic Wii U disc and its NUS update, as wux-rs, ore-rs and
 # smelt-rs are tested on them
-wiiu = []
+wiiu = ["dep:sha1"]
+# The synthetic PlayStation 3 disc and its IRD, as ps3-rs and oxyromon are
+# tested on them
+ps3 = ["dep:crc32fast", "dep:flate2", "dep:md-5"]

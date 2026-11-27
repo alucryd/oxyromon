@@ -19,7 +19,6 @@ use indexmap::IndexMap;
 use indicatif::{HumanBytes, ProgressBar};
 use ore_rs::{Codec, Options, Profile, Reader, StoreBatch, StoreOptions};
 use sqlx::SqliteConnection;
-#[cfg(any(feature = "mcp", test))]
 use std::collections::HashMap;
 use std::io::Read;
 use std::path::{Path, PathBuf};

@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT r.romfile_id AS \"romfile_id!\"\n        FROM roms AS r\n        JOIN games AS g ON r.game_id = g.id\n        WHERE r.romfile_id IS NOT NULL\n        AND r.parent_id IS NOT NULL\n        AND r.name = ?\n        AND r.size = ?\n        AND r.md5 = ?\n        AND (? IS NULL OR g.system_id = ?)\n        LIMIT 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "romfile_id!",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "roms",
+            "name": "romfile_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "6fdd84af56d105dce5783114e0bb5da7565bf0b71f95689010375815ee4a8dde"
+}

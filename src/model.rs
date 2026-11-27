@@ -4,7 +4,6 @@ use async_graphql::{Enum, SimpleObject};
 use num_derive::FromPrimitive;
 use serde::{Deserialize, Deserializer, Serialize};
 use sqlx::{FromRow, Type};
-use std::collections::HashMap;
 
 #[derive(Clone, Copy, FromPrimitive, Type, Eq, PartialEq)]
 #[cfg_attr(feature = "server", derive(Enum))]
@@ -383,21 +382,6 @@ pub struct DataXml {
     pub offset: String,
     #[serde(rename = "@value")]
     pub value: String,
-}
-
-pub struct Irdfile {
-    pub version: u8,
-    pub game_id: String,
-    pub game_name: String,
-    pub update_version: String,
-    pub game_version: String,
-    pub app_version: String,
-    pub regions_count: usize,
-    // parsed from the IRD file but not consumed yet
-    #[allow(dead_code)]
-    pub regions_hashes: Vec<String>,
-    pub files_count: usize,
-    pub files_hashes: HashMap<u64, String>,
 }
 
 /// A Retool clone list, of which `import-clone-lists` reads the groups' titles

@@ -108,6 +108,7 @@ log = "0.4.35"
 md-5.workspace = true
 nsz-rs = { path = "crates/nsz-rs", version = "0.3.0", default-features = false }
 ore-rs = { path = "crates/ore-rs", version = "0.1.0", default-features = false, features = ["write"] }
+ps3-rs = { path = "crates/ps3-rs", version = "0.1.0", default-features = false }
 rvz-rs = { path = "crates/rvz-rs", version = "0.1.0", default-features = false }
 wbfs-rs = { path = "crates/wbfs-rs", version = "0.1.0", default-features = false }
 wux-rs = { path = "crates/wux-rs", version = "0.1.1", default-features = false }
@@ -164,6 +165,8 @@ zip = { version = "9.4.0", features = [
 ], default-features = false }
 
 [dev-dependencies]
+# The synthetic PS3 disc and IRD the PS3 tests run on; publishing drops it
+test-support = { path = "crates/test-support", features = ["ps3"] }
 wiremock = "0.6.5"
 
 [[bin]]
