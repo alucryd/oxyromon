@@ -555,7 +555,7 @@ Options:
 
 ### import-keys
 
-Imports the Wii, Wii U, Switch and 3DS keys oxyROMon does not ship.
+Imports the Wii, Wii U, Switch, 3DS and PS3 keys oxyROMon does not ship.
 Wii and Wii U keys, which exporting to WUA and compressing Wii discs to RVZ need, come from files in the format of Cemu's `keys.txt`: one 32-digit hex key per line, with anything after `#` or `;` ignored.
 Disc keys and the Wii U common key can share a file.
 A console's OTP dump, `otp.bin`, can be imported too: its Wii U and vWii common keys are taken from it, the vWii key serving the vWii titles a disc's update partition can carry.
@@ -571,11 +571,14 @@ They are merged by name into `3ds_keys.txt` in the data directory, in the same f
 A key slot's key, `common0` to `common5` or the generator constant that is not 16 bytes is refused, and nothing is written.
 Nothing uses them yet: they are there for decrypting 3DS games to come.
 
+It imports PS3 disc keys from Redump's `.dkey` files, known by their extension, into `ps3_keys.txt` in the data directory, one key per line, each kept once, readable by its owner only.
+A disc's IRD gives its key already; a `.dkey` is for an ISO with none, and each key is tried against the disc, so a file's name does not matter.
+
 ```text
 Usage: oxyromon import-keys <KEYS>...
 
 Arguments:
-  <KEYS>...  Set the key files to import, as Cemu's keys.txt, a Wii's or a Wii U's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys, or Azahar's aes_keys.txt
+  <KEYS>...  Set the key files to import, as Cemu's keys.txt, a Wii's or a Wii U's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys, or Azahar's aes_keys.txt, or Redump's PS3 .dkey files
 
 Options:
   -h, --help  Print help

@@ -9,6 +9,8 @@
 //!   file of the same format.
 //! - The 3DS's, from Azahar's `aes_keys.txt`, merged by name into a file of
 //!   the same format.
+//! - The PS3's disc keys, from Redump's `.dkey` files, one hex key a line,
+//!   as every key is tried against a disc: an ISO with no IRD needs one.
 
 use super::common::to_hex;
 use super::config::*;
@@ -28,13 +30,15 @@ pub const SWITCH_KEYS_FILE: &str = "switch_keys.txt";
 /// The 3DS keys in the data directory, `name=HEX` lines as in Azahar's
 /// `aes_keys.txt`.
 pub const N3DS_KEYS_FILE: &str = "3ds_keys.txt";
+/// The PS3 disc keys in the data directory, one hex key per line.
+pub const PS3_KEYS_FILE: &str = "ps3_keys.txt";
 
 pub fn subcommand() -> Command {
     Command::new("import-keys")
-        .about("Import Wii, Wii U, Switch and 3DS keys into oxyromon")
+        .about("Import Wii, Wii U, Switch, 3DS and PS3 keys into oxyromon")
         .arg(
             Arg::new("KEYS")
-                .help("Set the key files to import, as Cemu's keys.txt, a Wii's or a Wii U's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys, or Azahar's aes_keys.txt")
+                .help("Set the key files to import, as Cemu's keys.txt, a Wii's or a Wii U's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys, or Azahar's aes_keys.txt, or Redump's PS3 .dkey files")
                 .required(true)
                 .num_args(1..)
                 .index(1)
@@ -81,8 +85,31 @@ fn import_keys(
     let before = keys.len();
     let switch_before = switch_keys.clone();
     let n3ds_before = n3ds_keys.clone();
+    let ps3_destination = data_directory.join(PS3_KEYS_FILE);
+    let mut ps3_keys: IndexSet<[u8; 16]> = IndexSet::new();
+    if ps3_destination.is_file() {
+        ps3_keys.extend(load_ps3_keys(&ps3_destination)?);
+    }
+    let ps3_before = ps3_keys.len();
     for path in paths {
         print_action(progress_bar, &format!("Reading \"{}\"", path.display()));
+        // a .dkey is one bare hex key, as a line of Cemu's keys.txt: only its
+        // extension tells it apart
+        if path
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("dkey"))
+        {
+            let text = std::fs::read_to_string(path)
+                .with_context(|| format!("Failed to read \"{}\"", path.display()))?;
+            match parse_key(text.trim()) {
+                Some(key) => ps3_keys.insert(key),
+                None => bail!(
+                    "Failed to read \"{}\": a .dkey holds one 32-digit hex key",
+                    path.display()
+                ),
+            };
+            continue;
+        }
         let found = read_named_keys(path)?;
         // Azahar's names, which no prod.keys has
         if found.iter().any(|(name, _)| is_3ds_name(name)) {
@@ -153,7 +180,8 @@ fn import_keys(
         .count();
 
     let added = keys.len() - before;
-    if added == 0 && switch_added == 0 && n3ds_added == 0 {
+    let ps3_added = ps3_keys.len() - ps3_before;
+    if added == 0 && switch_added == 0 && n3ds_added == 0 && ps3_added == 0 {
         print_skip(progress_bar, "No new keys");
         return Ok(());
     }
@@ -198,7 +226,45 @@ fn import_keys(
             ),
         );
     }
+    if ps3_added > 0 {
+        write_lines(ps3_keys.iter().map(|key| to_hex(key)), &ps3_destination)
+            .with_context(|| format!("Failed to write \"{}\"", ps3_destination.display()))?;
+        print_success(
+            progress_bar,
+            &format!(
+                "Imported {} new PS3 disc keys, {} in all",
+                ps3_added,
+                ps3_keys.len()
+            ),
+        );
+    }
     Ok(())
+}
+
+/// A 16-byte key, as 32 hex digits.
+fn parse_key(hex: &str) -> Option<[u8; 16]> {
+    if hex.len() != 32 || !hex.is_ascii() {
+        return None;
+    }
+    let mut key = [0u8; 16];
+    for (i, byte) in key.iter_mut().enumerate() {
+        *byte = u8::from_str_radix(&hex[2 * i..2 * i + 2], 16).ok()?;
+    }
+    Some(key)
+}
+
+/// The PS3 disc keys `import-keys` keeps, one hex key a line.
+pub fn load_ps3_keys(path: &Path) -> Result<Vec<[u8; 16]>> {
+    let text = std::fs::read_to_string(path)
+        .with_context(|| format!("Failed to read \"{}\"", path.display()))?;
+    text.lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(|line| {
+            parse_key(line)
+                .with_context(|| format!("Failed to read \"{}\": {line} is no key", path.display()))
+        })
+        .collect()
 }
 
 /// The `name = HEX` lines of a Switch or 3DS keys file, as nsz-rs and Azahar
