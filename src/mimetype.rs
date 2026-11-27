@@ -11,7 +11,6 @@ pub const CSO_EXTENSION: &str = "cso";
 pub const CUE_EXTENSION: &str = "cue";
 pub const DAT_EXTENSION: &str = "dat";
 pub const GDI_EXTENSION: &str = "gdi";
-pub const GZ_EXTENSION: &str = "gz";
 pub const IPS_EXTENSION: &str = "ips";
 pub const IRD_EXTENSION: &str = "ird";
 pub const ISO_EXTENSION: &str = "iso";

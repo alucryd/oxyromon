@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT romfile_id AS \"romfile_id!\"\n        FROM roms\n        WHERE romfile_id IS NOT NULL\n        AND parent_id IS NOT NULL\n        AND name = ?\n        AND size = ?\n        AND md5 = ?\n        LIMIT 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "romfile_id!",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "roms",
+            "name": "romfile_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "97c9cf3827dd2f26ecd4de33a17f67925c53f9af3fc4ab62b49c19d85b133e28"
+}

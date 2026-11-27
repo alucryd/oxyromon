@@ -1,25 +1,18 @@
+use super::common::to_hex;
 use super::database::*;
 use super::import_dats::reimport_orphan_romfiles;
-use super::iso::iso9660::{FileEntry, Iso9660Filesystem, SECTOR_SIZE, SectorReader};
-use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use clap::value_parser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
-use flate2::read::GzDecoder;
 use indicatif::ProgressBar;
+use ps3_rs::Ird;
 use sqlx::sqlite::SqliteConnection;
-use std::collections::hash_map::{Entry, HashMap};
-use std::io;
-use std::io::prelude::*;
 use std::path::{Path, PathBuf};
-use std::str;
 use strsim::jaro_winkler;
-
-const IRD_VERSION: u8 = 9;
 
 pub fn subcommand() -> Command {
     Command::new("import-irds")
@@ -93,47 +86,53 @@ pub async fn main(
     }
 
     for ird_path in ird_paths {
-        let (irdfile, header) = parse_ird(ird_path).await?;
+        let (ird, data) = match parse_ird(ird_path).await {
+            Ok(parsed) => parsed,
+            Err(error) => match error.downcast_ref::<ps3_rs::Error>() {
+                // an IRD of another version, which the others need not wait on
+                Some(ps3_rs::Error::Unsupported(_)) => {
+                    print_warning(progress_bar, &format!("{error:#}"));
+                    continue;
+                }
+                _ => return Err(error),
+            },
+        };
 
-        print_header(progress_bar, &format!("IRD: {}", irdfile.game_name));
-        print_info(progress_bar, &format!("IRD Version: {}", irdfile.version));
-        print_info(progress_bar, &format!("Game ID: {}", irdfile.game_id));
+        print_header(progress_bar, &format!("IRD: {}", ird.game_name));
+        print_info(progress_bar, &format!("IRD Version: {}", ird.version));
+        print_info(progress_bar, &format!("Game ID: {}", ird.game_id));
         print_info(
             progress_bar,
-            &format!("Update Version: {}", irdfile.update_version),
+            &format!("Update Version: {}", ird.update_version),
         );
+        print_info(progress_bar, &format!("Game Version: {}", ird.game_version));
+        print_info(progress_bar, &format!("App Version: {}", ird.app_version));
         print_info(
             progress_bar,
-            &format!("Game Version: {}", irdfile.game_version),
+            &format!("Regions: {}", ird.region_hashes.len()),
         );
-        print_info(
-            progress_bar,
-            &format!("App Version: {}", irdfile.app_version),
-        );
-        print_info(progress_bar, &format!("Regions: {}", irdfile.regions_count));
-        print_info(progress_bar, &format!("Files: {}", irdfile.files_count));
-
-        if irdfile.version != IRD_VERSION {
-            print_warning(progress_bar, "IRD version unsupported");
-            continue;
-        }
+        print_info(progress_bar, &format!("Files: {}", ird.file_hashes.len()));
 
         if !matches.get_flag("INFO") {
             games.sort_by(|a, b| {
-                jaro_winkler(&b.name.to_lowercase(), &irdfile.game_name.to_lowercase())
+                jaro_winkler(&b.name.to_lowercase(), &ird.game_name.to_lowercase())
                     .partial_cmp(&jaro_winkler(
                         &a.name.to_lowercase(),
-                        &irdfile.game_name.to_lowercase(),
+                        &ird.game_name.to_lowercase(),
                     ))
                     .unwrap()
             });
             let game = if headless {
-                Some(unattended_game(&games, &irdfile.game_name)?)
+                Some(unattended_game(&games, &ird.game_name)?)
             } else {
                 prompt_for_game(&games, None)?
             };
             if let Some(game) = game {
-                if game.jbfolder && !matches.get_flag("FORCE") {
+                // an IRD imported before IRDs were kept is kept now
+                if game.jbfolder
+                    && !matches.get_flag("FORCE")
+                    && find_ird_by_game_id(connection, game.id).await.is_some()
+                {
                     print_skip(progress_bar, "IRD already exists");
                     continue;
                 }
@@ -145,7 +144,7 @@ pub async fn main(
                 } else {
                     prompt_for_rom(&roms, None)?
                 };
-                import_ird(connection, progress_bar, game, &irdfile, header, parent_rom).await?;
+                import_ird(connection, progress_bar, game, &ird, &data, parent_rom).await?;
             }
         }
         print_separator(progress_bar);
@@ -197,181 +196,23 @@ fn title_key(title: &str) -> String {
     key
 }
 
-pub async fn parse_ird<P: AsRef<Path>>(path: &P) -> Result<(Irdfile, Vec<u8>)> {
-    let mimetype = get_mimetype(path).await?;
-
-    if mimetype.is_none() {
-        bail!("Not an IRD file");
-    }
-
-    let mut reader = match mimetype.unwrap().extension() {
-        GZ_EXTENSION => Box::new(GzDecoder::new(get_reader_sync(&path)?)) as Box<dyn Read>,
-        IRD_EXTENSION => Box::new(get_reader_sync(&path)?) as Box<dyn Read>,
-        _ => bail!("Not an IRD file"),
-    };
-
-    // read magic
-    let mut magic = [0u8; 4];
-    reader.read_exact(&mut magic).unwrap();
-
-    // read version
-    let mut version = [0u8];
-    reader.read_exact(&mut version).unwrap();
-
-    // read game id
-    let mut game_id = [0u8; 9];
-    reader.read_exact(&mut game_id).unwrap();
-
-    // read game name
-    let mut game_name_length = [0u8];
-    reader.read_exact(&mut game_name_length).unwrap();
-    let mut game_name = vec![0u8; game_name_length[0] as usize];
-    reader.read_exact(&mut game_name).unwrap();
-
-    // read update version
-    let mut update_version = [0u8; 4];
-    reader.read_exact(&mut update_version).unwrap();
-
-    // read game version
-    let mut game_version = [0u8; 5];
-    reader.read_exact(&mut game_version).unwrap();
-
-    // read app version
-    let mut app_version = [0u8; 5];
-    reader.read_exact(&mut app_version).unwrap();
-
-    // read header
-    let mut gzipped_header_length = [0u8; 4];
-    reader.read_exact(&mut gzipped_header_length).unwrap();
-    let gzipped_header_length = u32::from_le_bytes(gzipped_header_length);
-    let mut gzipped_header = vec![0u8; gzipped_header_length as usize];
-    reader.read_exact(&mut gzipped_header).unwrap();
-    let mut gzipped_header_decoder = GzDecoder::new(io::Cursor::new(gzipped_header));
-    let mut header: Vec<u8> = vec![];
-    gzipped_header_decoder.read_to_end(&mut header).unwrap();
-
-    // read footer
-    let mut footer_length = [0u8; 4];
-    reader.read_exact(&mut footer_length).unwrap();
-    let footer_length = u32::from_le_bytes(footer_length);
-    let mut footer = vec![0u8; footer_length as usize];
-    reader.read_exact(&mut footer).unwrap();
-
-    // read region hashes
-    let mut regions_count = [0u8];
-    reader.read_exact(&mut regions_count).unwrap();
-    let regions_count = regions_count[0] as usize;
-    let mut regions_hashes: Vec<String> = Vec::with_capacity(regions_count);
-    while regions_hashes.len() < regions_count {
-        let mut region_hash = [0u8; 16];
-        reader.read_exact(&mut region_hash).unwrap();
-        #[allow(clippy::format_collect)]
-        regions_hashes.push(region_hash.iter().map(|b| format!("{:02x}", b)).collect());
-    }
-
-    // read file hashes
-    let mut files_count = [0u8; 4];
-    reader.read_exact(&mut files_count).unwrap();
-    let files_count = u32::from_le_bytes(files_count) as usize;
-    let mut files_hashes: HashMap<u64, String> = HashMap::with_capacity(files_count);
-    while files_hashes.len() < files_count {
-        let mut sector = [0u8; 8];
-        reader.read_exact(&mut sector).unwrap();
-        let sector = u64::from_le_bytes(sector);
-        let mut file_hash = [0u8; 16];
-        reader.read_exact(&mut file_hash).unwrap();
-        files_hashes.insert(
-            sector,
-            #[allow(clippy::format_collect)]
-            file_hash.iter().map(|b| format!("{:02x}", b)).collect(),
-        );
-    }
-
-    Ok((
-        Irdfile {
-            version: version[0],
-            game_id: str::from_utf8(&game_id).unwrap().trim_end().to_string(),
-            game_name: str::from_utf8(&game_name).unwrap().trim_end().to_string(),
-            update_version: str::from_utf8(&update_version)
-                .unwrap()
-                .trim_end()
-                .to_string(),
-            game_version: str::from_utf8(&game_version)
-                .unwrap()
-                .trim_end()
-                .to_string(),
-            app_version: str::from_utf8(&app_version).unwrap().trim_end().to_string(),
-            regions_count,
-            regions_hashes,
-            files_count,
-            files_hashes,
-        },
-        header,
-    ))
-}
-
-/// A [`SectorReader`] backed by the ISO header embedded in an IRD file.
-///
-/// IRD files only carry the beginning of the disc, enough for the volume
-/// descriptors and the directory extents, so reads past its end are zero filled
-/// rather than refused. A short sector would make the default `read_bytes` spin
-/// forever, and an error would abort the whole walk.
-struct HeaderSectorReader {
-    header: Vec<u8>,
-}
-
-impl SectorReader for HeaderSectorReader {
-    fn read_sector(&mut self, lba: u64) -> Result<Vec<u8>> {
-        let mut sector = vec![0u8; SECTOR_SIZE as usize];
-        let offset = usize::try_from(lba.saturating_mul(SECTOR_SIZE)).unwrap_or(usize::MAX);
-        if let Some(available) = self.header.get(offset..) {
-            let length = available.len().min(SECTOR_SIZE as usize);
-            sector[..length].copy_from_slice(&available[..length]);
-        }
-        Ok(sector)
-    }
-}
-
-/// Collect every file below `directory`, keyed by its path relative to the root.
-///
-/// Files larger than 4 GiB span several extents, each of which gets its own
-/// directory record, hence the vector of entries per path.
-fn walk_directory(
-    filesystem: &mut Iso9660Filesystem,
-    directory: &FileEntry,
-) -> Result<HashMap<String, Vec<FileEntry>>> {
-    let mut files: HashMap<String, Vec<FileEntry>> = HashMap::new();
-    let mut directories: Vec<FileEntry> = vec![];
-    for entry in filesystem.list_directory(directory)? {
-        if entry.is_directory() {
-            directories.push(entry);
-            continue;
-        }
-        // Entry paths are absolute, and ISO 9660 spells an extensionless file
-        // "NAME." while DAT files and IRD hashes know it as "NAME"
-        let path = entry.path.trim_start_matches('/');
-        let path = path.strip_suffix('.').unwrap_or(path).to_string();
-        match files.entry(path.clone()) {
-            Entry::Vacant(e) => {
-                e.insert(Vec::from([entry]));
-            }
-            _ => {
-                files.get_mut(&path).unwrap().push(entry);
-            }
-        }
-    }
-    for directory in directories {
-        files.extend(walk_directory(filesystem, &directory)?);
-    }
-    Ok(files)
+/// An IRD and its bytes as read, which the game keeps.
+pub async fn parse_ird<P: AsRef<Path>>(path: &P) -> Result<(Ird, Vec<u8>)> {
+    let path = path.as_ref();
+    let data = tokio::fs::read(path)
+        .await
+        .with_context(|| format!("Failed to read \"{}\"", path.display()))?;
+    let ird = Ird::parse(&data)
+        .with_context(|| format!("Failed to read \"{}\" as an IRD", path.display()))?;
+    Ok((ird, data))
 }
 
 pub async fn import_ird(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     game: &Game,
-    irdfile: &Irdfile,
-    header: Vec<u8>,
+    ird: &Ird,
+    data: &[u8],
     parent_rom: Option<&Rom>,
 ) -> Result<()> {
     if parent_rom.is_none() {
@@ -380,19 +221,11 @@ pub async fn import_ird(
 
     let mut transaction = begin_transaction(connection).await;
 
-    // parse ISO header, enumerating the files up front so the non-Send
-    // filesystem is dropped before the awaits that follow (which lets the
-    // server spawn this work).
-    let files = {
-        let mut filesystem = Iso9660Filesystem::new(Box::new(HeaderSectorReader { header }))?;
-        let root = filesystem.root();
-        walk_directory(&mut filesystem, &root)?
-    };
-
-    if files.len() != irdfile.files_count {
+    let files = ird.files()?;
+    if files.len() != ird.file_hashes.len() {
         bail!(
             "Files count differ, expected {}, actual {}",
-            irdfile.files_count,
+            ird.file_hashes.len(),
             files.len()
         );
     }
@@ -400,23 +233,26 @@ pub async fn import_ird(
     // convert files into roms
     let mut orphan_romfile_ids: Vec<i64> = vec![];
     for file in files {
-        let size = file.1.iter().map(|file| file.size).sum::<u64>() as i64;
-        let location = file.1.first().unwrap().location;
-        match find_rom_by_name_and_game_id(&mut transaction, &file.0, game.id).await {
+        let size = file.size() as i64;
+        let md5 = match ird.file_hash(file.lba()) {
+            Some(md5) => to_hex(&md5),
+            None => bail!("No hash for \"{}\" at sector {}", file.path, file.lba()),
+        };
+        let rom_id = match find_rom_by_name_and_game_id(&mut transaction, &file.path, game.id).await
+        {
             Some(rom) => {
                 update_rom(
                     &mut transaction,
                     rom.id,
-                    &file.0,
+                    &file.path,
                     size,
-                    irdfile.files_hashes.get(&location).unwrap(),
+                    &md5,
                     game.id,
                     parent_rom.as_ref().map(|rom| rom.id),
                     false,
                 )
                 .await;
-                if (size != rom.size
-                    || irdfile.files_hashes.get(&location).unwrap() != rom.md5.as_ref().unwrap())
+                if (size != rom.size || Some(&md5) != rom.md5.as_ref())
                     && let Some(romfile_id) = rom.romfile_id
                 {
                     orphan_romfile_ids.push(romfile_id);
@@ -427,9 +263,9 @@ pub async fn import_ird(
             None => {
                 create_rom(
                     &mut transaction,
-                    &file.0,
+                    &file.path,
                     size,
-                    irdfile.files_hashes.get(&location).unwrap(),
+                    &md5,
                     game.id,
                     parent_rom.as_ref().map(|rom| rom.id),
                     false,
@@ -437,10 +273,23 @@ pub async fn import_ird(
                 .await
             }
         };
+        // a system update other discs share, imported already
+        if file.path == ps3_rs::UPDATE_PATH
+            && let Some(romfile_id) = find_child_romfile_id_by_name_and_size_and_md5(
+                &mut transaction,
+                &file.path,
+                size,
+                &md5,
+            )
+            .await
+        {
+            update_rom_romfile(&mut transaction, rom_id, Some(romfile_id)).await;
+        }
     }
 
-    // mark game as jbfolder
+    // mark game as jbfolder, keeping its IRD to rebuild its ISO from
     update_game_jbfolder(&mut transaction, game.id, true).await;
+    create_or_replace_ird(&mut transaction, game.id, data).await;
 
     // reimport orphan romfiles
     if !orphan_romfile_ids.is_empty() {

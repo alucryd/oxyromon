@@ -96,7 +96,7 @@ The repository also holds oxyROMon's format crates, under `crates/`.
 Each is a library and a standalone command-line tool:
 
 ```sh
-cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p rvz-rs -p wbfs-rs -p wux-rs -p xdelta-rs -p xps-rs -p xso-rs
+cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p ps3-rs -p rvz-rs -p wbfs-rs -p wux-rs -p xdelta-rs -p xps-rs -p xso-rs
 ```
 
 ### Features
@@ -230,12 +230,12 @@ Arcade games stored as archives stay as they are.
 | GDI                     |                  |         | ✔      | gdi-rs                                                       |
 | ISO (from CUE/BIN)      |                  |         | ✔      |                                                              |
 | CIA                     | ✔                |         |        | cia-rs                                                       |
-| JB folders (PS3)        | ✔                |         |        | IRD files                                                    |
+| JB folders (PS3)        | ✔                | ✔       |        | ps3-rs, from IRD files                                       |
 | BPS, IPS, XDELTA patches | ✔               |         |        | xps-rs, xdelta-rs                                            |
 
 The crates without a link are oxyROMon's own, in `crates/`.
 Each began as a port of the tool oxyROMon used to run: chdman, ctrtool, maxcso, nsz, gdidrop, Flips, xdelta3, Dolphin's and wit.
-wux-rs instead follows wudd and Cemu, as oxyROMon never ran a tool for the Wii U.
+wux-rs instead follows wudd and Cemu, as oxyROMon never ran a tool for the Wii U, and ps3-rs ps3-disc-dumper's IRDs.
 
 Your Switch keys are only needed to compress NSPs that contain NCAs: `import-keys` stores them, and `~/.switch/prod.keys`, where nsz keeps them, is read when only `title.keys` were imported, or nothing.
 Importing, checking and decompressing NSZs never need them.
@@ -500,6 +500,9 @@ Imports PlayStation 3 IRD files, which validate JB folders, the extracted form P
 A game counts as complete without its `PS3_CONTENT`, `PS3_EXTRA` and `PS3_UPDATE` directories.
 When an IRD no longer matches a file already in its JB folder, that file is imported again or moved to `Trash`.
 
+The IRD is kept with its game: with it, `convert-roms` rebuilds the Redump ISO from the JB folder and extracts the ISO back, its disc key derived from the IRD, so no `.dkey` is needed.
+A game whose IRD was imported by an earlier version keeps it once its IRD is imported again.
+
 Import a PS3 DAT first.
 If it doesn't come from Redump, make sure its name contains `PlayStation 3`.
 Only IRD version 9, the latest, is supported.
@@ -607,6 +610,8 @@ Files are moved as they are, except archives holding several games, which are ex
 When the system has a `PREFER_FORMAT`, imported ROMs are then converted to it, unless you pass `--as-is`.
 Files needing a choice, such as JB folders or ambiguous matches, prompt by default, and `-u` skips them or picks the first match instead.
 
+A PS3 system update, a `PS3UPDAT.PUP` loose or in a JB folder, goes to `PS3_UPDATE/<version>/` in the system's directory, once for every JB folder whose IRD lists it, as every disc built on that firmware carries the same file.
+
 Consoles accept every No-Intro and Redump format, 7Z, ZIP, CHD, CIA, CSO, NSZ, ORE, RVZ, WUA, WUX, ZSO, JB folders and Wii U title folders.
 A Wii U title folder, an update or DLC as Nintendo's servers deliver it, is found by its TMD, and either a downloader's names (`title.tmd`, `00000000.app`) or No-Intro's (`tmd.32`, `00000000`) will do.
 Arcade systems accept uncompressed files, ZIP and CHD.
@@ -692,6 +697,7 @@ Converts ROM files between lossless formats and back to their originals:
 - A game of several ROMs, a floppy game's disks or a cartridge's chips, as one ORE, as an archive holds them, each ROM a file of it, and back as the folder of its ROMs; the OREs a ROM each of an earlier build are gathered into one.
 - NSP to and from NSZ.
 - Wii U discs between ISO, WUX and lossless WUA.
+- PS3 JB folders to their Redump ISO with `ORIGINAL`, from their IRD, checked against the DAT, and the ISO back to its JB folder with `JB`; a JB folder needs its system update, `PS3_UPDATE/PS3UPDAT.PUP`, which `import-roms` imports.
 
 Games and systems are selected by case-insensitive name, with SQL wildcards, and both flags can be repeated.
 `--save` also stores the format as each processed system's `PREFER_FORMAT`, so future imports follow it.
@@ -700,7 +706,7 @@ Games and systems are selected by case-insensitive name, with SQL wildcards, and
 Usage: oxyromon convert-roms [OPTIONS]
 
 Options:
-  -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, NSZ, ORE, RVZ, WUA, WUX, ZIP, ZSO]
+  -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, JB, NSZ, ORE, RVZ, WUA, WUX, ZIP, ZSO]
   -g, --game <GAME>      Select games by name
   -s, --system <SYSTEM>  Select systems by name
   -a, --all              Convert all systems/games
@@ -894,8 +900,7 @@ Options:
 - Add more actions to the web UI
 - Find a way to automatically download No-Intro DAT files
 - Support merged sets for arcade systems
-- Write tests for arcade systems, for NSZ with a compressible NCA, and for IRD and PS3 in general
-- Support rebuilding PS3 ISOs from IRD files, if possible and requested
+- Write tests for arcade systems and for NSZ with a compressible NCA
 - Add a metadata scraper in the RetroArch format
 
 ## Contributing

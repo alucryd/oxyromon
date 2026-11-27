@@ -10,7 +10,7 @@ async fn test() {
 
     let game = find_games(&mut env.connection).await.remove(0);
 
-    let (ird_file, header) = parse_ird(&ird_path).await.unwrap();
+    let (ird, data) = parse_ird(&ird_path).await.unwrap();
 
     let parent_roms = find_roms_by_game_id_no_parents(&mut env.connection, game.id).await;
 
@@ -19,8 +19,8 @@ async fn test() {
         &mut env.connection,
         &env.progress_bar,
         &game,
-        &ird_file,
-        header,
+        &ird,
+        &data,
         parent_roms.first(),
     )
     .await

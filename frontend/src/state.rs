@@ -45,8 +45,8 @@ pub const ALL_REGIONS_SUBFOLDERS_KEY: &str = "REGIONS_ALL_SUBFOLDERS";
 pub const GAME_SUBFOLDERS_CHOICES: [&str; 3] = ["never", "multiple", "always"];
 pub const PREFER_REGIONS_CHOICES: [&str; 3] = ["none", "broad", "narrow"];
 pub const PREFER_VERSIONS_CHOICES: [&str; 3] = ["none", "new", "old"];
-pub const PREFER_FORMAT_CHOICES: [&str; 11] = [
-    "ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "ORE", "RVZ", "WUA", "WUX", "ZIP", "ZSO",
+pub const PREFER_FORMAT_CHOICES: [&str; 12] = [
+    "ORIGINAL", "7Z", "CHD", "CSO", "JB", "NSZ", "ORE", "RVZ", "WUA", "WUX", "ZIP", "ZSO",
 ];
 pub const SUBFOLDER_SCHEMES_CHOICES: [&str; 2] = ["none", "alpha"];
 

@@ -241,9 +241,14 @@ pub fn files(read: &mut dyn FnMut(u32, &mut [u8; SECTOR]) -> Result<()>) -> Resu
                 } else {
                     String::from_utf8_lossy(raw).into_owned()
                 };
-                // without its version, and the dot ISO 9660 gives a name with no extension
-                let name = name.split(';').next().unwrap_or_default();
-                let name = name.strip_suffix('.').unwrap_or(name);
+                // without its version, and the dot ISO 9660 gives a name with no
+                // extension: a file's last, a directory's every one
+                let name = name.rsplit_once(';').map_or(&name[..], |(name, _)| name);
+                let name = if flags & 0x02 != 0 {
+                    name.trim_end_matches('.')
+                } else {
+                    name.strip_suffix('.').unwrap_or(name)
+                };
                 let path = if path.is_empty() {
                     name.to_string()
                 } else {

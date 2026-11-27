@@ -146,6 +146,13 @@ pub async fn purge_ird(
             &format!("Moving {} romfiles to trash", romfile_ids.len()),
         );
         for romfile_id in romfile_ids {
+            // a system update other games' JB folders share stays theirs
+            if !find_roms_by_romfile_id(&mut transaction, romfile_id)
+                .await
+                .is_empty()
+            {
+                continue;
+            }
             let romfile = find_romfile_by_id(&mut transaction, romfile_id).await;
             let common_romfile = romfile.as_common(&mut transaction).await?;
             if common_romfile.path.exists() {
@@ -164,6 +171,7 @@ pub async fn purge_ird(
 
     // Mark game as not jbfolder
     update_game_jbfolder(&mut transaction, game.id, false).await;
+    delete_ird_by_game_id(&mut transaction, game.id).await;
 
     commit_transaction(transaction).await;
 

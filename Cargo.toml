@@ -165,6 +165,8 @@ zip = { version = "9.4.0", features = [
 ], default-features = false }
 
 [dev-dependencies]
+# The synthetic PS3 disc and IRD the PS3 tests run on; publishing drops it
+test-support = { path = "crates/test-support", features = ["ps3"] }
 wiremock = "0.6.5"
 
 [[bin]]

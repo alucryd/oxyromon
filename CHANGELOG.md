@@ -19,6 +19,9 @@
 - Added info modals for systems, games and ROMs to the web UI, with store statistics (#346)
 - `check-roms` reports a store's chunk count, dedup savings and parity cost, also shown in the web UI and MCP
 - Added `LANGUAGE_FIRST` and `PREFERRED_LANGUAGES`, ranking a game's languages above its region in 1G1R (#331)
+- Added PS3 ISOs rebuilt from their JB folder and IRD, byte for byte, with `convert-roms --format ORIGINAL`, checked against the DAT, and extracted back to the JB folder with the new `JB` format, both from the new ps3-rs crate; the disc key comes from the IRD
+- `import-irds` keeps each IRD with its game, which an IRD imported before keeps once imported again
+- `import-roms` imports a PS3 system update, `PS3UPDAT.PUP`, loose or in a JB folder, once a system under `PS3_UPDATE/<version>/`, for every JB folder whose IRD lists it
 
 ## Improvements
 
@@ -26,6 +29,9 @@
 
 ## Fixes
 
+- Fixed building without the `mcp` feature
+- Fixed a PS3 ISO, imported for a game with an IRD, going into a folder of its own and counting as incomplete
+- Fixed importing a PUP that every JB folder lists as its system update, which never matched
 - Fixed importing a CD's, a Wii U title's or a multi-ROM game's ORE replacing an unknown file under the game's name
 - Fixed `sort-roms` naming every ORE of a multi-ROM game after the game, which overwrote one with another; a sort moving two files to one path now fails before moving anything
 - ORE stores no game uses any more are now deleted
