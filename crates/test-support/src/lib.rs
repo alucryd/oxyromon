@@ -10,5 +10,7 @@
 
 #[cfg(feature = "gcwii")]
 pub mod gcwii;
+#[cfg(feature = "ps3")]
+pub mod ps3;
 #[cfg(feature = "wiiu")]
 pub mod wiiu;

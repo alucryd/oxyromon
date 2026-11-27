@@ -1,0 +1,41 @@
+[package]
+name = "ps3-rs"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "PlayStation 3 discs: Redump ISOs rebuilt from a JB folder and its IRD, and JB folders extracted from an ISO"
+license = "GPL-3.0-or-later"
+repository.workspace = true
+keywords = ["ps3", "ird", "iso", "redump", "jb-folder"]
+categories = ["command-line-utilities", "encoding"]
+# The tests build their disc with test-support, an unpublished
+# dev-dependency, so they stay out of the package
+include = ["src/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+
+[lib]
+name = "ps3_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ps3rs"
+path = "src/bin/ps3rs/main.rs"
+required-features = ["cli"]
+
+[dependencies]
+aes = "0.9"
+crc32fast.workspace = true
+flate2.workspace = true
+md-5.workspace = true
+thiserror.workspace = true
+clap = { workspace = true, optional = true }
+console = { workspace = true, optional = true }
+indicatif = { workspace = true, optional = true }
+
+[dev-dependencies]
+# The synthetic disc and IRD the tests run on.
+test-support = { path = "../test-support", features = ["ps3"] }
+tempfile.workspace = true
+
+[features]
+default = ["cli"]
+cli = ["dep:clap", "dep:console", "dep:indicatif"]
