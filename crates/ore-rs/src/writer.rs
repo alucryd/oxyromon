@@ -695,18 +695,32 @@ fn sony_platform(iso: &mut Iso) -> Result<Option<&'static str>> {
 /// Where an XGD1 disc's game partition starts, after its video partition.
 const XGD1_GAME: u64 = 0x1830_0000;
 
-/// Whether `iso` is an Xbox disc as Redump dumps one, XGD1: its video
-/// partition, then its XDVDFS game partition, whose volume descriptor, 32
-/// sectors in, starts and ends with `MICROSOFT*XBOX*MEDIA`.
-fn is_xbox(iso: &mut Iso) -> Result<bool> {
+/// Where an Xbox or Xbox 360 disc's game partition starts, by its kind,
+/// after its video partition: XGD1, the Xbox's, then the 360's XGD2 and
+/// XGD3, as Redump dumps them.
+const XGD_GAMES: [(u64, &str); 3] = [
+    (XGD1_GAME, "xbox"),
+    (0x0FD9_0000, "xbox360"),
+    (0x0208_0000, "xbox360"),
+];
+
+/// The platform of an Xbox or Xbox 360 disc, known by its game partition's
+/// volume descriptor, at its sector 32, which starts and ends with its
+/// magic.
+fn xbox_platform(iso: &mut Iso) -> Result<Option<&'static str>> {
     const MAGIC: &[u8; 20] = b"MICROSOFT*XBOX*MEDIA";
-    let descriptor = XGD1_GAME + 32 * 2048;
-    if iso.size() < descriptor + 2048 {
-        return Ok(false);
+    for (game, platform) in XGD_GAMES {
+        let descriptor = game + 32 * 2048;
+        if iso.size() < descriptor + 2048 {
+            continue;
+        }
+        let mut sector = [0; 2048];
+        iso.read_at(descriptor, &mut sector)?;
+        if sector.starts_with(MAGIC) && sector.ends_with(MAGIC) {
+            return Ok(Some(platform));
+        }
     }
-    let mut sector = [0; 2048];
-    iso.read_at(descriptor, &mut sector)?;
-    Ok(sector.starts_with(MAGIC) && sector.ends_with(MAGIC))
+    Ok(None)
 }
 
 /// The seed of an Xbox disc's filler, if a layout tool before 4831
@@ -940,15 +954,20 @@ fn encode(
             }
             None => match sony_platform(&mut iso)? {
                 Some(platform) => (plan_sony(&mut iso, &mut hashes)?, platform),
-                None if is_xbox(&mut iso)? => {
-                    xbox = Some(xbox_seed(&mut iso)?);
-                    (vec![raw(0, size)], "xbox")
-                }
-                None => {
-                    return Err(Error::Unsupported(
-                    "neither a GameCube, a Wii, a PlayStation 2, a PSP nor an Xbox disc, nor a cartridge ROM recognised by its header: name its platform".into(),
-                ));
-                }
+                None => match xbox_platform(&mut iso)? {
+                    Some(platform) => {
+                        // Only the Xbox's early layout tools seeded their filler
+                        if platform == "xbox" {
+                            xbox = Some(xbox_seed(&mut iso)?);
+                        }
+                        (vec![raw(0, size)], platform)
+                    }
+                    None => {
+                        return Err(Error::Unsupported(
+                            "neither a GameCube, a Wii, a PlayStation 2, a PSP, an Xbox nor an Xbox 360 disc, nor a cartridge ROM recognised by its header: name its platform".into(),
+                        ));
+                    }
+                },
             },
         },
     };

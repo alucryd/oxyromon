@@ -581,7 +581,7 @@ holding no directory, or that another file of the same output takes.
 | 32 | `cd-2352` | a CD of data tracks, 2,352-byte sectors | `cd` | `cd-data` |
 | 33 | `cd-mixed` | a CD with audio tracks | `cd` | `cd-data`, `cd-audio` |
 | 48 | `gd-rom` | a GD-ROM: a CD's single-density area and its high-density area | `gd-rom` | `cd-data`, `cd-audio` |
-| 64 | `dvd-2048` | a disc image of 2,048-byte sectors, or a Wii U disc's of 32 KiB | `gamecube`, `wii`, `ps2`, `psp`, `wiiu`, `xbox` | `raw`, `wii-partition`, `wiiu`, `repeat` |
+| 64 | `dvd-2048` | a disc image of 2,048-byte sectors, or a Wii U disc's of 32 KiB | `gamecube`, `wii`, `ps2`, `psp`, `wiiu`, `xbox`, `xbox360` | `raw`, `wii-partition`, `wiiu`, `repeat` |
 | 97 | `cdn-title` | an eShop title as its CDN delivers it: a Wii U NUS folder | `wiiu` | `raw`, `wiiu` |
 
 The class tells a reader what an emulator is handed: sectors of 2,352 bytes

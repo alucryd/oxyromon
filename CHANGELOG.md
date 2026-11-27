@@ -5,6 +5,7 @@
 - Added ORE, oxyROMon's own format, from the new ore-rs crate: import, check, convert and export GameCube and Wii discs and CUE/BIN to and from ORE, RVZs included, set by `ORE_COMPRESSION_ALGORITHM` and `ORE_PROFILE`; the format is ORE 1.0, specified in `crates/ore-rs/SPEC.md`
 - ORE takes Dreamcast GD-ROMs, PlayStation 2 DVDs, PSP UMDs, and Wii U discs and eShop titles, and converts from CHD
 - ORE takes original Xbox discs, regenerating the filler of early ones from its seed
+- ORE takes Xbox 360 discs
 - ORE takes cartridge ROMs of 30 systems, 3DS card images, and floppy images: the Amiga's and Atari ST's IPFs, and FDS and 64DD disks
 - A game of several ROMs, such as a floppy game's disks, is one ORE, as an archive holds them
 - Added ORE stores, opt-in per system with `ORE_STORE`, deduplicating a system's OREs, with `ORE_STORE_PARITY` and `ORE_STORE_BATCH`; `check-roms` checks and repairs them, and the new `compact-roms` compacts them
