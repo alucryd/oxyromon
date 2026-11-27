@@ -1,6 +1,11 @@
 use super::*;
 use crate::test_support::TestEnv;
 
+const DISKS: [&str; 2] = [
+    "Test Game (Europe) (Disk 1).ipf",
+    "Test Game (Europe) (Disk 2).ipf",
+];
+
 #[tokio::test]
 async fn test() {
     // given a game of two disks, from its archive, into the system's store, a run at a time
@@ -18,37 +23,24 @@ async fn test() {
         .await
         .unwrap();
 
-    // then each disk is an ORE of its own, a floppy's image taken whole
+    // then the game is one ORE, each disk a file of it, taken whole
     let roms = env.roms_with_romfiles(&system).await;
     assert_eq!(roms.len(), 2);
     let romfiles = env.romfiles().await;
-    assert_eq!(romfiles.len(), 2);
-    for (rom, disk) in roms.iter().zip(1..) {
-        let name = format!("Test Game (Europe) (Disk {disk})");
-        assert_eq!(rom.name, format!("{name}.ipf"));
-        let romfile = romfiles
-            .iter()
-            .find(|romfile| Some(romfile.id) == rom.romfile_id)
-            .unwrap();
-        let path = system_directory.join(format!("{name}.ore"));
-        assert_eq!(romfile.path, env.stored_path(&path));
-        let ore = ore_rs::Reader::open(&path).unwrap();
-        assert!(
-            ore_rs::Reader::inspect(&path)
-                .unwrap()
-                .store_uuid()
-                .is_some()
-        );
-        assert_eq!(ore.platform(), "amiga");
-        assert_eq!(ore.file_name(), Some(rom.name.as_str()));
-        let disk = std::fs::read(env.fixture_source(&rom.name)).unwrap();
-        let mut bytes = vec![0; disk.len()];
-        ore_rs::Reader::open(&path)
+    assert_eq!(romfiles.len(), 1);
+    let path = system_directory.join("Test Game (Europe).ore");
+    assert_eq!(romfiles[0].path, env.stored_path(&path));
+    assert!(
+        roms.iter()
+            .all(|rom| rom.romfile_id == Some(romfiles[0].id))
+    );
+    env.assert_set(&path, "amiga", &DISKS);
+    assert!(
+        ore_rs::Reader::inspect(&path)
             .unwrap()
-            .read_at(0, &mut bytes)
-            .unwrap();
-        assert_eq!(bytes, disk);
-    }
+            .store_uuid()
+            .is_some()
+    );
     assert!(!system_directory.join("Test Game (Europe).7z").exists());
     env.run(&["check-roms", "-a"]).await.unwrap();
 }

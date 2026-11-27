@@ -623,6 +623,16 @@ pub async fn import_rom<P: AsRef<Path>>(
                 unattended_mode,
             )
             .await?
+        } else if ore_romfile.is_set()? {
+            import_ore_set(
+                &mut transaction,
+                progress_bar,
+                system,
+                &game_ids,
+                ore_romfile,
+                unattended_mode,
+            )
+            .await?
         } else {
             import_disc(
                 &mut transaction,
@@ -941,7 +951,7 @@ async fn import_ore_title(
 ) -> Result<Option<[i64; 2]>> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let folder = tmp_directory.path().join("title");
-    ore_romfile.extract_title(progress_bar, &folder).await?;
+    ore_romfile.extract_files(progress_bar, &folder).await?;
     let Some((system, game, hash_algorithm, tmd)) =
         find_title_game(connection, progress_bar, system, &folder, unattended_mode).await?
     else {
@@ -963,6 +973,114 @@ async fn import_ore_title(
         .romfile
         .rename(progress_bar, &new_ore_path, false)
         .await?;
+    create_or_update_romfile(
+        connection,
+        progress_bar,
+        &new_ore_path,
+        &roms,
+        Some(system.id),
+    )
+    .await?;
+    Ok(Some([system.id, game.id]))
+}
+
+/// Import a set's ORE, a game's several ROMs in one: each file it holds
+/// matched as an archive's is, and the ORE, once it holds a whole game and
+/// that game only, moved under the game's name; anything less is left where
+/// it is.
+async fn import_ore_set(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &Option<&System>,
+    game_ids: &HashSet<i64>,
+    ore_romfile: OreRomfile,
+    unattended_mode: UnattendedMode,
+) -> Result<Option<[i64; 2]>> {
+    let tmp_directory = create_tmp_directory(connection).await?;
+    let folder = tmp_directory.path().join("set");
+    ore_romfile.extract_files(progress_bar, &folder).await?;
+    let mut files: Vec<PathBuf> = std::fs::read_dir(&folder)?
+        .map(|entry| entry.map(|entry| entry.path()))
+        .collect::<std::io::Result<_>>()?;
+    files.sort();
+    let ore_name = ore_romfile
+        .romfile
+        .path
+        .file_stem()
+        .unwrap()
+        .to_string_lossy();
+    let mut matched: Vec<(Rom, Game, System)> = Vec::new();
+    for file in &files {
+        let romfile = CommonRomfile::from_path(file)?;
+        let rom_name = file.file_name().and_then(|name| name.to_str());
+        let mut found = None;
+        for hash_algorithm in HashAlgorithm::iter() {
+            let (hash, size) = romfile
+                .get_hash_and_size(connection, progress_bar, 1, 1, &hash_algorithm)
+                .await?;
+            let claimed: Vec<i64> = matched.iter().map(|(rom, ..)| rom.id).collect();
+            let match_result = find_rom_by_size_and_hash(
+                connection,
+                progress_bar,
+                size,
+                &hash,
+                system,
+                game_ids,
+                &claimed,
+                &[&ore_name],
+                rom_name,
+                &hash_algorithm,
+                unattended_mode,
+            )
+            .await?;
+            match match_result.state {
+                MatchState::Valid => {
+                    found = Some((
+                        match_result.rom.unwrap(),
+                        match_result.game.unwrap(),
+                        match_result.system.unwrap(),
+                    ));
+                    break;
+                }
+                MatchState::Invalid => continue,
+                MatchState::Duplicate | MatchState::Skipped => break,
+            }
+        }
+        let Some(found) = found else {
+            print_skip(
+                progress_bar,
+                &format!(
+                    "\"{}\" holds a file no game wants, leaving it",
+                    ore_romfile.romfile
+                ),
+            );
+            return Ok(None);
+        };
+        matched.push(found);
+    }
+    let (_, game, system) = &matched[0];
+    let whole = matched.iter().all(|(_, other, _)| other.id == game.id)
+        && find_roms_by_game_id_no_parents(connection, game.id)
+            .await
+            .len()
+            == matched.len();
+    if !whole {
+        print_skip(
+            progress_bar,
+            &format!(
+                "\"{}\" holds other than one whole game, leaving it",
+                ore_romfile.romfile
+            ),
+        );
+        return Ok(None);
+    }
+    let system_directory = get_system_directory(connection, system).await?;
+    let new_ore_path = system_directory.join(format!("{}.{}", game.name, ORE_EXTENSION));
+    ore_romfile
+        .romfile
+        .rename(progress_bar, &new_ore_path, false)
+        .await?;
+    let roms: Vec<&Rom> = matched.iter().map(|(rom, ..)| rom).collect();
     create_or_update_romfile(
         connection,
         progress_bar,

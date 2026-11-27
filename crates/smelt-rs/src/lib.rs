@@ -134,8 +134,8 @@ pub struct Ingot {
     tracks: Vec<Track>,
     /// Its SBI's replacements by frame, in order, or why it has none.
     subq: std::result::Result<Vec<Replacement>, (SmeltErr, String)>,
-    /// A title's files: each its name, and where it starts and how long it
-    /// is in the byte view; none for what is not a title.
+    /// A title's or a set's files: each its name, and where it starts and
+    /// how long it is in the byte view; none for what is neither.
     files: Vec<(CString, u64, u64)>,
 }
 
@@ -143,12 +143,12 @@ impl Ingot {
     fn new(reader: Reader) -> std::result::Result<Self, Error> {
         let tracks = reader.tracks()?;
         let files = reader
-            .title_files()?
+            .files()?
             .into_iter()
             .map(|(name, start, len)| {
                 CString::new(name)
                     .map(|name| (name, start, len))
-                    .map_err(|_| Error::Corrupt("a title's file name holding a NUL".into()))
+                    .map_err(|_| Error::Corrupt("a file name holding a NUL".into()))
             })
             .collect::<std::result::Result<_, _>>()?;
         let subq = reader
@@ -416,7 +416,8 @@ pub unsafe extern "C" fn smelt_platform(
 /// The name of the file the ORE was written from, NUL-terminated: a
 /// cartridge's ROM's or a floppy's image's, `Game (Disk 1).ipf` say, for an
 /// emulator that picks its loader by extension. SMELT_ERR_UNSUPPORTED for a
-/// disc, a CD or a title, which name none.
+/// disc, a CD, a title or a set of several ROMs, which name none: a set's
+/// names are its files'.
 ///
 /// # Safety
 ///
@@ -685,8 +686,9 @@ pub unsafe extern "C" fn smelt_subq_replacement(
     })
 }
 
-/// A Wii U eShop title's files but its ticket, in the order its byte view
-/// holds them: 0 for what is not a title.
+/// A Wii U eShop title's files but its ticket, or a set's, a game's disks
+/// or a cartridge's chips, in the order its byte view holds them: 0 for
+/// what is neither.
 ///
 /// # Safety
 ///
@@ -702,7 +704,7 @@ pub unsafe extern "C" fn smelt_file_count(ingot: *const Ingot, out: *mut usize) 
     })
 }
 
-/// The `i`th file of a title, from 0: where it starts in the byte view
+/// The `i`th file of a title or a set, from 0: where it starts in the byte view
 /// into `*offset` and its size in bytes into `*size`, then its name,
 /// NUL-terminated, into `name`: SMELT_ERR_RANGE past the last. `*offset`
 /// and `*size` are written even when `name` is too small.

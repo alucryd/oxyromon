@@ -951,7 +951,8 @@ impl Reader {
     /// covers, its algorithm and its value. A disc image's are `logical`,
     /// `blake3-256`, `sha-1`, `md5` and `crc-32`; a CD's are each file's,
     /// by its name, as a DAT lists them: its tracks, its cue sheet and its
-    /// SBI, with the `logical` BLAKE3 of the tracks in order. A claim, which
+    /// SBI, with the `logical` BLAKE3 of the tracks in order; a set's, each
+    /// file's, with the `logical` BLAKE3 of the files in order. A claim, which
     /// [`decompress`] checks.
     pub fn identity(&self) -> impl Iterator<Item = (&str, &str, &[u8])> {
         self.meta.identity.iter().map(|identity| {
@@ -971,14 +972,38 @@ impl Reader {
     }
 
     /// A cartridge ROM's or a floppy image's file name, as it was written
-    /// from.
+    /// from: none for a set of several, whose names [`Reader::files`] gives.
     pub fn file_name(&self) -> Option<&str> {
+        (self.is_rom() && !self.is_set())
+            .then(|| self.meta.media.areas.first()?.file.as_deref())
+            .flatten()
+    }
+
+    /// Whether it holds cartridges' ROMs or floppies' images.
+    fn is_rom(&self) -> bool {
         matches!(
             self.header.media_class,
             MEDIA_ROM_FLAT | MEDIA_ROM_CARTRIDGE
         )
-        .then(|| self.meta.media.areas.first()?.file.as_deref())
-        .flatten()
+    }
+
+    /// Whether it holds the ROMs of a game of several, a floppy's disks or
+    /// a cartridge's chips, each a file of its own, which [`decompress`]
+    /// writes into its output, a folder.
+    pub fn is_set(&self) -> bool {
+        self.is_rom()
+            && self
+                .meta
+                .media
+                .areas
+                .iter()
+                .any(|area| area.file != self.meta.media.areas[0].file)
+    }
+
+    /// Whether [`decompress`] writes it as a folder of files: a title or a
+    /// set.
+    pub fn is_folder(&self) -> bool {
+        self.is_title() || self.is_set()
     }
 
     /// Whether it holds a CD, as a cue sheet and its tracks, rather than a
@@ -993,15 +1018,15 @@ impl Reader {
         self.meta.media.class == MEDIA_CDN_TITLE
     }
 
-    /// A title's files but its ticket, in the order the byte view holds
-    /// them: each its name, and where it starts and how long it is there,
-    /// so an emulator reads one as the folder's file; none for what is not
-    /// a title.
-    pub fn title_files(&self) -> Result<Vec<(String, u64, u64)>> {
-        if !self.is_title() {
+    /// A title's files but its ticket, or a set's, in the order the byte
+    /// view holds them: each its name, and where it starts and how long it
+    /// is there, so an emulator reads one as the folder's file; none for
+    /// what is neither.
+    pub fn files(&self) -> Result<Vec<(String, u64, u64)>> {
+        if !self.is_folder() {
             return Ok(Vec::new());
         }
-        let (files, _) = self.title_outputs(Path::new(""))?;
+        let (files, _) = self.folder_outputs(Path::new(""))?;
         Ok(files
             .into_iter()
             .map(|(path, start, len)| (path.to_string_lossy().into_owned(), start, len))
@@ -1108,8 +1133,8 @@ impl Reader {
         &self,
         output: &Path,
     ) -> Result<(Vec<(PathBuf, u64, u64)>, Vec<(PathBuf, Vec<u8>)>)> {
-        if self.is_title() {
-            return self.title_outputs(output);
+        if self.is_folder() {
+            return self.folder_outputs(output);
         }
         let Some(cue) = &self.meta.media.cue else {
             return Ok((vec![(output.to_path_buf(), 0, self.size())], Vec::new()));
@@ -1138,10 +1163,11 @@ impl Reader {
         Ok((tracks, whole))
     }
 
-    /// A title's files in the folder `output`, each from where its areas
-    /// start to where they end, and its ticket, written whole.
+    /// A title's or a set's files in the folder `output`, each from where
+    /// its areas start to where they end, and a title's ticket, written
+    /// whole.
     #[allow(clippy::type_complexity)]
-    fn title_outputs(
+    fn folder_outputs(
         &self,
         output: &Path,
     ) -> Result<(Vec<(PathBuf, u64, u64)>, Vec<(PathBuf, Vec<u8>)>)> {
@@ -1153,7 +1179,7 @@ impl Reader {
                 .file_name()
                 .is_some_and(|plain| plain == std::ffi::OsStr::new(name));
             if !plain || !names.insert(name.to_owned()) {
-                return Err(Error::Corrupt(format!("a title's file name: {name:?}")));
+                return Err(Error::Corrupt(format!("a folder's file name: {name:?}")));
             }
             Ok(output.join(name))
         };
@@ -1778,8 +1804,8 @@ pub fn decompress(input: &Path, output: &Path, progress: &mut dyn FnMut(u64)) ->
     // worker per one would only race them for the cache.
     let first = Reader::open_ahead(input, 0, READ_AHEAD_OFF)?;
     let (files, whole) = first.outputs(output)?;
-    // A title goes in a folder, made for it and gone if it fails
-    let made = first.is_title() && !output.exists();
+    // A title or a set goes in a folder, made for it and gone if it fails
+    let made = first.is_folder() && !output.exists();
     if made {
         std::fs::create_dir_all(output)?;
     }

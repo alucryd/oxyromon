@@ -174,6 +174,9 @@ partition's title key, so reading one needs no key, nor does a GameCube disc.
   caller vouching for it, as a ROM manager does from its DAT. A floppy's
   image named one of `FLOPPY_PLATFORMS`, `amiga`, `fds`, `n64dd` or `st`, an FDS
   or a 64DD disk's, or an IPF, is taken whole the same way, as media class 16.
+  A folder named one of those platforms is a game's several ROMs, its disks
+  or its chips, one ORE: each file an area of its own, by name, with its own
+  hashes, written back as that folder, which `Reader::files` lists.
   Anything else is refused.
 - **Not yet in the file**: the Merkle tree, parity, the tail index and the
   `deep` profile of the spec, beyond a store's segment parity.

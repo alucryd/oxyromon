@@ -3,6 +3,8 @@
 pub use super::*;
 
 mod matrix;
+mod test_amiga_disk_ores_to_one_ore;
+mod test_amiga_disk_ores_under_the_games_name_to_one_ore;
 mod test_amiga_disks_ore_recompress;
 mod test_amiga_disks_ore_to_original;
 mod test_amiga_disks_ore_to_sevenzip;

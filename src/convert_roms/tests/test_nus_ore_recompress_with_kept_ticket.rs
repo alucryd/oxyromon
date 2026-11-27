@@ -36,7 +36,7 @@ async fn test() {
                 .unwrap()
                 .as_ore()
                 .unwrap()
-                .extract_title(&progress_bar, &folder)
+                .extract_files(&progress_bar, &folder)
                 .await
                 .unwrap();
             folder.join("title.tik")

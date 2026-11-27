@@ -6,7 +6,7 @@ use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
-use anyhow::Result;
+use anyhow::{Result, bail};
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -738,7 +738,17 @@ async fn sort_system(
     if !romfile_moves.is_empty() {
         // sort moves and print a summary
         romfile_moves.sort_by(|a, b| a.1.cmp(&b.1));
-        romfile_moves.dedup_by(|a, b| a.1 == b.1);
+        // a romfile holding several ROMs is planned once a ROM; two romfiles
+        // planned onto one path would have the second overwrite the first
+        romfile_moves.dedup_by(|a, b| a.0.id == b.0.id && a.1 == b.1);
+        if let Some(pair) = romfile_moves.windows(2).find(|pair| pair[0].1 == pair[1].1) {
+            bail!(
+                "\"{}\" and \"{}\" would both be moved to \"{}\"",
+                pair[0].0.path,
+                pair[1].0.path,
+                pair[0].1.display()
+            );
+        }
 
         print_subheader(progress_bar, "Summary:");
         for romfile_move in &romfile_moves {

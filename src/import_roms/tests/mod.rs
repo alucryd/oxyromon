@@ -27,6 +27,7 @@ mod test_nus_multi_version_missing_ticket;
 mod test_nus_ore;
 mod test_nus_unlisted_ticket;
 mod test_ore;
+mod test_ore_set;
 mod test_original;
 mod test_original_delete;
 mod test_original_headered;

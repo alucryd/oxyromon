@@ -500,8 +500,22 @@ impl CommonFile for CommonRomfile {
             }
         }
 
-        // file name
+        // file name: a game of several ROMs stored an ORE a ROM, its floppies or a
+        // cartridge's chips, keeps each ORE under its ROM's name, as converting names it
+        let ore_per_rom = extension == Some(ORE_EXTENSION) && {
+            let roms = find_roms_by_game_id_no_parents(connection, game.id).await;
+            roms.len() > 1
+                && roms
+                    .iter()
+                    .filter(|other| other.romfile_id == rom.romfile_id)
+                    .count()
+                    == 1
+        };
         let filename = match extension {
+            Some(ext) if ore_per_rom => Path::new(&rom.name)
+                .with_extension(ext)
+                .to_string_lossy()
+                .into_owned(),
             Some(ext) if NON_ORIGINAL_EXTENSIONS.contains(&ext) => {
                 if system.arcade && !ARCHIVE_EXTENSIONS.contains(&ext) {
                     format!("{}.{}", rom.name, ext)

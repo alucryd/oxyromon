@@ -543,7 +543,8 @@ report a mismatch as damage.
 written: each an `algo`, `blake3-256`, `sha-1`, `md5` or `crc-32` (ISO-HDLC,
 the zlib one, 4 bytes big endian), and a `view`, what it covers: `logical`,
 the logical stream, or a file's name, for each file of a CD (its tracks, its
-cue sheet, its SBI) or of a title (its files, its ticket). The `blake3-256`
+cue sheet, its SBI), of a title (its files, its ticket) or of a set (its
+files). The `blake3-256`
 of the `logical` view is `logical_hash`. A stored hash is a claim: a check
 that matters recomputes it.
 
@@ -551,6 +552,10 @@ that matters recomputes it.
 
 - a disc image or a ROM, the logical stream as one file; a cartridge's ROM
   SHOULD take its first area's `file` as its name;
+- a set, of class 16 or 17, whose areas name more than one `file`: a game's
+  ROMs, a floppy game's disks or a cartridge's chips, a folder of its files,
+  each the areas, by `start`, that run on with the same `file`, from the
+  first's `start` for their lengths together;
 - a CD or GD-ROM, which has a `cue`: the cue sheet, `cue`'s bytes; each area
   a track's file named `file`, beside the cue sheet, its bytes from `start`
   to `start + len`; and if there is an `sbi`, its bytes, named as the cue
@@ -566,8 +571,8 @@ holding no directory, or that another file of the same output takes.
 
 | Id | Class | What | `platform` | Areas |
 | --- | --- | --- | --- | --- |
-| 16 | `rom-flat` | a file taken whole, as a DAT hashes it: a floppy's image | §11.1 | `raw` |
-| 17 | `rom-cartridge` | a cartridge's ROM, as its dump holds it | §11.1 | `raw` |
+| 16 | `rom-flat` | a file taken whole, as a DAT hashes it: a floppy's image, or a game's several | §11.1 | `raw` |
+| 17 | `rom-cartridge` | a cartridge's ROM, as its dump holds it, or a game's several | §11.1 | `raw` |
 | 32 | `cd-2352` | a CD of data tracks, 2,352-byte sectors | `cd` | `cd-data` |
 | 33 | `cd-mixed` | a CD with audio tracks | `cd` | `cd-data`, `cd-audio` |
 | 48 | `gd-rom` | a GD-ROM: a CD's single-density area and its high-density area | `gd-rom` | `cd-data`, `cd-audio` |

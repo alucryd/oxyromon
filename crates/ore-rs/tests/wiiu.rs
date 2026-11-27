@@ -160,7 +160,7 @@ fn an_eshop_title_reads_file_by_file_from_its_byte_view() {
 
     let mut reader = Reader::open(&ore).unwrap();
     let mut read: Vec<(String, Vec<u8>)> = Vec::new();
-    for (name, start, len) in reader.title_files().unwrap() {
+    for (name, start, len) in reader.files().unwrap() {
         let mut bytes = vec![0; len as usize];
         reader.read_at(start, &mut bytes).unwrap();
         read.push((name, bytes));
@@ -173,7 +173,7 @@ fn an_eshop_title_reads_file_by_file_from_its_byte_view() {
     // A disc is no title: no files, no ticket
     let (_, disc) = write(dir.path(), &[COMMON_KEY, DISC_KEY, VWII_KEY]);
     let disc = Reader::open(&disc).unwrap();
-    assert!(disc.title_files().unwrap().is_empty());
+    assert!(disc.files().unwrap().is_empty());
     assert!(disc.ticket().is_none());
 }
 

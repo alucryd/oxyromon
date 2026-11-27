@@ -178,13 +178,13 @@ impl Check for OreRomfile {
             return Ok(());
         }
 
-        // A Wii U title's files, written out as its folder and checked one
-        // by one
-        if self.is_title()? {
+        // A Wii U title's files, or a game's of several ROMs, written out
+        // as its folder and checked one by one
+        if self.is_folder()? {
             let tmp_directory = create_tmp_directory(connection).await?;
-            let folder = tmp_directory.path().join("title");
+            let folder = tmp_directory.path().join("files");
             for (file, rom) in self
-                .to_title_files(progress_bar, &folder, roms)
+                .to_files(progress_bar, &folder, roms)
                 .await?
                 .iter()
                 .zip(roms)
@@ -260,15 +260,28 @@ impl OreRomfile {
         Ok(Reader::inspect(&self.romfile.path)?.is_title())
     }
 
-    /// Write a Wii U title's ORE out as its NUS folder, `folder`, its ticket
-    /// beside its files: the files `roms` name, in their order.
-    pub async fn to_title_files(
+    /// Whether it holds a game's ROMs, several, a floppy's disks or a
+    /// cartridge's chips, each a file of its own.
+    pub fn is_set(&self) -> Result<bool> {
+        Ok(Reader::inspect(&self.romfile.path)?.is_set())
+    }
+
+    /// Whether it holds a folder of files: a title's or a set's.
+    pub fn is_folder(&self) -> Result<bool> {
+        let reader = Reader::inspect(&self.romfile.path)?;
+        Ok(reader.is_folder())
+    }
+
+    /// Write a Wii U title's or a set's ORE out as its folder, `folder`, a
+    /// title's ticket beside its files: the files `roms` name, in their
+    /// order.
+    pub async fn to_files(
         &self,
         progress_bar: &ProgressBar,
         folder: &Path,
         roms: &[&Rom],
     ) -> Result<Vec<CommonRomfile>> {
-        self.extract_title(progress_bar, folder).await?;
+        self.extract_files(progress_bar, folder).await?;
         roms.iter()
             .map(|rom| {
                 let path = folder.join(&rom.name);
@@ -280,9 +293,9 @@ impl OreRomfile {
             .collect()
     }
 
-    /// Write a Wii U title's ORE out as its NUS folder, `folder`, every file
-    /// it holds, its ticket included.
-    pub async fn extract_title(&self, progress_bar: &ProgressBar, folder: &Path) -> Result<()> {
+    /// Write a Wii U title's or a set's ORE out as its folder, `folder`,
+    /// every file it holds, a title's ticket included.
+    pub async fn extract_files(&self, progress_bar: &ProgressBar, folder: &Path) -> Result<()> {
         progress_bar.set_message("Extracting ore");
         print_action(
             progress_bar,
@@ -486,9 +499,38 @@ impl CommonRomfile {
     }
 }
 
-/// The ROMs of `games` by the ORE they are in, so that a game of several
-/// disks, an ORE a disk, is taken a disk at a time; a disk not converted
-/// yet, as a failed run leaves it, is left out.
+/// A game's ROMs, several, the files of `folder`, of `platform`, into one
+/// ORE in `destination_directory` named after the folder; into `sink`'s
+/// store when there is one, as [`IsoRomfile::to_ore_into`].
+pub async fn rom_set_to_ore(
+    progress_bar: &ProgressBar,
+    folder: &Path,
+    destination_directory: &Path,
+    compression_algorithm: &OreCompressionAlgorithm,
+    profile: &OreProfile,
+    platform: &'static str,
+    sink: Option<&mut StoreSink>,
+) -> Result<OreRomfile> {
+    let mut size = 0;
+    for entry in std::fs::read_dir(folder)? {
+        size += entry?.metadata()?.len();
+    }
+    compress(
+        progress_bar,
+        folder,
+        destination_directory,
+        compression_algorithm,
+        profile,
+        size,
+        Some(platform),
+        sink,
+    )
+    .await
+}
+
+/// The ROMs of `games` by the ORE they are in, a game's ROMs together when
+/// it is one ORE; a ROM not converted yet, as a failed run leaves it, is
+/// left out.
 pub fn by_ore(
     games: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: &HashMap<i64, Romfile>,
@@ -505,7 +547,8 @@ pub fn by_ore(
 
 /// The cartridge or floppy platform ore-rs knows a system's ROMs as, by
 /// its DAT's name, any suffix such as `(Headered)` aside: its ROMs are then
-/// taken whole, a game of several disks an ORE a disk, the DAT vouching for them, whether or not they carry a header.
+/// taken whole, a game of several ROMs one ORE, the DAT vouching for them,
+/// whether or not they carry a header.
 pub fn cartridge_platform(system: &System) -> Option<&'static str> {
     let name = system.name.split(" (").next().unwrap_or_default();
     Some(match name {
@@ -600,18 +643,27 @@ async fn compress(
         },
         platform,
     };
-    // Taken whole as its system says, but told when its header disagrees
-    if let Some(platform) = platform
-        && ore_rs::cartridge_header_matches(source, platform)? == Some(false)
-    {
-        print_warning(
-            progress_bar,
-            &format!(
-                "\"{}\" has no {} header, taken as its DAT says",
-                source.file_name().unwrap().to_str().unwrap(),
-                platform
-            ),
-        );
+    // Taken whole as its system says, but told when its header disagrees:
+    // a ROM's, or each of a set's
+    if let Some(platform) = platform {
+        let roms = match source.is_dir() {
+            true => std::fs::read_dir(source)?
+                .map(|entry| entry.map(|entry| entry.path()))
+                .collect::<std::io::Result<Vec<PathBuf>>>()?,
+            false => vec![source.to_path_buf()],
+        };
+        for rom in roms {
+            if ore_rs::cartridge_header_matches(&rom, platform)? == Some(false) {
+                print_warning(
+                    progress_bar,
+                    &format!(
+                        "\"{}\" has no {} header, taken as its DAT says",
+                        rom.file_name().unwrap().to_str().unwrap(),
+                        platform
+                    ),
+                );
+            }
+        }
     }
     let keys = load_wii_keys()?;
     let result = match sink {
@@ -823,8 +875,8 @@ pub async fn export_ore(
 }
 
 /// Write a game's ORE out as the files it holds into `directory`, under the
-/// names `roms` give them: a CD's cue sheet and tracks, a cartridge's ROM,
-/// or a disc's ISO. A thin ORE reads through its store, where it is.
+/// names `roms` give them: a CD's cue sheet and tracks, a title's or a
+/// set's files, a cartridge's ROM, or a disc's ISO. A thin ORE reads through its store, where it is.
 pub async fn ore_to_files(
     progress_bar: &ProgressBar,
     ore: &OreRomfile,
@@ -841,9 +893,9 @@ pub async fn ore_to_files(
             .await?;
         return Ok([vec![cue_bin.cue_romfile], cue_bin.bin_romfiles].concat());
     }
-    if ore.is_title()? {
+    if ore.is_folder()? {
         let roms: Vec<&Rom> = roms.iter().collect();
-        return ore.to_title_files(progress_bar, directory, &roms).await;
+        return ore.to_files(progress_bar, directory, &roms).await;
     }
     let name = &roms.first().context("A game with no ROM")?.name;
     if ore.is_rom()? {
