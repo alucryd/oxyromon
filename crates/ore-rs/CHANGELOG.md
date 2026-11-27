@@ -2,6 +2,7 @@
 
 ## Changes
 
+- A group a quick Zstandard try cannot shrink at all is that try's, whatever the codec, sparing the full level on noise: an Xbox disc's filler, written 63% quicker in CPU time on JSRF's 4 GiB of it, its ORE the same size
 - `recount` returns a `Recounted`, the games it counted and the OREs beneath the store whose header it could not read, where it returned the games alone: a store with no game is only unused with nothing unreadable beside it, which a caller deleting an unused store must know
 - The metadata writes as RFC 8949 §4.2.1 core deterministic CBOR, every map's keys shortest first and then bytewise, where they were written in declaration order: what a reader takes back is unchanged, keys of any order still read, and once the metadata's bytes must be one encoding — for signing, or for two writers agreeing — there now is one; SPEC.md §7 says so, `format.rs` holds a test that a field declared out of order fails, and a `compat` vector keeps the old order readable
 - The `dedup_saved` of `store_stats` is what every shared copy saved, `refs-1` copies of each shared chunk, as its own telling has it: it counted one game's share of each chunk before, which is what one game of several saves, not what the sharing kept from the store
@@ -9,6 +10,8 @@
 ## Features
 
 - Added sets, a game's several ROMs in one ORE, a floppy game's disks or a cartridge's chips: a folder named a cartridge's or a floppy's platform, by `Options::platform` or `--platform`, is written as one, each file an area of its own with its own hashes, of class 16 or 17, and written back as that folder; `Reader::is_set` tells one, `Reader::is_folder` one or a title, written back as a folder, `Reader::files`, which `Reader::title_files` became, lists a set's files as a title's, and `Reader::file_name` names none for a set
+- Added Xbox discs, XGD1 as Redump dumps them, recognised by their game partition's `MICROSOFT*XBOX*MEDIA` volume descriptor, platform `xbox`, media class 64
+- Added generator 7, `xbox-filler-prng`, SPEC.md Appendix H: the filler of an Xbox disc a layout tool before 4831 mastered, whose seed the writer finds by trying all 2³², its records regenerating it; JSRF's ORE goes from 5,353 MiB to 1,375 MiB; an `xbox.ore` vector among the conformance vectors, and a test that Appendix H's text alone gives the generator's output
 - Added floppies' images, media class 16 `rom-flat`: an image named one of `FLOPPY_PLATFORMS`, `amiga`, `fds`, `n64dd` or `st`, by `Options::platform` or `--platform`, an FDS or a 64DD disk's or an IPF, taken whole as a cartridge's ROM is; a `rom-flat.ore` vector among the conformance vectors
 - Added `Reader::title_files` and `Reader::ticket`: a Wii U eShop title's files, each its name and where it lies in the byte view, and its ticket, so a reader gives a file of the title without writing the folder out
 - Added `Index` among the exports, a store's index as a value: `Index::load` reads one from a store, and its `stats` and `shares` answer from what is already read what `store_stats` and `shares` answer from the store's path, so a caller that asks the same store many times parses it once

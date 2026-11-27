@@ -27,6 +27,7 @@ use super::wii::{
     GROUP_TOTAL_SIZE, HashBlock,
 };
 use super::wiiu_crypt::Layers;
+use super::xbox::{Filler, STATE_BYTES};
 
 /// What a core decodes at a time when writing a disc out: four Wii groups.
 const SLICE: u64 = 4 * GROUP_TOTAL_SIZE;
@@ -35,6 +36,7 @@ const SLICE: u64 = 4 * GROUP_TOTAL_SIZE;
 enum Record {
     Zero,
     Padding(Box<[u8; SEED_BYTES]>),
+    XboxFiller(Box<[u8; STATE_BYTES]>),
     /// One byte repeated.
     Fill(u8),
     Chunk(u32),
@@ -659,6 +661,9 @@ impl Reader {
                             Record::Padding(Box::new(cursor.take(SEED_BYTES)?.try_into().unwrap()))
                         }
                         GEN_FILL => Record::Fill(cursor.u8()?),
+                        GEN_XBOX_FILLER => Record::XboxFiller(Box::new(
+                            cursor.take(STATE_BYTES)?.try_into().unwrap(),
+                        )),
                         _ => return Err(Error::Unsupported("generator".into())),
                     },
                     KIND_STORE if thin => {
@@ -904,6 +909,9 @@ impl Reader {
                     Record::Zero => emit(Event::Run(Run::Zero(length)), done)?,
                     Record::Padding(seed) => emit(Event::Run(Run::Padding(length, *seed)), done)?,
                     Record::Fill(byte) => emit(Event::Run(Run::Fill(length, byte)), done)?,
+                    Record::XboxFiller(state) => {
+                        emit(Event::Run(Run::XboxFiller(length, *state)), done)?
+                    }
                     Record::Chunk(id) => {
                         let chunk = self.chunks[id as usize];
                         let group = self.group(chunk.group)?;
@@ -1390,6 +1398,7 @@ impl Reader {
                     lfg.forward_bytes(((self.phase(area) + start) % BLOCK + within) as usize);
                     lfg.fill(out);
                 }
+                Record::XboxFiller(state) => Filler::from_bytes(state).fill(within, out),
                 &Record::Chunk(id) => {
                     let chunk = self.chunks[id as usize];
                     let group = self.group(chunk.group)?;

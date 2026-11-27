@@ -26,6 +26,8 @@ file	gd-rom.ore	Vector (Track 3).bin	94080	49013c9de82d6816caa71a8db9540e25a003a
 file	gd-rom.ore	Vector.cue	312	60b438662a2d7efa3e0c5ca2fabdd67961442424
 vector	ps2.ore	ok	1228800	f651883675524f6b09928c25e672b5bbbbfb8db425f1ee5e48e3c07a5947718b	class 64, areas out of disc order, pcm, vag
 file	ps2.ore	Vector (PS2).iso	1228800	b2ae4cd6be2de645b1c7622fc0457fbd88dbee6e
+vector	xbox.ore	ok	406163456	d0d3edb5e859899aebe2ecdbc77d7e817550404f3e37a7e20aade60589a285ad	class 64, xbox-filler-prng
+file	xbox.ore	Vector (Xbox).iso	406163456	6e4bffcc06961d381b7a73d5dd4eb792cdabc285
 vector	wiiu-disc.ore	ok	1867776	ac4fb2dcc6b6515a4b6a0dc7799977dc7fa419a54c70dea83325019878190149	class 64, wiiu of every layer mode, repeat
 file	wiiu-disc.ore	Vector (Wii U).wud	1867776	aaa81b7227717bd344e36b425e922c24896948cf
 vector	wiiu-title.ore	ok	184568	11450d9a8d9dfd4398784355d2dde9ecf544a8f1a793dde865c747b86926dc79	class 97, a title's files, its ticket

@@ -10,6 +10,9 @@ use super::cdc;
 use super::format::{BLOCK, RECORD_MAX, Run};
 use super::fst::FileSystem;
 use super::lfg::{Lfg, SEED_BYTES, SEED_SIZE};
+use super::xbox::Filler;
+
+use std::collections::{HashMap, VecDeque};
 
 /// Zeros shorter than this stay in the chunks around them.
 const ZERO_MIN: u64 = BLOCK;
@@ -31,6 +34,101 @@ pub struct Segmenter {
     byte: u8,
     /// Whether to look for the GameCube and Wii padding generator.
     padding: bool,
+    /// An Xbox disc's filler stream, looked for a sector at a time.
+    xbox: Option<XboxStream>,
+}
+
+/// An Xbox disc's sector of filler.
+const XBOX_SECTOR: usize = 2048;
+/// How far ahead in the stream a sector is looked for: past a security
+/// range, 4096 sectors the stream runs on through but the disc keeps.
+const XBOX_WINDOW: usize = 1 << 13;
+
+/// The filler stream of an Xbox disc, a window of it ahead.
+struct XboxStream {
+    /// The state after the window.
+    next: Filler,
+    /// The window's sectors: the state each starts from, and its key.
+    ahead: VecDeque<(Filler, u64)>,
+    /// The window's sectors by their first eight bytes, to their index.
+    index: HashMap<u64, u64>,
+    /// The stream index of the window's first sector.
+    base: u64,
+    /// The filler run so far: its state, its length, the index after it.
+    run: Option<(Filler, u64, u64)>,
+}
+
+impl XboxStream {
+    fn new(seed: u32) -> Self {
+        let mut stream = Self {
+            next: Filler::new(seed),
+            ahead: VecDeque::new(),
+            index: HashMap::new(),
+            base: 0,
+            run: None,
+        };
+        stream.refill();
+        stream
+    }
+
+    fn sector(filler: &Filler) -> [u8; XBOX_SECTOR] {
+        let mut sector = [0; XBOX_SECTOR];
+        filler.clone().fill(0, &mut sector);
+        sector
+    }
+
+    fn key(sector: &[u8]) -> u64 {
+        u64::from_le_bytes(sector[..8].try_into().unwrap())
+    }
+
+    fn refill(&mut self) {
+        while self.ahead.len() < XBOX_WINDOW {
+            let at = self.base + self.ahead.len() as u64;
+            let state = self.next.clone();
+            let key = Self::key(&Self::sector(&state));
+            self.index.insert(key, at);
+            self.next.forward(XBOX_SECTOR as u64 / 2);
+            self.ahead.push_back((state, key));
+        }
+    }
+
+    /// Where in the window `sector` is, if it is there.
+    fn find(&self, sector: &[u8]) -> Option<u64> {
+        let &at = self.index.get(&Self::key(sector))?;
+        (Self::sector(&self.ahead[(at - self.base) as usize].0) == sector).then_some(at)
+    }
+
+    /// Whether the window's sector `at` continues the run so far.
+    fn continues(&self, at: u64) -> bool {
+        matches!(self.run, Some((_, len, next)) if next == at && len + XBOX_SECTOR as u64 <= RECORD_MAX)
+    }
+
+    /// Take the window's sector `at` into the run, a new one unless it
+    /// continues it, and the window past it.
+    fn take(&mut self, at: u64, emit: &mut dyn FnMut(Run)) {
+        if self.continues(at) {
+            let (_, len, next) = self.run.as_mut().unwrap();
+            *len += XBOX_SECTOR as u64;
+            *next += 1;
+        } else {
+            self.settle(emit);
+            let state = self.ahead[(at - self.base) as usize].0.clone();
+            self.run = Some((state, XBOX_SECTOR as u64, at + 1));
+        }
+        for _ in self.base..=at {
+            let (_, key) = self.ahead.pop_front().unwrap();
+            self.index.remove(&key);
+        }
+        self.base = at + 1;
+        self.refill();
+    }
+
+    /// Emit the run so far.
+    fn settle(&mut self, emit: &mut dyn FnMut(Run)) {
+        if let Some((state, len, _)) = self.run.take() {
+            emit(Run::XboxFiller(len, state.to_bytes()));
+        }
+    }
 }
 
 impl Segmenter {
@@ -41,6 +139,15 @@ impl Segmenter {
             run: 0,
             byte: 0,
             padding: true,
+            xbox: None,
+        }
+    }
+
+    /// A segmenter for an Xbox disc whose filler `seed` generated.
+    pub fn xbox(seed: u32) -> Self {
+        Self {
+            xbox: Some(XboxStream::new(seed)),
+            ..Self::without_padding(0)
         }
     }
 
@@ -56,6 +163,37 @@ impl Segmenter {
     /// Cut `bytes`, which lie at `offset` into the area and end on a block
     /// boundary unless the area ends with them, emitting what is settled.
     pub fn feed(
+        &mut self,
+        bytes: &[u8],
+        offset: u64,
+        file_system: Option<&FileSystem>,
+        emit: &mut dyn FnMut(Run),
+    ) {
+        if self.xbox.is_none() {
+            return self.feed_blocks(bytes, offset, file_system, emit);
+        }
+        // An Xbox disc's area starts on a sector, and every window ends on one
+        for (i, sector) in bytes.chunks(XBOX_SECTOR).enumerate() {
+            let at = offset + (i * XBOX_SECTOR) as u64;
+            let stream = self.xbox.as_mut().unwrap();
+            if let Some(found) = (sector.len() == XBOX_SECTOR)
+                .then(|| stream.find(sector))
+                .flatten()
+            {
+                // What came before the run is settled first
+                if !stream.continues(found) {
+                    self.settle_run(emit);
+                    self.flush(true, emit);
+                }
+                self.xbox.as_mut().unwrap().take(found, emit);
+                continue;
+            }
+            stream.settle(emit);
+            self.feed_blocks(sector, at, file_system, emit);
+        }
+    }
+
+    fn feed_blocks(
         &mut self,
         bytes: &[u8],
         offset: u64,
@@ -101,6 +239,9 @@ impl Segmenter {
 
     /// Emit what is left at the area's end.
     pub fn finish(&mut self, emit: &mut dyn FnMut(Run)) {
+        if let Some(xbox) = &mut self.xbox {
+            xbox.settle(emit);
+        }
         self.settle_run(emit);
         self.flush(true, emit);
     }

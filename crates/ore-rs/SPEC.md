@@ -44,6 +44,7 @@ a bug in one of them, to be reported.
 - Appendix E: `xa`
 - Appendix F: `vag`
 - Appendix G: `str`
+- Appendix H: the Xbox filler generator
 
 ## 1. Conventions
 
@@ -517,10 +518,11 @@ A `GENERATED` record names its generator with a byte, then what it takes:
 | --- | --- | --- | --- |
 | 4 | `gc-wii-filler-prng` | `seed`, 68 bytes | the padding of a GameCube or Wii disc (Appendix A) |
 | 5 | `fill` | `byte`, 1 byte | `len` copies of `byte`, as a ROM's padding |
+| 7 | `xbox-filler-prng` | `state`, 12 bytes | the filler of an Xbox disc an early layout tool mastered (Appendix H) |
 
 Any other id is refused. 0 to 3 and 6 are reserved for the draft's
 `cd-edc`, `cd-ecc-c22`, `cd-sync-header`, `pattern-run` and
-`zero-fill-tail`, 7 and up for later ones. A generator is never changed in
+`zero-fill-tail`, 8 and up for later ones. A generator is never changed in
 place: a new one takes a new id.
 
 **`gc-wii-filler-prng`** restarts at each record. The record lying at
@@ -529,6 +531,9 @@ generator's output for `seed` from offset `((phase + at) mod 0x8000) + x`,
 where `phase` is the area's `start` for a `raw` area and 0 for any other:
 the padding counts from the disc's 32 KiB blocks outside a Wii partition,
 and from its data's within one.
+
+**`xbox-filler-prng`** restarts at each record, from its `state`: the
+record's byte `x` is the generator's output from byte `x` of that state.
 
 ## 10. The logical stream, identity and outputs
 
@@ -576,7 +581,7 @@ holding no directory, or that another file of the same output takes.
 | 32 | `cd-2352` | a CD of data tracks, 2,352-byte sectors | `cd` | `cd-data` |
 | 33 | `cd-mixed` | a CD with audio tracks | `cd` | `cd-data`, `cd-audio` |
 | 48 | `gd-rom` | a GD-ROM: a CD's single-density area and its high-density area | `gd-rom` | `cd-data`, `cd-audio` |
-| 64 | `dvd-2048` | a disc image of 2,048-byte sectors, or a Wii U disc's of 32 KiB | `gamecube`, `wii`, `ps2`, `psp`, `wiiu` | `raw`, `wii-partition`, `wiiu`, `repeat` |
+| 64 | `dvd-2048` | a disc image of 2,048-byte sectors, or a Wii U disc's of 32 KiB | `gamecube`, `wii`, `ps2`, `psp`, `wiiu`, `xbox` | `raw`, `wii-partition`, `wiiu`, `repeat` |
 | 97 | `cdn-title` | an eShop title as its CDN delivers it: a Wii U NUS folder | `wiiu` | `raw`, `wiiu` |
 
 The class tells a reader what an emulator is handed: sectors of 2,352 bytes
@@ -1093,3 +1098,21 @@ each kind, Cr, Cb and luma, `class[3]` and `left` start 0. For each block
    - Whether it is escaped: a bit of the escape probability when the table
      has its run and magnitude, escaped without a bit when it has not.
    - `coded` counts it, and `previous` is its magnitude.
+
+## Appendix H: the Xbox filler generator
+
+What an Xbox disc's layout tool before version 4831 fills unused space
+with, as xboxdevwiki's XDVDFS page describes it: a 32-bit counter stepped
+modulo the prime `p = 0xFFFFFFFB`. Later tools use RC4, which no record
+regenerates.
+
+**State.** Three 32-bit words, `a`, `b` and `c`, each big endian, in that
+order. A tool seeded it from a 32-bit `seed` as `a = 0`, `b = B[seed & 7]`,
+`c = seed`, then `a` = a step's value, where `B` is 0x52F690D5, 0x534D7DDE,
+0x5B71A70F, 0x66793320, 0x9B7E5ED5, 0xA465265E, 0xA53F1D11, 0xB154430F.
+
+**A step** sets `c = ((c + 1) · b) mod p`, computed in 64 bits, and its
+value is `c ^ a`.
+
+**Output.** Each step gives two bytes, bits 8 to 23 of its value, little
+endian. The output from offset `o` skips the first `o` bytes.
