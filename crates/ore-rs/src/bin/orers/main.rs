@@ -13,12 +13,13 @@ use ore_rs::{Codec, Options, Profile, StoreBatch};
 fn cli() -> Command {
     Command::new("orers")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("ORE compression and decompression: GameCube, Wii, Wii U, PlayStation 2, PSP, Xbox and Xbox 360 ISOs, Wii U WUDs, WUXs and NUS folders, cartridge ROMs and CD and GD-ROM cue sheets are compressed, OREs decompressed, stores checked and repaired")
+        .about("ORE compression and decompression: GameCube, Wii, Wii U, PlayStation 2, PlayStation 3, PSP, Xbox and Xbox 360 ISOs, Wii U WUDs, WUXs and NUS folders, cartridge ROMs and CD and GD-ROM cue sheets are compressed, OREs decompressed, stores checked and repaired")
         .after_help(format!(
             "Writing an ORE from a Wii ISO needs the Wii common key among the keys, from a Wii U disc its\n\
              disc key and the Wii U common key, and the vWii common key for its vWii titles to be decrypted;\n\
              orers ships none. A Wii U NUS folder's contents are decrypted with its ticket, and kept as they\n\
-             are without one; its ticket is written back beside them.\n\n\
+             are without one; its ticket is written back beside them. A PS3 disc is decrypted with its\n\
+             disc key, as a .dkey holds it, and kept as it is without.\n\n\
              A CD is given as its cue sheet, its tracks a file each; an SBI of the cue sheet's name beside it\n\
              is kept, and written back beside the cue sheet with the tracks.\n\n\
              A thin ORE finds its store as the nearest .ore-store up from its folder: keep the store in the\n\

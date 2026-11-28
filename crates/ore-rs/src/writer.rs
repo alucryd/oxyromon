@@ -891,6 +891,7 @@ impl Drop for StoreBatch {
 }
 
 // A Wii U disc, laid out by wiiu's plan, or eShop title
+mod ps3_disc;
 mod wiiu_disc;
 pub use wiiu_disc::is_title_folder;
 
@@ -916,6 +917,9 @@ fn encode(
     }
     if wiiu_disc::is_wiiu(input) {
         return wiiu_disc::encode(input, part, options, keys, store, progress);
+    }
+    if options.platform.is_none() && ps3_disc::is_ps3(input) {
+        return ps3_disc::encode(input, part, options, keys, store, progress);
     }
     let mut iso = Iso::open(input)?;
     let size = iso.size();
@@ -1051,8 +1055,12 @@ fn encode(
                     }
                     segmenter.finish(&mut |run| encoder.push(run));
                 }
-                AreaKind::CdData | AreaKind::CdAudio | AreaKind::Wiiu | AreaKind::Repeat => {
-                    unreachable!("a disc image's plan has no CD track nor Wii U region")
+                AreaKind::CdData
+                | AreaKind::CdAudio
+                | AreaKind::Wiiu
+                | AreaKind::Repeat
+                | AreaKind::Ps3 => {
+                    unreachable!("a disc image's plan has no CD track, Wii U nor PS3 region")
                 }
             }
             exception_count += exceptions.len() as u64;

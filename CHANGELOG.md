@@ -22,6 +22,9 @@
 - Added PS3 ISOs rebuilt from their JB folder and IRD, byte for byte, with `convert-roms --format ORIGINAL`, checked against the DAT, and extracted back to the JB folder with the new `JB` format, both from the new ps3-rs crate; the disc key comes from the IRD
 - `import-irds` keeps each IRD with its game, which an IRD imported before keeps once imported again
 - `import-roms` imports a PS3 system update, `PS3UPDAT.PUP`, loose or in a JB folder, once a system under `PS3_UPDATE/<version>/`, for every JB folder whose IRD lists it
+- `import-keys` imports PS3 disc keys from Redump's `.dkey` files, for ISOs with no IRD
+- PS3 ISOs convert to and from ORE, decrypted with the disc key their IRD or a `.dkey` gives, and JB folders to ORE, through the ISO they rebuild
+- `import-irds` adds each IRD's disc key to `ps3_keys.txt`, beside the `.dkey` keys
 
 ## Improvements
 

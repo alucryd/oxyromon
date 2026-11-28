@@ -1,0 +1,20 @@
+[package]
+name = "ps3"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "PlayStation 3 disc specifics shared by ps3-rs and ore-rs: regions, their encryption, the disc key, the Joliet file system"
+# oxyROMon's own code, permissive so that ore-rs's reader, which smelt
+# links anywhere, may embed it to put a disc's encryption back
+license = "MIT OR Apache-2.0"
+repository.workspace = true
+# Never published: each crate using it embeds a copy of its source, so that
+# each publishes standalone
+publish = false
+
+[lib]
+name = "ps3"
+path = "src/lib.rs"
+
+[dependencies]
+aes = "0.9"

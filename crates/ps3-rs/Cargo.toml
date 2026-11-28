@@ -4,13 +4,22 @@ version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 description = "PlayStation 3 discs: Redump ISOs rebuilt from a JB folder and its IRD, and JB folders extracted from an ISO"
-license = "GPL-3.0-or-later"
+# GPL-3.0-or-later but for the embedded disc model, src/ps3, which ore-rs
+# reads with, MIT OR Apache-2.0
+license = "GPL-3.0-or-later AND (MIT OR Apache-2.0)"
 repository.workspace = true
 keywords = ["ps3", "ird", "iso", "redump", "jb-folder"]
 categories = ["command-line-utilities", "encoding"]
 # The tests build their disc with test-support, an unpublished
 # dev-dependency, so they stay out of the package
-include = ["src/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+include = [
+    "src/**/*",
+    "LICENSE",
+    "LICENSE-APACHE",
+    "LICENSE-MIT",
+    "README.md",
+    "CHANGELOG.md",
+]
 
 [lib]
 name = "ps3_rs"

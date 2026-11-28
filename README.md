@@ -248,7 +248,7 @@ WBFS files are those `wit copy --wbfs` writes: only what the disc points to is k
 Exporting an RVZ to WBFS needs no key and decodes no ISO on the way; exporting a Wii ISO needs the Wii common key, as compressing it to RVZ does.
 
 ORE is oxyROMon's own format, specified as ORE 1.0 in [crates/ore-rs/SPEC.md](crates/ore-rs/SPEC.md) with conformance vectors: an ORE this version writes opens in every later one.
-An ORE holds a GameCube, Wii, PlayStation 2, PSP, Xbox or Xbox 360 disc, a cartridge's ROM, a floppy's image, or a CD or a Dreamcast GD-ROM as its cue sheet and tracks, an ORE a disc: the cue sheet is inside it, so a CD is one file, which every ROM of the game points to.
+An ORE holds a GameCube, Wii, PlayStation 2, PlayStation 3, PSP, Xbox or Xbox 360 disc, a cartridge's ROM, a floppy's image, or a CD or a Dreamcast GD-ROM as its cue sheet and tracks, an ORE a disc: the cue sheet is inside it, so a CD is one file, which every ROM of the game points to.
 Importing a CD ORE needs every track it holds to match the DAT; when its cue sheet is not the DAT's, import the DAT's, and it goes into the ORE in its place, its metadata alone written again.
 Like RVZ, compressing a Wii ISO needs the Wii common key, and reading an ORE needs none.
 No emulator reads ORE yet.
@@ -501,6 +501,7 @@ A game counts as complete without its `PS3_CONTENT`, `PS3_EXTRA` and `PS3_UPDATE
 When an IRD no longer matches a file already in its JB folder, that file is imported again or moved to `Trash`.
 
 The IRD is kept with its game: with it, `convert-roms` rebuilds the Redump ISO from the JB folder and extracts the ISO back, its disc key derived from the IRD, so no `.dkey` is needed.
+Its disc key is also added to `ps3_keys.txt`, where `import-keys` keeps `.dkey` keys, for an ISO of the disc wherever it comes from.
 A game whose IRD was imported by an earlier version keeps it once its IRD is imported again.
 
 Import a PS3 DAT first.
@@ -555,7 +556,7 @@ Options:
 
 ### import-keys
 
-Imports the Wii, Wii U, Switch and 3DS keys oxyROMon does not ship.
+Imports the Wii, Wii U, Switch, 3DS and PS3 keys oxyROMon does not ship.
 Wii and Wii U keys, which exporting to WUA and compressing Wii discs to RVZ need, come from files in the format of Cemu's `keys.txt`: one 32-digit hex key per line, with anything after `#` or `;` ignored.
 Disc keys and the Wii U common key can share a file.
 A console's OTP dump, `otp.bin`, can be imported too: its Wii U and vWii common keys are taken from it, the vWii key serving the vWii titles a disc's update partition can carry.
@@ -571,11 +572,15 @@ They are merged by name into `3ds_keys.txt` in the data directory, in the same f
 A key slot's key, `common0` to `common5` or the generator constant that is not 16 bytes is refused, and nothing is written.
 Nothing uses them yet: they are there for decrypting 3DS games to come.
 
+It imports PS3 disc keys from Redump's `.dkey` files, known by their extension, into `ps3_keys.txt` in the data directory, one key per line, each kept once, readable by its owner only.
+A disc's IRD gives its key already; a `.dkey` is for an ISO with none, and each key is tried against the disc, so a file's name does not matter.
+Converting a PS3 ISO to ORE decrypts it with its key, which the ORE keeps, so that its data compresses: without one, it is stored encrypted, still bit-exact, a few percent smaller.
+
 ```text
 Usage: oxyromon import-keys <KEYS>...
 
 Arguments:
-  <KEYS>...  Set the key files to import, as Cemu's keys.txt, a Wii's or a Wii U's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys, or Azahar's aes_keys.txt
+  <KEYS>...  Set the key files to import, as Cemu's keys.txt, a Wii's or a Wii U's otp.bin, BootMii's keys.bin, or the Switch's prod.keys or title.keys, or Azahar's aes_keys.txt, or Redump's PS3 .dkey files
 
 Options:
   -h, --help  Print help
@@ -691,13 +696,13 @@ Converts ROM files between lossless formats and back to their originals:
 - Any original format to and from 7Z and ZIP.
 - CUE/BIN and ISO to and from CHD, with CHDs restored to their original split CUE/BIN.
 - ISO to and from CSO, ZSO and RVZ.
-- GameCube, Wii, PlayStation 2, PSP, Xbox and Xbox 360 ISOs, CUE/BIN and CHD to and from ORE, with OREs restored to their cue sheet and tracks; an ISO of another system is skipped.
+- GameCube, Wii, PlayStation 2, PlayStation 3, PSP, Xbox and Xbox 360 ISOs, CUE/BIN and CHD to and from ORE, with OREs restored to their cue sheet and tracks; an ISO of another system is skipped.
 - Cartridge ROMs, loose or in an archive, to and from ORE, restored under their name: every ROM of a cartridge system ORE knows by its DAT's name, the Atari consoles, ColecoVision, Odyssey 2, PC Engine and SuperGrafx, the Nintendo handhelds and consoles from the NES to the 3DS, its cards but not its eShop's CIAs, the NeoGeo Pocket, the Sega consoles from the SG-1000 to the 32X, and the WonderSwan, headerless or not, BIOSes included; in any other system, Game Boy, Game Boy Advance, DS, 3DS, N64 and Mega Drive ROMs ORE recognises by their header, the rest skipped.
 - Floppy images, loose or in an archive, to and from ORE, restored under their name: the Amiga's and the Atari ST's IPFs and the Famicom Disk System's and the 64DD's disks.
 - A game of several ROMs, a floppy game's disks or a cartridge's chips, as one ORE, as an archive holds them, each ROM a file of it, and back as the folder of its ROMs; the OREs a ROM each of an earlier build are gathered into one.
 - NSP to and from NSZ.
 - Wii U discs between ISO, WUX and lossless WUA.
-- PS3 JB folders to their Redump ISO with `ORIGINAL`, from their IRD, checked against the DAT, and the ISO back to its JB folder with `JB`; a JB folder needs its system update, `PS3_UPDATE/PS3UPDAT.PUP`, which `import-roms` imports.
+- PS3 JB folders to their Redump ISO with `ORIGINAL`, from their IRD, checked against the DAT, and the ISO back to its JB folder with `JB`; a JB folder needs its system update, `PS3_UPDATE/PS3UPDAT.PUP`, which `import-roms` imports. A JB folder converts to `ORE` the same way, as the ISO it rebuilds.
 
 Games and systems are selected by case-insensitive name, with SQL wildcards, and both flags can be repeated.
 `--save` also stores the format as each processed system's `PREFER_FORMAT`, so future imports follow it.

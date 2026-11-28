@@ -59,7 +59,7 @@ indicatif = { workspace = true, optional = true }
 
 [dev-dependencies]
 # The synthetic discs the tests run on
-test-support = { path = "../test-support", features = ["gcwii", "wiiu"] }
+test-support = { path = "../test-support", features = ["gcwii", "ps3", "wiiu"] }
 # The reference MinCDC the chunker is checked against
 mothcdc = { version = "0.7", default-features = false }
 tempfile.workspace = true

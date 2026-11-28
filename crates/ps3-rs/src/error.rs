@@ -21,3 +21,13 @@ pub enum Error {
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
+
+impl Error {
+    /// The embedded disc model's error: a disc that is not one is corrupt.
+    pub(crate) fn disc(error: std::io::Error) -> Error {
+        match error.kind() {
+            std::io::ErrorKind::InvalidData => Error::Corrupt(error.to_string()),
+            _ => Error::Io(error),
+        }
+    }
+}

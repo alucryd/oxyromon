@@ -1,13 +1,17 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! A PlayStation 3 disc as Redump dumps it: 2048-byte sectors, the regions
 //! sector 0 lists left plain and the ones between them encrypted, and an ISO
 //! 9660 file system with Joliet names.
 
 use std::collections::HashSet;
+use std::io::{Error, ErrorKind, Result};
 
 use aes::Aes128;
 use aes::cipher::{Array, BlockCipherDecrypt, BlockCipherEncrypt, KeyInit};
 
-use crate::{Error, Result};
+fn invalid(what: String) -> Error {
+    Error::new(ErrorKind::InvalidData, what)
+}
 
 pub const SECTOR: usize = 2048;
 
@@ -38,20 +42,20 @@ pub struct Region {
 /// The regions sector 0 lays out: the plain ones it lists, and the encrypted
 /// ones between them.
 pub fn regions(sector0: &[u8]) -> Result<Vec<Region>> {
-    let be = |at: usize| u32::from_be_bytes(sector0[at..at + 4].try_into().unwrap());
     if sector0.len() < SECTOR {
-        return Err(Error::Corrupt("sector 0 is short".into()));
+        return Err(invalid("sector 0 is short".into()));
     }
+    let be = |at: usize| u32::from_be_bytes(sector0[at..at + 4].try_into().unwrap());
     let count = be(0) as usize;
     if count == 0 || 8 + 8 * count > SECTOR {
-        return Err(Error::Corrupt(format!("{count} plain regions in sector 0")));
+        return Err(invalid(format!("{count} plain regions in sector 0")));
     }
     let mut regions = Vec::with_capacity(count * 2 - 1);
     for i in 0..count {
         let (start, end) = (be(8 + 8 * i), be(12 + 8 * i));
         let next = regions.last().map_or(0, |last: &Region| last.end + 1);
         if start < next || end < start {
-            return Err(Error::Corrupt(format!(
+            return Err(invalid(format!(
                 "plain region {start}-{end} out of order in sector 0"
             )));
         }
@@ -86,7 +90,8 @@ impl Crypt {
         }
     }
 
-    fn encrypted(&self, lba: u32) -> bool {
+    /// Whether sector `lba` is encrypted.
+    pub fn encrypted(&self, lba: u32) -> bool {
         self.regions
             .iter()
             .any(|region| region.encrypted && (region.start..=region.end).contains(&lba))
@@ -178,10 +183,10 @@ pub fn files(read: &mut dyn FnMut(u32, &mut [u8; SECTOR]) -> Result<()>) -> Resu
     for lba in 16..48 {
         read(lba, &mut sector)?;
         if &sector[1..6] != b"CD001" {
-            return Err(Error::BadMagic {
-                expected: "CD001".into(),
-                found: String::from_utf8_lossy(&sector[1..6]).into_owned(),
-            });
+            return Err(invalid(format!(
+                "no volume descriptor in sector {lba}: {}",
+                String::from_utf8_lossy(&sector[1..6])
+            )));
         }
         match sector[0] {
             1 => primary = Some(root(&sector)),
@@ -196,7 +201,7 @@ pub fn files(read: &mut dyn FnMut(u32, &mut [u8; SECTOR]) -> Result<()>) -> Resu
     let (is_joliet, (lba, size)) = match (joliet, primary) {
         (Some(root), _) => (true, root),
         (None, Some(root)) => (false, root),
-        (None, None) => return Err(Error::Corrupt("no volume descriptor".into())),
+        (None, None) => return Err(invalid("no volume descriptor".into())),
     };
 
     let mut files: Vec<File> = Vec::new();
@@ -217,7 +222,7 @@ pub fn files(read: &mut dyn FnMut(u32, &mut [u8; SECTOR]) -> Result<()>) -> Resu
                 let record = &sector[offset..];
                 let len = record[0] as usize;
                 if len < 34 || offset + len > SECTOR || 33 + record[32] as usize > len {
-                    return Err(Error::Corrupt(format!(
+                    return Err(invalid(format!(
                         "a directory record in sector {}",
                         lba + at
                     )));
@@ -286,6 +291,73 @@ fn root(descriptor: &[u8]) -> (u32, u32) {
 /// The disc's size in sectors, from its primary volume descriptor.
 pub fn volume_sectors(descriptor: &[u8]) -> u32 {
     u32::from_le_bytes(descriptor[80..84].try_into().unwrap())
+}
+
+/// What a file's first bytes are, by its name, when it lies encrypted: an
+/// executable's SELF header, a PNG's signature, a PARAM.SFO's.
+fn magic(path: &str) -> Option<&'static [u8]> {
+    let name = path.rsplit('/').next().unwrap_or(path).to_ascii_uppercase();
+    if name == "EBOOT.BIN" || name.ends_with(".SELF") || name.ends_with(".SPRX") {
+        Some(b"SCE\0")
+    } else if name.ends_with(".PNG") {
+        Some(b"\x89PNG")
+    } else if name == "PARAM.SFO" {
+        Some(b"\0PSF")
+    } else {
+        None
+    }
+}
+
+/// The sector a disc key is told right by: the first encrypted sector of a
+/// file whose first bytes are known, EBOOT.BIN's when it lies encrypted.
+/// Found once, it tells any number of keys apart without reading again.
+pub struct Probe {
+    lba: u32,
+    magic: &'static [u8],
+    sector: [u8; SECTOR],
+}
+
+impl Probe {
+    /// The probe of the disc whose sectors `read` gives as they are; `None`
+    /// when no file whose first bytes are known is encrypted, so no key can
+    /// be told right.
+    pub fn find(
+        read: &mut dyn FnMut(u32, &mut [u8; SECTOR]) -> Result<()>,
+    ) -> Result<Option<Probe>> {
+        let mut sector = [0; SECTOR];
+        read(0, &mut sector)?;
+        let regions = regions(&sector)?;
+        let encrypted = |lba: u32| {
+            regions
+                .iter()
+                .any(|region| region.encrypted && (region.start..=region.end).contains(&lba))
+        };
+        let mut files = files(read)?;
+        // EBOOT.BIN first, every disc's executable
+        files.sort_by_key(|file| !file.path.eq_ignore_ascii_case("PS3_GAME/USRDIR/EBOOT.BIN"));
+        for file in files {
+            let (Some(magic), lba) = (magic(&file.path), file.lba()) else {
+                continue;
+            };
+            if file.size() >= magic.len() as u64 && encrypted(lba) {
+                read(lba, &mut sector)?;
+                return Ok(Some(Probe { lba, magic, sector }));
+            }
+        }
+        Ok(None)
+    }
+
+    /// Whether `key` is the disc's key.
+    pub fn opens(&self, key: &[u8; 16]) -> bool {
+        let region = Region {
+            start: self.lba,
+            end: self.lba,
+            encrypted: true,
+        };
+        let mut sector = self.sector;
+        Crypt::new(key, vec![region]).decrypt(self.lba, &mut sector);
+        sector.starts_with(self.magic)
+    }
 }
 
 #[cfg(test)]
