@@ -15,7 +15,7 @@ use super::prompt::*;
 use super::ps3;
 use super::rvz::AsRvz;
 use super::util::*;
-use super::wux::{AsWua, AsWux, store_ticket};
+use super::wux::{AsWua, AsWux, find_store, store_ticket};
 use super::xso::AsXso;
 use anyhow::{Result, bail};
 use clap::value_parser;
@@ -2756,6 +2756,20 @@ async fn import_disc<T: HashAndSize + GetRomfile>(
                     .romfile()
                     .rename(progress_bar, &new_wux_path, false)
                     .await?;
+                // a legacy lossless WUA's store is not imported along with it
+                if extension == WUA_EXTENSION {
+                    let store = find_store(&new_wux_path);
+                    for name in wux_rs::store_entries(&new_wux_path)? {
+                        if !store.as_ref().is_some_and(|s| s.join(&name).is_file()) {
+                            print_warning(
+                                progress_bar,
+                                &format!(
+                                    "Update partition {name} not found, the disc can't be rebuilt"
+                                ),
+                            );
+                        }
+                    }
+                }
                 // persist in database
                 create_or_update_romfile(
                     connection,

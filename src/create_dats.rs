@@ -165,6 +165,11 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
     while let Some(entry) = walker.next() {
         let Ok(entry) = entry else { continue };
         let path = entry.path();
+        // a legacy lossless WUA's store holds no games of its own
+        if path.is_dir() && entry.file_name() == wux_rs::STORE_DIR {
+            walker.skip_current_dir();
+            continue;
+        }
         if path.is_dir() && entry.depth() > 0 && wux_rs::tmd_path(path).is_some() {
             walker.skip_current_dir();
             let game_name = path.file_name().unwrap().to_str().unwrap().to_string();

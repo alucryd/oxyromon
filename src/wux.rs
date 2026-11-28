@@ -518,7 +518,6 @@ pub async fn to_plain_wua(
         };
     }
     let output_path = output.to_path_buf();
-    let result_path = output_path.clone();
     run_blocking(progress_bar, length, move |progress| {
         let inputs: Vec<&Path> = inputs.iter().map(PathBuf::as_path).collect();
         wux_rs::to_plain_wua_with_tickets(&inputs, &output_path, &keys, &tickets, progress)
@@ -526,7 +525,7 @@ pub async fn to_plain_wua(
     .await
     .with_context(|| format!("Failed to create \"{}\"", output.display()))?;
     stop_action(progress_bar);
-    Ok(Some(CommonRomfile::from_path(&result_path)?))
+    Ok(Some(CommonRomfile::from_path(&output)?))
 }
 
 enum TitleSource {

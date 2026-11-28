@@ -1685,6 +1685,8 @@ async fn wiiu_discs(
         let iso = ore.to_iso(progress_bar, &tmp_directory.path()).await?;
         if iso.romfile.clone().as_wud().is_ok() {
             discs.push((iso.romfile, Some(tmp_directory)));
+        } else {
+            remaining.insert(game_id, roms);
         }
     }
     let (discs_in_library, others) = partition_games_by_extensions(

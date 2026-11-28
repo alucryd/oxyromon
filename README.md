@@ -267,7 +267,7 @@ WUX compresses a WUD losslessly, as wudd dumps it and Cemu reads it.
 
 WUA is Cemu's archive of a title's decrypted game files: converting a disc to it drops the disc's encryption and layout, so it is an export-only format (`export-roms --format WUA`).
 Exporting a Wii U disc (from WUD, ISO, WUX, ORE, or a legacy lossless WUA) or a NUS title to WUA writes a standalone plain WUA with no `.update-partitions` store beside it, while ORE covers lossless Wii U storage and update-partition deduplication via `.ore-store`.
-Legacy lossless WUAs written by earlier versions can still be checked, exported, and converted back to WUX, ORE, or ISO when their `.update-partitions` store is beside them; `purge-roms` deletes `.update-partitions` entries that no WUA in the database needs any more, keeping them all if any WUA cannot be read.
+Legacy lossless WUAs written by earlier versions can still be checked, exported, and converted back to WUX, ORE, or ISO when their `.update-partitions` store is beside them; importing one does not bring its store along, and warns of each update partition the library lacks. `purge-roms` deletes `.update-partitions` entries that no WUA in the database needs any more, keeping them all if any WUA cannot be read.
 WUA and NUS need the disc's key and the Wii U common key, neither of which ships with oxyROMon.
 `import-keys` stores them in oxyROMon's data directory, so a headless server needs no emulator.
 It reads files in the format of Cemu's `keys.txt`, one key per line, where the common key can sit alongside the disc keys, and a console's OTP dump, `otp.bin`, for the Wii U and vWii common keys.
@@ -282,6 +282,7 @@ A title needs its ticket to be decrypted: No-Intro lists every update with one, 
 Importing a title's folder keeps the ticket a downloader made, when no DAT lists it, in a `wiiu_tickets` folder in oxyROMon's data directory, beside the keys, by title ID; importing the folder of a title already imported keeps it too.
 Exporting to WUA decrypts the title with it, and exporting the title for a console adds it as `title.tik`, which WUP Installer GX2 needs; DLC without a ticket is skipped with a warning.
 
+A Wii U disc kept as an ORE exports to WUX and NUS too, through the WUD it rebuilds.
 Exporting a disc to NUS writes the folder WUP Installer GX2 installs on a console: the disc's TMD, ticket and certificates, and the game's contents, each checked against the TMD.
 A folder already in its place is only replaced if it holds nothing the export wouldn't write, as an earlier export of the same disc; otherwise the export fails and leaves it alone.
 A disc's game partition holds the title's CDN contents byte for byte, so every `.app` and `.h3` matches No-Intro's CDN DAT; only `title.tmd` differs, as Nintendo signed one for the disc and another for its servers.
