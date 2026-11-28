@@ -37,6 +37,8 @@ file	wiiu-title.ore	Vector (Wii U Title)/00000012.app	131072	2ab4956749a5bdbe9aa
 file	wiiu-title.ore	Vector (Wii U Title)/00000012.h3	20	6d25feffb97232a68a85e7127509d7e06086f2c9
 file	wiiu-title.ore	Vector (Wii U Title)/title.tik	676	c37351d72cf3600b67eb1ca377f3b79ef32e60d5
 file	wiiu-title.ore	Vector (Wii U Title)/title.tmd	2964	23965a0591fa923b34333ba30f09aaf0cec564ce
+vector	ps3.ore	ok	225280	0d1f416f86000f353ec05a0d81b822c7f5ee5113a73bec1e532a64a8eec6205c	class 64, ps3 between raw regions
+file	ps3.ore	Vector (PS3).iso	225280	6e5b64ad74dbe457ef2f936bcf8e73628fa4aa70
 vector	store/Vector A.ore	ok	524288	a61f6baf393f3202d494cc07ba1e95d24fc5c43c9017c6977289cc2e72d6059e	a thin ORE, STORE records, a sealed segment's parity
 file	store/Vector A.ore	Vector A.gb	524288	4282acbe81c5a533fa85d6c69c93f63f6c7a7eaa
 vector	store/Vector B.ore	ok	524288	ae0ca82e4934266454cf83c780cd5533caec544886ae021363402d0bba55dee2	a thin ORE, STORE records, a sealed segment's parity

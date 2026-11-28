@@ -32,6 +32,9 @@ let md5 = ps3_rs::rebuild(
   returned, to check against a DAT.
 - **Extracting**: the disc's files, decrypted, each with its MD5, from the
   disc key, which the IRD's data1 gives or Redump publishes as a `.dkey`.
+- **Disc keys**: whether a key is a disc's, by what the first encrypted sector
+  of its EBOOT.BIN, or of another file whose first bytes are known, decrypts
+  to, so a pool of `.dkey` keys can be tried against an ISO.
 - **System updates**: the firmware version a `PS3UPDAT.PUP` installs. Most JB
   folders go without theirs, which many discs share.
 
@@ -84,4 +87,4 @@ The disc key's derivation from data1 follows
 
 ## License
 
-GPL-3.0-or-later. See [LICENSE](LICENSE).
+GPL-3.0-or-later, but for the disc model in `src/ps3`, which ore-rs shares, MIT OR Apache-2.0. See [LICENSE](LICENSE), [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE).

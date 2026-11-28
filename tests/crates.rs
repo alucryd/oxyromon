@@ -32,6 +32,7 @@ const EMBEDDED: &[(&str, &[&str])] = &[
         "crates/gcwii",
         &["crates/rvz-rs/src/gcwii", "crates/wbfs-rs/src/gcwii"],
     ),
+    ("crates/ps3", &["crates/ps3-rs/src/ps3"]),
     ("crates/wiiu", &["crates/wux-rs/src/wiiu"]),
 ];
 

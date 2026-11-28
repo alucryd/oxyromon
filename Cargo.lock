@@ -3193,6 +3193,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ps3"
+version = "0.0.0"
+dependencies = [
+ "aes 0.9.4",
+]
+
+[[package]]
 name = "ps3-rs"
 version = "0.1.0"
 dependencies = [

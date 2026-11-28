@@ -1,6 +1,8 @@
 use super::common::to_hex;
+use super::config::get_data_directory;
 use super::database::*;
 use super::import_dats::reimport_orphan_romfiles;
+use super::import_keys::save_ps3_keys;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
@@ -114,6 +116,11 @@ pub async fn main(
         print_info(progress_bar, &format!("Files: {}", ird.file_hashes.len()));
 
         if !matches.get_flag("INFO") {
+            // its disc key, for an ISO of the disc, whatever game it matches;
+            // tests keep away from the data directory
+            if !cfg!(test) && save_ps3_keys(&get_data_directory()?, &[ird.disc_key()])? > 0 {
+                print_info(progress_bar, "Disc key kept");
+            }
             games.sort_by(|a, b| {
                 jaro_winkler(&b.name.to_lowercase(), &ird.game_name.to_lowercase())
                     .partial_cmp(&jaro_winkler(

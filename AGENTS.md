@@ -151,7 +151,9 @@ global `MultiProgress`.
 `xdelta-rs`, `xps-rs` and `xso-rs`, each a port of the tool oxyromon used to
 run (chdman, ctrtool, gdidrop, nsz, Dolphin, wit, xdelta3, Flips, maxcso),
 published on its own and keeping its upstream's license — MIT for `cia-rs`, whose upstream shipped none. `wux-rs`
-follows wudd and Cemu instead, under wudd's GPL-3.0+, and ships no key. `ore-rs`
+follows wudd and Cemu instead, under wudd's GPL-3.0+, and ships no key. `ps3-rs`
+rebuilds Redump's PS3 ISOs from a JB folder and its IRD and extracts them back,
+oxyROMon's own, under GPL-3.0+, and ships no key either. `ore-rs`
 is oxyROMon's own format, ORE, specified in `formats/design/` (a private
 repository checked out there, ignored by this one), under GPL-3.0+ but
 for its reader, what it builds without its default `write` feature, MIT OR
@@ -219,7 +221,10 @@ cue sheets and ISO 9660, embedded by `chd-rs` and `ore-rs`, BSD-3-Clause
 so every host may embed it, and `wiiu`, the Wii U disc model, its crypto,
 TMDs, tickets, keys, the WUD and WUX image and a disc's layout, embedded by
 `wux-rs` and `ore-rs`, under its GPL-3.0+, which only ore-rs's writer
-embeds. Each format crate embeds it, so that the crate it publishes
+embeds, and `ps3`, the PS3 disc model, its regions, their encryption, the
+disc key and the Joliet file system, embedded by `ps3-rs` and `ore-rs`,
+MIT OR Apache-2.0 so that ore-rs's reader may put a disc's encryption back.
+Each format crate embeds it, so that the crate it publishes
 holds a copy and stands alone:
 
 - **Copied, not depended on.** `crates/<host>/src/<embedded>` is a copy of
