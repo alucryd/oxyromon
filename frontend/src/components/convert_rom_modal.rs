@@ -9,7 +9,7 @@ use crate::ui::{Modal, control_value};
 
 /// The destination formats the server accepts, mirroring the CLI's.
 const FORMATS: &[&str] = &[
-    "ORIGINAL", "7Z", "CHD", "CSO", "JB", "NSZ", "ORE", "RVZ", "WUA", "WUX", "ZIP", "ZSO",
+    "ORIGINAL", "7Z", "CHD", "CSO", "JB", "NSZ", "ORE", "RVZ", "WUX", "ZIP", "ZSO",
 ];
 
 #[component]

@@ -19,10 +19,7 @@ use super::ps3;
 use super::rvz::{AsRvz, RvzCompressionAlgorithm, ToRvz};
 use super::transcode::*;
 use super::util::*;
-use super::wux::{
-    AsWua, AsWud, AsWux, ToWua, ToWux, disc_to_wud, has_extension, is_tmd_name, store_directory,
-    stored_ticket,
-};
+use super::wux::{AsWua, AsWud, ToWux, disc_to_wud, has_extension, is_tmd_name, stored_ticket};
 use super::xso::{AsXso, ToXso, XsoType};
 use anyhow::{Context, Result, bail};
 use clap::builder::PossibleValuesParser;
@@ -37,7 +34,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 pub const ALL_FORMATS: &[&str] = &[
-    "ORIGINAL", "7Z", "CHD", "CSO", "JB", "NSZ", "ORE", "RVZ", "WUA", "WUX", "ZIP", "ZSO",
+    "ORIGINAL", "7Z", "CHD", "CSO", "JB", "NSZ", "ORE", "RVZ", "WUX", "ZIP", "ZSO",
 ];
 pub const ARCADE_FORMATS: &[&str] = &["ORIGINAL", "ZIP"];
 
@@ -51,17 +48,7 @@ pub fn format_supported_for_system(system: &System, format: &str) -> bool {
 fn format_available(format: &str) -> bool {
     matches!(
         format,
-        "7Z" | "CHD"
-            | "CSO"
-            | "JB"
-            | "NSZ"
-            | "ORE"
-            | "ORIGINAL"
-            | "RVZ"
-            | "WUA"
-            | "WUX"
-            | "ZIP"
-            | "ZSO"
+        "7Z" | "CHD" | "CSO" | "JB" | "NSZ" | "ORE" | "ORIGINAL" | "RVZ" | "WUX" | "ZIP" | "ZSO"
     )
 }
 
@@ -398,18 +385,6 @@ pub async fn convert_system(
                 &compression_algorithm,
                 compression_level,
                 block_size,
-            )
-            .await?
-        }
-        "WUA" => {
-            to_wua(
-                connection,
-                progress_bar,
-                &system,
-                roms_by_game_id,
-                romfiles_by_id,
-                diff,
-                check,
             )
             .await?
         }
@@ -2603,7 +2578,8 @@ async fn to_nsz(
 }
 
 /// The Wii U disc formats a disc converts between, besides archives: a WUD,
-/// as `.wud` or Redump's `.iso`, a WUX, and a lossless WUA.
+/// as `.wud` or Redump's `.iso`, and a WUX (legacy lossless WUAs also
+/// convert out).
 const WUD_EXTENSIONS: &[&str] = &[WUD_EXTENSION, ISO_EXTENSION];
 
 /// Whether an archive holds a single WUD, by its rom's name.
@@ -2703,121 +2679,6 @@ async fn to_wux(
             &[rom],
             &source,
             &wux_romfile,
-            romfile.id,
-            check,
-            diff,
-            false,
-        )
-        .await?
-        {
-            commit_transaction(transaction).await;
-        }
-    }
-
-    Ok(())
-}
-
-/// WUD or WUX to WUA, lossless: it keeps what rebuilds the disc, its update
-/// partition in the system's store. A WUA has no settings, so recompressing
-/// one would change nothing.
-#[allow(clippy::too_many_arguments)]
-async fn to_wua(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-    system: &System,
-    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
-    romfiles_by_id: HashMap<i64, Romfile>,
-    diff: bool,
-    check: bool,
-) -> Result<()> {
-    let store = store_directory(connection, system).await?;
-
-    // partition archives
-    let (archives, others) = partition_games_by_extensions(
-        roms_by_game_id,
-        &romfiles_by_id,
-        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
-    );
-
-    // partition WUDs
-    let (wuds, others) = partition_games_by_extensions(others, &romfiles_by_id, WUD_EXTENSIONS);
-
-    // partition WUXs
-    let (wuxs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[WUX_EXTENSION]);
-
-    // drop others
-    drop(others);
-
-    // convert archives
-    for roms in archives.values() {
-        if !holds_one_wud(roms) {
-            continue;
-        }
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let mut transaction = begin_transaction(connection).await;
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        let decoded =
-            archive_to_common(&mut transaction, progress_bar, rom, romfile, &tmp_directory).await?;
-        let Ok(wud_romfile) = decoded.inner.as_wud() else {
-            continue;
-        };
-        let wua_romfile = wud_romfile
-            .to_wua(
-                &mut transaction,
-                progress_bar,
-                &decoded.source.path.parent().unwrap(),
-                &store,
-                false,
-            )
-            .await?;
-        if check_and_persist(
-            &mut transaction,
-            progress_bar,
-            &[rom],
-            &decoded.source,
-            &wua_romfile,
-            romfile.id,
-            check,
-            diff,
-            false,
-        )
-        .await?
-        {
-            commit_transaction(transaction).await;
-        }
-    }
-
-    // convert WUDs and WUXs
-    for roms in wuds.values().chain(wuxs.values()) {
-        let mut transaction = begin_transaction(connection).await;
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        let source = romfile.as_common(&mut transaction).await?;
-        let directory = source.path.parent().unwrap().to_path_buf();
-        let wua_romfile = match has_extension(&source.path, WUX_EXTENSION) {
-            true => {
-                source
-                    .clone()
-                    .as_wux()?
-                    .to_wua(&mut transaction, progress_bar, &directory, &store, false)
-                    .await?
-            }
-            false => match source.clone().as_wud() {
-                Ok(wud_romfile) => {
-                    wud_romfile
-                        .to_wua(&mut transaction, progress_bar, &directory, &store, false)
-                        .await?
-                }
-                Err(_) => continue,
-            },
-        };
-        if check_and_persist(
-            &mut transaction,
-            progress_bar,
-            &[rom],
-            &source,
-            &wua_romfile,
             romfile.id,
             check,
             diff,

@@ -4,25 +4,25 @@ use tokio::fs;
 
 #[tokio::test]
 async fn test() {
-    // given
+    // given a legacy lossless WUA in the library, its update partition in the
+    // legacy store beside it
     let mut env = TestEnv::with_dat("Test System (20261025) (WUD).dat").await;
+    let system = env.system().await;
+    let system_directory = env.system_directory(&system).await;
+    fs::create_dir_all(&system_directory).await.unwrap();
 
-    // a lossless WUA in the library, its update partition in the system's store
-    let staging = env.tmp_directory.join("staging");
-    fs::create_dir(&staging).await.unwrap();
+    let wua_path = system_directory.join("Test Game (USA).wua");
     let keys = wux_rs::load_keys(&env.fixture_source("Test Game (USA).keys.txt")).unwrap();
     wux_rs::to_wua(
         &[&env.fixture_source("Test Game (USA).wux")],
-        &staging.join("Test Game (USA).wua"),
+        &wua_path,
         &keys,
-        Some(&staging.join(wux_rs::STORE_DIR)),
+        Some(&system_directory.join(wux_rs::STORE_DIR)),
         &mut |_| {},
     )
     .unwrap();
 
-    let system = env.system().await;
-
-    env.import_roms(&[&staging]).await;
+    env.import_roms(&[&wua_path]).await;
 
     let roms = find_roms_with_romfile_by_system_id(&mut env.connection, system.id).await;
     let romfile = find_romfile_by_id(&mut env.connection, roms[0].romfile_id.unwrap()).await;

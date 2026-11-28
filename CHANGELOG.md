@@ -23,6 +23,10 @@
 - `import-irds` keeps each IRD with its game, which an IRD imported before keeps once imported again
 - `import-roms` imports a PS3 system update, `PS3UPDAT.PUP`, loose or in a JB folder, once a system under `PS3_UPDATE/<version>/`, for every JB folder whose IRD lists it
 
+## Changes
+
+- WUA is now an export-only format (`export-roms --format WUA`): it writes standalone plain WUAs from WUD/ISO, WUX, ORE, and NUS titles with no `.update-partitions` store beside them, removes `WUA` from `convert-roms` and `PREFER_FORMAT` while still converting legacy lossless WUAs out, and deletes unused legacy `.update-partitions` entries in `purge-roms` (#347)
+
 ## Improvements
 
 - The web UI reads a store's index once a request rather than once per size

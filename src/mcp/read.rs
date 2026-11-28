@@ -34,7 +34,7 @@ const MAX_SEARCH_LIMIT: i64 = 500;
 /// Mirrors the GraphQL `system_size` resolver: expected vs actual bytes, with
 /// and without the 1G1R selection. The id is a number interpolated after the
 /// existence check, so the SQL stays safe. Original sizes are SUMs; actual ones
-/// read every thin ORE's header and store index, and every WUA's layout.
+/// read every thin ORE's header and store index.
 async fn system_size(
     connection: &mut SqliteConnection,
     system_id: i64,

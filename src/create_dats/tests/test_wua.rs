@@ -7,13 +7,13 @@ async fn test() {
     let mut env = TestEnv::new().await;
     let system_directory = env.tmp_directory.join("Test System");
     std::fs::create_dir(&system_directory).unwrap();
-    // a lossless WUA, its update partition in the store beside it
+    // a legacy lossless WUA, self-contained
     let keys = wux_rs::load_keys(&env.fixture_source("Test Game (USA).keys.txt")).unwrap();
     wux_rs::to_wua(
         &[&env.fixture_source("Test Game (USA).wux")],
         &system_directory.join("Test Game (USA).wua"),
         &keys,
-        Some(&system_directory.join(wux_rs::STORE_DIR)),
+        None,
         &mut |_| {},
     )
     .unwrap();
