@@ -9,3 +9,4 @@ mod test_import_keys;
 mod test_import_otp;
 mod test_import_switch;
 mod test_import_switch_tampered;
+mod test_save_ps3_keys;

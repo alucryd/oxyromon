@@ -501,6 +501,7 @@ A game counts as complete without its `PS3_CONTENT`, `PS3_EXTRA` and `PS3_UPDATE
 When an IRD no longer matches a file already in its JB folder, that file is imported again or moved to `Trash`.
 
 The IRD is kept with its game: with it, `convert-roms` rebuilds the Redump ISO from the JB folder and extracts the ISO back, its disc key derived from the IRD, so no `.dkey` is needed.
+Its disc key is also added to `ps3_keys.txt`, where `import-keys` keeps `.dkey` keys, for an ISO of the disc wherever it comes from.
 A game whose IRD was imported by an earlier version keeps it once its IRD is imported again.
 
 Import a PS3 DAT first.
@@ -701,7 +702,7 @@ Converts ROM files between lossless formats and back to their originals:
 - A game of several ROMs, a floppy game's disks or a cartridge's chips, as one ORE, as an archive holds them, each ROM a file of it, and back as the folder of its ROMs; the OREs a ROM each of an earlier build are gathered into one.
 - NSP to and from NSZ.
 - Wii U discs between ISO, WUX and lossless WUA.
-- PS3 JB folders to their Redump ISO with `ORIGINAL`, from their IRD, checked against the DAT, and the ISO back to its JB folder with `JB`; a JB folder needs its system update, `PS3_UPDATE/PS3UPDAT.PUP`, which `import-roms` imports.
+- PS3 JB folders to their Redump ISO with `ORIGINAL`, from their IRD, checked against the DAT, and the ISO back to its JB folder with `JB`; a JB folder needs its system update, `PS3_UPDATE/PS3UPDAT.PUP`, which `import-roms` imports. A JB folder converts to `ORE` the same way, as the ISO it rebuilds.
 
 Games and systems are selected by case-insensitive name, with SQL wildcards, and both flags can be repeated.
 `--save` also stores the format as each processed system's `PREFER_FORMAT`, so future imports follow it.

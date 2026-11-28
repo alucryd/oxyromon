@@ -253,6 +253,25 @@ fn parse_key(hex: &str) -> Option<[u8; 16]> {
     Some(key)
 }
 
+/// Add `keys` to the PS3 disc keys kept in `data_directory`, each once, as
+/// importing an IRD does with its disc's: how many were new.
+pub fn save_ps3_keys(data_directory: &Path, keys: &[[u8; 16]]) -> Result<usize> {
+    let path = data_directory.join(PS3_KEYS_FILE);
+    let mut all: IndexSet<[u8; 16]> = IndexSet::new();
+    if path.is_file() {
+        all.extend(load_ps3_keys(&path)?);
+    }
+    let before = all.len();
+    all.extend(keys.iter().copied());
+    let added = all.len() - before;
+    if added > 0 {
+        std::fs::create_dir_all(data_directory)?;
+        write_lines(all.iter().map(|key| to_hex(key)), &path)
+            .with_context(|| format!("Failed to write \"{}\"", path.display()))?;
+    }
+    Ok(added)
+}
+
 /// The PS3 disc keys `import-keys` keeps, one hex key a line.
 pub fn load_ps3_keys(path: &Path) -> Result<Vec<[u8; 16]>> {
     let text = std::fs::read_to_string(path)
