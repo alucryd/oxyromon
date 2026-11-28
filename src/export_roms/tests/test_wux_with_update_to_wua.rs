@@ -47,14 +47,15 @@ async fn test() {
     .await
     .unwrap();
 
-    // then the WUA holds the game and its update, a folder each
-    let wua = fs::read(destination_directory.join("Test Game (USA).wua"))
-        .await
-        .unwrap();
+    // then the WUA holds the game and its update, a folder each, as a
+    // standalone plain WUA with no lossless layout or revert data
+    let wua_path = destination_directory.join("Test Game (USA).wua");
+    let wua = fs::read(&wua_path).await.unwrap();
     let holds = |name: &[u8]| wua.windows(name.len()).any(|w| w == name);
     assert!(holds(b"0005000010101010_v32"));
     assert!(holds(b"0005000e10101010_v48"));
-    // and what reverts each to a NUS folder
-    assert!(holds(b".nus"));
-    assert!(holds(b"residue"));
+    assert!(!holds(b".nus"));
+    assert!(!holds(b".wud"));
+    assert_eq!(wux_rs::disc_info(&wua_path).unwrap(), None);
+    assert!(!destination_directory.join(wux_rs::STORE_DIR).exists());
 }

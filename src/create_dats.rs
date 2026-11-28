@@ -156,8 +156,8 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
         clrmamepros: vec![],
     };
 
-    // One game per file, except that a WUX or a lossless WUA is listed as the
-    // disc it holds, an ISO as Redump lists it, and a NUS title's folder, an
+    // One game per file, except that a WUX or a legacy lossless WUA is listed as
+    // the disc it holds, an ISO as Redump lists it, and a NUS title's folder, an
     // update or DLC as Nintendo's servers deliver it, as one game whose ROMs
     // are its files, as No-Intro lists them.
     let mut games_xml: Vec<GameXml> = vec![];
@@ -165,7 +165,7 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
     while let Some(entry) = walker.next() {
         let Ok(entry) = entry else { continue };
         let path = entry.path();
-        // the update partitions lossless WUAs share, not games of their own
+        // a legacy lossless WUA's store holds no games of its own
         if path.is_dir() && entry.file_name() == wux_rs::STORE_DIR {
             walker.skip_current_dir();
             continue;

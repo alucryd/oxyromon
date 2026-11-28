@@ -15,9 +15,7 @@ use super::prompt::*;
 use super::ps3;
 use super::rvz::AsRvz;
 use super::util::*;
-use super::wux::{
-    AsWua, AsWux, STORE_DIR, copy_store_entries, find_store, store_directory, store_ticket,
-};
+use super::wux::{AsWua, AsWux, find_store, store_ticket};
 use super::xso::AsXso;
 use anyhow::{Result, bail};
 use clap::value_parser;
@@ -314,12 +312,8 @@ pub async fn main(
                     let mut walker = WalkDir::new(&path).into_iter();
                     while let Some(entry) = walker.next() {
                         let Ok(entry) = entry else { continue };
-                        // the update partitions WUAs share, which they bring
-                        // along, and an ORE store, its thin OREs'
-                        if entry.path().is_dir()
-                            && (entry.file_name() == STORE_DIR
-                                || entry.file_name() == ore_rs::STORE_DIR)
-                        {
+                        // an ORE store, its thin OREs'
+                        if entry.path().is_dir() && entry.file_name() == ore_rs::STORE_DIR {
                             walker.skip_current_dir();
                             continue;
                         }
@@ -2757,31 +2751,25 @@ async fn import_disc<T: HashAndSize + GetRomfile>(
                 let rom = match_result.rom.unwrap();
                 let system_directory = get_system_directory(connection, &system).await?;
                 let new_wux_path = system_directory.join(&rom.name).with_extension(extension);
-                // a WUA's update partition, into the system's store
-                if extension == WUA_EXTENSION {
-                    let source = &wux_romfile.romfile().path;
-                    let store = store_directory(connection, &system).await?;
-                    let missing = copy_store_entries(
-                        progress_bar,
-                        source,
-                        find_store(source).as_deref(),
-                        &store,
-                    )
-                    .await?;
-                    for name in missing {
-                        print_warning(
-                            progress_bar,
-                            &format!(
-                                "Update partition {name} not found, the disc can't be rebuilt"
-                            ),
-                        );
-                    }
-                }
                 // move it if needed
                 wux_romfile
                     .romfile()
                     .rename(progress_bar, &new_wux_path, false)
                     .await?;
+                // a legacy lossless WUA's store is not imported along with it
+                if extension == WUA_EXTENSION {
+                    let store = find_store(&new_wux_path);
+                    for name in wux_rs::store_entries(&new_wux_path)? {
+                        if !store.as_ref().is_some_and(|s| s.join(&name).is_file()) {
+                            print_warning(
+                                progress_bar,
+                                &format!(
+                                    "Update partition {name} not found, the disc can't be rebuilt"
+                                ),
+                            );
+                        }
+                    }
+                }
                 // persist in database
                 create_or_update_romfile(
                     connection,

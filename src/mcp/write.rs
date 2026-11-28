@@ -383,7 +383,7 @@ impl OxyromonMcp {
     }
 
     #[tool(
-        description = "Convert one system's ROM files to a target format: ORIGINAL, 7Z, CHD, CSO, JB, NSZ, ORE, RVZ, WUA, WUX, ZIP or ZSO (the PREFER_FORMAT values; arcade systems take only ORIGINAL or ZIP; JB extracts a PS3 ISO to its JB folder, which ORIGINAL rebuilds). Long jobs.",
+        description = "Convert one system's ROM files to a target format: ORIGINAL, 7Z, CHD, CSO, JB, NSZ, ORE, RVZ, WUX, ZIP or ZSO (the PREFER_FORMAT values; arcade systems take only ORIGINAL or ZIP; JB extracts a PS3 ISO to its JB folder, which ORIGINAL rebuilds). Long jobs.",
         annotations(read_only_hint = false)
     )]
     async fn convert_roms(

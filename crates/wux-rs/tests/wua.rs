@@ -228,3 +228,28 @@ fn progress_moves_on_through_the_whole_conversion() {
         stats.input_size
     );
 }
+
+#[test]
+fn plain_wua_omits_lossless_and_revert_data() {
+    let (dir, _, wux) = setup();
+    let update = dir.path().join("update");
+    std::fs::create_dir(&update).unwrap();
+    let mut expected = common::game_files().1;
+    expected.extend(common::nus(&update));
+    expected.sort();
+
+    let output = dir.path().join("plain.wua");
+    let mut read = 0;
+    let stats =
+        wux_rs::to_plain_wua(&[&wux, &update], &output, &keys(), &mut |n| read += n).unwrap();
+    assert_eq!(read, stats.input_size);
+    assert_eq!(stats.output_size, std::fs::metadata(&output).unwrap().len());
+    assert_eq!(wux_rs::disc_info(&output).unwrap(), None);
+    assert!(wux_rs::store_entries(&output).unwrap().is_empty());
+    assert!(!dir.path().join(wux_rs::STORE_DIR).exists());
+
+    let all = archive::archive_files(&output);
+    assert!(!all.iter().any(|(name, _)| name.starts_with(".wud/")));
+    assert!(!all.iter().any(|(name, _)| name.starts_with(".nus/")));
+    assert_eq!(all, expected);
+}

@@ -55,6 +55,43 @@ pub fn to_wua_with_tickets(
     store: Option<&Path>,
     progress: &mut dyn FnMut(u64),
 ) -> Result<Stats> {
+    write_wua(inputs, output, keys, tickets, store, true, progress)
+}
+
+/// Convert `inputs` to a standalone plain WUA at `output`, as Cemu writes it:
+/// each title's decrypted files under `<title id>_v<version>/`, with no
+/// `.wud/` lossless disc data, `.nus/` revert data, or `.update-partitions`
+/// store beside it.
+pub fn to_plain_wua(
+    inputs: &[&Path],
+    output: &Path,
+    keys: &[Key],
+    progress: &mut dyn FnMut(u64),
+) -> Result<Stats> {
+    to_plain_wua_with_tickets(inputs, output, keys, &[], progress)
+}
+
+/// [`to_plain_wua`], with tickets for the NUS folders that hold none:
+/// `tickets` are candidates, as `keys` are, each found by its title ID.
+pub fn to_plain_wua_with_tickets(
+    inputs: &[&Path],
+    output: &Path,
+    keys: &[Key],
+    tickets: &[Vec<u8>],
+    progress: &mut dyn FnMut(u64),
+) -> Result<Stats> {
+    write_wua(inputs, output, keys, tickets, None, false, progress)
+}
+
+fn write_wua(
+    inputs: &[&Path],
+    output: &Path,
+    keys: &[Key],
+    tickets: &[Vec<u8>],
+    store: Option<&Path>,
+    lossless: bool,
+    progress: &mut dyn FnMut(u64),
+) -> Result<Stats> {
     let mut titles = Vec::with_capacity(inputs.len());
     for input in inputs {
         let title = match input.is_dir() {
@@ -77,7 +114,6 @@ pub fn to_wua_with_tickets(
     let disc_input = inputs.iter().find(|input| !input.is_dir());
     let input_size: u64 = titles.iter().map(|t| t.input_size).sum();
     let trees: Vec<Vec<Item>> = titles.iter().map(|t| tree(&t.fst)).collect();
-    // The files written, then every content read for the revert data.
     let mut total: u64 = titles
         .iter()
         .zip(&trees)
@@ -87,16 +123,19 @@ pub fn to_wua_with_tickets(
                 .map(|item| t.fst.entries[item.entry].size())
         })
         .sum();
-    for title in &titles {
-        total += nus::parse_tmd(&title.meta.tmd)?
-            .contents
-            .iter()
-            .map(|c| c.stored_size())
-            .sum::<u64>();
-    }
-    // The disc read through, then its partitions' streams.
-    if let Some(disc_input) = disc_input {
-        total += 2 * Image::open(disc_input)?.size();
+    if lossless {
+        // Every content read for the revert data, then the disc read through
+        // and its partitions' streams.
+        for title in &titles {
+            total += nus::parse_tmd(&title.meta.tmd)?
+                .contents
+                .iter()
+                .map(|c| c.stored_size())
+                .sum::<u64>();
+        }
+        if let Some(disc_input) = disc_input {
+            total += 2 * Image::open(disc_input)?.size();
+        }
     }
 
     let part = part(output);
@@ -124,26 +163,28 @@ pub fn to_wua_with_tickets(
                     })?;
             }
         }
-        // What rebuilds each title's contents from its files, ignored by Cemu.
-        let revert = writer.dir(zarchive::ROOT, REVERT_DIR.as_bytes())?;
-        for (title, tree) in titles.iter().zip(&trees) {
-            let files = revert::collect(
-                title.source.as_ref(),
-                &title.fst,
-                tree,
-                &title.meta,
-                &mut |n| scaled.add(n),
-            )?;
-            let dir = writer.dir(revert, title.folder().as_bytes())?;
-            for (name, bytes) in files {
-                writer.file(dir, name.as_bytes())?;
-                writer.append(&bytes)?;
+        if lossless {
+            // What rebuilds each title's contents from its files, ignored by Cemu.
+            let revert = writer.dir(zarchive::ROOT, REVERT_DIR.as_bytes())?;
+            for (title, tree) in titles.iter().zip(&trees) {
+                let files = revert::collect(
+                    title.source.as_ref(),
+                    &title.fst,
+                    tree,
+                    &title.meta,
+                    &mut |n| scaled.add(n),
+                )?;
+                let dir = writer.dir(revert, title.folder().as_bytes())?;
+                for (name, bytes) in files {
+                    writer.file(dir, name.as_bytes())?;
+                    writer.append(&bytes)?;
+                }
             }
-        }
-        if let (Some(folder), Some(disc_input)) = (&disc, disc_input) {
-            crate::lossless::write(&mut writer, disc_input, folder, keys, store, &mut |n| {
-                scaled.add(n)
-            })?;
+            if let (Some(folder), Some(disc_input)) = (&disc, disc_input) {
+                crate::lossless::write(&mut writer, disc_input, folder, keys, store, &mut |n| {
+                    scaled.add(n)
+                })?;
+            }
         }
         scaled.finish();
         let file = writer.finish()?.into_inner().map_err(|e| e.into_error())?;

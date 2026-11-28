@@ -138,7 +138,7 @@ pub(crate) struct ConvertRomsParams {
     /// Convert this system's ROM files.
     pub system_id: i64,
     /// Target format: "ORIGINAL", "7Z", "CHD", "CSO", "JB", "NSZ", "ORE",
-    /// "RVZ", "WUA", "WUX", "ZIP" or "ZSO" — the same values as PREFER_FORMAT.
+    /// "RVZ", "WUX", "ZIP" or "ZSO" — the same values as PREFER_FORMAT.
     /// "JB" extracts a PS3 ISO to its JB folder; "ORIGINAL" rebuilds it.
     pub format: String,
 }

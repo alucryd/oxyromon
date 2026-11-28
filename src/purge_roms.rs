@@ -67,19 +67,25 @@ pub async fn main(
     progress_bar: &ProgressBar,
 ) -> Result<()> {
     let answer_yes = matches.get_flag("YES");
-    if matches.get_flag("MISSING") {
+    let missing = matches.get_flag("MISSING");
+    let trash = matches.get_flag("TRASH");
+    let orphan = matches.get_flag("ORPHAN");
+    let foreign = matches.get_flag("FOREIGN");
+    if missing {
         purge_missing_romfiles(connection, progress_bar).await?;
     }
-    if matches.get_flag("TRASH") {
+    if trash {
         let romfiles = find_romfiles_in_trash(connection).await;
         purge_romfiles(connection, progress_bar, answer_yes, "trashed", romfiles).await?;
     }
-    if matches.get_flag("ORPHAN") {
+    if orphan {
         let romfiles = find_orphan_romfiles(connection).await;
         purge_romfiles(connection, progress_bar, answer_yes, "orphan", romfiles).await?;
     }
-    if matches.get_flag("FOREIGN") {
+    if foreign {
         purge_foreign_romfiles(connection, progress_bar, answer_yes).await?;
+    } else if missing || trash || orphan {
+        purge_unused_update_partitions(connection, progress_bar, answer_yes).await?;
     }
     for system in find_systems(connection).await {
         compute_system_completion(connection, progress_bar, &system).await?;
@@ -203,51 +209,19 @@ async fn purge_foreign_romfiles(
             files.push(entry.path().to_path_buf());
         }
     }
-    // The update partitions the library's WUAs keep in their stores. A WUA
-    // that can't be read may need any of them, so then they are all kept.
-    let mut referenced: HashSet<String> = HashSet::new();
-    let mut keep_stores = false;
-    for path in known
-        .iter()
-        .filter(|path| has_extension(path, WUA_EXTENSION))
-    {
-        match wux_rs::store_entries(path) {
-            Ok(entries) => referenced.extend(entries),
-            Err(error) => {
-                print_warning(
-                    progress_bar,
-                    &format!(
-                        "Failed to read \"{}\", keeping every update partition: {error}",
-                        path.display()
-                    ),
-                );
-                keep_stores = true;
-            }
-        }
-    }
     let mut emptied_directories: HashSet<PathBuf> = HashSet::new();
     let mut stores = HashSet::new();
     let mut count = 0;
     for path in files {
         // An ORE store's segments and index belong to the thin OREs beneath
-        // it, which the database knows, never to it
-        if path
-            .components()
-            .any(|component| component.as_os_str() == ore_rs::STORE_DIR)
-        {
+        // it, which the database knows, never to it; legacy update partition
+        // stores are swept separately below.
+        if path.components().any(|component| {
+            component.as_os_str() == ore_rs::STORE_DIR || component.as_os_str() == STORE_DIR
+        }) {
             continue;
         }
-        let in_store = path
-            .parent()
-            .and_then(|p| p.file_name())
-            .is_some_and(|name| name == STORE_DIR);
-        let referenced = in_store
-            && (keep_stores
-                || path
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .is_some_and(|name| referenced.contains(name)));
-        if !known.contains(&path) && !referenced {
+        if !known.contains(&path) {
             let relative_path = path
                 .strip_prefix(&rom_directory)
                 .context("Failed to retrieve relative path")?;
@@ -286,7 +260,94 @@ async fn purge_foreign_romfiles(
             ),
         );
     }
-    recount_stores(progress_bar, stores).await
+    recount_stores(progress_bar, stores).await?;
+    purge_unused_update_partitions(connection, progress_bar, answer_yes).await
+}
+
+/// Delete legacy `.update-partitions` entries that no WUA in the database
+/// names any more, and remove the store directory once empty. Fails closed:
+/// if any WUA in the database cannot be read, all entries are kept.
+async fn purge_unused_update_partitions(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    answer_yes: bool,
+) -> Result<()> {
+    let rom_directory = get_rom_directory(connection).await;
+    let store_dirs: Vec<PathBuf> = WalkDir::new(&rom_directory)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().is_dir() && e.file_name() == STORE_DIR)
+        .map(|e| e.into_path())
+        .collect();
+    if store_dirs.is_empty() {
+        return Ok(());
+    }
+
+    // Collect every entry named by any WUA in the database. Fail closed if
+    // any WUA cannot be opened or parsed so its entries stay intact.
+    let mut referenced: HashSet<String> = HashSet::new();
+    for romfile in find_romfiles(connection).await {
+        let path = rom_directory.join(&romfile.path);
+        if !has_extension(&path, WUA_EXTENSION) {
+            continue;
+        }
+        match wux_rs::store_entries(&path) {
+            Ok(entries) => referenced.extend(entries),
+            Err(error) => {
+                print_warning(
+                    progress_bar,
+                    &format!(
+                        "Failed to read \"{}\", keeping every update partition: {error}",
+                        path.display()
+                    ),
+                );
+                return Ok(());
+            }
+        }
+    }
+
+    let kept_directories = get_kept_directories(connection).await?;
+    let mut count = 0;
+    for store_dir in store_dirs {
+        let mut candidates = Vec::new();
+        for entry in WalkDir::new(&store_dir).into_iter().filter_map(|e| e.ok()) {
+            let path = entry.path();
+            if !path.is_file() {
+                continue;
+            }
+            let needed = path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| referenced.contains(name));
+            if !needed {
+                candidates.push(path.to_path_buf());
+            }
+        }
+        for path in candidates {
+            let relative_path = path
+                .strip_prefix(&rom_directory)
+                .context("Failed to retrieve relative path")?;
+            print_action(
+                progress_bar,
+                &format!(
+                    "Unused update partition found: \"{}\"",
+                    relative_path.as_os_str().to_str().unwrap()
+                ),
+            );
+            if answer_yes || confirm(true)? {
+                remove_file(progress_bar, &path, false).await?;
+                count += 1;
+            }
+        }
+        remove_empty_directories(&store_dir, &kept_directories).await?;
+    }
+    if count > 0 {
+        print_success(
+            progress_bar,
+            &format!("Deleted {} unused update partition(s)", count),
+        );
+    }
+    Ok(())
 }
 
 /// The ORE store whose chunks a game at `path` was using, if it had one:

@@ -166,7 +166,7 @@ These environment variables change where things go:
 
 | Setting                           | Description                                                                                              | Default   |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------- | --------- |
-| `PREFER_FORMAT`                   | Format imported ROMs are converted to: `ORIGINAL`, `7Z`, `CHD`, `CSO`, `NSZ`, `ORE`, `RVZ`, `ZIP`, `ZSO`; arcade systems take only `ORIGINAL` and `ZIP` |           |
+| `PREFER_FORMAT`                   | Format imported ROMs are converted to: `ORIGINAL`, `7Z`, `CHD`, `CSO`, `JB`, `NSZ`, `ORE`, `RVZ`, `WUX`, `ZIP`, `ZSO`; arcade systems take only `ORIGINAL` and `ZIP` |           |
 | `CHD_PARENTS`                     | Use the other discs of a game as CHD parents, which needs playlists to have been generated              | `false`   |
 | `CHD_CD_HUNK_SIZE`                | CHD hunk size in bytes for CDs, `16` to `1048576`                                                        | auto      |
 | `CHD_CD_COMPRESSION_ALGORITHMS`   | Up to 4 CHD codecs for CDs: `none`, `cdfl`, `cdlz`, `cdzl`, `cdzs`                                       | auto      |
@@ -221,11 +221,11 @@ Arcade games stored as archives stay as they are.
 | CHD                     | ✔                | ✔       | ✔      | chd-rs                                                       |
 | CSO, ZSO                | ✔                | ✔       | ✔      | xso-rs                                                       |
 | NSZ                     | ✔                | ✔       | ✔      | nsz-rs                                                       |
-| ORE (GC, Wii, PS2, CD, GD-ROM) | ✔                | ✔       |        | ore-rs                                                       |
+| ORE (GC, Wii, PS2, Wii U, CD, GD-ROM) | ✔          | ✔       | ✔      | ore-rs                                                       |
 | RVZ                     | ✔                | ✔       | ✔      | rvz-rs                                                       |
 | WBFS                    |                  |         | ✔      | wbfs-rs                                                      |
 | WUX (Wii U)             | ✔                | ✔       | ✔      | wux-rs                                                       |
-| WUA (Wii U)             | ✔                | ✔       | ✔      | wux-rs                                                       |
+| WUA (Wii U)             |                  |         | ✔      | wux-rs                                                       |
 | NUS folder (Wii U)      |                  |         | ✔      | wux-rs                                                       |
 | GDI                     |                  |         | ✔      | gdi-rs                                                       |
 | ISO (from CUE/BIN)      |                  |         | ✔      |                                                              |
@@ -265,12 +265,9 @@ A thin ORE reads only beneath its store's directory, which `sort-roms`' folders 
 Wii U discs are WUDs, which Redump lists as ISOs, so that is what converting back to the original gives; a `.wud` found in the wild is matched and renamed all the same.
 WUX compresses a WUD losslessly, as wudd dumps it and Cemu reads it.
 
-WUA is Cemu's archive of a disc's decrypted game files, and a WUA oxyROMon writes is lossless too: it also keeps, where Cemu doesn't look, what rebuilds the disc byte for byte, its partitions' layout and headers and the data a WUA otherwise drops, so it converts back to WUX or to the original ISO, checked against the disc's SHA-1.
-Every Wii U disc carries a system update, about 1.3 GB, which the many discs carrying the same one share: a WUA keeps it in a hidden `.update-partitions` folder in its system's directory, once for every WUA there, decrypted and compressed to about 600 MB, as NKit keeps its recovery partitions.
-Mario Tennis: Ultra Smash, a 2.1 GB WUX, becomes an 0.8 GB WUA, with 0.6 GB of update partition shared with the other discs carrying its update.
-`purge-roms -f` deletes the update partitions no WUA needs any more, keeping them all if a WUA can't be read, and importing a WUA brings the ones it needs from the `.update-partitions` folder next to it.
-WUAs Cemu writes, or oxyROMon did before, can't rebuild their disc and are not lossless.
-A WUA oxyROMon writes also keeps revert data for each title it holds: `wuxrs` turns it back into a NUS folder per title, whose contents are byte for byte the disc's and its update's, checked against their TMDs.
+WUA is Cemu's archive of a title's decrypted game files: converting a disc to it drops the disc's encryption and layout, so it is an export-only format (`export-roms --format WUA`).
+Exporting a Wii U disc (from WUD, ISO, WUX, ORE, or a legacy lossless WUA) or a NUS title to WUA writes a standalone plain WUA with no `.update-partitions` store beside it, while ORE covers lossless Wii U storage and update-partition deduplication via `.ore-store`.
+Legacy lossless WUAs written by earlier versions can still be checked, exported, and converted back to WUX, ORE, or ISO when their `.update-partitions` store is beside them; importing one does not bring its store along, and warns of each update partition the library lacks. `purge-roms` deletes `.update-partitions` entries that no WUA in the database needs any more, keeping them all if any WUA cannot be read.
 WUA and NUS need the disc's key and the Wii U common key, neither of which ships with oxyROMon.
 `import-keys` stores them in oxyROMon's data directory, so a headless server needs no emulator.
 It reads files in the format of Cemu's `keys.txt`, one key per line, where the common key can sit alongside the disc keys, and a console's OTP dump, `otp.bin`, for the Wii U and vWii common keys.
@@ -285,6 +282,7 @@ A title needs its ticket to be decrypted: No-Intro lists every update with one, 
 Importing a title's folder keeps the ticket a downloader made, when no DAT lists it, in a `wiiu_tickets` folder in oxyROMon's data directory, beside the keys, by title ID; importing the folder of a title already imported keeps it too.
 Exporting to WUA decrypts the title with it, and exporting the title for a console adds it as `title.tik`, which WUP Installer GX2 needs; DLC without a ticket is skipped with a warning.
 
+A Wii U disc kept as an ORE exports to WUX and NUS too, through the WUD it rebuilds.
 Exporting a disc to NUS writes the folder WUP Installer GX2 installs on a console: the disc's TMD, ticket and certificates, and the game's contents, each checked against the TMD.
 A folder already in its place is only replaced if it holds nothing the export wouldn't write, as an earlier export of the same disc; otherwise the export fails and leaves it alone.
 A disc's game partition holds the title's CDN contents byte for byte, so every `.app` and `.h3` matches No-Intro's CDN DAT; only `title.tmd` differs, as Nintendo signed one for the disc and another for its servers.
@@ -617,7 +615,7 @@ Files needing a choice, such as JB folders or ambiguous matches, prompt by defau
 
 A PS3 system update, a `PS3UPDAT.PUP` loose or in a JB folder, goes to `PS3_UPDATE/<version>/` in the system's directory, once for every JB folder whose IRD lists it, as every disc built on that firmware carries the same file.
 
-Consoles accept every No-Intro and Redump format, 7Z, ZIP, CHD, CIA, CSO, NSZ, ORE, RVZ, WUA, WUX, ZSO, JB folders and Wii U title folders.
+Consoles accept every No-Intro and Redump format, 7Z, ZIP, CHD, CIA, CSO, NSZ, ORE, RVZ, WUX, ZSO, JB folders and Wii U title folders.
 A Wii U title folder, an update or DLC as Nintendo's servers deliver it, is found by its TMD, and either a downloader's names (`title.tmd`, `00000000.app`) or No-Intro's (`tmd.32`, `00000000`) will do.
 Arcade systems accept uncompressed files, ZIP and CHD.
 
@@ -701,7 +699,7 @@ Converts ROM files between lossless formats and back to their originals:
 - Floppy images, loose or in an archive, to and from ORE, restored under their name: the Amiga's and the Atari ST's IPFs and the Famicom Disk System's and the 64DD's disks.
 - A game of several ROMs, a floppy game's disks or a cartridge's chips, as one ORE, as an archive holds them, each ROM a file of it, and back as the folder of its ROMs; the OREs a ROM each of an earlier build are gathered into one.
 - NSP to and from NSZ.
-- Wii U discs between ISO, WUX and lossless WUA.
+- Wii U discs between ISO and WUX, and Wii U discs and eShop titles to and from ORE (legacy lossless WUAs also convert out to ISO, WUX, ORE, 7Z or ZIP).
 - PS3 JB folders to their Redump ISO with `ORIGINAL`, from their IRD, checked against the DAT, and the ISO back to its JB folder with `JB`; a JB folder needs its system update, `PS3_UPDATE/PS3UPDAT.PUP`, which `import-roms` imports. A JB folder converts to `ORE` the same way, as the ISO it rebuilds.
 
 Games and systems are selected by case-insensitive name, with SQL wildcards, and both flags can be repeated.
@@ -711,7 +709,7 @@ Games and systems are selected by case-insensitive name, with SQL wildcards, and
 Usage: oxyromon convert-roms [OPTIONS]
 
 Options:
-  -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, JB, NSZ, ORE, RVZ, WUA, WUX, ZIP, ZSO]
+  -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, JB, NSZ, ORE, RVZ, WUX, ZIP, ZSO]
   -g, --game <GAME>      Select games by name
   -s, --system <SYSTEM>  Select systems by name
   -a, --all              Convert all systems/games
@@ -790,6 +788,7 @@ Forgets ROM files that went missing or that no ROM references, and deletes the f
 `--foreign` deletes files in the ROM directory that the database doesn't know.
 Directories left empty are deleted, except the ROM, system and `Trash` directories.
 An ORE store's files are never foreign; the chunks of games purged stay in it until `compact-roms`, and the store is deleted once its last game is purged.
+`purge-roms` also deletes legacy `.update-partitions` entries once no WUA in the database references them, keeping them all if any WUA cannot be read.
 
 ```text
 Usage: oxyromon purge-roms [OPTIONS]

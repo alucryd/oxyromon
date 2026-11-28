@@ -1066,10 +1066,9 @@ where
 }
 
 /// What `romfiles` weigh on disk: their files, with a thin ORE's share of
-/// its store and a WUA's of the update partitions it keeps in its own. A
-/// store shared with other systems, as `GROUP_SUBSYSTEMS` gives, is split
-/// by game, so each system counts only its part. Reads every thin ORE's
-/// header and its store's index, and with WUAs every WUA's layout.
+/// its store. A store shared with other systems, as `GROUP_SUBSYSTEMS` gives,
+/// is split by game, so each system counts only its part. Reads every thin
+/// ORE's header and its store's index.
 #[cfg(any(feature = "mcp", test))]
 pub async fn actual_size(connection: &mut SqliteConnection, romfiles: &[Romfile]) -> Result<u64> {
     actual_size_in(connection, romfiles, |store| async move {
@@ -1119,42 +1118,26 @@ where
     Fut: Future<Output = Option<Arc<ore_rs::Index>>>,
 {
     let rom_directory = get_rom_directory(connection).await;
-    let is_wua = |path: &Path| {
-        path.extension().and_then(|extension| extension.to_str()) == Some(WUA_EXTENSION)
-    };
     let romfiles: Vec<(PathBuf, u64)> = romfiles
         .iter()
         .map(|romfile| (rom_directory.join(&romfile.path), romfile.size as u64))
         .collect();
-    // every WUA the database knows, as they all split the partitions they share
-    let all_wuas: Vec<PathBuf> = match romfiles.iter().any(|(path, _)| is_wua(path)) {
-        true => crate::database::find_romfiles(connection)
-            .await
-            .into_iter()
-            .map(|romfile| rom_directory.join(&romfile.path))
-            .filter(|path| is_wua(path))
-            .collect(),
-        false => vec![],
-    };
-    // what weighs alone, what shares a store, what keeps its own: the
-    // thin OREs grouped by the store holding their chunks
-    let (alone, ores, wuas) = spawn_blocking(move || {
+    // what weighs alone and what shares a store: the thin OREs grouped by the
+    // store holding their chunks
+    let (alone, ores) = spawn_blocking(move || {
         let mut alone = 0;
         let mut ores: HashMap<PathBuf, Vec<(PathBuf, u64)>> = HashMap::new();
-        let mut wuas = vec![];
         for (path, file_size) in romfiles {
             let extension = path.extension().and_then(|extension| extension.to_str());
-            match (extension, ore_rs::find_store(&path)) {
-                (Some(ORE_EXTENSION), Some(store)) => {
-                    ores.entry(store).or_default().push((path, file_size));
-                    continue;
-                }
-                (Some(WUA_EXTENSION), _) => wuas.push(path),
-                _ => {}
+            if extension == Some(ORE_EXTENSION)
+                && let Some(store) = ore_rs::find_store(&path)
+            {
+                ores.entry(store).or_default().push((path, file_size));
+                continue;
             }
             alone += file_size;
         }
-        (alone, ores, wuas)
+        (alone, ores)
     })
     .await?;
     // one index per store, however the caller chose to obtain it; a store
@@ -1178,48 +1161,9 @@ where
                 size += shares.get(i).copied().flatten().unwrap_or(*file_size);
             }
         }
-        if !wuas.is_empty() {
-            size += wua_store_share(&all_wuas, &wuas);
-        }
         size
     })
     .await?)
-}
-
-/// The share of `wuas` in their update partition stores: each entry split
-/// among every WUA of `all_wuas` that needs it.
-#[cfg(any(feature = "mcp", test))]
-fn wua_store_share(all_wuas: &[PathBuf], wuas: &[PathBuf]) -> u64 {
-    let entries = |wua: &Path| -> Vec<PathBuf> {
-        let Some(store) = crate::wux::find_store(wua) else {
-            return vec![];
-        };
-        wux_rs::store_entries(wua)
-            .unwrap_or_default()
-            .into_iter()
-            .map(|name| store.join(name))
-            .collect()
-    };
-    let mut entries_by_wua: HashMap<&Path, Vec<PathBuf>> = HashMap::new();
-    for wua in all_wuas.iter().chain(wuas) {
-        entries_by_wua
-            .entry(wua.as_path())
-            .or_insert_with(|| entries(wua));
-    }
-    let mut refs: HashMap<&Path, u64> = HashMap::new();
-    for wua in all_wuas {
-        for entry in &entries_by_wua[wua.as_path()] {
-            *refs.entry(entry.as_path()).or_default() += 1;
-        }
-    }
-    let mut share = 0;
-    for wua in wuas {
-        for entry in &entries_by_wua[wua.as_path()] {
-            let len = entry.metadata().map_or(0, |metadata| metadata.len());
-            share += len / refs.get(entry.as_path()).copied().unwrap_or(1).max(1);
-        }
-    }
-    share
 }
 
 /// Bring the OREs among `romfiles` in line with the system's `ORE_STORE`:

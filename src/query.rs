@@ -96,10 +96,9 @@ async fn store_savings_of(ctx: &Context<'_>, system_id: i64) -> Option<ore_rs::S
     crate::ore::store_savings_loaded(&mut connection, &romfiles, None).await
 }
 
-/// What the files of `romfiles` weigh, a thin ORE's its share of its
-/// store and a WUA's the partitions it keeps in its own, the system's
-/// store index asked of the request's loader first so one read serves
-/// every share: [`actual_size_loaded`] for a game instead of a system.
+/// What the files of `romfiles` weigh, a thin ORE's its share of its store,
+/// the system's store index asked of the request's loader first so one read
+/// serves every share: [`actual_size_loaded`] for a game instead of a system.
 async fn romfiles_size_loaded(
     ctx: &Context<'_>,
     system_id: i64,

@@ -37,23 +37,14 @@ async fn test() {
     .unwrap();
 
     // then
-    // a ZArchive, ending with its version and magic
-    let wua = fs::read(destination_directory.join("Test Game (USA).wua"))
-        .await
-        .unwrap();
+    // a standalone plain ZArchive, ending with its version and magic
+    let wua_path = destination_directory.join("Test Game (USA).wua");
+    let wua = fs::read(&wua_path).await.unwrap();
     assert_eq!(
         wua[wua.len() - 8..],
         [0x61, 0xbf, 0x3a, 0x01, 0x16, 0x9f, 0x52, 0xd6]
     );
-    // lossless, its update partition in the store the destination's WUAs share
-    let wua = destination_directory.join("Test Game (USA).wua");
-    assert!(wux_rs::disc_info(&wua).unwrap().is_some());
-    for entry in wux_rs::store_entries(&wua).unwrap() {
-        assert!(
-            destination_directory
-                .join(wux_rs::STORE_DIR)
-                .join(entry)
-                .is_file()
-        );
-    }
+    assert_eq!(wux_rs::disc_info(&wua_path).unwrap(), None);
+    assert!(wux_rs::store_entries(&wua_path).unwrap().is_empty());
+    assert!(!destination_directory.join(wux_rs::STORE_DIR).exists());
 }

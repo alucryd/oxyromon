@@ -26,6 +26,10 @@
 - PS3 ISOs convert to and from ORE, decrypted with the disc key their IRD or a `.dkey` gives, and JB folders to ORE, through the ISO they rebuild
 - `import-irds` adds each IRD's disc key to `ps3_keys.txt`, beside the `.dkey` keys
 
+## Changes
+
+- WUA is now an export-only format (`export-roms --format WUA`): it writes standalone plain WUAs from WUD/ISO, WUX, ORE, and NUS titles with no `.update-partitions` store beside them, removes `WUA` from `convert-roms` and `PREFER_FORMAT` while still converting legacy lossless WUAs out, and deletes unused legacy `.update-partitions` entries in `purge-roms` (#347)
+
 ## Improvements
 
 - The web UI reads a store's index once a request rather than once per size

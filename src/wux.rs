@@ -1,11 +1,11 @@
 //! Wii U discs: WUD, the raw dump, which Redump lists as an ISO; WUX, its
-//! lossless compression; and WUA, Cemu's archive of a disc's files, lossless
-//! too when wux-rs writes it, as it then keeps what rebuilds the disc byte
-//! for byte. All are handled by the wux-rs crate.
+//! lossless compression; and WUA, Cemu's archive of a title's decrypted files,
+//! exported as a standalone plain WUA via the wux-rs crate.
 //!
-//! A disc's update partition, the same on every disc carrying that update,
-//! is kept once for every WUA of a system, in a store: a hidden folder in the
-//! system's directory. A WUA finds it in the nearest folder up from its own.
+//! Legacy lossless WUAs written before WUA became export-only may keep their
+//! update partition in a hidden `.update-partitions` folder in the system's
+//! directory; [`find_store`] still resolves it when reading, checking or
+//! converting legacy WUAs out.
 //!
 //! WUA and NUS need the disc's key and the Wii U common key. Neither ships
 //! with oxyromon: `import-keys` stores them in its data directory, from files
@@ -25,15 +25,17 @@ use super::database::{
 use super::import_keys::WIIU_KEYS_FILE;
 use super::mimetype::*;
 use super::model::*;
+use super::ore::AsOre;
 use super::progress::*;
 use super::util::*;
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result, anyhow, bail};
 use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use tempfile::TempDir;
 use tokio::task::spawn_blocking;
 
 pub use wux_rs::STORE_DIR;
@@ -118,50 +120,12 @@ pub async fn add_stored_ticket(
     Ok(())
 }
 
-/// The store a system's WUAs share their update partitions in.
-pub async fn store_directory(
-    connection: &mut SqliteConnection,
-    system: &System,
-) -> Result<PathBuf> {
-    Ok(get_system_directory(connection, system)
-        .await?
-        .join(STORE_DIR))
-}
-
-/// The store of the WUA at `path`: the nearest one up from its folder.
+/// The store of a legacy WUA at `path`: the nearest one up from its folder.
 pub fn find_store(path: &Path) -> Option<PathBuf> {
     path.ancestors()
         .skip(1)
         .map(|dir| dir.join(STORE_DIR))
         .find(|store| store.is_dir())
-}
-
-/// Copy the store entries the WUA at `wua` needs from `from` to `to`, those
-/// `to` lacks. Returns the names of those `from` lacks too.
-pub async fn copy_store_entries(
-    progress_bar: &ProgressBar,
-    wua: &Path,
-    from: Option<&Path>,
-    to: &Path,
-) -> Result<Vec<String>> {
-    let mut missing = Vec::new();
-    for name in wux_rs::store_entries(wua)? {
-        let target = to.join(&name);
-        if target.is_file() {
-            continue;
-        }
-        match from
-            .map(|from| from.join(&name))
-            .filter(|path| path.is_file())
-        {
-            Some(source) => {
-                create_directory(progress_bar, &to, true).await?;
-                copy_file(progress_bar, &source, &target, false).await?;
-            }
-            None => missing.push(name),
-        }
-    }
-    Ok(missing)
 }
 
 pub struct WudRomfile {
@@ -469,8 +433,8 @@ impl ToWux for WuaRomfile {
     }
 }
 
-/// Convert to WUA, which keeps what rebuilds the disc: its update partition
-/// goes to `store`, shared by the WUAs beside it.
+/// Export to a standalone plain WUA (no `.wud/` lossless disc layout, `.nus/`
+/// revert data, or `.update-partitions` store).
 pub trait ToWua: GetRomfile {
     /// With `bundle`, the WUA holds, as Cemu bundles them, the newest update
     /// and DLC found in the library, in any system, matched by title ID.
@@ -479,44 +443,13 @@ pub trait ToWua: GetRomfile {
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-        store: &Path,
         bundle: bool,
-    ) -> Result<WuaRomfile> {
-        start_action(progress_bar, Some("Creating wua"));
+    ) -> Result<CommonRomfile> {
         let input = self.romfile().path.clone();
-        let path = output_path(destination_directory, &input, WUA_EXTENSION);
-        print_action(
-            progress_bar,
-            &format!(
-                "Creating \"{}\"",
-                path.file_name().unwrap().to_str().unwrap()
-            ),
-        );
-        let keys = load_wiiu_keys()?;
-        let mut inputs = vec![input.clone()];
-        let mut tickets = Vec::new();
-        if bundle {
-            let (directories, stored) =
-                find_update_and_dlc(connection, progress_bar, &input, &keys).await?;
-            inputs.extend(directories);
-            tickets = stored;
-        }
-        let mut length = 0;
-        for input in &inputs {
-            length += match input.is_dir() {
-                true => directory_size(input)?,
-                false => input.metadata()?.len(),
-            };
-        }
-        let (output, store) = (path.clone(), store.to_path_buf());
-        run_blocking(progress_bar, length, move |progress| {
-            let inputs: Vec<&Path> = inputs.iter().map(PathBuf::as_path).collect();
-            wux_rs::to_wua_with_tickets(&inputs, &output, &keys, &tickets, Some(&store), progress)
-        })
-        .await
-        .with_context(|| format!("Failed to create \"{}\"", path.display()))?;
-        stop_action(progress_bar);
-        CommonRomfile::from_path(&path)?.as_wua()
+        let output = output_path(destination_directory, &input, WUA_EXTENSION);
+        to_plain_wua(connection, progress_bar, &input, &output, bundle, None)
+            .await?
+            .ok_or_else(|| anyhow!("Failed to export \"{}\" to WUA", input.display()))
     }
 }
 
@@ -524,27 +457,145 @@ impl ToWua for WudRomfile {}
 
 impl ToWua for WuxRomfile {}
 
-/// The folders of the newest update and DLC in the library for the game on
-/// the disc at `disc`: titles whose ID shares the game's low half, typed
-/// `0005000E` for an update and `0005000C` for DLC, and the stored tickets of
-/// those that hold none.
+/// Export a disc or NUS title directory at `input` to a standalone plain WUA
+/// at `output`. Returns `Ok(None)` when a standalone NUS title has no ticket
+/// to decrypt it with and is skipped with a warning.
+pub async fn to_plain_wua(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    input: &Path,
+    output: &Path,
+    bundle: bool,
+    display_name: Option<&str>,
+) -> Result<Option<CommonRomfile>> {
+    let keys = load_wiiu_keys()?;
+    let (title_id, _) = wux_rs::title_id(input, &keys)
+        .with_context(|| format!("Failed to read \"{}\"", input.display()))?;
+    let mut tickets = Vec::new();
+    if input.is_dir() && wux_rs::ticket_path(input).is_none() {
+        match stored_ticket(connection, title_id).await? {
+            Some(path) => tickets.push(std::fs::read(&path)?),
+            None => {
+                let name = display_name.unwrap_or_else(|| {
+                    input
+                        .file_name()
+                        .and_then(|name| name.to_str())
+                        .unwrap_or_default()
+                });
+                print_warning(
+                    progress_bar,
+                    &format!(
+                        "\"{name}\" has no ticket to decrypt it with, skipping: import its folder with the ticket a downloader made"
+                    ),
+                );
+                return Ok(None);
+            }
+        }
+    }
+
+    start_action(progress_bar, Some("Creating wua"));
+    print_action(
+        progress_bar,
+        &format!(
+            "Creating \"{}\"",
+            output.file_name().unwrap().to_str().unwrap()
+        ),
+    );
+    let mut inputs = vec![input.to_path_buf()];
+    let mut _temp_dirs = Vec::new();
+    if bundle && (title_id >> 32) == 0x0005_0000 {
+        let (directories, stored, temp_dirs) =
+            find_update_and_dlc(connection, progress_bar, title_id).await?;
+        inputs.extend(directories);
+        tickets.extend(stored);
+        _temp_dirs = temp_dirs;
+    }
+    let mut length = 0;
+    for input in &inputs {
+        length += match input.is_dir() {
+            true => directory_size(input)?,
+            false => input.metadata()?.len(),
+        };
+    }
+    let output_path = output.to_path_buf();
+    run_blocking(progress_bar, length, move |progress| {
+        let inputs: Vec<&Path> = inputs.iter().map(PathBuf::as_path).collect();
+        wux_rs::to_plain_wua_with_tickets(&inputs, &output_path, &keys, &tickets, progress)
+    })
+    .await
+    .with_context(|| format!("Failed to create \"{}\"", output.display()))?;
+    stop_action(progress_bar);
+    Ok(Some(CommonRomfile::from_path(&output)?))
+}
+
+enum TitleSource {
+    Dir(PathBuf),
+    Ore(PathBuf),
+}
+
+/// The folders of the newest update and DLC in the library for `title_id`:
+/// titles whose ID shares the game's low half, typed `0005000E` for an update
+/// and `0005000C` for DLC, whether stored as loose NUS folders or `.ore`
+/// titles, and the stored tickets of those that hold none. Returned `TempDir`s
+/// hold extracted `.ore` titles and must stay alive until WUA creation ends.
 async fn find_update_and_dlc(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    disc: &Path,
-    keys: &[wux_rs::Key],
-) -> Result<(Vec<PathBuf>, Vec<Vec<u8>>)> {
+    title_id: u64,
+) -> Result<(Vec<PathBuf>, Vec<Vec<u8>>, Vec<TempDir>)> {
     let tmds = find_romfiles_of_tmds(connection).await;
     if tmds.is_empty() {
-        return Ok((Vec::new(), Vec::new()));
+        return Ok((Vec::new(), Vec::new(), Vec::new()));
     }
-    let (title_id, _) = wux_rs::title_id(disc, keys)
-        .with_context(|| format!("Failed to read \"{}\"", disc.display()))?;
     // the newest version of each matching title
-    let mut found: HashMap<u64, (u16, PathBuf)> = HashMap::new();
+    let mut found: HashMap<u64, (u16, String, TitleSource)> = HashMap::new();
     let mut tickets: HashMap<u64, Vec<u8>> = HashMap::new();
+    let mut indexes = HashMap::new();
     for tmd in tmds {
         let path = tmd.as_common(connection).await?.path;
+        if has_extension(&path, ORE_EXTENSION) {
+            let Ok(reader) = ore_rs::Reader::inspect(&path) else {
+                continue;
+            };
+            if !reader.is_title() {
+                continue;
+            }
+            let Ok(files) = reader.files() else {
+                continue;
+            };
+            let Some(tmd_name) = newest_tmd_name(files.iter().map(|(name, ..)| name.as_str()))
+            else {
+                continue;
+            };
+            let Ok(bytes) = ore_title_file(&path, &tmd_name, &mut indexes) else {
+                continue;
+            };
+            let Ok(parsed) = wux_rs::parse_tmd(&bytes) else {
+                continue;
+            };
+            let (id, version) = (parsed.title_id, parsed.version);
+            if id & 0xFFFF_FFFF != title_id & 0xFFFF_FFFF
+                || !matches!(id >> 32, 0x0005_000E | 0x0005_000C)
+            {
+                continue;
+            }
+            let display_name = path
+                .file_stem()
+                .and_then(|name| name.to_str())
+                .unwrap_or_default()
+                .to_string();
+            if reader.ticket().is_none()
+                && !tickets.contains_key(&id)
+                && !collect_stored_ticket(connection, progress_bar, id, &display_name, &mut tickets)
+                    .await?
+            {
+                continue;
+            }
+            if found.get(&id).is_none_or(|(newest, ..)| version > *newest) {
+                found.insert(id, (version, display_name, TitleSource::Ore(path)));
+            }
+            continue;
+        }
         let Some(directory) = path.parent() else {
             continue;
         };
@@ -556,41 +607,104 @@ async fn find_update_and_dlc(
         {
             continue;
         }
+        let display_name = directory
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or_default()
+            .to_string();
         // No-Intro lists DLC without the ticket it would need: the one a
         // downloader made is in the store of tickets, if it was imported
-        if wux_rs::ticket_path(directory).is_none() && !tickets.contains_key(&id) {
-            match stored_ticket(connection, id).await? {
-                Some(path) => {
-                    tickets.insert(id, std::fs::read(&path)?);
-                }
-                None => {
-                    print_warning(
-                        progress_bar,
-                        &format!(
-                            "\"{}\" has no ticket to decrypt it with, skipping: import its folder with the ticket a downloader made",
-                            directory.file_name().unwrap().to_str().unwrap()
-                        ),
-                    );
-                    continue;
-                }
+        if wux_rs::ticket_path(directory).is_none()
+            && !tickets.contains_key(&id)
+            && !collect_stored_ticket(connection, progress_bar, id, &display_name, &mut tickets)
+                .await?
+        {
+            continue;
+        }
+        if found.get(&id).is_none_or(|(newest, ..)| version > *newest) {
+            found.insert(
+                id,
+                (
+                    version,
+                    display_name,
+                    TitleSource::Dir(directory.to_path_buf()),
+                ),
+            );
+        }
+    }
+    let mut entries: Vec<(String, TitleSource)> = found
+        .into_values()
+        .map(|(_, name, source)| (name, source))
+        .collect();
+    entries.sort_by(|(a, _), (b, _)| a.cmp(b));
+    let mut directories = Vec::with_capacity(entries.len());
+    let mut temp_dirs = Vec::new();
+    for (name, source) in entries {
+        print_info(progress_bar, &format!("Adding \"{name}\""));
+        match source {
+            TitleSource::Dir(directory) => directories.push(directory),
+            TitleSource::Ore(path) => {
+                let tmp_directory = create_tmp_directory(connection).await?;
+                let folder = tmp_directory.path().join("title");
+                CommonRomfile::from_path(&path)?
+                    .as_ore()?
+                    .extract_files(progress_bar, &folder)
+                    .await?;
+                directories.push(folder);
+                temp_dirs.push(tmp_directory);
             }
         }
-        if found.get(&id).is_none_or(|(newest, _)| version > *newest) {
-            found.insert(id, (version, directory.to_path_buf()));
+    }
+    Ok((directories, tickets.into_values().collect(), temp_dirs))
+}
+
+async fn collect_stored_ticket(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    id: u64,
+    display_name: &str,
+    tickets: &mut HashMap<u64, Vec<u8>>,
+) -> Result<bool> {
+    match stored_ticket(connection, id).await? {
+        Some(path) => {
+            tickets.insert(id, std::fs::read(&path)?);
+            Ok(true)
+        }
+        None => {
+            print_warning(
+                progress_bar,
+                &format!(
+                    "\"{display_name}\" has no ticket to decrypt it with, skipping: import its folder with the ticket a downloader made"
+                ),
+            );
+            Ok(false)
         }
     }
-    let mut directories: Vec<PathBuf> = found.into_values().map(|(_, path)| path).collect();
-    directories.sort();
-    for directory in &directories {
-        print_info(
-            progress_bar,
-            &format!(
-                "Adding \"{}\"",
-                directory.file_name().unwrap().to_str().unwrap()
-            ),
-        );
+}
+
+/// Mirror `wux_rs::tmd_path` selection on file names inside an ORE title:
+/// `title.tmd` first, otherwise `tmd` or highest-version `tmd.<version>`.
+fn newest_tmd_name<'a>(names: impl Iterator<Item = &'a str>) -> Option<String> {
+    let mut best: Option<(u32, String)> = None;
+    for name in names {
+        if name == "title.tmd" {
+            return Some(name.to_string());
+        }
+        let Some(rest) = name.strip_prefix("tmd") else {
+            continue;
+        };
+        let version = match rest {
+            "" => 0,
+            _ => match rest.strip_prefix('.').and_then(|v| v.parse::<u32>().ok()) {
+                Some(v) => v,
+                None => continue,
+            },
+        };
+        if best.as_ref().is_none_or(|(cur, _)| version >= *cur) {
+            best = Some((version, name.to_string()));
+        }
     }
-    Ok((directories, tickets.into_values().collect()))
+    best.map(|(_, name)| name)
 }
 
 /// The total size of the files directly in `directory`.

@@ -14,3 +14,4 @@ mod test_orphans_game_subfolders;
 mod test_orphans_subfolder;
 mod test_trashed;
 mod test_trashed_rom_directory;
+mod test_unused_update_partitions;
