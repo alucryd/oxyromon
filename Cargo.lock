@@ -3209,6 +3209,7 @@ dependencies = [
  "crc32fast",
  "flate2",
  "indicatif",
+ "libc",
  "md-5",
  "tempfile",
  "test-support",

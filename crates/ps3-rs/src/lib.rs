@@ -79,7 +79,9 @@ pub fn rebuild(
     );
     let hashes: HashMap<u64, [u8; 16]> = ird.file_hashes.iter().copied().collect();
 
-    // Every file found and the right size before anything is written
+    // Every file found, the right size and readable before anything is
+    // written, but held open only as it is read: a disc can hold thousands,
+    // past the limit of open files
     let files = ird.files()?;
     let mut sources = Vec::with_capacity(files.len());
     for file in &files {
@@ -95,7 +97,9 @@ pub fn rebuild(
                 file.size()
             )));
         }
-        sources.push(fs::File::open(&path)?);
+        fs::File::open(&path)
+            .map_err(|e| Error::WrongSource(format!("{}: {e}", path.display())))?;
+        sources.push(path);
     }
 
     // Each extent where it lies, in order, with where it starts in its file
@@ -158,6 +162,9 @@ pub fn rebuild(
             Ok(())
         };
         let mut chunk = vec![0u8; CHUNK * SECTOR];
+        // the one file open, by its index: extents come in disc order, a
+        // file's together but for one past 4 GiB
+        let mut open: Option<(usize, fs::File)> = None;
         for &(start, len, index, offset) in &extents {
             let end = start + len.div_ceil(SECTOR as u32);
             if start < lba || end > total {
@@ -173,10 +180,14 @@ pub fn rebuild(
                 )));
             }
             fill(&mut out, lba, start)?;
+            if open.as_ref().is_none_or(|(at, _)| *at != index) {
+                open = Some((index, fs::File::open(&sources[index])?));
+            }
+            let file = &open.as_ref().unwrap().1;
             let mut done = 0u64;
             while done < len as u64 {
                 let n = (len as u64 - done).min(chunk.len() as u64) as usize;
-                read_exact_at(&sources[index], &mut chunk[..n], offset + done)?;
+                read_exact_at(file, &mut chunk[..n], offset + done)?;
                 file_md5s[index].update(&chunk[..n]);
                 progress(n as u64);
                 let sectors = n.div_ceil(SECTOR);
