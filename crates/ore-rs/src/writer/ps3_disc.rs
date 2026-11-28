@@ -111,22 +111,13 @@ pub(super) fn encode(
                 let disc = &mut disc[..length];
                 iso.read_at(start + at, disc)?;
                 hashes.update(disc);
-                match &crypt {
-                    Some(crypt) => {
-                        let lba = ((start + at) / SECTOR_2048) as u32;
-                        let mut plain = disc.to_vec();
-                        crypt.decrypt(lba, &mut plain);
-                        let mut back = plain.clone();
-                        crypt.encrypt(lba, &mut back);
-                        if back != *disc {
-                            return Err(Error::Corrupt(format!(
-                                "the PS3 region at sector {lba} does not encrypt back"
-                            )));
-                        }
-                        segmenter.feed(&plain, at, None, &mut |run| encoder.push(run));
-                    }
-                    None => segmenter.feed(disc, at, None, &mut |run| encoder.push(run)),
+                // hashed as the disc has it, then decrypted in place: each
+                // sector's CBC chain starts from its own number, so the reader
+                // encrypts it back exactly, whatever the key
+                if let Some(crypt) = &crypt {
+                    crypt.decrypt(((start + at) / SECTOR_2048) as u32, disc);
                 }
+                segmenter.feed(disc, at, None, &mut |run| encoder.push(run));
                 encoder.flush(false)?;
                 progress(length as u64);
                 at += length as u64;

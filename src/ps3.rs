@@ -10,7 +10,7 @@
 use super::common::*;
 use super::config::HashAlgorithm;
 use super::database::*;
-use super::import_keys::{PS3_KEYS_FILE, load_ps3_keys};
+use super::import_keys::{PS3_KEYS_FILE, parse_key};
 use super::import_roms::create_or_update_romfile;
 use super::mimetype::ISO_EXTENSION;
 use super::model::*;
@@ -130,17 +130,43 @@ pub async fn import_pup(
 
 /// The keys a game's PS3 disc may be opened with, which ore-rs tells apart
 /// by what the disc decrypts to: its IRD's, when one is kept, then the disc
-/// keys `import-keys` keeps, which tests leave out.
-pub async fn disc_keys(connection: &mut SqliteConnection, game_id: i64) -> Result<Vec<[u8; 16]>> {
+/// keys `import-keys` keeps, which tests leave out. Asked of every ISO, so
+/// what cannot be read is warned about and left out: a disc without its key
+/// is still stored whole, and another system's needs none.
+pub async fn disc_keys(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    game_id: i64,
+) -> Vec<[u8; 16]> {
     let mut keys = Vec::new();
     if let Some(data) = find_ird_by_game_id(connection, game_id).await {
-        keys.push(Ird::parse(&data)?.disc_key());
+        match Ird::parse(&data) {
+            Ok(ird) => keys.push(ird.disc_key()),
+            Err(error) => print_warning(
+                progress_bar,
+                &format!("The kept IRD is unreadable: {error}"),
+            ),
+        }
     }
-    let path = super::config::get_data_directory()?.join(PS3_KEYS_FILE);
-    if !cfg!(test) && path.is_file() {
-        keys.extend(load_ps3_keys(&path)?);
+    if cfg!(test) {
+        return keys;
     }
-    Ok(keys)
+    let Ok(path) = super::config::get_data_directory().map(|dir| dir.join(PS3_KEYS_FILE)) else {
+        return keys;
+    };
+    let Ok(text) = std::fs::read_to_string(&path) else {
+        return keys;
+    };
+    for line in text.lines().map(str::trim).filter(|line| !line.is_empty()) {
+        match parse_key(line) {
+            Some(key) => keys.push(key),
+            None => print_warning(
+                progress_bar,
+                &format!("\"{}\": {line} is no key, left out", path.display()),
+            ),
+        }
+    }
+    keys
 }
 
 /// A JB folder game's IRD, kept since it was imported.

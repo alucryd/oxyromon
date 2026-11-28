@@ -6,6 +6,7 @@ use sha1::Sha1;
 
 mod test_iso_to_jbfolder;
 mod test_iso_to_ore;
+mod test_iso_to_ore_unreadable_ird;
 mod test_jbfolder_missing_update;
 mod test_jbfolder_to_iso;
 mod test_jbfolder_to_ore;

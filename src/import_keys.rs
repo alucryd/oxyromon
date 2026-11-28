@@ -242,7 +242,7 @@ fn import_keys(
 }
 
 /// A 16-byte key, as 32 hex digits.
-fn parse_key(hex: &str) -> Option<[u8; 16]> {
+pub(crate) fn parse_key(hex: &str) -> Option<[u8; 16]> {
     if hex.len() != 32 || !hex.is_ascii() {
         return None;
     }
