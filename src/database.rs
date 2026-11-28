@@ -3,9 +3,13 @@ use cfg_if::cfg_if;
 use itertools::Itertools;
 use sqlx::migrate::Migrator;
 use sqlx::prelude::*;
-use sqlx::sqlite::{SqliteConnection, SqlitePool, SqlitePoolOptions};
+use sqlx::sqlite::{
+    SqliteConnectOptions, SqliteConnection, SqliteLockingMode, SqlitePool, SqlitePoolOptions,
+    SqliteSynchronous,
+};
 use sqlx::{Acquire, AssertSqlSafe, Sqlite, Transaction};
 use std::convert::TryFrom;
+use std::str::FromStr;
 use std::time::Duration;
 
 static MIGRATOR: Migrator = sqlx::migrate!();
@@ -14,51 +18,41 @@ pub async fn establish_connection(url: &str) -> SqlitePool {
     #[allow(clippy::needless_late_init)]
     let max_connections: u32;
     #[allow(clippy::needless_late_init)]
-    let locking_mode: &str;
+    let locking_mode: SqliteLockingMode;
     cfg_if! {
         // long-lived processes — the web server and the MCP server — need a
         // real pool and must not hold the database with EXCLUSIVE locking
         if #[cfg(any(feature = "server", feature = "mcp"))] {
             max_connections = 5;
-            locking_mode = "NORMAL";
+            locking_mode = SqliteLockingMode::Normal;
         } else {
             max_connections = 1;
-            locking_mode = "EXCLUSIVE";
+            locking_mode = SqliteLockingMode::Exclusive;
         }
     }
+
+    // these pragmas only last for the connection they run on, so they go in
+    // the connect options, which the pool applies to every connection it opens
+    let options = SqliteConnectOptions::from_str(url)
+        .unwrap_or_else(|_| panic!("Error parsing {}", url))
+        .foreign_keys(true)
+        .locking_mode(locking_mode)
+        .synchronous(SqliteSynchronous::Normal)
+        .pragma("temp_store", "MEMORY")
+        .pragma("mmap_size", "268435456")
+        .pragma("cache_size", "10000");
 
     let pool = SqlitePoolOptions::new()
         .min_connections(1)
         .max_connections(max_connections)
         .acquire_timeout(Duration::from_secs(5))
-        .connect(url)
+        .connect_with(options)
         .await
         .unwrap_or_else(|_| panic!("Error connecting to {}", url));
 
-    pool.execute("PRAGMA foreign_keys = ON;")
-        .await
-        .expect("Failed to set PRAGMA foreign_keys");
-    pool.execute(AssertSqlSafe(format!(
-        "PRAGMA locking_mode = {};",
-        locking_mode
-    )))
-    .await
-    .expect("Failed to set PRAGMA locking_mode");
     pool.execute("PRAGMA journal_mode = WAL;")
         .await
         .expect("Failed to set PRAGMA journal_mode");
-    pool.execute("PRAGMA synchronous = NORMAL;")
-        .await
-        .expect("Failed to set PRAGMA synchronous");
-    pool.execute("PRAGMA temp_store = MEMORY;")
-        .await
-        .expect("Failed to set PRAGMA temp_store");
-    pool.execute("PRAGMA mmap_size = 268435456;")
-        .await
-        .expect("Failed to set PRAGMA mmap_size");
-    pool.execute("PRAGMA cache_size = 10000;")
-        .await
-        .expect("Failed to set PRAGMA cache_size");
     pool.execute("PRAGMA auto_vacuum = INCREMENTAL;")
         .await
         .expect("Failed to set PRAGMA auto_vacuum");
@@ -3594,3 +3588,6 @@ pub async fn find_setting_by_key(
     .await
     .unwrap_or_else(|_| panic!("Error while finding setting with key {}", key))
 }
+
+#[cfg(test)]
+mod tests;

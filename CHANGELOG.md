@@ -54,6 +54,7 @@
 - Fixed system sizes in the web UI and MCP ignoring thin OREs' share of their store and WUAs' update partitions
 - Fixed `import-roms --unattended first` picking the least similar ROM
 - Fixed replacing or purging a thin ORE leaving its chunk references in the store (#344)
+- Fixed builds with the `server` or `mcp` feature, such as the Docker image, applying oxyROMon's SQLite settings to only one of their database connections, which made `import-dats` panic with "Error while marking games as complete" in a container with a read-only root filesystem
 
 # 0.25.0
 
