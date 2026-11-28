@@ -21,6 +21,7 @@ use super::io;
 use super::lfg::{Lfg, SEED_BYTES};
 use super::pack::{Cache, decode_group, read_group};
 use super::precache::{BATCH_BYTES, BATCH_PAUSE, Progress, Run as PrecacheRun, Warm};
+use super::ps3::disc::{Crypt, Region};
 use super::store::{Index, NOWHERE, StoreReader, find_store, hex};
 use super::wii::{
     self, BLOCK_DATA_SIZE, BLOCK_TOTAL_SIZE, BLOCKS_PER_GROUP, BlockData, GROUP_DATA_SIZE,
@@ -28,6 +29,9 @@ use super::wii::{
 };
 use super::wiiu_crypt::Layers;
 use super::xbox::{Filler, STATE_BYTES};
+
+/// A PS3 disc's sector, which its encryption counts in.
+const PS3_SECTOR: u64 = super::ps3::disc::SECTOR as u64;
 
 /// What a core decodes at a time when writing a disc out: four Wii groups.
 const SLICE: u64 = 4 * GROUP_TOTAL_SIZE;
@@ -633,8 +637,13 @@ impl Reader {
                 (AreaKind::Repeat, _) => return Err(corrupt("a repeat of a bad period")),
                 _ => 0,
             };
+            if area.kind == AreaKind::Ps3
+                && !(area.start.is_multiple_of(PS3_SECTOR) && area.len.is_multiple_of(PS3_SECTOR))
+            {
+                return Err(corrupt("a PS3 region of partial sectors"));
+            }
             let stored_len = match area.kind {
-                AreaKind::Raw | AreaKind::CdAudio | AreaKind::Wiiu => area.len,
+                AreaKind::Raw | AreaKind::CdAudio | AreaKind::Wiiu | AreaKind::Ps3 => area.len,
                 AreaKind::Repeat => 0,
                 AreaKind::CdData => map.as_ref().unwrap().stored_len(),
                 AreaKind::WiiPartition => {
@@ -653,11 +662,11 @@ impl Reader {
                     | AreaKind::Repeat,
                     _,
                 ) => None,
-                (AreaKind::WiiPartition, Some(key)) => Some(
+                (AreaKind::WiiPartition | AreaKind::Ps3, Some(key)) => Some(
                     Key::try_from(key.as_slice())
                         .map_err(|_| corrupt("a title key not of 16 bytes"))?,
                 ),
-                (AreaKind::WiiPartition, None) => {
+                (AreaKind::WiiPartition | AreaKind::Ps3, None) => {
                     return Err(corrupt("a partition without its key"));
                 }
             };
@@ -1272,6 +1281,7 @@ impl Reader {
                     self.read_stored(index, within, &mut buf[..length])?
                 }
                 AreaKind::CdData => self.read_sectors(index, within, &mut buf[..length])?,
+                AreaKind::Ps3 => self.read_ps3(index, within, &mut buf[..length])?,
                 AreaKind::Wiiu => {
                     let to = within + length as u64;
                     if !matches!(&self.wiiu, Some((a, lo, bytes))
@@ -1317,6 +1327,33 @@ impl Reader {
             buf = &mut buf[length..];
             offset += length as u64;
         }
+        Ok(())
+    }
+
+    /// Read a PS3 region at `within`: its whole sectors decrypted from the
+    /// stored stream, encrypted back with the disc key.
+    fn read_ps3(&mut self, area: usize, within: u64, buf: &mut [u8]) -> Result<()> {
+        let (start, key) = {
+            let area = &self.areas[area];
+            (area.start, area.key.expect("a PS3 region has its key"))
+        };
+        let lo = within / PS3_SECTOR * PS3_SECTOR;
+        let hi = (within + buf.len() as u64).next_multiple_of(PS3_SECTOR);
+        let mut sectors = vec![0; (hi - lo) as usize];
+        self.read_stored(area, lo, &mut sectors)?;
+        let first = ((start + lo) / PS3_SECTOR) as u32;
+        let last = first + (sectors.len() as u64 / PS3_SECTOR) as u32 - 1;
+        Crypt::new(
+            &key,
+            vec![Region {
+                start: first,
+                end: last,
+                encrypted: true,
+            }],
+        )
+        .encrypt(first, &mut sectors);
+        let from = (within - lo) as usize;
+        buf.copy_from_slice(&sectors[from..from + buf.len()]);
         Ok(())
     }
 
@@ -1457,7 +1494,8 @@ impl Reader {
             | AreaKind::CdData
             | AreaKind::CdAudio
             | AreaKind::Wiiu
-            | AreaKind::Repeat => 0,
+            | AreaKind::Repeat
+            | AreaKind::Ps3 => 0,
         }
     }
 
@@ -1732,7 +1770,7 @@ impl Reader {
             .partition_point(|&i| self.areas[i].start + self.areas[i].len <= end)];
         let within = end - self.areas[index].start;
         match self.areas[index].kind {
-            AreaKind::Raw | AreaKind::CdAudio | AreaKind::Wiiu => {
+            AreaKind::Raw | AreaKind::CdAudio | AreaKind::Wiiu | AreaKind::Ps3 => {
                 self.guess_stored(index, within, &mut seen, &mut out)
             }
             AreaKind::CdData => {

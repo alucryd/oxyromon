@@ -9,6 +9,7 @@
 
 ## Features
 
+- Added PlayStation 3 discs, by their sector 1: each region sector 0 lists an area, the encrypted ones stored decrypted with the disc key found among the keys by what EBOOT.BIN decrypts to, which the ORE keeps to encrypt them back, a new `ps3` area kind (SPEC.md §8.8), and as they are without it; Disgaea 3 (USA) is 66% of its ISO, 94% of it without its key
 - Added `Index::open`, opening an ORE, a thin one through an index already loaded, for a caller opening many OREs of one store
 - Added sets, a game's several ROMs in one ORE, a floppy game's disks or a cartridge's chips: a folder named a cartridge's or a floppy's platform, by `Options::platform` or `--platform`, is written as one, each file an area of its own with its own hashes, of class 16 or 17, and written back as that folder; `Reader::is_set` tells one, `Reader::is_folder` one or a title, written back as a folder, `Reader::files`, which `Reader::title_files` became, lists a set's files as a title's, and `Reader::file_name` names none for a set
 - Added Xbox discs, XGD1 as Redump dumps them, recognised by their game partition's `MICROSOFT*XBOX*MEDIA` volume descriptor, platform `xbox`, media class 64

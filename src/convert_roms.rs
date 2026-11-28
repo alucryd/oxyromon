@@ -178,6 +178,12 @@ pub async fn convert_system(
         .map(|game| game.id)
         .collect();
 
+    // A JB folder goes to ORE as the ISO it rebuilds, checked against the
+    // DAT, which then converts as any other
+    if format == "ORE" && !jbfolder_game_ids.is_empty() {
+        ps3::jbfolders_to_isos(connection, progress_bar, &system, &jbfolder_game_ids).await?;
+    }
+
     let (roms_by_game_id, games_by_id, romfiles_by_id) =
         load_rom_data(connection, games, true).await;
 
@@ -2940,6 +2946,7 @@ async fn to_ore(
                         compression_algorithm,
                         profile,
                         sink.as_deref_mut(),
+                        ps3::disc_keys(&mut transaction, progress_bar, rom.game_id).await,
                     )
                     .await
             } else {
@@ -3096,6 +3103,7 @@ async fn to_ore(
                     compression_algorithm,
                     profile,
                     sink.as_deref_mut(),
+                    ps3::disc_keys(&mut transaction, progress_bar, rom.game_id).await,
                 )
                 .await,
         )?
@@ -3149,6 +3157,7 @@ async fn to_ore(
                     compression_algorithm,
                     profile,
                     sink.as_deref_mut(),
+                    Vec::new(),
                 )
                 .await,
         )?

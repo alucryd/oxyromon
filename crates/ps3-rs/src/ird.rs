@@ -9,6 +9,7 @@ use flate2::read::GzDecoder;
 
 use crate::disc::{self, File, SECTOR};
 use crate::{Error, Result};
+use std::io::ErrorKind;
 
 const MAGIC: &[u8; 4] = b"3IRD";
 const PIC_SIZE: usize = 115;
@@ -197,11 +198,15 @@ impl Ird {
         disc::files(&mut |lba, sector| {
             let at = lba as usize * SECTOR;
             let bytes = self.header.get(at..at + SECTOR).ok_or_else(|| {
-                Error::Corrupt(format!("a directory in sector {lba}, past the IRD header"))
+                std::io::Error::new(
+                    ErrorKind::InvalidData,
+                    format!("a directory in sector {lba}, past the IRD header"),
+                )
             })?;
             sector.copy_from_slice(bytes);
             Ok(())
         })
+        .map_err(Error::disc)
     }
 
     /// The MD5 the IRD gives the file starting at `lba`.

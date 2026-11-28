@@ -196,3 +196,42 @@ fn an_ird_inflating_past_its_bound_is_refused() {
     assert!(bomb.len() < 1 << 20);
     assert!(matches!(Ird::parse(&bomb), Err(Error::Corrupt(_))));
 }
+
+#[cfg(unix)]
+#[test]
+fn an_unreadable_file_fails_before_anything_is_written() {
+    use std::os::unix::fs::PermissionsExt;
+    let (dir, disc, ird) = setup();
+    let (jb, update) = jb_and_update(dir.path(), &disc);
+    let eboot = jb.join("PS3_GAME/USRDIR/EBOOT.BIN");
+    std::fs::set_permissions(&eboot, std::fs::Permissions::from_mode(0o000)).unwrap();
+    // root reads it anyway: nothing to test then
+    if std::fs::File::open(&eboot).is_ok() {
+        return;
+    }
+    let output = dir.path().join("Test Game.iso");
+    let mut read = 0;
+    let error = ps3_rs::rebuild(&ird, &mut sources(&jb, &update), &output, &mut |n| {
+        read += n
+    })
+    .unwrap_err();
+    assert!(matches!(error, Error::WrongSource(_)), "{error}");
+    assert_eq!(
+        read, 0,
+        "files were read before the unreadable one was found"
+    );
+    assert!(!dir.path().join("Test Game.iso.part").exists());
+}
+
+#[test]
+fn a_disc_key_is_told_right_by_what_eboot_decrypts_to() {
+    let (_dir, disc, ird) = setup();
+    let mut read = |lba: u32, sector: &mut [u8; ps3::SECTOR]| {
+        let at = lba as usize * ps3::SECTOR;
+        sector.copy_from_slice(&disc.iso[at..at + ps3::SECTOR]);
+        Ok(())
+    };
+    let probe = ps3_rs::disc::Probe::find(&mut read).unwrap().unwrap();
+    assert!(probe.opens(&ird.disc_key()));
+    assert!(!probe.opens(&[0x55; 16]));
+}

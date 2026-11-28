@@ -328,7 +328,7 @@ media = {
 area = {
   len:          uint,                     ; bytes of the logical stream it covers, > 0
   ? file:       text,                     ; the file it is, or part of, §10
-  kind:         "raw" / "wii-partition" / "cd-data" / "cd-audio" / "wiiu" / "repeat",
+  kind:         "raw" / "wii-partition" / "cd-data" / "cd-audio" / "wiiu" / "repeat" / "ps3",
   ? wiiu:       { ? outer: layer, ? pieces: [ { len: uint, layer: layer, offset: uint } ] },
   ? codec:      codec name,               ; what its groups were meant for, informational
   ? frame:      uint,                     ; a CD track's first sector, frames from 00:00:00
@@ -336,7 +336,7 @@ area = {
   ? period:     uint,                     ; a repeat's, §8.7
   records:      uint,                     ; the index records it takes
   ? sectors:    bytes,                    ; a CD data track's sector map, §8.4
-  ? title_key:  bytes(16),                ; a Wii partition's, decrypted
+  ? title_key:  bytes(16),                ; a Wii partition's, decrypted, or a PS3 region's disc key
   ? exceptions: [ { block: uint, hashes: bytes(1024) } ],   ; a Wii partition's, §8.5
 }
 
@@ -352,7 +352,8 @@ provenance = { tool: text, params: { codec: codec name, group: uint, level: uint
 `ledger` and `provenance` are informational: what the writer did to the
 input, and with what. A reader MUST NOT depend on either but to parse them;
 ore-rs's steps are `wii-decrypt`, `wii-hashes`, `gc-wii-filler-prng`, `zero`,
-`fill`, `mincdc-dedup`, `cd-sectors`, `wiiu-decrypt` and `wiiu-repeat`, each
+`fill`, `mincdc-dedup`, `cd-sectors`, `wiiu-decrypt`, `wiiu-repeat` and
+`ps3-decrypt`, each
 with the bytes it accounts for. `identity` is §10's.
 
 ## 8. Areas and how they read
@@ -373,10 +374,11 @@ and its bytes of logical stream are made from it as its kind says:
 | `wii-partition` | `len / 0x8000 × 0x7C00` bytes | the partition's blocks hashed and encrypted (§8.5) |
 | `wiiu` | `len` bytes | the stored stream encrypted by its layers (§8.6) |
 | `repeat` | none | the logical stream `period` bytes before (§8.7) |
+| `ps3` | `len` bytes | the stored stream encrypted sector by sector (§8.8) |
 
 A reader MUST refuse an area missing what its kind needs: `cd-data` its
 `sectors` and `frame`, `cd-audio` its `frame`, `wii-partition` its
-`title_key`, `wiiu` its `wiiu`, `repeat` its `period`.
+`title_key`, `wiiu` its `wiiu`, `repeat` its `period`, `ps3` its `title_key`.
 
 ### 8.1 `raw`
 
@@ -510,6 +512,16 @@ another `repeat`: byte `x` of the area is byte `start + x − period` of the
 logical stream. `period` MUST be above 0, a multiple of 0x8000, and at most
 `start`, and the area takes no records.
 
+### 8.8 `ps3`
+
+A PlayStation 3 disc's sector 0 lists the regions it leaves plain; those
+between them are encrypted, each 2,048-byte sector on its own with
+AES-128-CBC, the disc key `title_key`, its IV the sector's number counted
+from the disc's first, as a 128-bit big-endian integer. A `ps3` area is
+such a region stored decrypted: its logical bytes are its stored stream,
+each whole sector encrypted so. `start` and `len` MUST be multiples of
+2,048. A writer without the disc key stores the region as `raw`, as it is.
+
 ## 9. Generators
 
 A `GENERATED` record names its generator with a byte, then what it takes:
@@ -581,7 +593,7 @@ holding no directory, or that another file of the same output takes.
 | 32 | `cd-2352` | a CD of data tracks, 2,352-byte sectors | `cd` | `cd-data` |
 | 33 | `cd-mixed` | a CD with audio tracks | `cd` | `cd-data`, `cd-audio` |
 | 48 | `gd-rom` | a GD-ROM: a CD's single-density area and its high-density area | `gd-rom` | `cd-data`, `cd-audio` |
-| 64 | `dvd-2048` | a disc image of 2,048-byte sectors, or a Wii U disc's of 32 KiB | `gamecube`, `wii`, `ps2`, `psp`, `wiiu`, `xbox`, `xbox360` | `raw`, `wii-partition`, `wiiu`, `repeat` |
+| 64 | `dvd-2048` | a disc image of 2,048-byte sectors, or a Wii U disc's of 32 KiB | `gamecube`, `wii`, `ps2`, `ps3`, `psp`, `wiiu`, `xbox`, `xbox360` | `raw`, `wii-partition`, `wiiu`, `repeat`, `ps3` |
 | 97 | `cdn-title` | an eShop title as its CDN delivers it: a Wii U NUS folder | `wiiu` | `raw`, `wiiu` |
 
 The class tells a reader what an emulator is handed: sectors of 2,352 bytes
