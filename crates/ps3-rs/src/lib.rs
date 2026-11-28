@@ -72,9 +72,9 @@ pub fn rebuild(
     let crypt = Crypt::new(&ird.disc_key(), disc::regions(&ird.header[..SECTOR])?);
     let hashes: HashMap<u64, [u8; 16]> = ird.file_hashes.iter().copied().collect();
 
-    // Every file found and the right size before anything is written, but
-    // opened only as it is read: a disc can hold thousands, past the limit
-    // of open files
+    // Every file found, the right size and readable before anything is
+    // written, but held open only as it is read: a disc can hold thousands,
+    // past the limit of open files
     let files = ird.files()?;
     let mut sources = Vec::with_capacity(files.len());
     for file in &files {
@@ -90,6 +90,8 @@ pub fn rebuild(
                 file.size()
             )));
         }
+        fs::File::open(&path)
+            .map_err(|e| Error::WrongSource(format!("{}: {e}", path.display())))?;
         sources.push(path);
     }
 

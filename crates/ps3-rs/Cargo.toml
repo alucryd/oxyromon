@@ -36,6 +36,10 @@ indicatif = { workspace = true, optional = true }
 test-support = { path = "../test-support", features = ["ps3"] }
 tempfile.workspace = true
 
+# To lower the limit of open files, which one test runs under
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+libc = "0.2"
+
 [features]
 default = ["cli"]
 cli = ["dep:clap", "dep:console", "dep:indicatif"]
